@@ -3,8 +3,8 @@ import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, TouchableArea } from 'ui/src'
-import { AnglesDownUp } from 'ui/src/components/icons/AnglesDownUp'
-import { SortVertical } from 'ui/src/components/icons/SortVertical'
+import { ChevronsIn } from 'ui/src/components/icons/ChevronsIn'
+import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
 import { iconSizes } from 'ui/src/theme'
 import { NetworkLogo } from 'uniswap/src/components/CurrencyLogo/NetworkLogo'
 import { getChainLabel } from 'uniswap/src/features/chains/utils'
@@ -62,6 +62,7 @@ export function useTokenColumns({
           ),
           cell: (info) => {
             const row = hasRow<TokenTableRow>(info) ? info.row.original : null
+            const tableRow = hasRow<TokenTableRow>(info) ? info.row : null
             if (!row) {
               return (
                 <Cell loading={showLoadingSkeleton} justifyContent="flex-start">
@@ -69,12 +70,14 @@ export function useTokenColumns({
                 </Cell>
               )
             }
+            const isExpanded = tableRow?.getIsExpanded() ?? false
             return (
               <Cell loading={showLoadingSkeleton} justifyContent="flex-start">
                 {row.type === 'parent' ? (
                   <TokenDisplay
                     currencyInfo={row.tokenData.currencyInfo}
                     chainIds={row.tokenData.tokens.map((t) => t.chainId)}
+                    isExpanded={isExpanded}
                   />
                 ) : (
                   <Flex row alignItems="center" gap="$spacing8" ml="$spacing40">
@@ -269,9 +272,9 @@ export function useTokenColumns({
                     hitSlop={8}
                   >
                     {isExpanded ? (
-                      <AnglesDownUp color="$neutral2" size="$icon.16" />
+                      <ChevronsIn color="$neutral2" size="$icon.16" />
                     ) : (
-                      <SortVertical color="$neutral2" size="$icon.16" />
+                      <ChevronsOut color="$neutral2" size="$icon.16" />
                     )}
                   </TouchableArea>
                 </Cell>

@@ -8,7 +8,7 @@
     "typecheck": {},
     "typecheck:tsgo": {},
     "build": {
-      "command": "tsc",
+      "command": "tsc -b",
       "options": {
         "cwd": "{projectRoot}"
       }

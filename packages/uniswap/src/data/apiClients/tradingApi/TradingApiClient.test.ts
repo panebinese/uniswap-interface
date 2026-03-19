@@ -3,7 +3,7 @@ vi.mock('@universe/gating', async (importOriginal) => {
   return {
     ...actual,
     getFeatureFlag: vi.fn(),
-    getExperimentValue: vi.fn(),
+    getExperimentValueFromLayer: vi.fn(),
   }
 })
 
@@ -23,10 +23,10 @@ import { TradingApi } from '@universe/api'
 import { TRADING_API_PATHS } from '@universe/api/src/clients/trading/createTradingApiClient'
 import {
   EthAsErc20UniswapXProperties,
-  Experiments,
   FeatureFlags,
-  getExperimentValue,
+  getExperimentValueFromLayer,
   getFeatureFlag,
+  Layers,
 } from '@universe/gating'
 import {
   checkWalletDelegation,
@@ -491,12 +491,14 @@ describe('checkWalletDelegation', () => {
 
 describe('getFeatureFlaggedHeaders', () => {
   const mockGetFeatureFlag = getFeatureFlag as MockedFunction<typeof getFeatureFlag>
-  const mockGetExperimentValue = getExperimentValue as MockedFunction<typeof getExperimentValue>
+  const mockGetExperimentValueFromLayer = getExperimentValueFromLayer as MockedFunction<
+    typeof getExperimentValueFromLayer
+  >
 
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetFeatureFlag.mockReturnValue(false)
-    mockGetExperimentValue.mockReturnValue(false)
+    mockGetExperimentValueFromLayer.mockReturnValue(false)
   })
 
   getAllTradingApiPaths().forEach((path) => {
@@ -528,15 +530,14 @@ describe('getFeatureFlaggedHeaders', () => {
     })
 
     it(`Endpoint: ${path} should/should not include Erc20EthEnabled header when experiment is enabled`, () => {
-      mockGetExperimentValue.mockImplementation(({ experiment, param }: { experiment: string; param: string }) => {
-        if (
-          experiment === Experiments.EthAsErc20UniswapX &&
-          param === EthAsErc20UniswapXProperties.EthAsErc20UniswapXEnabled
-        ) {
-          return true
-        }
-        return false
-      })
+      mockGetExperimentValueFromLayer.mockImplementation(
+        ({ layerName, param }: { layerName: string; param: string }) => {
+          if (layerName === Layers.SwapPage && param === EthAsErc20UniswapXProperties.EthAsErc20UniswapXEnabled) {
+            return true
+          }
+          return false
+        },
+      )
       const headers = getFeatureFlaggedHeaders(path)
       switch (path) {
         case TRADING_API_PATHS.quote:

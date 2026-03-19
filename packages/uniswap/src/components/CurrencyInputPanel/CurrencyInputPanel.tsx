@@ -60,6 +60,7 @@ export const CurrencyInputPanel = memo(
         inputRowMinHeight,
         inputSuffix,
         allowOverflow,
+        balanceVariant,
       } = props
 
       const isShortMobileDevice = useIsShortMobileDevice()
@@ -205,6 +206,7 @@ export const CurrencyInputPanel = memo(
                     currencyInfo={currencyInfo}
                     showInsufficientBalanceWarning={showInsufficientBalanceWarning}
                     hideBalance={!!hidePresets}
+                    variant={balanceVariant}
                   />
                   {/* Max button */}
                   {showMaxButton && onSetPresetValue && (

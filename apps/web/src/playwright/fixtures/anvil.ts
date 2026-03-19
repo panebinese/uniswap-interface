@@ -21,7 +21,18 @@ class WalletError extends Error {
   code?: number
 }
 
-const allowedErc20BalanceAddresses = [USDT.address, DAI.address, WETH_ADDRESS(UniverseChainId.Mainnet)]
+// Known balance mapping slots for tokens with non-standard storage layouts
+const KNOWN_BALANCE_SLOTS: Record<string, number> = {
+  // WEETH (ether.fi weETH) — balance mapping at slot 101
+  '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee': 101,
+}
+
+const allowedErc20BalanceAddresses = [
+  USDT.address,
+  DAI.address,
+  WETH_ADDRESS(UniverseChainId.Mainnet),
+  ...Object.keys(KNOWN_BALANCE_SLOTS),
+]
 
 // Helper to check if error is a timeout
 const isTimeoutError = (error: any): boolean => {
@@ -56,6 +67,7 @@ const createAnvilClient = () => {
         erc20Address: address,
         user: walletAddress,
         newBalance: balance,
+        knownSlot: KNOWN_BALANCE_SLOTS[address],
       })
     },
     async getErc20Balance(address: Address, owner?: Address) {

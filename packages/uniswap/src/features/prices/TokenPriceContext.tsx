@@ -27,7 +27,10 @@ export interface TokenPriceHooks {
     pollInterval?: PollingInterval,
   ) => CurrencyAmount<Currency> | null
 
-  useUSDCValueWithStatus: (currencyAmount: CurrencyAmount<Currency> | undefined | null) => {
+  useUSDCValueWithStatus: (
+    currencyAmount: CurrencyAmount<Currency> | undefined | null,
+    pollInterval?: PollingInterval,
+  ) => {
     value: CurrencyAmount<Currency> | null
     isLoading: boolean
   }

@@ -90,7 +90,7 @@ export function DeletePasskeyMenu({
             width="100%"
             p="$gap12"
             borderColor="$surface3"
-            borderWidth={1}
+            borderWidth="$spacing1"
             borderRadius="$rounded12"
             borderStyle="solid"
           >

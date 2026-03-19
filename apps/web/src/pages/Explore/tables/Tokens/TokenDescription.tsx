@@ -1,7 +1,7 @@
 import { Flex, View } from 'ui/src'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import QueryTokenLogo from '~/components/Logo/QueryTokenLogo'
-import { EllipsisText, TableText } from '~/components/Table/styled'
+import { EllipsisText, TableText } from '~/components/Table/shared/TableText'
 import { TokenStat } from '~/state/explore/types'
 
 export function TokenDescription({ token }: { token: TokenStat }) {

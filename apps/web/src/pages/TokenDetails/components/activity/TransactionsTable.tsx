@@ -4,6 +4,7 @@ import { ApolloError } from '@apollo/client'
 import { createColumnHelper } from '@tanstack/react-table'
 import { Token } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, useMedia } from 'ui/src'
@@ -28,15 +29,11 @@ import { InternalLink } from '~/components/InternalLink'
 import { Table } from '~/components/Table'
 import { Cell } from '~/components/Table/Cell'
 import { Filter } from '~/components/Table/Filter'
-import {
-  EllipsisText,
-  FilterHeaderRow,
-  HeaderCell,
-  HeaderSortText,
-  TableText,
-  TimestampCell,
-  TokenLinkCell,
-} from '~/components/Table/styled'
+import { HeaderSortText } from '~/components/Table/shared/SortableHeader'
+import { EllipsisText, TableText } from '~/components/Table/shared/TableText'
+import { TimestampCell } from '~/components/Table/shared/TimestampCell'
+import { TokenLinkCell } from '~/components/Table/shared/TokenLinkCell'
+import { FilterHeaderRow, HeaderCell } from '~/components/Table/styled'
 import { useUpdateManualOutage } from '~/hooks/useUpdateManualOutage'
 import { buildPortfolioUrl } from '~/pages/Portfolio/utils/portfolioUrls'
 
@@ -58,6 +55,7 @@ interface SwapLeg {
 
 export function TransactionsTable({ chainId, referenceToken }: { chainId: UniverseChainId; referenceToken: Token }) {
   const { t } = useTranslation()
+  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const activeLocalCurrency = useAppFiatCurrency()
   const { convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
   const [filterModalIsOpen, toggleFilterModal] = useReducer((s) => !s, false)
@@ -331,7 +329,7 @@ export function TransactionsTable({ chainId, referenceToken }: { chainId: Univer
         data={data}
         loading={allDataStillLoading}
         error={combinedError}
-        v2={false}
+        v2={isMultichainTokenUx}
         loadMore={loadMore}
         maxHeight={600}
         defaultPinnedColumns={['timestamp', 'swap-type']}

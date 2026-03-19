@@ -17,6 +17,8 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
       (set) => ({
         step: DEFAULT_CREATE_AUCTION_STATE.step,
         tokenForm: DEFAULT_CREATE_AUCTION_STATE.tokenForm,
+        configureAuction: DEFAULT_CREATE_AUCTION_STATE.configureAuction,
+        xVerification: DEFAULT_CREATE_AUCTION_STATE.xVerification,
 
         actions: {
           setStep: (step) => {
@@ -35,18 +37,47 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
           setTokenMode: (mode) => {
             set((state) => ({ tokenForm: { ...state.tokenForm, mode } }))
           },
-          updateCreateNewField: (key, value) => {
+          updateCreateNewTokenField: (key, value) => {
             set((state) => ({
               tokenForm: { ...state.tokenForm, createNew: { ...state.tokenForm.createNew, [key]: value } },
             }))
           },
-          updateExistingField: (key, value) => {
+          updateExistingTokenField: (key, value) => {
             set((state) => ({
               tokenForm: { ...state.tokenForm, existing: { ...state.tokenForm.existing, [key]: value } },
             }))
           },
           setTokenForm: (tokenForm: TokenFormState) => {
             set({ tokenForm })
+          },
+          setXVerification: (value) => {
+            set({ xVerification: value })
+          },
+          setAuctionType: (auctionType) => {
+            set((state) => ({ configureAuction: { ...state.configureAuction, auctionType } }))
+          },
+          setMaxDurationDays: (maxDurationDays) => {
+            set((state) => ({ configureAuction: { ...state.configureAuction, maxDurationDays } }))
+          },
+          setAuctionSupplyPercent: (auctionSupplyPercent) => {
+            set((state) => ({ configureAuction: { ...state.configureAuction, auctionSupplyPercent } }))
+          },
+          setRaiseCurrency: (raiseCurrency) => {
+            set((state) => ({ configureAuction: { ...state.configureAuction, raiseCurrency } }))
+          },
+          setSupplyCurve: (supplyCurve) => {
+            set((state) => ({ configureAuction: { ...state.configureAuction, supplyCurve } }))
+          },
+          setFloorPrice: (floorPrice) => {
+            set((state) => ({ configureAuction: { ...state.configureAuction, floorPrice } }))
+          },
+          setPostAuctionLiquidityPercent: (postAuctionLiquidityPercent) => {
+            set((state) => ({ configureAuction: { ...state.configureAuction, postAuctionLiquidityPercent } }))
+          },
+          updateConfigureAuctionField: (key, value) => {
+            set((state) => ({
+              configureAuction: { ...state.configureAuction, [key]: value },
+            }))
           },
           commitTokenFormAndAdvance: () => {
             set((state) => {
@@ -65,6 +96,8 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
             set({
               step: DEFAULT_CREATE_AUCTION_STATE.step,
               tokenForm: DEFAULT_CREATE_AUCTION_STATE.tokenForm,
+              configureAuction: DEFAULT_CREATE_AUCTION_STATE.configureAuction,
+              xVerification: DEFAULT_CREATE_AUCTION_STATE.xVerification,
             })
           },
         },

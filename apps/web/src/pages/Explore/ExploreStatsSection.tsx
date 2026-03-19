@@ -161,7 +161,7 @@ const StatDisplayWithPopover = memo(({ data, isLoading }: StatDisplayProps) => {
   const { convertFiatAmountFormatted } = useLocalizationContext()
 
   return (
-    <Popover hoverable placement="bottom-start" offset={{ mainAxis: 10 }}>
+    <Popover hoverable={{ delay: { open: 200 }, restMs: 100 }} placement="bottom-start" offset={{ mainAxis: 10 }}>
       <Popover.Trigger>
         <StatDisplay data={data} isLoading={isLoading} isHoverable />
       </Popover.Trigger>

@@ -210,6 +210,44 @@ export const SearchModalList = memo(function _SearchModalList({
             }}
           />
         )
+      case OnchainItemListOptionType.MultichainToken:
+        return (
+          <TokenOptionItem
+            option={{
+              type: OnchainItemListOptionType.Token,
+              currencyInfo: item.primaryCurrencyInfo,
+              quantity: null,
+              balanceUSD: undefined,
+            }}
+            networkCount={item.multichainResult.tokens.length}
+            contextMenuVariant={TokenContextMenuVariant.Search}
+            focusedRowControl={{
+              focusedRowIndex,
+              setFocusedRowIndex,
+              rowIndex,
+            }}
+            rightElement={
+              isHoverable && rowIndex === focusedRowIndex ? (
+                <TokenRowContextMenuButton currency={item.primaryCurrencyInfo.currency} />
+              ) : undefined
+            }
+            onPress={() => {
+              registerSearchItem(item)
+
+              navigateToTokenDetails(item.primaryCurrencyInfo.currencyId)
+
+              sendSearchOptionItemClickedAnalytics({
+                item,
+                section,
+                sectionIndex: index,
+                rowIndex,
+                searchFilters,
+              })
+
+              onSelect?.()
+            }}
+          />
+        )
       case OnchainItemListOptionType.WalletByAddress:
         return (
           <WalletByAddressOptionItem
@@ -304,6 +342,8 @@ function key(item: SearchModalOption): string {
       return `pool-${item.chainId}-${item.poolId}-${item.protocolVersion}-${item.hookAddress}-${item.feeTier}`
     case OnchainItemListOptionType.Token:
       return `token-${item.currencyInfo.currency.chainId}-${item.currencyInfo.currencyId}`
+    case OnchainItemListOptionType.MultichainToken:
+      return `multichain-${item.multichainResult.id}`
     case OnchainItemListOptionType.WalletByAddress:
       return `wallet-${item.address}`
     case OnchainItemListOptionType.ENSAddress:

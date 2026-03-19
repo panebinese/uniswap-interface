@@ -1,6 +1,7 @@
 import { LiquidityService } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_connect'
 import { V2_FACTORY_ADDRESSES } from '@uniswap/sdk-core'
 import { computePairAddress } from '@uniswap/v2-sdk'
+import { FeatureFlags, getFeatureFlagName } from '@universe/gating'
 import { USDT } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { WETH } from 'uniswap/src/test/fixtures/lib/sdk'
@@ -9,11 +10,11 @@ import { parseEther } from 'viem'
 import { ONE_MILLION_USDT } from '~/playwright/anvil/utils'
 import { expect, getTest, type Page } from '~/playwright/fixtures'
 import { stubLiquidityServiceEndpoint } from '~/playwright/fixtures/liquidityService'
+import { TEST_WALLET_ADDRESS } from '~/playwright/fixtures/wallets'
 import { Mocks } from '~/playwright/mocks/mocks'
 import { assume0xAddress } from '~/utils/wagmi'
 
 const test = getTest({ withAnvil: true })
-
 const WETH_ADDRESS = WETH.address
 
 function modifyRequestData(data: { v4CreateLpPosition: { simulateTransaction: boolean } }) {
@@ -151,6 +152,61 @@ test.describe(
         await page.getByRole('button', { name: 'Continue' }).click()
         await page.getByTestId(TestID.HookModalContinueButton).click()
         await reviewAndCreatePosition({ page })
+      })
+    })
+
+    test.describe('Dynamic slippage', () => {
+      const WEETH_ADDRESS = '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee'
+      const ETH_WEETH_CREATE_URL = `/positions/create/v4?currencyA=NATIVE&currencyB=0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee&chain=ethereum&fee={"feeAmount":100,"tickSpacing":1,"isDynamic":false}&hook=undefined&priceRangeState={"priceInverted":false,"fullRange":false,"minTick":-871,"maxTick":-859,"initialPrice":"","inputMode":"price"}&depositState={"exactField":"TOKEN1","exactAmounts":{"TOKEN0":"0.01","TOKEN1":"0.064"}}&step=1&featureFlagOverride=lp_dynamic_native_slippage`
+
+      test('shows low slippage warning for ETH/WEETH pool', async ({ page, anvil, graphql }) => {
+        await stubLiquidityServiceEndpoint({
+          page,
+          endpoint: LiquidityService.methods.createLPPosition,
+          modifyRequestData,
+        })
+        await page.route('**/uniswap.liquidity.v1.LiquidityService/PoolInfo*', async (route) => {
+          await route.fulfill({ path: Mocks.LiquidityService.pool_info_eth_weeth })
+        })
+        await graphql.intercept('PoolPriceHistory', Mocks.PoolPriceHistory.eth_weeth)
+        await graphql.intercept('AllV4Ticks', Mocks.AllV4Ticks.eth_weeth)
+        await anvil.setBalance({ address: assume0xAddress(TEST_WALLET_ADDRESS), value: parseEther('0.03733') })
+        await anvil.setErc20Balance({ address: assume0xAddress(WEETH_ADDRESS), balance: parseEther('0.0654') })
+
+        await page.goto(ETH_WEETH_CREATE_URL)
+
+        await page.getByTestId(TestID.AmountInputIn).last().click()
+        await page.getByTestId(TestID.AmountInputIn).last().fill('0.065')
+        await expect(page.getByText('Slippage automatically reduced')).toBeVisible()
+      })
+
+      test('shows very high slippage warning when backend returns extreme value', async ({ page, anvil, graphql }) => {
+        await stubLiquidityServiceEndpoint({
+          page,
+          endpoint: LiquidityService.methods.createLPPosition,
+          modifyRequestData,
+          modifyResponseData: (data) => {
+            data.slippage = 25
+            return data
+          },
+        })
+        await page.route('**/uniswap.liquidity.v1.LiquidityService/PoolInfo*', async (route) => {
+          await route.fulfill({ path: Mocks.LiquidityService.pool_info_eth_weeth })
+        })
+        await graphql.intercept('PoolPriceHistory', Mocks.PoolPriceHistory.eth_weeth)
+        await graphql.intercept('AllV4Ticks', Mocks.AllV4Ticks.eth_weeth)
+        await anvil.setBalance({ address: assume0xAddress(TEST_WALLET_ADDRESS), value: parseEther('0.03733') })
+        await anvil.setErc20Balance({ address: assume0xAddress(WEETH_ADDRESS), balance: parseEther('0.0654') })
+
+        await page.goto(ETH_WEETH_CREATE_URL)
+
+        await page.getByTestId(TestID.AmountInputIn).last().click()
+        await page.getByTestId(TestID.AmountInputIn).last().fill('0.065')
+        await page.getByRole('button', { name: 'Review' }).click()
+        await expect(page.getByText('Very high slippage')).toBeVisible()
+        await page.getByRole('button', { name: 'Cancel' }).click()
+        await expect(page.getByText('Very high slippage')).not.toBeVisible()
+        await expect(page.getByRole('button', { name: 'Review' })).toBeVisible()
       })
     })
   },

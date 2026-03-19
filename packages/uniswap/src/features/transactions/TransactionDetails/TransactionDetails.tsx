@@ -15,7 +15,7 @@ import { EstimatedSwapTime } from 'uniswap/src/features/transactions/swap/compon
 import { SlippageUpdate } from 'uniswap/src/features/transactions/swap/components/SwapFormSettings/settingsConfigurations/slippageUpdate/SlippageUpdate'
 import type { UniswapXGasBreakdown } from 'uniswap/src/features/transactions/swap/types/swapTxAndGasInfo'
 import type { SwapFee as SwapFeeType } from 'uniswap/src/features/transactions/swap/types/trade'
-import { isBridge, isChained } from 'uniswap/src/features/transactions/swap/utils/routing'
+import { isBridge, isChained, isWrap } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { ExpectedFailureBanner } from 'uniswap/src/features/transactions/TransactionDetails/ExpectedFailureBanner'
 import { ExpectedSpeed } from 'uniswap/src/features/transactions/TransactionDetails/ExpectedSpeed'
 import { FeeOnTransferFeeGroup } from 'uniswap/src/features/transactions/TransactionDetails/FeeOnTransferFee'
@@ -105,7 +105,8 @@ export function TransactionDetails({
 
   const isChainedTrade = routingType && isChained({ routing: routingType })
   const isBridgeTrade = routingType && isBridge({ routing: routingType })
-  const isSwap = !isBridgeTrade && !isChainedTrade
+  const isWrapTrade = routingType && isWrap({ routing: routingType })
+  const isSwap = !isBridgeTrade && !isChainedTrade && !isWrapTrade
 
   // Used to show slippage settings on mobile, where the modal needs to be added outside of the conditional expected failure banner
   const [showSlippageSettings, setShowSlippageSettings] = useState(false)

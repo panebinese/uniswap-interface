@@ -72,12 +72,13 @@ function ActivityPopupContent({ activity, onClick, onClose }: ActivityPopupConte
       width={POPUP_MAX_WIDTH}
       backgroundColor="$surface1"
       position="relative"
-      borderWidth={1}
+      borderWidth="$spacing1"
       borderRadius="$rounded16"
       borderColor="$surface3"
       py={2}
       px={0}
       animation="300ms"
+      data-testid={TestID.ActivityPopup}
       $sm={{
         mx: 'auto',
         width: '100%',

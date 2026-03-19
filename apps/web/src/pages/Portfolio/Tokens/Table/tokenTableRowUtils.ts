@@ -1,7 +1,7 @@
 import type { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
 
 export type TokenTableRow =
-  | { type: 'parent'; tokenData: TokenData; subRows?: TokenTableRow[] }
+  | { type: 'parent'; tokenData: TokenData; subRows?: TokenTableRow[]; testId: string }
   | { type: 'child'; tokenData: TokenData; chainToken: TokenData['tokens'][number] }
 
 /**
@@ -15,7 +15,7 @@ export function buildTokenTableRows(tokenData: TokenData[], multichainExpandable
     const subRows: TokenTableRow[] | undefined = hasMultipleChains
       ? tokenData.tokens.map((chainToken) => ({ type: 'child', tokenData, chainToken }))
       : undefined
-    return { type: 'parent', tokenData, subRows }
+    return { type: 'parent', tokenData, subRows, testId: tokenData.testId }
   })
 }
 

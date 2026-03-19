@@ -77,11 +77,14 @@ export function useUSDCValueCentralized(
   }, [currencyAmount, price])
 }
 
-export function useUSDCValueWithStatusCentralized(currencyAmount: CurrencyAmount<Currency> | undefined | null): {
+export function useUSDCValueWithStatusCentralized(
+  currencyAmount: CurrencyAmount<Currency> | undefined | null,
+  pollInterval?: PollingInterval,
+): {
   value: CurrencyAmount<Currency> | null
   isLoading: boolean
 } {
-  const { price, isLoading } = useUSDCPriceCentralized(currencyAmount?.currency)
+  const { price, isLoading } = useUSDCPriceCentralized(currencyAmount?.currency, pollInterval)
 
   return useMemo(() => {
     if (!price || !currencyAmount) {

@@ -144,11 +144,11 @@ export function useActivityFiltering({
     () =>
       filterTransactions({
         transactions: sectionData || [],
-        // If server-side filtering handled the type filter, skip client-side type filtering
-        typeFilter: serverFilterTypes ? ActivityFilterType.All : selectedTransactionType,
+        // Always apply client-side type filtering — local transactions bypass server-side filtering
+        typeFilter: selectedTransactionType,
         timeFilter: selectedTimePeriod,
       }),
-    [sectionData, selectedTransactionType, selectedTimePeriod, serverFilterTypes],
+    [sectionData, selectedTransactionType, selectedTimePeriod],
   )
 
   return {

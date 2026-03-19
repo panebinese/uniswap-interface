@@ -1,44 +1,47 @@
 import { type PromiseClient } from '@connectrpc/connect'
 import { EmbeddedWalletService as OldEmbeddedWalletService } from '@uniswap/client-embeddedwallet/dist/uniswap/embeddedwallet/v1/service_connect'
 import {
-  type DeleteAuthenticatorResponse,
   type ExportSeedPhraseResponse,
-  type ListAuthenticatorsResponse,
   type Action as OldAction,
   type AuthenticationTypes as OldAuthenticationTypes,
-  type RegisterNewAuthenticatorResponse,
   type SecuredChallengeResponse,
 } from '@uniswap/client-embeddedwallet/dist/uniswap/embeddedwallet/v1/service_pb'
 import {
+  type AddAuthenticatorResponse,
   type ChallengeResponse,
   type CreateWalletResponse,
+  type DeleteAuthenticatorResponse,
   type DisconnectResponse,
+  type ListAuthenticatorsResponse,
   type Action as NewAction,
   type AuthenticationTypes as NewAuthenticationTypes,
   type RegistrationOptions,
   type SignMessageResponse,
   type SignTransactionResponse,
   type SignTypedDataResponse,
+  type StartAuthenticatedSessionResponse,
   type WalletSignInResponse,
 } from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
 
 export type {
-  DeleteAuthenticatorResponse,
   ExportSeedPhraseResponse,
-  ListAuthenticatorsResponse,
-  RegisterNewAuthenticatorResponse,
   SecuredChallengeResponse,
 } from '@uniswap/client-embeddedwallet/dist/uniswap/embeddedwallet/v1/service_pb'
 export type {
   Action,
+  AddAuthenticatorResponse,
   AuthenticationTypes,
+  Authenticator,
   ChallengeResponse,
   CreateWalletResponse,
+  DeleteAuthenticatorResponse,
   DisconnectResponse,
+  ListAuthenticatorsResponse,
   RegistrationOptions,
   SignMessageResponse,
   SignTransactionResponse,
   SignTypedDataResponse,
+  StartAuthenticatedSessionResponse,
   WalletSignInResponse,
 } from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
 
@@ -51,6 +54,10 @@ export interface EmbeddedWalletClientContext {
     signTransaction: (req: Record<string, unknown>) => Promise<SignTransactionResponse>
     signTypedData: (req: Record<string, unknown>) => Promise<SignTypedDataResponse>
     disconnect: (req: Record<string, unknown>) => Promise<DisconnectResponse>
+    listAuthenticators: (req: Record<string, unknown>) => Promise<ListAuthenticatorsResponse>
+    startAuthenticatedSession: (req: Record<string, unknown>) => Promise<StartAuthenticatedSessionResponse>
+    addAuthenticator: (req: Record<string, unknown>) => Promise<AddAuthenticatorResponse>
+    deleteAuthenticator: (req: Record<string, unknown>) => Promise<DeleteAuthenticatorResponse>
   }
   legacyRpcClient?: PromiseClient<typeof OldEmbeddedWalletService>
 }
@@ -64,13 +71,13 @@ export interface EmbeddedWalletApiClient {
     message?: string
     transaction?: string
     typedData?: string
+    authenticatorId?: string
   }) => Promise<ChallengeResponse>
 
   fetchCreateWalletRequest: (params: { credential: string }) => Promise<CreateWalletResponse>
 
   fetchWalletSigninRequest: (params: { credential: string }) => Promise<WalletSignInResponse>
 
-  // Batch operations adapted to single operations
   fetchSignMessagesRequest: (params: {
     messages: string[]
     credential: string | undefined
@@ -88,6 +95,11 @@ export interface EmbeddedWalletApiClient {
 
   fetchDisconnectRequest: () => Promise<DisconnectResponse>
 
+  fetchListAuthenticatorsRequest: (params: {
+    credential?: string
+    walletId?: string
+  }) => Promise<ListAuthenticatorsResponse>
+
   fetchSecuredChallengeRequest: (params: {
     type: OldAuthenticationTypes
     action: OldAction
@@ -99,20 +111,15 @@ export interface EmbeddedWalletApiClient {
     credential: string
   }) => Promise<ExportSeedPhraseResponse>
 
-  fetchListAuthenticatorsRequest: (params: { credential?: string }) => Promise<ListAuthenticatorsResponse>
-
-  fetchRegisterNewAuthenticatorRequest: (params: {
-    newCredential: string
-    newAuthenticationType: OldAuthenticationTypes
+  fetchStartAuthenticatedSessionRequest: (params: {
     existingCredential: string
-    existingAuthenticationType: OldAuthenticationTypes
-  }) => Promise<RegisterNewAuthenticatorResponse>
+  }) => Promise<StartAuthenticatedSessionResponse>
+
+  fetchAddAuthenticatorRequest: (params: { newCredential: string }) => Promise<AddAuthenticatorResponse>
 
   fetchDeleteAuthenticatorRequest: (params: {
     credential: string
-    authenticationType: OldAuthenticationTypes
     authenticatorId: string
-    authenticatorType: string
   }) => Promise<DeleteAuthenticatorResponse>
 }
 
@@ -120,6 +127,8 @@ export function createEmbeddedWalletApiClient({
   rpcClient,
   legacyRpcClient,
 }: EmbeddedWalletClientContext): EmbeddedWalletApiClient {
+  const inflightRequests = new Map<string, Promise<unknown>>()
+
   async function fetchChallengeRequest({
     type,
     action,
@@ -128,6 +137,7 @@ export function createEmbeddedWalletApiClient({
     message,
     transaction,
     typedData,
+    authenticatorId,
   }: {
     type: NewAuthenticationTypes
     action: NewAction
@@ -136,16 +146,33 @@ export function createEmbeddedWalletApiClient({
     message?: string
     transaction?: string
     typedData?: string
+    authenticatorId?: string
   }): Promise<ChallengeResponse> {
-    return await rpcClient.challenge({
-      type,
-      action,
-      options,
-      walletId,
-      message,
-      transaction,
-      typedData,
-    })
+    const cacheKey = `challenge:${type}:${action}:${walletId ?? 'no-wallet'}:${message ?? ''}:${transaction ?? ''}:${typedData ?? ''}:${authenticatorId ?? ''}`
+
+    const existingRequest = inflightRequests.get(cacheKey) as Promise<ChallengeResponse> | undefined
+    if (existingRequest) {
+      return existingRequest
+    }
+
+    const request = rpcClient
+      .challenge({
+        type,
+        action,
+        options,
+        walletId,
+        message,
+        transaction,
+        typedData,
+        authenticatorId,
+      })
+      .finally(() => {
+        inflightRequests.delete(cacheKey)
+      })
+
+    inflightRequests.set(cacheKey, request)
+
+    return request
   }
 
   async function fetchCreateWalletRequest({ credential }: { credential: string }): Promise<CreateWalletResponse> {
@@ -220,6 +247,29 @@ export function createEmbeddedWalletApiClient({
     return await rpcClient.disconnect({})
   }
 
+  async function fetchListAuthenticatorsRequest({
+    credential,
+    walletId,
+  }: {
+    credential?: string
+    walletId?: string
+  }): Promise<ListAuthenticatorsResponse> {
+    const cacheKey = `listAuthenticators:${credential ?? walletId ?? 'no-key'}`
+
+    const existingRequest = inflightRequests.get(cacheKey) as Promise<ListAuthenticatorsResponse> | undefined
+    if (existingRequest) {
+      return existingRequest
+    }
+
+    const request = rpcClient.listAuthenticators({ credential, walletId }).finally(() => {
+      inflightRequests.delete(cacheKey)
+    })
+
+    inflightRequests.set(cacheKey, request)
+
+    return request
+  }
+
   async function fetchSecuredChallengeRequest({
     type,
     action,
@@ -253,59 +303,30 @@ export function createEmbeddedWalletApiClient({
     return await legacyRpcClient.exportSeedPhrase({ credential, b64EncryptionPublicKey: encryptionKey })
   }
 
-  async function fetchListAuthenticatorsRequest({
-    credential,
+  async function fetchStartAuthenticatedSessionRequest({
+    existingCredential,
   }: {
-    credential?: string
-  }): Promise<ListAuthenticatorsResponse> {
-    if (!legacyRpcClient) {
-      throw new Error('ListAuthenticators not supported in new API - legacy client required')
-    }
-    return await legacyRpcClient.listAuthenticators({ credential })
+    existingCredential: string
+  }): Promise<StartAuthenticatedSessionResponse> {
+    return await rpcClient.startAuthenticatedSession({ existingCredential })
   }
 
-  async function fetchRegisterNewAuthenticatorRequest({
+  async function fetchAddAuthenticatorRequest({
     newCredential,
-    newAuthenticationType,
-    existingCredential,
-    existingAuthenticationType,
   }: {
     newCredential: string
-    newAuthenticationType: OldAuthenticationTypes
-    existingCredential: string
-    existingAuthenticationType: OldAuthenticationTypes
-  }): Promise<RegisterNewAuthenticatorResponse> {
-    if (!legacyRpcClient) {
-      throw new Error('RegisterNewAuthenticator not supported in new API - legacy client required')
-    }
-    return await legacyRpcClient.registerNewAuthenticator({
-      newCredential,
-      newAuthenticationType,
-      existingCredential,
-      existingAuthenticationType,
-    })
+  }): Promise<AddAuthenticatorResponse> {
+    return await rpcClient.addAuthenticator({ newCredential })
   }
 
   async function fetchDeleteAuthenticatorRequest({
     credential,
-    authenticationType,
     authenticatorId,
-    authenticatorType,
   }: {
     credential: string
-    authenticationType: OldAuthenticationTypes
     authenticatorId: string
-    authenticatorType: string
   }): Promise<DeleteAuthenticatorResponse> {
-    if (!legacyRpcClient) {
-      throw new Error('DeleteAuthenticator not supported in new API - legacy client required')
-    }
-    return await legacyRpcClient.deleteAuthenticator({
-      credential,
-      type: authenticationType,
-      authenticatorId,
-      authenticatorType,
-    })
+    return await rpcClient.deleteAuthenticator({ credential, authenticatorId })
   }
 
   return {
@@ -319,7 +340,8 @@ export function createEmbeddedWalletApiClient({
     fetchExportSeedPhraseRequest,
     fetchDisconnectRequest,
     fetchListAuthenticatorsRequest,
-    fetchRegisterNewAuthenticatorRequest,
+    fetchStartAuthenticatedSessionRequest,
+    fetchAddAuthenticatorRequest,
     fetchDeleteAuthenticatorRequest,
   }
 }

@@ -57,7 +57,7 @@ function NetworkSelector({
       </Popover.Trigger>
       <Popover.Content
         borderRadius="$rounded12"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         backgroundColor="$surface1"
         p="$spacing8"
@@ -99,7 +99,7 @@ function NetworkSelector({
 
 export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFields }) {
   const { t } = useTranslation()
-  const { updateCreateNewField, commitTokenFormAndAdvance } = useCreateAuctionStoreActions()
+  const { updateCreateNewTokenField, commitTokenFormAndAdvance } = useCreateAuctionStoreActions()
   const [isEditingName, setIsEditingName] = useState(false)
 
   const canContinue =
@@ -147,7 +147,7 @@ export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFie
                 height={fonts.heading2.lineHeight}
                 autoFocus
                 value={createNew.name}
-                onChangeText={(text) => updateCreateNewField('name', text)}
+                onChangeText={(text) => updateCreateNewTokenField('name', text)}
                 onBlur={() => setIsEditingName(false)}
                 placeholder={t('toucan.createAuction.step.tokenInfo.namePlaceholder')}
                 placeholderTextColor="$neutral3"
@@ -184,9 +184,10 @@ export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFie
               <Input
                 flex={1}
                 value={createNew.symbol}
-                onChangeText={(text) => updateCreateNewField('symbol', text)}
+                onChangeText={(text) => updateCreateNewTokenField('symbol', text)}
                 placeholder={t('toucan.createAuction.step.tokenInfo.tickerPlaceholder')}
                 unstyled
+                outlineStyle="none"
                 fontFamily="$body"
                 fontSize={fonts.body1.fontSize}
                 lineHeight={fonts.body1.lineHeight}
@@ -199,14 +200,14 @@ export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFie
               <NetworkSelector
                 network={createNew.network}
                 allowedNetworks={allowedNetworks}
-                onSelect={(chainId) => updateCreateNewField('network', chainId)}
+                onSelect={(chainId) => updateCreateNewTokenField('network', chainId)}
                 label={t('toucan.createAuction.step.tokenInfo.network')}
               />
             </Flex>
           </Flex>
           <TokenAdditionalInfoSection
             description={createNew.description}
-            onDescriptionChange={(v) => updateCreateNewField('description', v)}
+            onDescriptionChange={(v) => updateCreateNewTokenField('description', v)}
           />
         </Flex>
       </Flex>

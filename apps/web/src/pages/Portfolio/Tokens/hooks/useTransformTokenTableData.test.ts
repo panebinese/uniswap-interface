@@ -1,4 +1,5 @@
 import { NetworkStatus } from '@apollo/client'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useSortedPortfolioBalancesMultichain } from 'uniswap/src/features/dataApi/balances/balances'
 import type { PortfolioChainBalance, PortfolioMultichainBalance } from 'uniswap/src/features/dataApi/types'
 import { describe, expect, it, vi } from 'vitest'
@@ -184,5 +185,45 @@ describe('useTransformTokenTableData', () => {
       expect(row.tokens.length).toBeGreaterThanOrEqual(1)
       expect(row.tokens[0]).toBeDefined()
     }
+  })
+
+  it('when chainIds is set, only includes balances with a token on a selected chain and filters tokens to those chains', () => {
+    const chain1Only = createMultichainBalance({
+      id: 'chain-1-only',
+      tokens: [createChainBalance({ chainId: 1, valueUsd: 500 })],
+    })
+    const multichain = createMultichainBalance({
+      id: 'multichain',
+      tokens: [
+        createChainBalance({ chainId: 1, valueUsd: 300 }),
+        createChainBalance({ chainId: 42161, valueUsd: 200 }),
+      ],
+    })
+    const chain42161Only = createMultichainBalance({
+      id: 'chain-42161-only',
+      tokens: [createChainBalance({ chainId: 42161, valueUsd: 100 })],
+    })
+
+    mockUseSortedPortfolioBalancesMultichain.mockReturnValue({
+      data: {
+        balances: [chain1Only, multichain, chain42161Only],
+        hiddenBalances: [],
+      },
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+      networkStatus: NetworkStatus.ready,
+    } as ReturnType<typeof useSortedPortfolioBalancesMultichain>)
+
+    const { result } = renderHook(() =>
+      useTransformTokenTableData({ chainIds: [UniverseChainId.Mainnet as UniverseChainId] }),
+    )
+
+    expect(result.current.visible).not.toBeNull()
+    expect(result.current.visible).toHaveLength(2)
+    expect(result.current.visible!.map((r) => r.id)).toEqual(['chain-1-only', 'multichain'])
+    expect(result.current.visible!.find((r) => r.id === 'multichain')!.tokens).toHaveLength(1)
+    expect(result.current.visible!.find((r) => r.id === 'multichain')!.tokens[0].chainId).toBe(1)
+    expect(result.current.visible!.find((r) => r.id === 'multichain')!.totalValue).toBe(300)
   })
 })

@@ -1,4 +1,5 @@
 import { memo, useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Flex, Text, TouchableArea } from 'ui/src'
 import { Check } from 'ui/src/components/icons/Check'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
@@ -223,6 +224,8 @@ export interface TokenOptionItemProps {
   option: TokenOption
   onPress: () => void
   showTokenAddress?: boolean
+  networkCount?: number
+  hideNetworkLogo?: boolean
   rightElement?: JSX.Element
   showDisabled?: boolean
   modalInfo?: OptionItemProps['modalInfo']
@@ -243,6 +246,8 @@ const BaseTokenOptionItem = memo(function _BaseTokenOptionItem(
     option,
     onPress,
     showTokenAddress,
+    networkCount,
+    hideNetworkLogo,
     rightElement,
     showDisabled,
     modalInfo,
@@ -251,6 +256,10 @@ const BaseTokenOptionItem = memo(function _BaseTokenOptionItem(
   } = props
   const { currencyInfo } = option
   const { currency } = currencyInfo
+  const { t } = useTranslation()
+
+  const isMultichain = networkCount !== undefined && networkCount > 1
+  const isSingleChainMultichainResult = networkCount !== undefined && networkCount === 1
 
   // in lists like token selector & search, we only show the warning icon if token is >=Medium severity
   const severity = getTokenWarningSeverity(currencyInfo)
@@ -264,6 +273,8 @@ const BaseTokenOptionItem = memo(function _BaseTokenOptionItem(
           name={currency.name}
           symbol={currency.symbol}
           url={currencyInfo.logoUrl ?? undefined}
+          hideNetworkLogo={hideNetworkLogo || isMultichain}
+          alwaysShowNetworkLogo={isSingleChainMultichainResult}
         />
       }
       title={currency.name ?? currency.symbol ?? ''}
@@ -272,12 +283,19 @@ const BaseTokenOptionItem = memo(function _BaseTokenOptionItem(
           <Text color="$neutral2" numberOfLines={1} variant="body3">
             {getSymbolDisplayText(currency.symbol)}
           </Text>
-          {!currency.isNative && showTokenAddress && (
-            <Flex shrink>
-              <Text color="$neutral3" numberOfLines={1} variant="body3">
-                {shortenAddress({ address: currency.address })}
-              </Text>
-            </Flex>
+          {isMultichain ? (
+            <Text color="$neutral3" numberOfLines={1} variant="body3">
+              {t('search.results.networks', { count: networkCount })}
+            </Text>
+          ) : (
+            !currency.isNative &&
+            showTokenAddress && (
+              <Flex shrink>
+                <Text color="$neutral3" numberOfLines={1} variant="body3">
+                  {shortenAddress({ address: currency.address })}
+                </Text>
+              </Flex>
+            )
           )}
         </Flex>
       }

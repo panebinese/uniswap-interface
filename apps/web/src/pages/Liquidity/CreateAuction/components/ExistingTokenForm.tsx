@@ -18,7 +18,7 @@ import { type ExistingTokenFields } from '~/pages/Liquidity/CreateAuction/types'
 
 export function ExistingTokenForm({ existing }: { existing: ExistingTokenFields }) {
   const { t } = useTranslation()
-  const { updateExistingField, commitTokenFormAndAdvance } = useCreateAuctionStoreActions()
+  const { updateExistingTokenField, commitTokenFormAndAdvance } = useCreateAuctionStoreActions()
   const address = useActiveAddress(Platform.EVM)
 
   const canContinue = existing.existingTokenCurrencyInfo !== undefined && existing.description.trim().length > 0
@@ -38,10 +38,10 @@ export function ExistingTokenForm({ existing }: { existing: ExistingTokenFields 
   // Auto-populate currencyInfo when address resolves
   useEffect(() => {
     if (resolvedCurrencyInfo && resolvedCurrencyInfo !== existing.existingTokenCurrencyInfo) {
-      updateExistingField('existingTokenCurrencyInfo', resolvedCurrencyInfo)
+      updateExistingTokenField('existingTokenCurrencyInfo', resolvedCurrencyInfo)
       setLookupCurrencyId(undefined)
     }
-  }, [resolvedCurrencyInfo, existing.existingTokenCurrencyInfo, updateExistingField])
+  }, [resolvedCurrencyInfo, existing.existingTokenCurrencyInfo, updateExistingTokenField])
 
   if (!address) {
     return (
@@ -72,7 +72,7 @@ export function ExistingTokenForm({ existing }: { existing: ExistingTokenFields 
           justifyContent="space-between"
           p="$spacing16"
           borderRadius="$rounded12"
-          borderWidth={1}
+          borderWidth="$spacing1"
           borderColor="$surface3"
           backgroundColor="$surface1"
           onPress={() => setShowCurrencySearch(true)}
@@ -107,7 +107,7 @@ export function ExistingTokenForm({ existing }: { existing: ExistingTokenFields 
       {selectedCurrencyInfo && (
         <TokenAdditionalInfoSection
           description={existing.description}
-          onDescriptionChange={(v) => updateExistingField('description', v)}
+          onDescriptionChange={(v) => updateExistingTokenField('description', v)}
         />
       )}
 
@@ -123,7 +123,7 @@ export function ExistingTokenForm({ existing }: { existing: ExistingTokenFields 
         switchNetworkAction={SwitchNetworkAction.LP}
         onCurrencySelect={(currency) => {
           const address = currency.isToken ? currency.address : ''
-          updateExistingField('existingTokenCurrencyInfo', undefined)
+          updateExistingTokenField('existingTokenCurrencyInfo', undefined)
           if (currency.isToken) {
             setLookupCurrencyId(buildCurrencyId(currency.chainId, address))
           }

@@ -104,66 +104,73 @@ export function TokenDetailsLinks(): JSX.Element {
 
   const links = useMemo((): LinkButtonProps[] => {
     const showMultichainDropdowns = isMultichainTokenUx && hasMultipleChains
+    const isNativeAddress = isDefaultNativeAddress({ address, platform: chainIdToPlatform(chainId) })
+    const items: LinkButtonProps[] = []
 
-    return [
-      homepageUrl
-        ? {
-            Icon: GlobeFilled,
-            buttonType: LinkButtonType.Link,
-            element: ElementName.TokenLinkWebsite,
-            label: t('token.links.website'),
-            testID: TestID.TokenLinkWebsite,
-            value: homepageUrl,
-          }
-        : null,
-      twitterName
-        ? {
-            Icon: XTwitter,
-            buttonType: LinkButtonType.Link,
-            element: ElementName.TokenLinkTwitter,
-            label: t('token.links.twitter'),
-            testID: TestID.TokenLinkTwitter,
-            value: getTwitterLink(twitterName),
-          }
-        : null,
-      // Explorer: single-chain link or multichain sheet trigger
-      !isNativeCurrency
-        ? showMultichainDropdowns
-          ? {
-              Icon: BlockExplorer,
-              element: ElementName.MultichainExplorer,
-              label: t('common.explorer'),
-              testID: TestID.MultichainExplorerDropdown,
-              onPress: () => setIsExplorerSheetOpen(true),
-            }
-          : {
-              Icon: getBlockExplorerIcon(chainId),
-              buttonType: LinkButtonType.Link,
-              element: ElementName.TokenLinkEtherscan,
-              label: explorerName,
-              testID: TestID.TokenLinkEtherscan,
-              value: explorerLink,
-            }
-        : null,
-      // Copy address: single-chain copy or multichain sheet trigger
-      !isDefaultNativeAddress({ address, platform: chainIdToPlatform(chainId) })
-        ? showMultichainDropdowns
-          ? {
-              Icon: Page,
-              element: ElementName.MultichainAddress,
-              label: t('common.address'),
-              testID: TestID.MultichainAddressDropdown,
-              onPress: () => setIsAddressSheetOpen(true),
-            }
-          : {
-              buttonType: LinkButtonType.Copy,
-              element: ElementName.Copy,
-              label: t('common.text.contract'),
-              testID: TestID.TokenLinkCopy,
-              value: address,
-            }
-        : null,
-    ].filter((item): item is NonNullable<typeof item> => Boolean(item))
+    if (!isNativeAddress) {
+      if (showMultichainDropdowns) {
+        items.push({
+          Icon: Page,
+          element: ElementName.MultichainAddress,
+          label: t('common.address'),
+          testID: TestID.MultichainAddressDropdown,
+          onPress: () => setIsAddressSheetOpen(true),
+        })
+      } else {
+        items.push({
+          buttonType: LinkButtonType.Copy,
+          element: ElementName.Copy,
+          label: t('common.text.contract'),
+          testID: TestID.TokenLinkCopy,
+          value: address,
+        })
+      }
+    }
+
+    if (!isNativeCurrency) {
+      if (showMultichainDropdowns) {
+        items.push({
+          Icon: BlockExplorer,
+          element: ElementName.MultichainExplorer,
+          label: t('common.explorer'),
+          testID: TestID.MultichainExplorerDropdown,
+          onPress: () => setIsExplorerSheetOpen(true),
+        })
+      } else {
+        items.push({
+          Icon: getBlockExplorerIcon(chainId),
+          buttonType: LinkButtonType.Link,
+          element: ElementName.TokenLinkEtherscan,
+          label: explorerName,
+          testID: TestID.TokenLinkEtherscan,
+          value: explorerLink,
+        })
+      }
+    }
+
+    if (homepageUrl) {
+      items.push({
+        Icon: GlobeFilled,
+        buttonType: LinkButtonType.Link,
+        element: ElementName.TokenLinkWebsite,
+        label: t('token.links.website'),
+        testID: TestID.TokenLinkWebsite,
+        value: homepageUrl,
+      })
+    }
+
+    if (twitterName) {
+      items.push({
+        Icon: XTwitter,
+        buttonType: LinkButtonType.Link,
+        element: ElementName.TokenLinkTwitter,
+        label: t('token.links.twitter'),
+        testID: TestID.TokenLinkTwitter,
+        value: getTwitterLink(twitterName),
+      })
+    }
+
+    return items
   }, [
     chainId,
     address,

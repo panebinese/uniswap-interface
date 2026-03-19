@@ -17,6 +17,18 @@ export declare enum Action {
   DELETE_RECORD = 7,
   REGISTER_NEW_AUTHENTICATION_TYPES = 8,
   LIST_AUTHENTICATORS = 9,
+  DELETE_AUTHENTICATOR = 10,
+}
+
+export declare enum AuthenticatorNameType {
+  AUTHENTICATOR_NAME_TYPE_UNSPECIFIED = 0,
+  GOOGLE_PASSWORD_MANAGER = 1,
+  CHROME_MAC = 2,
+  WINDOWS_HELLO = 3,
+  ICLOUD_KEYCHAIN_MANAGED = 4,
+  ICLOUD_KEYCHAIN = 15,
+  PLATFORM_AUTHENTICATOR = 30,
+  SECURITY_KEY = 31,
 }
 
 export declare enum RegistrationOptions_AuthenticatorAttachment {
@@ -26,7 +38,8 @@ export declare enum RegistrationOptions_AuthenticatorAttachment {
 }
 
 export declare class ChallengeResponse {
-  challengeOptions: string
+  challengeOptions?: string
+  sessionActive: boolean
 }
 
 export declare class CreateWalletResponse {
@@ -57,4 +70,29 @@ export declare class SignTransactionResponse {
 
 export declare class SignTypedDataResponse {
   signature: string
+}
+
+export declare class Authenticator {
+  credentialId: string
+  providerName: AuthenticatorNameType
+  createdAt: bigint
+  aaguid?: string
+}
+
+export declare class ListAuthenticatorsRequest {
+  credential?: string
+  walletId?: string
+}
+
+export declare class ListAuthenticatorsResponse {
+  authenticators: Authenticator[]
+}
+
+export declare class DeleteAuthenticatorRequest {
+  credential: string
+  authenticatorId: string
+}
+
+export declare class DeleteAuthenticatorResponse {
+  success: boolean
 }

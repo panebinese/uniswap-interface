@@ -293,8 +293,18 @@ export default function PoolDetailsPage() {
                     loading={loading}
                   />
                 )}
-                <PoolDetailsLink address={token0?.address} chainId={chainInfo.id} tokens={[token0]} loading={loading} />
-                <PoolDetailsLink address={token1?.address} chainId={chainInfo.id} tokens={[token1]} loading={loading} />
+                <PoolDetailsLink
+                  address={poolData?.token0.address}
+                  chainId={chainInfo.id}
+                  tokens={[poolData?.token0]}
+                  loading={loading}
+                />
+                <PoolDetailsLink
+                  address={poolData?.token1.address}
+                  chainId={chainInfo.id}
+                  tokens={[poolData?.token1]}
+                  loading={loading}
+                />
               </LinksContainer>
             </TokenDetailsWrapper>
           </Flex>

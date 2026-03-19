@@ -18,7 +18,7 @@ export function TableScrollButton({ onPress, direction }: TableScrollButtonProps
         backgroundColor="$surface2"
         hoverStyle={{ backgroundColor: '$surface2Hovered' }}
         p="$spacing12"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderStyle="solid"
         borderColor="$surface3"
         $platform-web={{ backdropFilter: 'blur(2px)' }}

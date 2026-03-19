@@ -92,6 +92,7 @@ export {
   Storage,
   useClientAsyncInit,
   useExperiment,
+  useGateValue,
   useLayer,
 } from '@universe/gating/src/sdk/statsig'
 export { getOverrides } from '@universe/gating/src/utils'

@@ -34,7 +34,7 @@ export function DeletePasskeySpeedbumpMenu({
           borderRadius="$rounded20"
           p="$spacing12"
           borderColor="$surface3"
-          borderWidth={1}
+          borderWidth="$spacing1"
           gap="$gap4"
         >
           <Flex row gap="$gap12">

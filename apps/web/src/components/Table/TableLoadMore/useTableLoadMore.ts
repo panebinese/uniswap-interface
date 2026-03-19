@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { LOAD_MORE_BOTTOM_OFFSET, SHOW_RETURN_TO_TOP_OFFSET } from '~/components/Table/styled'
 import useDebounce from '~/hooks/useDebounce'
+
+const SHOW_RETURN_TO_TOP_OFFSET = 500
+const LOAD_MORE_BOTTOM_OFFSET = 50
 
 export function useTableLoadMore(params: {
   tableBodyRef: React.RefObject<HTMLDivElement | null>

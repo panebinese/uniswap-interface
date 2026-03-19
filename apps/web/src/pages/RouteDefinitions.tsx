@@ -47,6 +47,7 @@ const ExtensionUninstall = lazy(() => import('~/pages/ExtensionUninstall/Extensi
 const Portfolio = lazy(() => import('~/pages/Portfolio/Portfolio'))
 const ToucanToken = lazy(() => import('~/pages/Explore/ToucanToken'))
 const CreateAuction = lazy(() => import('~/pages/Liquidity/CreateAuction/CreateAuction'))
+const XOAuthCallbackPage = lazy(() => import('~/pages/Liquidity/CreateAuction/XOAuthCallbackPage'))
 const Wrapped = lazy(() => import('~/pages/Wrapped'))
 
 interface RouterConfig {
@@ -200,6 +201,16 @@ export const routes: RouteDefinition[] = [
     getElement: () => (
       <Suspense fallback={null}>
         <CreateAuction />
+      </Suspense>
+    ),
+  }),
+  createRouteDefinition({
+    path: '/liquidity/launch-auction/x/callback',
+    getTitle: () => 'X Verification',
+    getDescription: () => StaticTitlesAndDescriptions.ToucanPlaceholderDescription,
+    getElement: () => (
+      <Suspense fallback={null}>
+        <XOAuthCallbackPage />
       </Suspense>
     ),
   }),

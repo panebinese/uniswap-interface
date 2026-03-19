@@ -7,6 +7,7 @@ import type { PortfolioMultichainBalance } from 'uniswap/src/features/dataApi/ty
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { usePortfolioAddresses } from '~/pages/Portfolio/hooks/usePortfolioAddresses'
+import { createChainFilter } from '~/pages/Portfolio/Tokens/utils/filterMultichainBalancesByChain'
 
 /** Per-chain token instance (use TokenData['tokens'][number] in other modules) */
 interface TokenDataToken {
@@ -84,31 +85,34 @@ export function useTransformTokenTableData({ chainIds, limit }: { chainIds?: Uni
       return { visible: [], hidden: [], totalCount: 0, loading, refetching: false, error, refetch, networkStatus }
     }
 
-    const balancesWithTokens = (b: PortfolioMultichainBalance) => b.tokens.length > 0
-    const visibleBalances = sortedBalances.balances.filter(balancesWithTokens)
-    const hiddenBalancesFiltered = sortedBalances.hiddenBalances.filter(balancesWithTokens)
+    const chainFilter = createChainFilter(chainIds)
+    const { filterBalances, getValueUsdForBalance, getTokensForRow } = chainFilter
+    const visibleBalances = filterBalances(sortedBalances.balances)
+    const hiddenBalancesFiltered = filterBalances(sortedBalances.hiddenBalances)
 
-    // Compute total USD across visible balances (with at least one token) for allocation
-    const totalUSDVisible = visibleBalances.reduce((sum, b) => sum + (b.totalValueUsd ?? b.tokens[0]?.valueUsd ?? 0), 0)
+    const totalUSDVisible = visibleBalances.reduce((sum, b) => sum + getValueUsdForBalance(b), 0)
 
     const mapBalanceToTokenData = (
       balance: PortfolioMultichainBalance,
       allocationFromTotal?: number,
     ): TokenData | null => {
-      const tokens: TokenData['tokens'] = balance.tokens.map((t) => ({
-        chainId: t.chainId,
-        currencyInfo: t.currencyInfo,
-        quantity: t.quantity,
-        valueUsd: t.valueUsd ?? 0,
-        symbol: t.currencyInfo.currency.symbol,
-      }))
+      const tokensForRow = getTokensForRow(balance)
+      const tokens: TokenData['tokens'] = tokensForRow
+        .map((t) => ({
+          chainId: t.chainId,
+          currencyInfo: t.currencyInfo,
+          quantity: t.quantity,
+          valueUsd: t.valueUsd ?? 0,
+          symbol: t.currencyInfo.currency.symbol,
+        }))
+        .sort((a, b) => b.valueUsd - a.valueUsd)
       const first = tokens[0]
       // useTransformTokenTableData already ensures that there is at least one token, but adding check for safety
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (!first) {
         throw new Error('Invariant violation: tokens array is empty after filtering')
       }
-      const totalValue = balance.totalValueUsd ?? first.valueUsd
+      const totalValue = getValueUsdForBalance(balance)
       const price =
         first.valueUsd > 0 && first.quantity > 0 ? first.valueUsd / first.quantity : (balance.priceUsd ?? undefined)
       return {
@@ -129,7 +133,7 @@ export function useTransformTokenTableData({ chainIds, limit }: { chainIds?: Uni
 
     const visible = visibleBalances
       .map((b) => {
-        const valueUSD = b.totalValueUsd ?? b.tokens[0]?.valueUsd ?? 0
+        const valueUSD = getValueUsdForBalance(b)
         const allocation = totalUSDVisible > 0 ? (valueUSD / totalUSDVisible) * 100 : 0
         return mapBalanceToTokenData(b, allocation)
       })
@@ -153,5 +157,5 @@ export function useTransformTokenTableData({ chainIds, limit }: { chainIds?: Uni
       networkStatus,
       error,
     }
-  }, [loading, sortedBalances, error, refetch, networkStatus, limit])
+  }, [loading, sortedBalances, error, refetch, networkStatus, limit, chainIds])
 }

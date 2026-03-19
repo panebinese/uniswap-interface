@@ -13,7 +13,7 @@ import { useParsedSwapWarnings } from 'uniswap/src/features/transactions/swap/ho
 import { useSwapFormStore } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 import { useSwapTxStore } from 'uniswap/src/features/transactions/swap/stores/swapTxStore/useSwapTxStore'
 import { getSwapFeeUsdFromDerivedSwapInfo } from 'uniswap/src/features/transactions/swap/utils/getSwapFeeUsd'
-import { isMultiChainGasQuote, isUniswapX } from 'uniswap/src/features/transactions/swap/utils/routing'
+import { isMultiChainGasQuote, isUniswapX, isWrap } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { TransactionDetails } from 'uniswap/src/features/transactions/TransactionDetails/TransactionDetails'
 import { CurrencyField } from 'uniswap/src/types/currency'
 
@@ -88,7 +88,7 @@ export function ExpandableRows(): JSX.Element | null {
               customSlippageTolerance={customSlippageTolerance}
             />
           )}
-          {trade.trade.routing !== TradingApi.Routing.BRIDGE && (
+          {trade.trade.routing !== TradingApi.Routing.BRIDGE && !isWrap(trade.trade) && (
             <RoutingInfo trade={trade.trade} gasFee={gasFee} chainId={chainId} />
           )}
         </TransactionDetails>

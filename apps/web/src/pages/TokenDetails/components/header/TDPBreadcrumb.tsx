@@ -2,10 +2,10 @@ import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { BreadcrumbNavContainer, BreadcrumbNavLink, CurrentPageBreadcrumb } from '~/components/BreadcrumbNav'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 
 export function TDPBreadcrumb() {
-  const { currency } = useTDPContext()
+  const currency = useTDPStore((s) => s.currency)!
   const { t } = useTranslation()
   const { state } = useLocation()
 

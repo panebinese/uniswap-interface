@@ -2,12 +2,7 @@
 
 exports[`TDPPoolTable > renders data filled state 1`] = `
 <DocumentFragment>
-  .c0 {
-  display: inline-block;
-  height: inherit;
-}
-
-.c1 {
+  .c1 {
   height: 16px;
   width: 16px;
 }
@@ -20,6 +15,11 @@ exports[`TDPPoolTable > renders data filled state 1`] = `
 
 .c2 {
   animation: 2s fvtopB linear infinite;
+}
+
+.c0 {
+  display: inline-block;
+  height: inherit;
 }
 
 <span
@@ -5629,7 +5629,7 @@ exports[`TDPPoolTable > renders error state 1`] = `
             </div>
           </div>
           <div
-            class="_display-flex _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _alignItems-flex-start _justifyContent-flex-start _position-absolute _top-5037 _left-5037 _transform-translate-51285172859 _width-320px _pt-t-space-pad1331704929 _pr-t-space-pad1331704929 _pb-t-space-pad1331704929 _pl-t-space-pad1331704929 _gap-t-space-gap1569 _backgroundColor-surface5 _backdropFilter-blur24px1281 _WebkitBackdropFilter-blur24px1281 _boxShadow-04px6pxrgba217844814 _borderTopWidth-1px _borderRightWidth-1px _borderBottomWidth-1px _borderLeftWidth-1px _borderTopColor-surface3 _borderRightColor-surface3 _borderBottomColor-surface3 _borderLeftColor-surface3 _borderTopLeftRadius-t-radius-ro291586424 _borderTopRightRadius-t-radius-ro291586424 _borderBottomRightRadius-t-radius-ro291586424 _borderBottomLeftRadius-t-radius-ro291586424 _borderBottomStyle-solid _borderTopStyle-solid _borderLeftStyle-solid _borderRightStyle-solid"
+            class="_display-flex _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _alignItems-flex-start _justifyContent-flex-start _position-absolute _top-5037 _left-5037 _transform-translate-51285172859 _width-320px _pt-t-space-pad1331704929 _pr-t-space-pad1331704929 _pb-t-space-pad1331704929 _pl-t-space-pad1331704929 _gap-t-space-gap1569 _backgroundColor-surface5 _backdropFilter-blur24px1281 _WebkitBackdropFilter-blur24px1281 _boxShadow-04px6pxrgba217844814 _borderTopWidth-t-space-spa94665586 _borderRightWidth-t-space-spa94665586 _borderBottomWidth-t-space-spa94665586 _borderLeftWidth-t-space-spa94665586 _borderTopColor-surface3 _borderRightColor-surface3 _borderBottomColor-surface3 _borderLeftColor-surface3 _borderTopLeftRadius-t-radius-ro291586424 _borderTopRightRadius-t-radius-ro291586424 _borderBottomRightRadius-t-radius-ro291586424 _borderBottomLeftRadius-t-radius-ro291586424 _borderBottomStyle-solid _borderTopStyle-solid _borderLeftStyle-solid _borderRightStyle-solid"
             data-testid="table-error-modal"
           >
             <div

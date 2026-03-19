@@ -213,9 +213,10 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
     currencyBalances,
   } = useDepositInfo(depositInfoProps)
 
-  const { customDeadline, customSlippageTolerance } = useTransactionSettingsStore((s) => ({
+  const { customDeadline, customSlippageTolerance, isSlippageDirty } = useTransactionSettingsStore((s) => ({
     customDeadline: s.customDeadline,
     customSlippageTolerance: s.customSlippageTolerance,
+    isSlippageDirty: s.isSlippageDirty,
   }))
   const isLiquidityBatchedTransactionsEnabled = useFeatureFlag(FeatureFlags.LiquidityBatchedTransactions)
   const isLpDynamicNativeSlippageEnabled = useFeatureFlag(FeatureFlags.LpDynamicNativeSlippage)
@@ -293,7 +294,7 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
       poolOrPair,
       currencyAmounts,
       independentField: depositState.exactField,
-      slippageTolerance: nativeTokenBalance ? undefined : customSlippageTolerance,
+      slippageTolerance: nativeTokenBalance && !isSlippageDirty ? undefined : customSlippageTolerance,
       customDeadline,
       nativeTokenBalance,
     })
@@ -307,6 +308,7 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
     positionState,
     depositState.exactField,
     customSlippageTolerance,
+    isSlippageDirty,
     currencies.display,
     protocolVersion,
     customDeadline,
@@ -444,6 +446,7 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
     isEnabled: isLpDynamicNativeSlippageEnabled,
     nativeTokenBalance,
     createCalldata,
+    isSlippageDirty,
   })
 
   const value = useMemo(

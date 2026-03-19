@@ -88,7 +88,7 @@ function getIcon({
         p="$spacing4"
         backgroundColor="$accent2"
         borderRadius="$rounded8"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor={opacify(20, themeColors.accent1.val)}
       >
         <UniswapLogo size={iconSize - 10} color="$accent1" />

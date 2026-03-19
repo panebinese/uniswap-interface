@@ -10,34 +10,100 @@ import {
   useDynamicConfigValue,
   useFeatureFlagWithExposureLoggingDisabled,
 } from '@universe/gating'
-import type { ChangeEvent, PropsWithChildren } from 'react'
+import type { PropsWithChildren, ReactNode } from 'react'
 import { memo } from 'react'
-import { Button, Flex, ModalCloseIcon, styled, Text } from 'ui/src'
-import { LayerRow } from 'uniswap/src/components/gating/Rows'
+import { Button, Flex, FlexProps, ModalCloseIcon, Switch, styled, Text, TouchableArea } from 'ui/src'
+import { Pin } from 'ui/src/components/icons/Pin'
+import { useLayerValue } from 'uniswap/src/components/gating/Rows'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { isPlaywrightEnv } from 'utilities/src/environment/env'
 import { TRUSTED_CHROME_EXTENSION_IDS } from 'utilities/src/environment/extensionId'
 import { useEvent } from 'utilities/src/react/hooks'
+import { FeatureFlagSelector } from '~/components/FeatureFlagModal/FeatureFlagSelector'
+import { usePinnedExperiments, usePinnedFeatureFlags } from '~/dev/usePinnedFeatureFlags'
 import { useModalState } from '~/hooks/useModalState'
-import { deprecatedStyled } from '~/lib/deprecated-styled'
 import { useExternallyConnectableExtensionId } from '~/pages/ExtensionPasskeyAuthPopUp/useExternallyConnectableExtensionId'
+import { EllipsisTamaguiStyle } from '~/theme/components/styles'
 
-const FLAG_VARIANTS = ['Enabled', 'Disabled'] as const
-
-const CenteredRow = styled(Flex, {
+const CenteredRowProps: FlexProps = {
   flexDirection: 'row',
   justifyContent: 'space-between',
   alignItems: 'center',
   py: '$gap8',
   maxWidth: '100%',
   gap: '$gap4',
-})
+}
+
+const CenteredRow = styled(Flex, CenteredRowProps)
+
+const TouchableCenteredRow = styled(TouchableArea, CenteredRowProps)
 
 const FlagInfo = styled(Flex, {
-  pl: '$padding8',
   flexShrink: 1,
 })
+
+interface GatingRowContentProps {
+  title: string
+  label?: string
+  rightContent?: ReactNode
+}
+
+export function GatingRowContent({ title, label, rightContent }: GatingRowContentProps): JSX.Element {
+  return (
+    <CenteredRow flexGrow={1} flexShrink={1} py={rightContent ? '$none' : undefined}>
+      <FlagInfo>
+        <Text variant="body2" {...EllipsisTamaguiStyle}>
+          {title}
+        </Text>
+        {label && (
+          <Text variant="body4" color="$neutral2" {...EllipsisTamaguiStyle}>
+            {label}
+          </Text>
+        )}
+      </FlagInfo>
+      {rightContent}
+    </CenteredRow>
+  )
+}
+
+export function GatingSwitch({
+  checked,
+  onCheckedChange,
+}: {
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+}): JSX.Element {
+  return (
+    <Flex
+      onPressIn={(e: { stopPropagation: () => void }) => e.stopPropagation()}
+      onPress={(e: { stopPropagation: () => void }) => e.stopPropagation()}
+    >
+      <Switch checked={checked} onCheckedChange={onCheckedChange} variant="branded" />
+    </Flex>
+  )
+}
+
+type PinnableRowProps = GatingRowContentProps & {
+  isPinned: boolean
+  onPinPress: () => void
+}
+
+function PinnableRow({ isPinned, onPinPress, title, label, rightContent }: PinnableRowProps): JSX.Element {
+  return (
+    <TouchableCenteredRow group="item" onPress={onPinPress} gap="$gap8">
+      <Flex
+        alignSelf="center"
+        p="$padding4"
+        opacity={isPinned ? 1 : 0}
+        $group-item-hover={{ opacity: isPinned ? 1 : 0.6 }}
+      >
+        <Pin size="$icon.16" color={isPinned ? '$accent1' : '$neutral2'} />
+      </Flex>
+      <GatingRowContent title={title} label={label} rightContent={rightContent} />
+    </TouchableCenteredRow>
+  )
+}
 
 interface FeatureFlagProps {
   label: string
@@ -58,46 +124,69 @@ const FeatureFlagGroup = memo(function FeatureFlagGroup({
   )
 })
 
-const FlagVariantSelection = deprecatedStyled.select`
-  border-radius: 12px;
-  padding: 8px;
-  background: ${({ theme }) => theme.surface3};
-  font-weight: 535;
-  font-size: 16px;
-  border: none;
-  color: ${({ theme }) => theme.neutral1};
-  cursor: pointer;
-  :hover {
-    background: ${({ theme }) => theme.surface3};
-  }
-`
-
-const Variant = memo(function Variant({ option }: { option: string }): JSX.Element {
-  return <option value={option}>{option}</option>
-})
-
 const FeatureFlagOption = memo(function FeatureFlagOption({ flag, label }: FeatureFlagProps): JSX.Element {
   const enabled = useFeatureFlagWithExposureLoggingDisabled(flag)
   const name = getFeatureFlagName(flag)
+  const { isPinned, pinFlag, unpinFlag } = usePinnedFeatureFlags()
+  const isOptionPinned = isPinned(name)
 
-  const onFlagVariantChange = useEvent((e: ChangeEvent<HTMLSelectElement>) => {
-    getOverrideAdapter().overrideGate(name, e.target.value === 'Enabled' ? true : false)
+  const onFlagVariantChange = useEvent((enabled: boolean) => {
+    getOverrideAdapter().overrideGate(name, enabled)
+  })
+
+  const onPinPress = useEvent(() => {
+    if (isOptionPinned) {
+      unpinFlag(name)
+    } else {
+      pinFlag(name)
+    }
   })
 
   return (
-    <CenteredRow key={flag}>
-      <FlagInfo>
-        <Text variant="body2">{name}</Text>
-        <Text variant="body4" color="$neutral2">
-          {label}
-        </Text>
-      </FlagInfo>
-      <FlagVariantSelection id={name} onChange={onFlagVariantChange} value={enabled ? 'Enabled' : 'Disabled'}>
-        {FLAG_VARIANTS.map((variant) => (
-          <Variant key={variant} option={variant} />
-        ))}
-      </FlagVariantSelection>
-    </CenteredRow>
+    <PinnableRow
+      key={flag}
+      isPinned={isOptionPinned}
+      onPinPress={onPinPress}
+      title={name}
+      label={label}
+      rightContent={
+        <Flex
+          onPressIn={(e: { stopPropagation: () => void }) => e.stopPropagation()}
+          onPress={(e: { stopPropagation: () => void }) => e.stopPropagation()}
+        >
+          <Switch checked={enabled} onCheckedChange={onFlagVariantChange} variant="branded" />
+        </Flex>
+      }
+    />
+  )
+})
+
+interface LayerOptionProps {
+  layerName: Layers
+}
+const LayerOption = memo(function LayerOption({ layerName }: LayerOptionProps): JSX.Element {
+  const { value, overrideValue } = useLayerValue(layerName)
+  const { isPinned, pinExperiment, unpinExperiment } = usePinnedExperiments()
+
+  return (
+    <>
+      {Object.entries(value).map(([key, val]) => {
+        return (
+          typeof val === 'boolean' && (
+            <PinnableRow
+              key={key}
+              isPinned={isPinned(key)}
+              onPinPress={() => (isPinned(key) ? unpinExperiment(key) : pinExperiment(key))}
+              title={key}
+              label={undefined}
+              rightContent={
+                <GatingSwitch checked={val} onCheckedChange={(enabled) => overrideValue<boolean>({ [key]: enabled })} />
+              }
+            />
+          )
+        )
+      })}
+    </>
   )
 })
 
@@ -111,7 +200,6 @@ const DynamicConfigDropdown = memo(function DynamicConfigDropdown<
   options,
   selected,
   parser,
-  allowMultiple = true,
 }: {
   config: Conf
   configKey: Key
@@ -119,14 +207,14 @@ const DynamicConfigDropdown = memo(function DynamicConfigDropdown<
   options: Array<string | number> | Record<string, string | number>
   selected: unknown[]
   parser: (opt: string) => unknown
-  allowMultiple?: boolean
 }): JSX.Element {
-  const handleSelectChange = useEvent((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedValues = Array.from(e.target.selectedOptions, (opt) => parser(opt.value))
+  const onValueChange = useEvent((value: string) => {
     getOverrideAdapter().overrideDynamicConfig(config, {
-      [configKey]: allowMultiple ? selectedValues : selectedValues[0],
+      [configKey]: parser(value),
     })
   })
+
+  const currentValue = String(selected[0] ?? '')
 
   return (
     <CenteredRow key={config}>
@@ -136,23 +224,7 @@ const DynamicConfigDropdown = memo(function DynamicConfigDropdown<
           {label}
         </Text>
       </FlagInfo>
-      <select
-        multiple={allowMultiple}
-        onChange={handleSelectChange}
-        value={allowMultiple ? selected.map(String) : String(selected[0] ?? '')}
-      >
-        {Array.isArray(options)
-          ? options.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))
-          : Object.entries(options).map(([key, value]) => (
-              <option key={key} value={value}>
-                {key}
-              </option>
-            ))}
-      </select>
+      <FeatureFlagSelector id={config} value={currentValue} onValueChange={onValueChange} options={options} />
     </CenteredRow>
   )
 })
@@ -172,7 +244,7 @@ export default function FeatureFlagModal(): JSX.Element {
   return (
     <Modal name={ModalName.FeatureFlags} isModalOpen={isOpen} onClose={closeModal} padding={0}>
       <Flex py="$gap20" px="$gap16" gap="$gap8">
-        <CenteredRow borderBottomColor="$surface3" borderBottomWidth={1}>
+        <CenteredRow borderBottomColor="$surface3" borderBottomWidth={1} borderRadius={0}>
           <Flex row grow alignItems="center" justifyContent="space-between">
             <Text variant="subheading2">Feature Flag Settings</Text>
             <Button onPress={removeAllOverrides} variant="branded" size="small" fill={false}>
@@ -181,7 +253,12 @@ export default function FeatureFlagModal(): JSX.Element {
           </Flex>
           <ModalCloseIcon onClose={closeModal} />
         </CenteredRow>
-        <Flex maxHeight="600px" pb="$gap8" overflow="scroll" $md={{ maxHeight: 'unset' }}>
+        <Flex
+          maxHeight="600px"
+          pb="$gap8"
+          $platform-web={{ overflowY: 'auto', overflowX: 'hidden' }}
+          $md={{ maxHeight: 'unset' }}
+        >
           <FeatureFlagGroup name="Sessions">
             <FeatureFlagOption flag={FeatureFlags.SessionsServiceEnabled} label="Enable Sessions Service" />
             <FeatureFlagOption flag={FeatureFlags.SessionsUpgradeAutoEnabled} label="Enable Sessions Upgrade Auto" />
@@ -220,6 +297,7 @@ export default function FeatureFlagModal(): JSX.Element {
             <FeatureFlagOption flag={FeatureFlags.ViemProviderEnabled} label="Enable Viem Provider" />
             <FeatureFlagOption flag={FeatureFlags.LimitsFees} label="Enable Limits fees" />
             <FeatureFlagOption flag={FeatureFlags.EnablePermitMismatchUX} label="Enable Permit2 mismatch detection" />
+            <FeatureFlagOption flag={FeatureFlags.NetworkFilterV2} label="Enable Network Filter V2" />
             <FeatureFlagOption
               flag={FeatureFlags.ForcePermitTransactions}
               label="Force Permit2 transaction instead of signatures, always"
@@ -266,7 +344,6 @@ export default function FeatureFlagModal(): JSX.Element {
               config={DynamicConfigs.ExternallyConnectableExtension}
               configKey={ExternallyConnectableExtensionConfigKey.ExtensionId}
               label="Which Extension the web app will communicate with"
-              allowMultiple={false}
             />
           </FeatureFlagGroup>
           <FeatureFlagGroup name="New Chains">
@@ -298,11 +375,15 @@ export default function FeatureFlagModal(): JSX.Element {
           <FeatureFlagGroup name="Prices">
             <FeatureFlagOption flag={FeatureFlags.CentralizedPrices} label="Enable Centralized Prices" />
           </FeatureFlagGroup>
-          <FeatureFlagGroup name="Experiments"></FeatureFlagGroup>
+          <FeatureFlagGroup name="Experiments" />
           <FeatureFlagGroup name="Layers">
-            <Flex ml="$padding8">
-              <LayerRow value={Layers.ExplorePage} />
-              <LayerRow value={Layers.SwapPage} />
+            <Flex ml="$padding8" gap="$gap8">
+              <FeatureFlagGroup name={Layers.ExplorePage}>
+                <LayerOption layerName={Layers.ExplorePage} />
+              </FeatureFlagGroup>
+              <FeatureFlagGroup name={Layers.SwapPage}>
+                <LayerOption layerName={Layers.SwapPage} />
+              </FeatureFlagGroup>
             </Flex>
           </FeatureFlagGroup>
         </Flex>
@@ -328,7 +409,6 @@ function NetworkRequestsConfig() {
       parser={Number.parseInt}
       config={DynamicConfigs.NetworkRequests}
       configKey={NetworkRequestsConfigKey.BalanceMaxRefetchAttempts}
-      allowMultiple={false}
       label="Max refetch attempts"
     />
   )

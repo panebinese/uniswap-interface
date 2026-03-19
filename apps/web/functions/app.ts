@@ -13,6 +13,7 @@ type Bindings = {
 interface AppConfig {
   fetchSpaHtml: (c: Context) => Promise<Response>
   getEntryGatewayUrl: (c: Context) => string
+  getPrivyEwUrl: (c: Context) => string
   getWebSocketUrl: (c: Context) => string
   getTrustedClientIp: (c: Context) => string | undefined
 }
@@ -27,6 +28,12 @@ export const ENTRY_GATEWAY_URLS = {
 // Statsig proxy via Cloudflare gateway — the URL is constant for the web app
 // (platform prefix "interface", service prefix "gating")
 const STATSIG_PROXY_TARGET = 'https://gating.interface.gateway.uniswap.org'
+export const PRIVY_EW_URLS = {
+  development: 'https://privy-embedded-wallet.backend-dev.api.uniswap.org',
+  staging: 'https://privy-embedded-wallet.backend-dev.api.uniswap.org',
+  production: 'https://privy-embedded-wallet.backend-prod.api.uniswap.org',
+} as const
+
 export const WEBSOCKET_URLS = {
   development: 'https://websockets.backend-staging.api.uniswap.org',
   staging: 'https://websockets.backend-staging.api.uniswap.org',
@@ -43,7 +50,7 @@ function cacheControl(maxAge: number) {
   }
 }
 
-export function createApp({ fetchSpaHtml, getEntryGatewayUrl, getWebSocketUrl, getTrustedClientIp }: AppConfig) {
+export function createApp({ fetchSpaHtml, getEntryGatewayUrl, getPrivyEwUrl, getWebSocketUrl, getTrustedClientIp }: AppConfig) {
   const app = new Hono<{ Bindings: Bindings }>()
 
   // ── OG image routes ────────────────────────────────────────────────────
@@ -80,6 +87,24 @@ export function createApp({ fetchSpaHtml, getEntryGatewayUrl, getWebSocketUrl, g
 
     // Rewrite Set-Cookie headers so cookies work on non-.uniswap.org domains
     // (Vercel previews, staging, etc.)
+    return rewriteProxiedCookies(response)
+  })
+
+  // ── BFF proxy: privy-ew ────────────────────────────────────────────
+  app.all('/privy-ew/*', async (c) => {
+    const privyEwUrl = getPrivyEwUrl(c)
+    const path = c.req.path.slice('/privy-ew'.length) || '/'
+    const query = new URL(c.req.url).search
+
+    const response = await proxy(`${privyEwUrl}${path}${query}`, {
+      ...c.req,
+      headers: {
+        ...c.req.header(),
+        host: undefined,
+      },
+      redirect: 'manual',
+    })
+
     return rewriteProxiedCookies(response)
   })
 

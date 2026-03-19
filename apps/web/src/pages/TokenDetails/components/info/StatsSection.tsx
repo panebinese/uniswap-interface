@@ -1,3 +1,4 @@
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { ReactNode, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, FlexProps, Text } from 'ui/src'
@@ -10,7 +11,7 @@ import { FiatNumberType, NumberType } from 'utilities/src/format/types'
 import { TokenQueryData } from '~/appGraphql/data/Token'
 import { HEADER_DESCRIPTIONS, TokenSortMethod } from '~/components/Tokens/constants'
 import { MouseoverTooltip } from '~/components/Tooltip'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 
 const STATS_GAP = '$gap20'
 
@@ -87,10 +88,10 @@ function Stat({
 type StatsSectionProps = {
   tokenQueryData: TokenQueryData
 }
-export function StatsSection(props: StatsSectionProps) {
-  const { tokenQueryData } = props
+export function StatsSection({ tokenQueryData }: StatsSectionProps) {
   const { t } = useTranslation()
-  const { currency } = useTDPContext()
+  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const currency = useTDPStore((s) => s.currency)!
 
   // Construct currencyId for shared hooks
   const currencyIdValue = useMemo(() => currencyId(currency), [currency])
@@ -98,14 +99,23 @@ export function StatsSection(props: StatsSectionProps) {
   // Live price from centralized provider (feature-flag aware via TokenPriceContext)
   const spotPrice = useTokenSpotPrice(currencyIdValue)
 
-  // Use shared hook for unified data fetching (CoinGecko-first strategy)
-  // spotPrice override ensures 52w bounds adjust against live WebSocket prices
-  const { marketCap, fdv, high52w, low52w } = useTokenMarketStats(currencyIdValue, spotPrice)
+  // When multichain token UX is on, TokenWebQuery returns aggregated market/project data — pass it so the hook uses it for stats.
+  const aggregatedInput = useMemo(
+    () =>
+      isMultichainTokenUx && tokenQueryData
+        ? { market: tokenQueryData.market, project: tokenQueryData.project }
+        : undefined,
+    [isMultichainTokenUx, tokenQueryData],
+  )
+  const stats = useTokenMarketStats(currencyIdValue, {
+    currentPriceOverride: spotPrice,
+    aggregatedData: aggregatedInput,
+  })
 
-  // Volume and TVL come from tokenQueryData to avoid fragment timing issues
-  // These are already loaded with the main TokenWebQuery
-  const volume = tokenQueryData?.market?.volume24H?.value
+  // Prefer TDP query's 24h volume when available; otherwise use hook (fragment or aggregated)
+  const volume = tokenQueryData?.market?.volume24H?.value ?? stats.volume
   const tvl = tokenQueryData?.market?.totalValueLocked?.value
+  const { marketCap, fdv, high52w, low52w } = stats
 
   const hasStats = tvl || fdv || marketCap || volume || high52w || low52w
 

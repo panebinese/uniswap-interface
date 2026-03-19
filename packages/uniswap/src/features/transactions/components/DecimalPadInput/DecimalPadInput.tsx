@@ -16,6 +16,7 @@ import { type TextInputProps } from 'uniswap/src/components/input/TextInput'
 import { DecimalPad } from 'uniswap/src/features/transactions/components/DecimalPadInput/DecimalPad'
 import { KeyAction, type KeyLabel } from 'uniswap/src/features/transactions/components/DecimalPadInput/types'
 import { maxDecimalsReached } from 'utilities/src/format/truncateToMaxDecimals'
+import { isNumeric, isSafeNumber } from 'utilities/src/primitives/integer'
 import { useEvent } from 'utilities/src/react/hooks'
 
 const LONG_PRESS_DELETE_INTERVAL_MS = 20
@@ -235,6 +236,10 @@ export const DecimalPadInput = memo(
 
     const updateValue = useCallback(
       (newValue: string): void => {
+        if (isNumeric(newValue, true) && !isSafeNumber(newValue)) {
+          return
+        }
+
         setValue(newValue)
         updateDisabledKeys(newValue)
       },
@@ -245,6 +250,8 @@ export const DecimalPadInput = memo(
     const handleInsert = useCallback(
       (label: KeyLabel): void => {
         const { start, end } = getCurrentSelection()
+        const previousValue = valueRef.current
+
         if (start === undefined || end === undefined) {
           resetSelection({ start: valueRef.current.length + 1, end: valueRef.current.length + 1 })
           // has no text selection, cursor is at the end of the text input
@@ -252,6 +259,16 @@ export const DecimalPadInput = memo(
         } else {
           resetSelection({ start: start + 1, end: start + 1 })
           updateValue(valueRef.current.slice(0, start) + label + valueRef.current.slice(end))
+        }
+
+        // If the value wasn't updated (e.g., rejected by the consumer because it exceeds
+        // the safe number range), restore the cursor to its previous position.
+        if (valueRef.current === previousValue) {
+          if (start === undefined || end === undefined) {
+            resetSelection({ start: previousValue.length, end: previousValue.length })
+          } else {
+            resetSelection({ start, end })
+          }
         }
       },
       [updateValue, resetSelection, valueRef, getCurrentSelection],

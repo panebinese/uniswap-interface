@@ -1,6 +1,6 @@
 import { transparentize } from 'polished'
 import { Fragment, memo, PropsWithChildren, ReactNode, useEffect, useState } from 'react'
-import { Flex } from 'ui/src'
+import { Flex, Text } from 'ui/src'
 import { noop } from 'utilities/src/react/noop'
 import Popover, { PopoverProps } from '~/components/Popover'
 import { deprecatedStyled } from '~/lib/deprecated-styled'
@@ -102,7 +102,11 @@ export const MouseoverTooltip = memo(function MouseoverTooltip(props: MouseoverT
       {...rest}
     >
       <Flex onMouseEnter={open} onMouseLeave={timeout ? noop : close}>
-        {children}
+        {typeof children === 'string' || typeof children === 'number' ? (
+          <Text variant="body3">{children}</Text>
+        ) : (
+          children
+        )}
       </Flex>
     </Popover>
   )

@@ -27,6 +27,12 @@ exports[`SwapTransactionDetails Component > renders SwapTransactionDetails witho
             >
               - 
             </h3>
+            <span
+              class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
+              data-disable-theme="true"
+            >
+              -
+            </span>
           </div>
         </div>
       </div>
@@ -73,6 +79,12 @@ exports[`SwapTransactionDetails Component > renders SwapTransactionDetails witho
             >
               - 
             </h3>
+            <span
+              class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
+              data-disable-theme="true"
+            >
+              -
+            </span>
           </div>
         </div>
       </div>

@@ -50,7 +50,8 @@ test.describe(
 
       await expectSingleTransaction(async () => {
         await page.getByTestId(TestID.ReviewSwap).click()
-        await expect(page.getByText('Unwrapped')).toBeVisible()
+        await page.getByTestId(TestID.Swap).click()
+        await expect(page.getByTestId(TestID.ActivityPopup).getByText('Unwrapped')).toBeVisible()
         await expect(page.getByText('0.010 WETH for 0.010 ETH')).toBeVisible()
       })
     })
@@ -73,7 +74,8 @@ test.describe(
 
       await expectSingleTransaction(async () => {
         await page.getByTestId(TestID.ReviewSwap).click()
-        await expect(page.getByText('Wrapped')).toBeVisible()
+        await page.getByTestId(TestID.Swap).click()
+        await expect(page.getByTestId(TestID.ActivityPopup).getByText('Wrapped')).toBeVisible()
         await expect(page.getByText('0.010 ETH for 0.010 WETH')).toBeVisible()
       })
     })

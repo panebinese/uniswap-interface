@@ -94,7 +94,7 @@ export function BidProgressBar({
         borderRadius="$roundedFull"
         overflow={showInRangeAuctionGradient ? 'visible' : 'hidden'}
         backgroundColor="$surface2"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3Hovered"
       >
         {hasProgress && (

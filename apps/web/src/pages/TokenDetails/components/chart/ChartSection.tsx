@@ -11,10 +11,14 @@ import { ChartType, DataQuality } from '~/components/Charts/utils'
 import { VolumeChart } from '~/components/Charts/VolumeChart'
 import { EXPLORE_CHART_HEIGHT_PX } from '~/components/Explore/constants'
 import { ChartControls } from '~/pages/TokenDetails/components/chart/ChartControls'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 
 export function ChartSection() {
-  const { tokenColor, currency, chartState } = useTDPContext()
+  const { tokenColor, currency, chartState } = useTDPStore((s) => ({
+    tokenColor: s.tokenColor,
+    currency: s.currency!,
+    chartState: s.chartState,
+  }))
   const { activeQuery, timePeriod, priceChartType } = chartState
   const { t } = useTranslation()
 

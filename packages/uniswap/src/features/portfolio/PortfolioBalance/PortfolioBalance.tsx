@@ -1,6 +1,8 @@
+import { ChartPeriod } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { isWarmLoadingStatus } from '@universe/api'
 import { memo, useMemo } from 'react'
-import { Flex, RefreshButton, Shine, useIsDarkMode } from 'ui/src'
+import { useTranslation } from 'react-i18next'
+import { Flex, RefreshButton, Shine, Text, useIsDarkMode } from 'ui/src'
 import AnimatedNumber, {
   BALANCE_CHANGE_INDICATION_DURATION,
 } from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
@@ -15,11 +17,30 @@ import i18next from 'uniswap/src/i18n'
 import { NumberType } from 'utilities/src/format/types'
 import { isWebPlatform } from 'utilities/src/platform'
 
+function periodToTimeLabel(t: ReturnType<typeof useTranslation>['t'], period: ChartPeriod): string {
+  switch (period) {
+    case ChartPeriod.HOUR:
+    case ChartPeriod.DAY:
+      return t('common.today')
+    case ChartPeriod.WEEK:
+      return t('common.thisWeek')
+    case ChartPeriod.MONTH:
+      return t('common.thisMonth')
+    case ChartPeriod.YEAR:
+      return t('common.thisYear')
+    case ChartPeriod.MAX:
+      return t('common.allTime')
+    default:
+      return t('common.today')
+  }
+}
+
 interface PortfolioBalanceProps {
   evmOwner?: Address
   svmOwner?: Address
   endText?: JSX.Element | string
   chainIds?: UniverseChainId[]
+  chartPeriod?: ChartPeriod
 }
 
 export const PortfolioBalance = memo(function _PortfolioBalance({
@@ -27,7 +48,9 @@ export const PortfolioBalance = memo(function _PortfolioBalance({
   svmOwner,
   endText,
   chainIds,
+  chartPeriod,
 }: PortfolioBalanceProps): JSX.Element {
+  const { t } = useTranslation()
   const { data, loading, networkStatus, refetch } = usePortfolioTotalValue({
     evmAddress: evmOwner,
     svmAddress: svmOwner,
@@ -89,6 +112,11 @@ export const PortfolioBalance = memo(function _PortfolioBalance({
             variant="body3"
           />
         </Shine>
+        {chartPeriod !== undefined && (
+          <Text variant="body3" color="$neutral3" ml="$spacing4">
+            {periodToTimeLabel(t, chartPeriod).toLocaleLowerCase()}
+          </Text>
+        )}
         {endText}
       </Flex>
     </Flex>

@@ -141,6 +141,12 @@ export {
   type AuctionServiceClient,
 } from '@universe/api/src/clients/auctions/createAuctionServiceClient'
 
+// X Verification Service API
+export {
+  createXVerificationServiceClient,
+  type XVerificationServiceClient,
+} from '@universe/api/src/clients/x/createXVerificationServiceClient'
+
 // Uniswap API
 export {
   createUniswapApiClient,

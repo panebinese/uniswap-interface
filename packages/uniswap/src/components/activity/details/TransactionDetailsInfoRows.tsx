@@ -225,8 +225,7 @@ function useTransactionDetailsInfoRows({
  */
 function NetworkFeeRow({ transactionDetails }: { transactionDetails: TransactionDetails }): JSX.Element {
   const { t } = useTranslation()
-  const { value: networkFeeValue } = useNetworkFee(transactionDetails)
-  const isLoading = networkFeeValue === '-'
+  const { value: networkFeeValue, isLoading } = useNetworkFee(transactionDetails)
 
   const isPlanTransaction = isPlanTransactionDetails(transactionDetails)
   const GasText = isUniswapX(transactionDetails) ? UniswapXText : Text

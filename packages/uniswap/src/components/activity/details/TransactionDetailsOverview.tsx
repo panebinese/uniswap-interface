@@ -2,8 +2,8 @@ import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex, Separator, Text, TouchableArea } from 'ui/src'
-import { AnglesDownUp } from 'ui/src/components/icons/AnglesDownUp'
-import { SortVertical } from 'ui/src/components/icons/SortVertical'
+import { ChevronsIn } from 'ui/src/components/icons/ChevronsIn'
+import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
 import { ResumePlanButton } from 'uniswap/src/components/activity/details/plan/ResumePlanButton'
 import { TransactionDetailsContent } from 'uniswap/src/components/activity/details/TransactionDetailsContent'
 import { TransactionDetailsHeader } from 'uniswap/src/components/activity/details/TransactionDetailsHeader'
@@ -139,9 +139,9 @@ function ShowMoreSeparator({
             {isShowingMore ? t('common.button.showLess') : t('common.button.showMore')}
           </Text>
           {isShowingMore ? (
-            <AnglesDownUp color="$neutral3" size="$icon.16" />
+            <ChevronsIn color="$neutral3" size="$icon.16" />
           ) : (
-            <SortVertical color="$neutral3" size="$icon.16" />
+            <ChevronsOut color="$neutral3" size="$icon.16" />
           )}
         </Flex>
       </TouchableArea>

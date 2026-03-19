@@ -30,7 +30,7 @@ export function usePrice(options: UsePriceOptions): number | undefined {
   const { data } = useQuery(
     enabled
       ? tokenPriceQueryOptions({ chainId, address, restBatcher, queryClient })
-      : queryOptions<TokenPriceData | undefined>({ queryKey: priceKeys.all, queryFn: skipToken, enabled: false }),
+      : queryOptions<TokenPriceData | null>({ queryKey: priceKeys.all, queryFn: skipToken, enabled: false }),
   )
 
   useEffect(() => {

@@ -21,14 +21,20 @@ import { TokenDescription } from '~/pages/TokenDetails/components/info/TokenDesc
 import { LeftPanel, RightPanel, TokenDetailsLayout } from '~/pages/TokenDetails/components/skeleton/Skeleton'
 import { TDPSwapComponent } from '~/pages/TokenDetails/components/swap/TDPSwapComponent'
 import { TokenCarousel } from '~/pages/TokenDetails/components/TokenCarousel/TokenCarousel'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 
 export function TokenDetailsContent({ isCompact }: { isCompact: boolean }) {
   const media = useMedia()
   const isTouchDevice = useIsTouchDevice()
   const { t } = useTranslation()
 
-  const { tokenQuery, currencyChain, multiChainMap, address, currency } = useTDPContext()
+  const { tokenQuery, currencyChain, multiChainMap, address, currency } = useTDPStore((s) => ({
+    tokenQuery: s.tokenQuery,
+    currencyChain: s.currencyChain,
+    multiChainMap: s.multiChainMap,
+    address: s.address,
+    currency: s.currency!,
+  }))
   const tokenQueryData = tokenQuery.data?.token
   const pageChainBalance = multiChainMap[currencyChain]?.balance
 

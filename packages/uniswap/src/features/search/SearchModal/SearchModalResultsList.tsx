@@ -1,5 +1,6 @@
 import { ContentStyle } from '@shopify/flash-list'
 import { GqlResult } from '@universe/api'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { memo, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePoolSearchResultsToPoolOptions } from 'uniswap/src/components/lists/items/pools/usePoolSearchResultsToPoolOptions'
@@ -8,9 +9,10 @@ import { NetworkError, NoResultsFound } from 'uniswap/src/components/lists/NoRes
 import { OnchainItemSection, OnchainItemSectionName } from 'uniswap/src/components/lists/OnchainItemList/types'
 import { useOnchainItemListSection } from 'uniswap/src/components/lists/utils'
 import { useCurrencyInfosToTokenOptions } from 'uniswap/src/components/TokenSelector/hooks/useCurrencyInfosToTokenOptions'
+import { useMultichainSearchResultsToOptions } from 'uniswap/src/components/TokenSelector/hooks/useMultichainSearchResultsToOptions'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useSearchPools } from 'uniswap/src/features/dataApi/searchPools'
-import { useSearchTokens } from 'uniswap/src/features/dataApi/searchTokens'
+import { useMultichainSearchTokens, useSearchTokens } from 'uniswap/src/features/dataApi/searchTokens'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { NUMBER_OF_RESULTS_ALL_TAB } from 'uniswap/src/features/search/SearchModal/constants'
 import { useWalletSearchResults } from 'uniswap/src/features/search/SearchModal/hooks/useWalletSearchResults'
@@ -22,6 +24,7 @@ import { isWebPlatform } from 'utilities/src/platform'
 import { noop } from 'utilities/src/react/noop'
 import { usePreviousWithLayoutEffect } from 'utilities/src/react/usePreviousWithLayoutEffect'
 
+// eslint-disable-next-line complexity
 function useSectionsForSearchResults({
   chainFilter,
   searchFilter,
@@ -53,22 +56,49 @@ function useSectionsForSearchResults({
     options: activeTab === SearchTab.All ? poolSearchOptions.slice(0, NUMBER_OF_RESULTS_ALL_TAB) : poolSearchOptions,
   })
 
+  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const useMultichainPath = isMultichainTokenUx && chainFilter === null
+
+  const skipTokenSearch = !searchFilter || (activeTab !== SearchTab.Tokens && activeTab !== SearchTab.All)
+
   const {
     data: searchResultCurrencies,
-    error: searchTokensError,
-    refetch: refetchSearchTokens,
-    loading: searchTokensLoading,
+    error: flatSearchTokensError,
+    refetch: refetchFlatSearchTokens,
+    loading: flatSearchTokensLoading,
   } = useSearchTokens({
     searchQuery: searchFilter,
     chainFilter,
-    skip: !searchFilter || (activeTab !== SearchTab.Tokens && activeTab !== SearchTab.All),
+    skip: skipTokenSearch || useMultichainPath,
   })
+
+  const {
+    data: multichainResults,
+    error: multichainTokensError,
+    refetch: refetchMultichainTokens,
+    loading: multichainTokensLoading,
+  } = useMultichainSearchTokens({
+    searchQuery: searchFilter,
+    chainFilter,
+    skip: skipTokenSearch || !useMultichainPath,
+  })
+
   const tokenSearchResults = useCurrencyInfosToTokenOptions({ currencyInfos: searchResultCurrencies })
+  const multichainSearchOptions = useMultichainSearchResultsToOptions({ results: multichainResults })
+
+  const searchTokensError = useMultichainPath ? multichainTokensError : flatSearchTokensError
+  const searchTokensLoading = useMultichainPath ? multichainTokensLoading : flatSearchTokensLoading
+  const refetchSearchTokens = useMultichainPath ? refetchMultichainTokens : refetchFlatSearchTokens
+
   const isPoolAddressSearch =
     searchFilter &&
     getValidAddress({ address: searchFilter, platform: Platform.EVM }) &&
     searchResultPools?.length === 1
-  const tokenOptions = isPoolAddressSearch ? [] : (tokenSearchResults ?? []) // do not display tokens if pool address search (to avoid displaying V2 liquidity tokens in results)
+  const tokenOptions: SearchModalOption[] = isPoolAddressSearch
+    ? []
+    : useMultichainPath
+      ? (multichainSearchOptions ?? [])
+      : (tokenSearchResults ?? [])
   const tokenSearchResultsSection = useOnchainItemListSection({
     sectionKey: OnchainItemSectionName.Tokens,
     options: activeTab === SearchTab.All ? tokenOptions.slice(0, NUMBER_OF_RESULTS_ALL_TAB) : tokenOptions,
@@ -106,15 +136,15 @@ function useSectionsForSearchResults({
         }
         return {
           data: !searchTokensLoading ? sections : [],
-          loading: searchTokensLoading, // only show loading&error state for loading tokens
-          error: (!tokenSearchResults && searchTokensError) || undefined,
+          loading: searchTokensLoading,
+          error: (!tokenOptions.length && searchTokensError) || undefined,
           refetch: refetchAll,
         }
       case SearchTab.Tokens:
         return {
           data: tokenSearchResultsSection ?? [],
           loading: searchTokensLoading,
-          error: (!tokenSearchResults && searchTokensError) || undefined,
+          error: (!tokenOptions.length && searchTokensError) || undefined,
           refetch: refetchSearchTokens,
         }
       case SearchTab.Pools:
@@ -140,19 +170,19 @@ function useSectionsForSearchResults({
     }
   }, [
     activeTab,
+    refetchSearchTokens,
+    searchTokensError,
+    searchTokensLoading,
     poolSearchOptions.length,
     poolSearchResultsSection,
     refetchAll,
     refetchSearchPools,
-    refetchSearchTokens,
     searchPoolsError,
     searchPoolsLoading,
     searchResultPools?.length,
-    searchTokensError,
-    searchTokensLoading,
     shouldPrioritizePools,
     shouldPrioritizeWallets,
-    tokenSearchResults,
+    tokenOptions.length,
     tokenSearchResultsSection,
     walletSearchResultsLoading,
     walletSearchResultsSection,

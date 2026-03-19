@@ -14,13 +14,13 @@ export interface TokenPriceQueryOptionsParams {
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function tokenPriceQueryOptions({ chainId, address, restBatcher, queryClient }: TokenPriceQueryOptionsParams) {
   const key = priceKeys.token(chainId, address)
-  return queryOptions<TokenPriceData | undefined>({
+  return queryOptions<TokenPriceData | null>({
     queryKey: key,
     queryFn: restBatcher
-      ? async (): Promise<TokenPriceData | undefined> => {
+      ? async (): Promise<TokenPriceData | null> => {
           const fresh = await restBatcher.fetch({ chainId, address: address.toLowerCase() })
           if (!fresh) {
-            return fresh
+            return null
           }
           // Guard against REST responses overwriting newer WebSocket data.
           // refetchInterval fires independently of staleTime, so without this

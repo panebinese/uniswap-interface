@@ -35,7 +35,7 @@ export type TDPChartState = {
   disableCandlestickUI: boolean
 }
 
-/** Exported to `TDPContext` to fire queries on pageload. `TDPChartState` should be accessed through `useTDPContext` rather than this hook. */
+/** Exported to `TDPContext` to fire queries on pageload. `TDPChartState` should be accessed through `useTDPStore` rather than this hook. */
 export function useCreateTDPChartState(
   tokenDBAddress: string | undefined,
   currencyChainName: GraphQLApi.Chain,

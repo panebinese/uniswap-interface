@@ -46,10 +46,12 @@ export function useDynamicNativeSlippage({
   isEnabled,
   nativeTokenBalance,
   createCalldata,
+  isSlippageDirty,
 }: {
   isEnabled: boolean
   nativeTokenBalance?: string
   createCalldata?: CreateLPPositionResponse
+  isSlippageDirty: boolean
 }): void {
   const { setCustomSlippageTolerance, setIsSlippageDirty } = useTransactionSettingsActions()
   const setAutoSlippageTolerance = useSetTransactionSettingsAutoSlippageTolerance()
@@ -65,16 +67,16 @@ export function useDynamicNativeSlippage({
       return
     }
     const responseSlippage = createCalldata.slippage
-    if (responseSlippage !== undefined) {
+    if (responseSlippage !== undefined && !isSlippageDirty) {
       const truncatedSlippage = Math.trunc(responseSlippage * 10000) / 10000
       setCustomSlippageTolerance(truncatedSlippage)
       setAutoSlippageTolerance(truncatedSlippage)
-      setIsSlippageDirty(false)
     }
   }, [
     isEnabled,
     nativeTokenBalance,
     createCalldata,
+    isSlippageDirty,
     setCustomSlippageTolerance,
     setAutoSlippageTolerance,
     setIsSlippageDirty,

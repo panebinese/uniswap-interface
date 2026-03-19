@@ -4,8 +4,9 @@ import {
   EthAsErc20UniswapXProperties,
   Experiments,
   FeatureFlags,
-  getExperimentValue,
+  getExperimentValueFromLayer,
   getFeatureFlag,
+  Layers,
 } from '@universe/gating'
 import { config } from 'uniswap/src/config'
 import { tradingApiVersionPrefix, uniswapUrls } from 'uniswap/src/constants/urls'
@@ -61,8 +62,12 @@ export const getFeatureFlaggedHeaders = (
   const chainedActionsEnabled = getFeatureFlag(FeatureFlags.ChainedActions)
   const unirouteEnabled = getFeatureFlag(FeatureFlags.UnirouteEnabled)
   const uniroutePulumiEnabled = getFeatureFlag(FeatureFlags.UniroutePulumiEnabled)
-  const ethAsErc20UniswapXEnabled = getExperimentValue({
-    experiment: Experiments.EthAsErc20UniswapX,
+  const ethAsErc20UniswapXEnabled = getExperimentValueFromLayer<
+    typeof Layers.SwapPage,
+    Experiments.EthAsErc20UniswapX,
+    boolean
+  >({
+    layerName: Layers.SwapPage,
     param: EthAsErc20UniswapXProperties.EthAsErc20UniswapXEnabled,
     defaultValue: false,
   })

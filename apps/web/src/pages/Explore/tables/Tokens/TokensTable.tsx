@@ -2,6 +2,7 @@
 
 import { ApolloError } from '@apollo/client'
 import { createColumnHelper } from '@tanstack/react-table'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { ReactElement, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, useMedia } from 'ui/src'
@@ -20,7 +21,8 @@ import SparklineChart from '~/components/Charts/SparklineChart'
 import { DeltaArrow } from '~/components/DeltaArrow/DeltaArrow'
 import { Table } from '~/components/Table'
 import { Cell } from '~/components/Table/Cell'
-import { EllipsisText, HeaderCell, TableText } from '~/components/Table/styled'
+import { EllipsisText, TableText } from '~/components/Table/shared/TableText'
+import { HeaderCell } from '~/components/Table/styled'
 import { TokenSortMethod } from '~/components/Tokens/constants'
 import { useExploreTablesFilterStore } from '~/pages/Explore/exploreTablesFilterStore'
 import { TokenDescription } from '~/pages/Explore/tables/Tokens/TokenDescription'
@@ -71,6 +73,7 @@ export function TokenTable({
   loadMore?: ({ onComplete }: { onComplete?: () => void }) => void
 }) {
   const { t } = useTranslation()
+  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { convertFiatAmountFormatted, formatPercent } = useLocalizationContext()
   const { defaultChainId } = useEnabledChains()
   const { sortMethod, sortAscending } = useTokenTableSortStore((s) => ({
@@ -312,7 +315,7 @@ export function TokenTable({
       data={tokenTableValues}
       loading={loading}
       error={error}
-      v2={false}
+      v2={isMultichainTokenUx}
       loadMore={loadMore}
       maxWidth={1200}
       defaultPinnedColumns={['index', 'tokenDescription']}

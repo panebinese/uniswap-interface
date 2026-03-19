@@ -1,10 +1,16 @@
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, Input, Text } from 'ui/src'
+import { Flex, Input, Text, TouchableArea } from 'ui/src'
+import { Check } from 'ui/src/components/icons/Check'
 import { ExternalLink } from 'ui/src/components/icons/ExternalLink'
 import { QuestionInCircleFilled } from 'ui/src/components/icons/QuestionInCircleFilled'
 import { XTwitter } from 'ui/src/components/icons/XTwitter'
 import { fonts } from 'ui/src/theme'
-import { ClickableTamaguiStyle } from '~/theme/components/styles'
+import {
+  useCreateAuctionStore,
+  useCreateAuctionStoreActions,
+} from '~/pages/Liquidity/CreateAuction/CreateAuctionContext'
+import { useXOAuthFlow } from '~/pages/Liquidity/CreateAuction/hooks/useXOAuthFlow'
 
 export function TokenAdditionalInfoSection({
   description,
@@ -14,6 +20,10 @@ export function TokenAdditionalInfoSection({
   onDescriptionChange: (v: string) => void
 }) {
   const { t } = useTranslation()
+  const xVerification = useCreateAuctionStore((state) => state.xVerification)
+  const { setXVerification } = useCreateAuctionStoreActions()
+  const { connectX, isLoading, error } = useXOAuthFlow()
+  const disconnectX = useCallback(() => setXVerification(undefined), [setXVerification])
 
   return (
     <Flex gap="$spacing8">
@@ -29,6 +39,7 @@ export function TokenAdditionalInfoSection({
           multiline
           numberOfLines={3}
           unstyled
+          outlineStyle="none"
           fontFamily="$body"
           fontSize={fonts.body1.fontSize}
           lineHeight={fonts.body1.lineHeight}
@@ -47,24 +58,48 @@ export function TokenAdditionalInfoSection({
           </Text>
           <QuestionInCircleFilled color="$neutral2" size="$icon.16" />
         </Flex>
-        <Flex
-          row
-          alignItems="center"
-          justifyContent="center"
-          backgroundColor="$surface3"
-          borderRadius="$rounded16"
-          py="$spacing12"
-          px="$spacing16"
-          gap="$spacing8"
-          onPress={() => {}} // TODO: launch X OAuth flow
-          {...ClickableTamaguiStyle}
-        >
-          <XTwitter color="$neutral1" size="$icon.24" />
-          <Text variant="buttonLabel2" color="$neutral1">
-            {t('toucan.createAuction.step.tokenInfo.xProfile.connect')}
+        {xVerification ? (
+          <Flex gap="$spacing8">
+            <Flex row alignItems="center" gap="$spacing8" flex={1} minWidth={0}>
+              <Text variant="body1" color="$neutral1" numberOfLines={1} flex={1}>
+                @{xVerification.xHandle}
+              </Text>
+              <Check color="$accent1" size="$icon.24" />
+            </Flex>
+            <TouchableArea onPress={disconnectX} alignSelf="flex-start">
+              <Text variant="body3" color="$neutral2">
+                {t('toucan.createAuction.step.tokenInfo.xProfile.disconnect')}
+              </Text>
+            </TouchableArea>
+          </Flex>
+        ) : (
+          <TouchableArea
+            row
+            alignItems="center"
+            justifyContent="center"
+            backgroundColor="$surface3"
+            borderRadius="$rounded16"
+            py="$spacing12"
+            px="$spacing16"
+            gap="$spacing8"
+            disabled={isLoading}
+            onPress={connectX}
+            opacity={isLoading ? 0.6 : 1}
+          >
+            <XTwitter color="$neutral1" size="$icon.24" />
+            <Text variant="buttonLabel2" color="$neutral1">
+              {isLoading
+                ? t('toucan.createAuction.step.tokenInfo.xProfile.connecting')
+                : t('toucan.createAuction.step.tokenInfo.xProfile.connect')}
+            </Text>
+            <ExternalLink color="$neutral1" size="$icon.20" />
+          </TouchableArea>
+        )}
+        {error && (
+          <Text variant="body3" color="$statusCritical" textAlign="center">
+            {t('toucan.createAuction.step.tokenInfo.xProfile.error')}
           </Text>
-          <ExternalLink color="$neutral1" size="$icon.20" />
-        </Flex>
+        )}
       </Flex>
     </Flex>
   )

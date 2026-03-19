@@ -150,12 +150,9 @@ export const COMMON_BASES: ChainCurrencyList = {
     USDC_SONEIUM,
   ].map(buildPartialCurrencyInfo),
 
-  [UniverseChainId.XLayer]: [
-    nativeOnChain(UniverseChainId.XLayer),
-    WRAPPED_NATIVE_CURRENCY[UniverseChainId.XLayer] as Token,
-    USDC_XLAYER,
-    USDT0_XLAYER,
-  ].map(buildPartialCurrencyInfo),
+  [UniverseChainId.XLayer]: [WRAPPED_NATIVE_CURRENCY[UniverseChainId.XLayer] as Token, USDC_XLAYER, USDT0_XLAYER].map(
+    buildPartialCurrencyInfo,
+  ),
 
   [UniverseChainId.Solana]: [nativeOnChain(UniverseChainId.Solana), USDC_SOLANA].map(buildPartialCurrencyInfo),
 

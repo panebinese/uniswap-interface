@@ -13,6 +13,7 @@ ignores: [
     "cross-fetch",
     "@datadog/datadog-ci",
     "dotenv",
+    "expo-image",
     "expo-localization",
     "expo-linking",
     "expo-modules-core",

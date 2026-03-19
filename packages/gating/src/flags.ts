@@ -25,6 +25,7 @@ export enum FeatureFlags {
   HashcashSolverEnabled,
   Monad,
   MultichainTokenUx,
+  NetworkFilterV2,
   NoUniswapInterfaceFees,
   PortionFields,
   ProfitLoss,
@@ -55,6 +56,7 @@ export enum FeatureFlags {
   EnableExportPrivateKeys,
   EnableRestoreSeedPhrase,
   EnableTransactionSpacingForDelegatedAccounts,
+  ExpoImage,
 
   NotificationApiDataSource,
   NotificationOnboardingCard,
@@ -107,6 +109,7 @@ export const SHARED_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   [FeatureFlags.HashcashSolverEnabled, 'sessions_hashcash_solver_enabled'],
   [FeatureFlags.Monad, 'monad'],
   [FeatureFlags.MultichainTokenUx, 'multichain_token_ux'],
+  [FeatureFlags.NetworkFilterV2, 'network_filter_v2'],
   [FeatureFlags.NoUniswapInterfaceFees, 'no_uniswap_interface_fees'],
   [FeatureFlags.NotificationApiDataSource, 'notification_api_data_source'],
   [FeatureFlags.PortionFields, 'portion-fields'],
@@ -168,6 +171,7 @@ export const WALLET_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   [FeatureFlags.EnableExportPrivateKeys, 'enable-export-private-keys'],
   [FeatureFlags.EnableRestoreSeedPhrase, 'enable-restore-seed-phrase'],
   [FeatureFlags.EnableTransactionSpacingForDelegatedAccounts, 'enable_transaction_spacing_for_delegated_accounts'],
+  [FeatureFlags.ExpoImage, 'expo_image'],
 
   [FeatureFlags.NotificationOnboardingCard, 'notification_onboarding_card'],
   [FeatureFlags.NotificationService, 'notification_system'],

@@ -1,4 +1,5 @@
 import { GraphQLApi } from '@universe/api'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
 import { useLocation, useParams } from 'react-router'
 import { useSporeColors } from 'ui/src'
@@ -28,9 +29,14 @@ export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
   const isNative = tokenAddress === NATIVE_CHAIN_ID
 
   const tokenDBAddress = isNative ? getNativeTokenDBAddress(currencyChainInfo.backendChain.chain) : tokenAddress
+  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const tokenQuery = GraphQLApi.useTokenWebQuery({
-    variables: { address: tokenDBAddress, chain: currencyChainInfo.backendChain.chain },
+    variables: {
+      address: tokenDBAddress,
+      chain: currencyChainInfo.backendChain.chain,
+      multichain: isMultichainTokenUx,
+    },
     errorPolicy: 'all',
   })
   const currency = useMemo(() => {

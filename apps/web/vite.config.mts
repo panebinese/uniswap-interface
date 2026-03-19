@@ -458,6 +458,13 @@ export default defineConfig(({ mode }) => {
           secure: true,
           rewrite: (path) => path.replace(/^\/config/, '/v1/statsig-proxy'),
         },
+        // Must match PRIVY_EW_DEV_PROXY_PATH in packages/uniswap/src/data/rest/embeddedWallet/requests.ts
+        '/privy-ew': {
+          target: 'https://privy-embedded-wallet.backend-dev.api.uniswap.org',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/privy-ew/, ''),
+        },
         ...(ENABLE_PROXY ? { '/entry-gateway': createEntryGatewayProxy({ getLogger }) } : {}),
       },
     },

@@ -86,7 +86,7 @@ function RecentlyConnectedModalUI({
             },
           },
         ]}
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         borderRadius="$rounded20"
         $md={{
@@ -141,7 +141,7 @@ function RecentlyConnectedModalUI({
           py="$spacing8"
           alignItems="center"
           justifyContent="center"
-          borderWidth={1}
+          borderWidth="$spacing1"
           borderColor="$surface3"
           borderRadius="$rounded12"
           display="none"

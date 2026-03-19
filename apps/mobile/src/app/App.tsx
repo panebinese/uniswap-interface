@@ -8,6 +8,7 @@ import {
   DatadogSessionSampleRateKey,
   DynamicConfigs,
   Experiments,
+  FeatureFlags,
   getDynamicConfigValue,
   getIsHashcashSolverEnabled,
   getIsSessionServiceEnabled,
@@ -18,6 +19,7 @@ import {
   StatsigCustomAppValue,
   type StatsigUser,
   Storage,
+  useFeatureFlag,
   useIsSessionServiceEnabled,
   WALLET_FEATURE_FLAG_NAMES,
 } from '@universe/gating'
@@ -80,7 +82,7 @@ import { SystemBannerPortalProvider } from 'src/notification-service/notificatio
 import { initDynamicIntlPolyfills } from 'src/polyfills/intl-delayed'
 import { useDatadogUserAttributesTracking } from 'src/screens/HomeScreen/useDatadogUserAttributesTracking'
 import { useAppStateTrigger } from 'src/utils/useAppStateTrigger'
-import { flexStyles, useIsDarkMode } from 'ui/src'
+import { flexStyles, ImageSettingsProvider, useIsDarkMode } from 'ui/src'
 import { TestnetModeBanner } from 'uniswap/src/components/banners/TestnetModeBanner'
 import { BlankUrlProvider } from 'uniswap/src/contexts/UrlContext'
 import { initializePortfolioQueryOverrides } from 'uniswap/src/data/rest/portfolioBalanceOverrides'
@@ -295,6 +297,8 @@ function AppOuter(): JSX.Element | null {
     sendAnalyticsEvent(MobileEventName.PerformanceReport, report)
   }, [])
 
+  const enableExpoImage = useFeatureFlag(FeatureFlags.ExpoImage)
+
   useEffect(() => {
     for (const [_, flagKey] of WALLET_FEATURE_FLAG_NAMES.entries()) {
       DdRum.addFeatureFlagEvaluation(
@@ -331,30 +335,32 @@ function AppOuter(): JSX.Element | null {
         <ErrorBoundaryWrapper>
           <BlankUrlProvider>
             <LocalizationContextProvider>
-              <GestureHandlerRootView style={flexStyles.fill}>
-                <WalletContextProvider>
-                  <NavigationContainer>
-                    <MobileWalletNavigationProvider>
-                      <NativeWalletProvider>
-                        <TokenPriceProvider>
-                          <WalletUniswapProvider>
-                            <AccountsStoreContextProvider>
-                              <DataUpdaters />
-                              <BottomSheetModalProvider>
-                                <AppModals />
-                                <PerformanceProfiler onReportPrepared={onReportPrepared}>
-                                  <AppInner />
-                                </PerformanceProfiler>
-                              </BottomSheetModalProvider>
-                              <NotificationToastWrapper />
-                            </AccountsStoreContextProvider>
-                          </WalletUniswapProvider>
-                        </TokenPriceProvider>
-                      </NativeWalletProvider>
-                    </MobileWalletNavigationProvider>
-                  </NavigationContainer>
-                </WalletContextProvider>
-              </GestureHandlerRootView>
+              <ImageSettingsProvider enableExpoImage={enableExpoImage}>
+                <GestureHandlerRootView style={flexStyles.fill}>
+                  <WalletContextProvider>
+                    <NavigationContainer>
+                      <MobileWalletNavigationProvider>
+                        <NativeWalletProvider>
+                          <TokenPriceProvider>
+                            <WalletUniswapProvider>
+                              <AccountsStoreContextProvider>
+                                <DataUpdaters />
+                                <BottomSheetModalProvider>
+                                  <AppModals />
+                                  <PerformanceProfiler onReportPrepared={onReportPrepared}>
+                                    <AppInner />
+                                  </PerformanceProfiler>
+                                </BottomSheetModalProvider>
+                                <NotificationToastWrapper />
+                              </AccountsStoreContextProvider>
+                            </WalletUniswapProvider>
+                          </TokenPriceProvider>
+                        </NativeWalletProvider>
+                      </MobileWalletNavigationProvider>
+                    </NavigationContainer>
+                  </WalletContextProvider>
+                </GestureHandlerRootView>
+              </ImageSettingsProvider>
             </LocalizationContextProvider>
           </BlankUrlProvider>
         </ErrorBoundaryWrapper>

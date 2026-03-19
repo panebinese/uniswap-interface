@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Flex, Text, Tooltip, useMedia } from 'ui/src'
 import { zIndexes } from 'ui/src/theme'
 import { AccountIcon } from 'uniswap/src/features/accounts/AccountIcon'
-import { useAbbreviatedTimeString } from '~/components/Table/utils'
+import { useAbbreviatedTimeString } from '~/components/Table/utils/useAbbreviatedTimeString'
 import { MARKER_CONFIG } from '~/components/Toucan/Auction/BidDistributionChart/constants'
 import { MarkerPosition } from '~/components/Toucan/Auction/BidDistributionChart/markers/types'
 import { useBidStatusColors } from '~/components/Toucan/Auction/hooks/useBidStatusColors'
@@ -125,7 +125,7 @@ export function BidMarker({ marker, bidTokenInfo, formatPrice, formatTokenAmount
               px="$spacing2"
               alignItems="center"
               justifyContent="center"
-              borderWidth={1}
+              borderWidth="$spacing1"
               borderColor="$surface3"
             >
               <Text variant="body4" fontSize={10} lineHeight={10} color="$neutral1">

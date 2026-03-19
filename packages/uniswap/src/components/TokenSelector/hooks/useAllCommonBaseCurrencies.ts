@@ -16,7 +16,6 @@ const baseCurrencyIds = [
   buildNativeCurrencyId(UniverseChainId.Avalanche),
   buildNativeCurrencyId(UniverseChainId.Solana),
   buildNativeCurrencyId(UniverseChainId.Monad),
-  buildNativeCurrencyId(UniverseChainId.XLayer),
   currencyId(USDC),
   currencyId(USDT),
   currencyId(WBTC),

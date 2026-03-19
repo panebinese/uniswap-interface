@@ -137,7 +137,7 @@ export function Bids({ showBidForm }: { showBidForm: () => void }): JSX.Element 
           py="$spacing8"
           backgroundColor="$statusCritical2"
           borderRadius="$rounded12"
-          borderWidth={1}
+          borderWidth="$spacing1"
           borderColor="$statusCritical"
         >
           <Text variant="body4" color="$statusCritical">

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Text } from 'ui/src'
-import { useAbbreviatedTimeString } from '~/components/Table/utils'
+import { useAbbreviatedTimeString } from '~/components/Table/utils/useAbbreviatedTimeString'
 
 interface TimeCellProps {
   /** Timestamp - either ISO string or milliseconds */

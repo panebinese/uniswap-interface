@@ -19,7 +19,7 @@ import { popupRegistry } from '~/components/Popups/registry'
 import { PopupType } from '~/components/Popups/types'
 import { useModalState } from '~/hooks/useModalState'
 import { useTokenDetailsHeaderActions } from '~/pages/TokenDetails/components/header/useTokenDetailsHeaderActions'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 import { CopyHelper } from '~/theme/components/CopyHelper'
 import { EllipsisTamaguiStyle } from '~/theme/components/styles'
 
@@ -32,7 +32,11 @@ export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
   const media = useMedia()
   const isMobileScreen = media.md
 
-  const { address, currency, tokenQuery } = useTDPContext()
+  const { address, currency, tokenQuery } = useTDPStore((s) => ({
+    address: s.address,
+    currency: s.currency!,
+    tokenQuery: s.tokenQuery,
+  }))
   const isNative = Boolean(currency.isNative)
   const tokenLogoUrl = tokenQuery.data?.token?.project?.logoUrl
   const tokenLogoSize = getHeaderLogoSize({ isCompact, isMobile: media.md })

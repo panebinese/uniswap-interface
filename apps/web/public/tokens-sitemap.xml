@@ -11810,4 +11810,24 @@
     <lastmod>2026-03-05T20:12:39.955Z</lastmod>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://app.uniswap.org/explore/tokens/ethereum/0xe343167631d89b6ffc58b88d6b7fb0228795491d</loc>
+    <lastmod>2026-03-12T19:27:13.845Z</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://app.uniswap.org/explore/tokens/bnb/0xeccbb861c0dda7efd964010085488b69317e4444</loc>
+    <lastmod>2026-03-12T19:27:13.845Z</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://app.uniswap.org/explore/tokens/solana/C9dJfTGUzhuqPWxh9mcDr66JZN4uzXh2gh9EWnEdpump</loc>
+    <lastmod>2026-03-12T19:27:13.845Z</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://app.uniswap.org/explore/tokens/solana/PresTj4Yc2bAR197Er7wz4UUKSfqt6FryBEdAriBoQB</loc>
+    <lastmod>2026-03-12T19:27:13.845Z</lastmod>
+    <priority>0.8</priority>
+  </url>
 </urlset>

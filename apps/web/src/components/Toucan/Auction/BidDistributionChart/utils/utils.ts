@@ -459,6 +459,48 @@ function computeCumulativeBarsFromEntries({
 }
 
 /**
+ * Computes the tick window indices for the chart, capping to MAX_RENDERABLE_BARS.
+ *
+ * When the window exceeds the limit, it anchors around the clearing price
+ * (keeping a few ticks below and filling the rest above) so the clearing price
+ * is always visible. Bids far from the clearing price may be outside the window.
+ */
+export function computeTickWindow({
+  minTickIndexAvailable,
+  maxTickIndexAvailable,
+  clearingLowerIndex,
+  minRequiredMaxIndex,
+}: {
+  minTickIndexAvailable: number
+  maxTickIndexAvailable: number
+  clearingLowerIndex: number
+  minRequiredMaxIndex: number
+}): { windowMinIndex: number; windowMaxIndex: number } {
+  let windowMinIndex = minTickIndexAvailable
+  let windowMaxIndex = Math.max(maxTickIndexAvailable, minRequiredMaxIndex)
+
+  const totalWindowSize = Math.max(1, windowMaxIndex - windowMinIndex + 1)
+
+  if (totalWindowSize > MAX_RENDERABLE_BARS) {
+    // Center window around clearing price so it is always visible
+    const maxBelowAllowed = Math.max(0, MAX_RENDERABLE_BARS - CHART_CONSTRAINTS.MIN_TICKS_ABOVE_CLEARING_PRICE)
+    const desiredBelowTicks = Math.min(CHART_CONSTRAINTS.PREFERRED_TICKS_BELOW_CLEARING_PRICE, maxBelowAllowed)
+    const availableBelowTicks = Math.max(0, clearingLowerIndex - minTickIndexAvailable + 1)
+    const belowTickCount = Math.min(desiredBelowTicks, availableBelowTicks)
+
+    windowMinIndex = clearingLowerIndex - Math.max(0, belowTickCount - 1)
+    windowMaxIndex = windowMinIndex + (MAX_RENDERABLE_BARS - 1)
+
+    if (windowMaxIndex < minRequiredMaxIndex) {
+      windowMaxIndex = minRequiredMaxIndex
+      windowMinIndex = windowMaxIndex - (MAX_RENDERABLE_BARS - 1)
+    }
+  }
+
+  return { windowMinIndex, windowMaxIndex }
+}
+
+/**
  * Generate chart data from raw bid distribution data
  */
 export function generateChartData({
@@ -549,25 +591,14 @@ export function generateChartData({
   const firstAboveClearingIndex = clearingLowerIndex + 1
   const minRequiredMaxIndex = firstAboveClearingIndex + (CHART_CONSTRAINTS.MIN_TICKS_ABOVE_CLEARING_PRICE - 1)
 
-  const totalTickCount = Math.max(1, maxTickIndexAvailable - minTickIndexAvailable + 1)
-
-  let windowMinIndex = minTickIndexAvailable
-  let windowMaxIndex = Math.max(maxTickIndexAvailable, minRequiredMaxIndex)
-
-  if (totalTickCount > MAX_RENDERABLE_BARS) {
-    const maxBelowAllowed = Math.max(0, MAX_RENDERABLE_BARS - CHART_CONSTRAINTS.MIN_TICKS_ABOVE_CLEARING_PRICE)
-    const desiredBelowTicks = Math.min(CHART_CONSTRAINTS.PREFERRED_TICKS_BELOW_CLEARING_PRICE, maxBelowAllowed)
-    const availableBelowTicks = Math.max(0, clearingLowerIndex - minTickIndexAvailable + 1)
-    const belowTickCount = Math.min(desiredBelowTicks, availableBelowTicks)
-
-    windowMinIndex = clearingLowerIndex - Math.max(0, belowTickCount - 1)
-    windowMaxIndex = windowMinIndex + (MAX_RENDERABLE_BARS - 1)
-
-    if (windowMaxIndex < minRequiredMaxIndex) {
-      windowMaxIndex = minRequiredMaxIndex
-      windowMinIndex = windowMaxIndex - (MAX_RENDERABLE_BARS - 1)
-    }
-  }
+  const windowed = computeTickWindow({
+    minTickIndexAvailable,
+    maxTickIndexAvailable,
+    clearingLowerIndex,
+    minRequiredMaxIndex,
+  })
+  const windowMinIndex = windowed.windowMinIndex
+  let windowMaxIndex = windowed.windowMaxIndex
 
   // Store the original max tick from data before any extension
   const maxTickFromDataValue = getTickFromIndex({
@@ -608,21 +639,57 @@ export function generateChartData({
   const totalBidVolume = entries.reduce((sum, entry) => sum + entry.amount, 0) + excludedVolumeNumber
 
   if (effectiveEntries.length === 0) {
-    // Use floorPrice as the anchor for the tick grid even when there are no bids
-    const emptyMaxIndex = Math.max(minRequiredMaxIndex, CHART_CONSTRAINTS.MIN_BARS - 1)
-    const emptyMaxTick = getTickFromIndex({
-      index: emptyMaxIndex,
-      floorTick: floorPriceDecimal,
-      tickSize: tickSizeDecimal,
-    })
+    // Use the clearing-price-anchored window so the chart centers on clearing price
+    const emptyMinTick = windowMinTick
+    const emptyMaxTick = windowMaxTick
+
+    // When bids exist but are all outside the visible range, generate zero-volume bars
+    // so the chart renders a proper grid with axes and clearing price line
+    if (excludedVolumeNumber > 0) {
+      const { barStep, totalBars: rawEmptyTotalBars } = calculateBarStepAndRange({
+        minTick: emptyMinTick,
+        maxTick: emptyMaxTick,
+        tickSize: tickSizeDecimal,
+      })
+      const emptyTotalBars = Math.min(rawEmptyTotalBars, MAX_RENDERABLE_BARS)
+      const emptyFloorOffset = Math.round((emptyMinTick - floorPriceDecimal) / tickSizeDecimal)
+      const emptyBars: ChartBarData[] = []
+      for (let i = 0; i < emptyTotalBars; i++) {
+        const currentTick = emptyMinTick + i * barStep
+        const displayValue = calculateTickDisplayValue({
+          tickValue: currentTick,
+          bidTokenInfo,
+          totalSupply,
+          auctionTokenDecimals,
+        })
+        emptyBars.push({
+          tick: currentTick,
+          tickQ96: calculateTickQ96({
+            basePriceQ96: floorPrice,
+            tickSizeQ96: tickSize,
+            tickOffset: emptyFloorOffset + i,
+          }),
+          tickDisplay: formatter(displayValue),
+          amount: 0,
+          index: i,
+        })
+      }
+      return {
+        bars: emptyBars,
+        yAxisLevels: [...DEFAULT_Y_AXIS_LEVELS],
+        minTick: emptyMinTick,
+        maxTick: emptyMaxTick,
+        maxAmount: 0,
+        totalBidVolume,
+        concentration: null,
+        maxTickFromData: maxTickFromDataValue,
+      }
+    }
+
     return {
       bars: [],
       yAxisLevels: [...DEFAULT_Y_AXIS_LEVELS],
-      minTick: getTickFromIndex({
-        index: Math.min(0, windowMinIndex),
-        floorTick: floorPriceDecimal,
-        tickSize: tickSizeDecimal,
-      }),
+      minTick: emptyMinTick,
       maxTick: emptyMaxTick,
       maxAmount: 0,
       totalBidVolume,

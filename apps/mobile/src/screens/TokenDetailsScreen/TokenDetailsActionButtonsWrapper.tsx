@@ -9,7 +9,10 @@ import {
   TokenDetailsSwapButtons,
 } from 'src/components/TokenDetails/TokenDetailsActionButtons'
 import { useTokenDetailsContext } from 'src/components/TokenDetails/TokenDetailsContext'
-import { useTokenDetailsCTAVariant } from 'src/components/TokenDetails/useTokenDetailsCTAVariant'
+import {
+  useMultichainBuyVariant,
+  useTokenDetailsCTAVariant,
+} from 'src/components/TokenDetails/useTokenDetailsCTAVariant'
 import { useTokenDetailsCurrentChainBalance } from 'src/components/TokenDetails/useTokenDetailsCurrentChainBalance'
 import { NetworkBalanceSheetContent } from 'src/screens/TokenDetailsScreen/NetworkBalanceSheetContent'
 import { useNetworkBalanceSheet } from 'src/screens/TokenDetailsScreen/useNetworkBalanceSheet'
@@ -68,8 +71,6 @@ export const TokenDetailsActionButtonsWrapper = memo(function _TokenDetailsActio
 
   const currentChainBalance = useTokenDetailsCurrentChainBalance()
 
-  const hasTokenBalance = Boolean(currentChainBalance)
-
   const { currency: fiatOnRampCurrency, isLoading: isFiatOnRampCurrencyLoading } =
     useIsSupportedFiatOnRampCurrency(currencyId)
 
@@ -85,9 +86,12 @@ export const TokenDetailsActionButtonsWrapper = memo(function _TokenDetailsActio
     hasMultiChainBalances,
     isNetworkSheetOpen,
     openSellSheet,
+    openSendSheet,
     onCloseNetworkSheet,
     onSelectNetwork,
   } = useNetworkBalanceSheet({ currencyId, chainId })
+
+  const hasTokenBalance = isMultichainTokenUx ? allChainBalances.length > 0 : Boolean(currentChainBalance)
 
   // For multichain UX: resolve the chain with the highest balance (computed once, used by multiple handlers)
   const highestBalanceEntry = useMemo(() => {
@@ -121,10 +125,8 @@ export const TokenDetailsActionButtonsWrapper = memo(function _TokenDetailsActio
   })
 
   const onPressSend = useEvent(() => {
-    if (highestBalanceEntry) {
-      const { currency } = highestBalanceEntry.currencyInfo
-      const currencyAddress = currency.isToken ? currency.address : getNativeAddress(currency.chainId)
-      navigateToSend({ currencyAddress, chainId: currency.chainId })
+    if (isMultichainTokenUx && hasMultiChainBalances) {
+      openSendSheet()
     } else {
       navigateToSend({ currencyAddress: address, chainId })
     }
@@ -138,7 +140,20 @@ export const TokenDetailsActionButtonsWrapper = memo(function _TokenDetailsActio
     }, MODAL_OPEN_WAIT_TIME)
   })
 
-  const onPressBuy = useEvent(() => onPressSwap(CurrencyField.OUTPUT))
+  const onPressBuy = useEvent(() => {
+    if (isBlocked) {
+      openTokenWarningModal()
+      return
+    }
+    if (isMultichainTokenUx && highestBalanceEntry) {
+      const { currency } = highestBalanceEntry.currencyInfo
+      const currencyAddress = currency.isToken ? currency.address : getNativeAddress(currency.chainId)
+      navigateToSwapFlow({ currencyField: CurrencyField.OUTPUT, currencyAddress, currencyChainId: currency.chainId })
+    } else {
+      navigateToSwapFlow({ currencyField: CurrencyField.OUTPUT, currencyAddress: address, currencyChainId: chainId })
+    }
+  })
+
   const onPressSell = useEvent(() => {
     if (isMultichainTokenUx && hasMultiChainBalances) {
       openSellSheet()
@@ -279,13 +294,28 @@ export const TokenDetailsActionButtonsWrapper = memo(function _TokenDetailsActio
         })
     : openTokenWarningModal
 
+  const multichainBuyVariant = useMultichainBuyVariant({
+    hasTokenBalance,
+    isNativeCurrency,
+    nativeFiatOnRampCurrency,
+    fiatOnRampCurrency,
+    bridgingTokenWithHighestBalance,
+    hasZeroNativeBalance,
+    tokenSymbol: token.symbol,
+    onPressBuyWithCash,
+    onPressGet,
+    onPressBuy,
+  })
+
   return hideActionButtons ? null : (
     <AnimatedFlex mb={insets.bottom} backgroundColor="$surface1" entering={FadeInDown}>
       {isMultichainTokenUx ? (
         <TokenDetailsBuySellButtons
           actionMenuOptions={multichainActionMenuOptions}
+          buyButtonIcon={multichainBuyVariant.icon}
+          buyButtonTitle={multichainBuyVariant.title}
           userHasBalance={hasTokenBalance}
-          onPressBuy={onPressBuy}
+          onPressBuy={multichainBuyVariant.onPress}
           onPressDisabled={onPressDisabled}
           onPressSell={onPressSell}
         />

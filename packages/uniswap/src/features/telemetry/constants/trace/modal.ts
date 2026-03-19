@@ -93,6 +93,7 @@ export const ModalName = {
   HiddenNFTInfoModal: 'hidden-nft-info-modal',
   HiddenTokenInfoModal: 'hidden-token-info-modal',
   Hook: 'hook',
+  KeyManagement: 'key-management-modal',
   KoreaCexTransferInfoModal: 'korea-cex-transfer-info-modal',
   KycInterstitial: 'kyc-interstitial-modal',
   KycFailed: 'kyc-failed-modal',

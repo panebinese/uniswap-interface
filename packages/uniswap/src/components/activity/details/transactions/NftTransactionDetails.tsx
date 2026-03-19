@@ -31,7 +31,9 @@ export function NftTransactionDetails({
 export function NftTransactionContent({ nftSummaryInfo }: { nftSummaryInfo: NFTSummaryInfo }): JSX.Element {
   return (
     <Flex borderRadius="$rounded20" overflow="hidden">
-      <NFTViewer maxHeight={MAX_NFT_IMAGE_HEIGHT} uri={nftSummaryInfo.imageURL} />
+      <Flex aspectRatio={1} width="100%">
+        <NFTViewer maxHeight={MAX_NFT_IMAGE_HEIGHT} uri={nftSummaryInfo.imageURL} />
+      </Flex>
       <Flex
         borderBottomLeftRadius="$rounded20"
         borderBottomRightRadius="$rounded20"

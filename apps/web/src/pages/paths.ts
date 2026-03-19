@@ -32,6 +32,7 @@ export const paths = [
   '/pools',
   '/pools/:tokenId',
   '/liquidity/launch-auction',
+  '/liquidity/launch-auction/x/callback',
   '/portfolio',
   '/portfolio/tokens',
   '/portfolio/defi',

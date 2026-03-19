@@ -180,7 +180,7 @@ function LpIncentiveRewardsCard({
         p={isSmallScreen ? '$spacing16' : '$spacing24'}
         justifyContent="space-between"
         backgroundColor="$surface2"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         borderRadius="$rounded20"
         overflow="hidden"

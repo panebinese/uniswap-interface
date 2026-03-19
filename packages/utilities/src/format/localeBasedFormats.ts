@@ -508,7 +508,8 @@ export const fiatTokenDetailsFormatter: Formatter = {
     { upperBound: 0.1, formatter: ThreeSigFigsCurrency },
     { upperBound: 1.05, formatter: ThreeDecimalsCurrency },
     { upperBound: 1e6, formatter: TwoDecimalsCurrency },
-    { upperBound: Infinity, formatter: ShorthandTwoDecimalsCurrency },
+    { upperBound: 1e15, formatter: ShorthandTwoDecimalsCurrency },
+    { upperBound: Infinity, formatter: '>$999T' },
   ],
   defaultFormat: TwoDecimalsCurrency,
 }
@@ -572,7 +573,8 @@ export const fiatGasPriceFormatter: Formatter = {
       postFormatModifier: lessThanPostFormatModifier,
     },
     { upperBound: 1e6, formatter: TwoDecimalsCurrency },
-    { upperBound: Infinity, formatter: ShorthandTwoDecimalsCurrency },
+    { upperBound: 1e15, formatter: ShorthandTwoDecimalsCurrency },
+    { upperBound: Infinity, formatter: '>$999T' },
   ],
   defaultFormat: TwoDecimalsCurrency,
 }

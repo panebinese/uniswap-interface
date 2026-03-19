@@ -57,4 +57,5 @@ export type CurrencyInputPanelProps = {
   inputSuffix?: string
   /** Allow content to overflow the panel container (e.g., for tooltips in panelAccessory) */
   allowOverflow?: boolean
+  balanceVariant?: TextProps['variant']
 }

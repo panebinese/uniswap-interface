@@ -36,12 +36,20 @@ export function PlanTransactionDetails({
   const inputCurrency = useCurrencyInfo(typeInfo.inputCurrencyId)
   const outputCurrency = useCurrencyInfo(typeInfo.outputCurrencyId)
 
-  const { descriptor: inputDescriptor, value: inputValue } = useTokenAmountInfo({
+  const {
+    descriptor: inputDescriptor,
+    value: inputValue,
+    isLoading: isLoadingInput,
+  } = useTokenAmountInfo({
     currency: inputCurrency?.currency,
     amountRaw: typeInfo.inputCurrencyAmountRaw,
     isApproximateAmount: false,
   })
-  const { descriptor: outputDescriptor, value: outputValue } = useTokenAmountInfo({
+  const {
+    descriptor: outputDescriptor,
+    value: outputValue,
+    isLoading: isLoadingOutput,
+  } = useTokenAmountInfo({
     currency: outputCurrency?.currency,
     amountRaw: typeInfo.outputCurrencyAmountRaw,
     isApproximateAmount: false,
@@ -56,6 +64,8 @@ export function PlanTransactionDetails({
         usdValueA={inputValue}
         tokenDescriptorB={outputDescriptor}
         usdValueB={outputValue}
+        isLoadingA={isLoadingInput}
+        isLoadingB={isLoadingOutput}
         separatorElement={<ArrowDown color="$neutral3" size="$icon.20" />}
         disableClick={disableClick}
         hideNetworkLogos={false}

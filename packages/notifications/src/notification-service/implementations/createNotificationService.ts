@@ -329,6 +329,10 @@ export function createNotificationService(config: NotificationServiceConfig): No
       })
     },
 
+    async refresh(): Promise<void> {
+      await Promise.all(dataSources.map((dataSource) => dataSource.refresh?.()))
+    },
+
     destroy(): void {
       // Clean up old tracked notifications on teardown
       const cleanupThreshold = Date.now() - CLEANUP_OLDER_THAN_MS

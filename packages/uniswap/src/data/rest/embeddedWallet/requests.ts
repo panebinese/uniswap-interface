@@ -7,9 +7,24 @@ import { getVersionHeader } from 'uniswap/src/data/getVersionHeader'
 import { isMobileApp } from 'utilities/src/platform'
 import { REQUEST_SOURCE } from 'utilities/src/platform/requestSource'
 
+const PRIVY_EW_DEV_PROXY_PATH = '/privy-ew'
+
+function getPrivyEmbeddedWalletBaseUrl(): string {
+  // In local browser dev, route through the Vite proxy (/privy-ew) so the
+  // SameSite=strict session cookie set by StartAuthenticatedSession is sent
+  // back on AddAuthenticator (cross-site cookies are blocked from localhost).
+  if (typeof window !== 'undefined') {
+    const { hostname } = window.location
+    if (hostname === 'localhost' || hostname.endsWith('-uniswap.vercel.app') || hostname === 'app.corn-staging.com') {
+      return `${window.location.origin}${PRIVY_EW_DEV_PROXY_PATH}`
+    }
+  }
+  return uniswapUrls.privyEmbeddedWalletUrl
+}
+
 function createEmbeddedWalletTransport(): Transport {
   return getTransport({
-    getBaseUrl: () => uniswapUrls.privyEmbeddedWalletUrl,
+    getBaseUrl: getPrivyEmbeddedWalletBaseUrl,
     getHeaders: () => ({
       ...(isMobileApp && { Origin: uniswapUrls.requestOriginUrl }),
       'x-request-source': REQUEST_SOURCE,
@@ -64,7 +79,8 @@ export const EmbeddedWalletApiClient: EmbeddedWalletApiClientType = {
   fetchSecuredChallengeRequest: (...args) => getApiClient().then((c) => c.fetchSecuredChallengeRequest(...args)),
   fetchExportSeedPhraseRequest: (...args) => getApiClient().then((c) => c.fetchExportSeedPhraseRequest(...args)),
   fetchListAuthenticatorsRequest: (...args) => getApiClient().then((c) => c.fetchListAuthenticatorsRequest(...args)),
-  fetchRegisterNewAuthenticatorRequest: (...args) =>
-    getApiClient().then((c) => c.fetchRegisterNewAuthenticatorRequest(...args)),
+  fetchStartAuthenticatedSessionRequest: (...args) =>
+    getApiClient().then((c) => c.fetchStartAuthenticatedSessionRequest(...args)),
+  fetchAddAuthenticatorRequest: (...args) => getApiClient().then((c) => c.fetchAddAuthenticatorRequest(...args)),
   fetchDeleteAuthenticatorRequest: (...args) => getApiClient().then((c) => c.fetchDeleteAuthenticatorRequest(...args)),
 }

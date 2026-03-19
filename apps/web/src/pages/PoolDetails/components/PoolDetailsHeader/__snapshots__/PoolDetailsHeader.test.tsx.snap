@@ -335,7 +335,12 @@ exports[`PoolDetailsHeader > renders header text correctly 1`] = `
                     class="font_body _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _display-flex _flexDirection-row _alignItems-center _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494 _backgroundColor-surface3 _pt-t-space-spa94665587 _pb-t-space-spa94665587 _pr-t-space-pad95589112 _pl-t-space-pad95589112 _gap-t-space-spa94665589 _borderTopLeftRadius-t-radius-ro840690006 _borderTopRightRadius-t-radius-ro840690006 _borderBottomRightRadius-t-radius-ro840690006 _borderBottomLeftRadius-t-radius-ro840690006"
                     data-disable-theme="true"
                   >
-                    0.05%
+                    <span
+                      class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
+                      data-disable-theme="true"
+                    >
+                      0.05%
+                    </span>
                   </span>
                 </div>
               </div>

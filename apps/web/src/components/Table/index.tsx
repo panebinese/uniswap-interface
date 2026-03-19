@@ -1,26 +1,18 @@
 import { flexRender, getCoreRowModel, getExpandedRowModel, RowData, useReactTable } from '@tanstack/react-table'
-import { useParentSize } from '@visx/responsive'
-import { useMemo, useRef, useState } from 'react'
+import useParentSize from '@visx/responsive/lib/hooks/useParentSize'
+import { PropsWithChildren, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollSync, ScrollSyncPane } from 'react-scroll-sync'
-import { Flex, HeightAnimator, Separator, Text, TouchableArea } from 'ui/src'
-import { DoubleChevron } from 'ui/src/components/icons/DoubleChevron'
-import { DoubleChevronInverted } from 'ui/src/components/icons/DoubleChevronInverted'
-import { useSporeColors } from 'ui/src/hooks/useSporeColors'
+import { FlexProps, HeightAnimator, Separator, Text, TouchableArea, useSporeColors } from 'ui/src'
+import { ChevronsIn } from 'ui/src/components/icons/ChevronsIn'
+import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
+import { Flex, styled } from 'ui/src/index'
 import { zIndexes } from 'ui/src/theme'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useTableExpandedState } from '~/components/Table/hooks/useTableExpandedState'
 import { getCommonPinningStyles } from '~/components/Table/PinnedColumns/getCommonPinningStyles'
 import { usePinnedColumns } from '~/components/Table/PinnedColumns/usePinnedColumns'
-import {
-  CellContainer,
-  HeaderRow,
-  HiddenTableScrollContainer,
-  TableBodyContainer,
-  TableContainer,
-  TableHead,
-  TableSeparatorRow,
-} from '~/components/Table/styled'
+import { CellContainer, TableRowBase } from '~/components/Table/styled'
 import { TableBody } from '~/components/Table/TableBody'
 import { TableLoadMoreIndicator } from '~/components/Table/TableLoadMore/TableLoadMoreIndicator'
 import { useTableLoadMore } from '~/components/Table/TableLoadMore/useTableLoadMore'
@@ -28,8 +20,161 @@ import { TableScrollMask } from '~/components/Table/TableScrollMask'
 import { TableSideScrollButtons } from '~/components/Table/TableSideScrollButtons/TableSideScrollButtons'
 import { useTableSideScrollButtons } from '~/components/Table/TableSideScrollButtons/useTableSideScrollButtons'
 import { TableSizeProvider } from '~/components/Table/TableSizeProvider'
-import type { TableProps } from '~/components/Table/types'
+import { TableProps } from '~/components/Table/types'
 import { useAppHeaderHeight } from '~/hooks/useAppHeaderHeight'
+
+const TableContainer = styled(Flex, {
+  centered: true,
+  m: '0 auto 24px auto',
+  className: 'scrollbar-hidden',
+})
+
+const TableBodyContainer = styled(Flex, {
+  width: '100%',
+  position: 'relative',
+  className: 'scrollbar-hidden',
+  justifyContent: 'flex-start',
+  borderStyle: 'solid',
+  '$platform-web': {
+    overscrollBehaviorX: 'none',
+    overflowX: 'auto',
+    overflowY: 'auto',
+  },
+  variants: {
+    v2: {
+      true: {
+        borderBottomRightRadius: '$rounded12',
+        borderBottomLeftRadius: '$rounded12',
+        borderWidth: 0,
+      },
+      false: {
+        borderBottomRightRadius: '$rounded20',
+        borderBottomLeftRadius: '$rounded20',
+        borderColor: '$surface3',
+        borderWidth: 1,
+        borderTopWidth: '$none',
+      },
+    },
+    hasHiddenRows: {
+      true: {
+        borderBottomRightRadius: 0,
+        borderBottomLeftRadius: 0,
+        borderBottomWidth: 0,
+      },
+    },
+  },
+})
+
+const HiddenTableScrollContainer = styled(Flex, {
+  width: '100%',
+  position: 'relative',
+  className: 'scrollbar-hidden',
+  justifyContent: 'flex-start',
+  borderStyle: 'solid',
+  '$platform-web': {
+    overscrollBehaviorX: 'none',
+    overflowX: 'auto',
+    overflowY: 'visible', // Critical: allows sticky to work
+  },
+  variants: {
+    v2: {
+      true: {
+        borderBottomRightRadius: '$rounded12',
+        borderBottomLeftRadius: '$rounded12',
+        borderWidth: 0,
+      },
+      false: {
+        borderBottomRightRadius: '$rounded20',
+        borderBottomLeftRadius: '$rounded20',
+        borderColor: '$surface3',
+        borderWidth: 1,
+        borderTopWidth: 0,
+      },
+    },
+  },
+})
+
+const TableSeparatorRow = styled(Flex, {
+  centered: true,
+  row: true,
+  gap: '$spacing12',
+  py: '$spacing8',
+  px: '$spacing16',
+  borderStyle: 'solid',
+  width: '100%',
+  variants: {
+    v2: {
+      true: {
+        borderWidth: 0,
+      },
+      false: {
+        borderColor: '$surface3',
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderTopWidth: 0,
+        borderBottomWidth: 0,
+      },
+    },
+    showBottomBorder: {
+      true: {
+        borderBottomWidth: 1,
+      },
+    },
+  } as const,
+})
+
+const TableHead = (
+  props: PropsWithChildren<{ $isSticky: boolean; $top: number; mb?: FlexProps['mb'] }>,
+): JSX.Element => (
+  <Flex
+    width="100%"
+    zIndex={zIndexes.dropdown - 2}
+    top={props.$isSticky ? props.$top : 'unset'}
+    justifyContent="flex-end"
+    backgroundColor="$surface1"
+    className="scrollbar-hidden"
+    $platform-web={props.$isSticky ? { position: 'sticky' } : {}}
+    mb={props.mb}
+  >
+    {props.$isSticky && <Flex height={12} />}
+    {props.children}
+  </Flex>
+)
+
+const HeaderRow = styled(TableRowBase, {
+  width: 'unset',
+  scrollbarWidth: 'none',
+  className: 'scrollbar-hidden',
+  transition: 'unset',
+
+  '$platform-web': {
+    overscrollBehavior: 'none',
+    overflow: 'auto',
+  },
+  variants: {
+    dimmed: {
+      true: {
+        opacity: 0.4,
+      },
+    },
+    v2: {
+      true: {
+        backgroundColor: '$surface2',
+        borderRadius: '$rounded12',
+      },
+      false: {
+        backgroundColor: '$surface1Hovered',
+        borderWidth: 1,
+        borderStyle: 'solid',
+        borderColor: '$surface3',
+        borderTopRightRadius: '$rounded20',
+        borderTopLeftRadius: '$rounded20',
+        borderBottomRightRadius: 'unset',
+        borderBottomLeftRadius: 'unset',
+      },
+    },
+  } as const,
+})
 
 export function Table<T extends RowData>({
   columns,
@@ -195,7 +340,7 @@ export function Table<T extends RowData>({
           {/* Separator with expand/collapse control */}
           <TableSeparatorRow
             v2={v2}
-            isExpanded={areHiddenRowsShown}
+            showBottomBorder={!v2 && !areHiddenRowsShown}
             borderBottomRightRadius={areHiddenRowsShown ? 0 : v2 ? '$rounded12' : '$rounded20'}
             borderBottomLeftRadius={areHiddenRowsShown ? 0 : v2 ? '$rounded12' : '$rounded20'}
           >
@@ -210,9 +355,9 @@ export function Table<T extends RowData>({
                   {areHiddenRowsShown ? hiddenLabel : showLabel}
                 </Text>
                 {areHiddenRowsShown ? (
-                  <DoubleChevron size="$icon.12" color="$neutral3" />
+                  <ChevronsIn size="$icon.12" color="$neutral3" />
                 ) : (
-                  <DoubleChevronInverted size="$icon.12" color="$neutral3" />
+                  <ChevronsOut size="$icon.12" color="$neutral3" />
                 )}
               </Flex>
             </TouchableArea>

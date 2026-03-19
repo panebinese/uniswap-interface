@@ -22,7 +22,7 @@ import { type ExternalWallet } from '~/features/accounts/store/types'
 import { useDisconnect } from '~/hooks/useDisconnect'
 import { useSignOutWithPasskey } from '~/hooks/useSignOutWithPasskey'
 
-function useOnDisconnect() {
+export function useOnDisconnect() {
   const disconnect = useDisconnect()
 
   const activeEVMWallet = useActiveWallet(Platform.EVM)

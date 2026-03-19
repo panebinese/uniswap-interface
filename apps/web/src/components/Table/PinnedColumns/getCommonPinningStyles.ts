@@ -2,7 +2,7 @@ import { Column, RowData } from '@tanstack/react-table'
 import { CSSProperties } from 'react'
 import { useSporeColors } from 'ui/src/hooks/useSporeColors'
 import { opacify, padding, zIndexes } from 'ui/src/theme'
-import { getColumnSizingStyles } from '~/components/Table/utils'
+import { getColumnSizingStyles } from '~/components/Table/utils/getColumnSizingStyles'
 
 export function getCommonPinningStyles<Data extends RowData>({
   column,
