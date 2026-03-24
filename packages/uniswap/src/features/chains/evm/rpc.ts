@@ -11,6 +11,7 @@ export const DEFAULT_RETRY_OPTIONS: RetryOptions = { n: 10, minWait: 250, medWai
 export const DEFAULT_MS_BEFORE_WARNING = ONE_MINUTE_MS * 10
 
 // Source: https://marketplace.quicknode.com/chains_and_networks
+// eslint-disable-next-line complexity
 export function getQuicknodeChainId(chainId: UniverseChainId): string {
   switch (chainId) {
     case UniverseChainId.Mainnet:
@@ -39,6 +40,8 @@ export function getQuicknodeChainId(chainId: UniverseChainId): string {
       return 'solana-mainnet'
     case UniverseChainId.Soneium:
       return 'soneium-mainnet'
+    case UniverseChainId.Tempo:
+      return 'tempo-mainnet'
     case UniverseChainId.Unichain:
       return 'unichain-mainnet'
     case UniverseChainId.UnichainSepolia:

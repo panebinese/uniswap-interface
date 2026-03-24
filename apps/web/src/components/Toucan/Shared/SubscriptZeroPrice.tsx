@@ -18,6 +18,10 @@ interface SubscriptZeroPriceProps {
   subscriptThreshold?: number
   /** Text variant for the main number */
   variant?: TextProps['variant']
+  /** Override font size (takes precedence over variant for sizing) */
+  fontSize?: number
+  /** Override line height */
+  lineHeight?: number
   /** Color for the main number */
   color?: TextProps['color']
 }
@@ -131,6 +135,8 @@ export function SubscriptZeroPrice({
   maxSignificantDigits = 4,
   subscriptThreshold = 4,
   variant = 'body3',
+  fontSize,
+  lineHeight,
   color = '$neutral1',
 }: SubscriptZeroPriceProps): JSX.Element {
   const parsed = useMemo(
@@ -144,9 +150,11 @@ export function SubscriptZeroPrice({
     [value, minSignificantDigits, maxSignificantDigits, subscriptThreshold],
   )
 
+  const sizeProps = fontSize !== undefined ? { fontSize, lineHeight } : {}
+
   if (!parsed.useSubscript) {
     return (
-      <Text variant={variant} color={color}>
+      <Text variant={variant} color={color} {...sizeProps}>
         {prefix ?? ''}
         {parsed.fullFormatted}
         {symbol ? ` ${symbol}` : ''}
@@ -156,12 +164,13 @@ export function SubscriptZeroPrice({
 
   // Scale subscript font size based on variant (headings need larger subscripts)
   const isHeading = variant.startsWith('heading')
-  const subscriptFontSize = isHeading ? 12 : variant === 'body3' ? 9 : 10
+  const subscriptFontSize =
+    fontSize !== undefined ? Math.round(fontSize * 0.7) : isHeading ? 12 : variant === 'body3' ? 9 : 10
   const subscriptTopOffset = isHeading ? 5 : 3
 
   return (
     <Flex row alignItems="baseline" gap="$none">
-      <Text variant={variant} color={color}>
+      <Text variant={variant} color={color} {...sizeProps}>
         {prefix ?? ''}0.0
       </Text>
       <Text
@@ -172,7 +181,7 @@ export function SubscriptZeroPrice({
       >
         {parsed.leadingZeros}
       </Text>
-      <Text variant={variant} color={color}>
+      <Text variant={variant} color={color} {...sizeProps}>
         {parsed.significantPart}
         {symbol ? ` ${symbol}` : ''}
       </Text>

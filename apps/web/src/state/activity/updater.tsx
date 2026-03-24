@@ -153,6 +153,7 @@ function useOnActivityUpdate(): OnActivityUpdate {
             type: original.typeInfo.type,
             swapStartTimestamp: original.typeInfo.swapStartTimestamp,
             planAnalytics: extractPlanFieldsFromTypeInfo(original.typeInfo),
+            transactedUSDValue: original.typeInfo.transactedUSDValue,
           })
         } else if (original.typeInfo.type === TransactionType.Bridge) {
           logSwapFinalized({
@@ -166,6 +167,7 @@ function useOnActivityUpdate(): OnActivityUpdate {
             type: original.typeInfo.type,
             swapStartTimestamp: original.typeInfo.swapStartTimestamp,
             planAnalytics: extractPlanFieldsFromTypeInfo(original.typeInfo),
+            transactedUSDValue: original.typeInfo.transactedUSDValue,
           })
         }
 

@@ -80,11 +80,7 @@
       },
       "dependsOn": ["@uniswap/biome-config:prepare"],
       "cache": true,
-      "inputs": [
-        "default",
-        "lintConfig",
-        "{workspaceRoot}/biome.json"
-      ]
+      "inputs": ["default", "lintConfig", "{workspaceRoot}/biome.json"]
     },
     "lint:biome:fix": {
       "command": "biome check . --write",
@@ -100,11 +96,7 @@
         "cwd": "{projectRoot}"
       },
       "cache": true,
-      "inputs": [
-        "default",
-        "lintConfig",
-        "{projectRoot}/.eslint*"
-      ]
+      "inputs": ["default", "lintConfig", "{projectRoot}/.eslint*"]
     },
     "lint:eslint:fix": {
       "command": "eslint . --ext ts,tsx --fix",
@@ -115,7 +107,7 @@
     },
     "lint": {
       "executor": "nx:noop",
-      "dependsOn": ["typecheck", "check:circular", "lint:biome", "lint:eslint"],
+      "dependsOn": ["check:circular", "lint:biome", "lint:eslint"],
       "inputs": ["default"],
       "cache": true
     },
@@ -125,26 +117,6 @@
       "cache": false
     },
     "test": {
-      "dependsOn": ["^prepare"],
-      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
-      "cache": true
-    },
-    "test:set1": {
-      "dependsOn": ["^prepare"],
-      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
-      "cache": true
-    },
-    "test:set2": {
-      "dependsOn": ["^prepare"],
-      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
-      "cache": true
-    },
-    "test:set3": {
-      "dependsOn": ["^prepare"],
-      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
-      "cache": true
-    },
-    "test:set4": {
       "dependsOn": ["^prepare"],
       "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
       "cache": true
@@ -227,10 +199,7 @@
       "!{projectRoot}/**/*.stories.tsx",
       "!{projectRoot}/**/*.stories.ts"
     ],
-    "sharedGlobals": [
-      "{workspaceRoot}/tsconfig.base.json",
-      "{workspaceRoot}/tsconfig.json"
-    ],
+    "sharedGlobals": ["{workspaceRoot}/tsconfig.base.json", "{workspaceRoot}/tsconfig.json"],
     "lintConfig": [
       "{workspaceRoot}/.biome*",
       "{workspaceRoot}/.eslint*",
@@ -238,10 +207,7 @@
       "{workspaceRoot}/packages/biome-config/**/*",
       "{workspaceRoot}/packages/eslint-config/**/*"
     ],
-    "mobileGlobals": [
-      "{workspaceRoot}/metro.config.*",
-      "{workspaceRoot}/Gemfile*"
-    ],
+    "mobileGlobals": ["{workspaceRoot}/metro.config.*", "{workspaceRoot}/Gemfile*"],
     "sourceFiles": [
       "sharedGlobals",
       "{projectRoot}/**/*.ts",

@@ -23,6 +23,7 @@ export enum UniverseChainId {
   Polygon = UniswapSDKChainId.POLYGON,
   Sepolia = UniswapSDKChainId.SEPOLIA,
   Soneium = UniswapSDKChainId.SONEIUM,
+  Tempo = UniswapSDKChainId.TEMPO,
   Unichain = UniswapSDKChainId.UNICHAIN,
   UnichainSepolia = UniswapSDKChainId.UNICHAIN_SEPOLIA,
   WorldChain = UniswapSDKChainId.WORLDCHAIN,

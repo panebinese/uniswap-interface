@@ -1,17 +1,102 @@
+import { type Currency, type CurrencyAmount } from '@uniswap/sdk-core'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, Input, Text } from 'ui/src'
+import { Flex, Input, Text, TouchableArea } from 'ui/src'
 import { fonts } from 'ui/src/theme'
-import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { type UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useCurrentLocale } from 'uniswap/src/features/language/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { useCurrencyInfo, useNativeCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { useUSDCPrice } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
-import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { NumberType } from 'utilities/src/format/types'
 import { RaiseCurrency } from '~/pages/Liquidity/CreateAuction/types'
+import { getRaiseCurrencyAsCurrency } from '~/pages/Liquidity/CreateAuction/utils'
+
+// Two independent axes:
+//   denomination – what the numeric input represents (floor price per token, or FDV)
+//   inputCurrency – the currency the user types in (raise token, or USD fiat)
+type Denomination = 'floorPrice' | 'fdv'
+type InputCurrency = 'raise' | 'usd'
+
+// ─── Pure helpers (input normalization & floor price math) ───────────────────
+
+function normalizeDecimalInput(value: string, decimalSeparator: string): string | null {
+  const normalized = decimalSeparator !== '.' ? value.replace(decimalSeparator, '.') : value
+  if (!/^\d*\.?\d*$/.test(normalized)) {
+    return null
+  }
+  return normalized
+}
+
+function exceedsDecimalCap(normalized: string, maxDecimals: number): boolean {
+  const dotIndex = normalized.indexOf('.')
+  return dotIndex !== -1 && normalized.length - dotIndex - 1 > maxDecimals
+}
+
+function computeFloorPriceFromLocalInput({
+  denomination,
+  inputCurrency,
+  num,
+  usdPriceNum,
+  totalSupplyNum,
+}: {
+  denomination: Denomination
+  inputCurrency: InputCurrency
+  num: number
+  usdPriceNum: number | null
+  totalSupplyNum: number
+}): string {
+  if (denomination === 'floorPrice' && inputCurrency === 'usd') {
+    if (!usdPriceNum || usdPriceNum <= 0) {
+      return ''
+    }
+    return (num / usdPriceNum).toString()
+  }
+  if (denomination === 'fdv' && inputCurrency === 'raise') {
+    if (!Number.isFinite(totalSupplyNum) || totalSupplyNum <= 0) {
+      return ''
+    }
+    return (num / totalSupplyNum).toString()
+  }
+  // fdv + usd
+  if (!usdPriceNum || usdPriceNum <= 0 || !Number.isFinite(totalSupplyNum) || totalSupplyNum <= 0) {
+    return ''
+  }
+  return (num / usdPriceNum / totalSupplyNum).toString()
+}
+
+function getDisplayValueForMode({
+  denomination,
+  inputCurrency,
+  floorPriceNum,
+  totalSupplyNum,
+  usdPriceNum,
+  hasValidFloorPrice,
+}: {
+  denomination: Denomination
+  inputCurrency: InputCurrency
+  floorPriceNum: number
+  totalSupplyNum: number
+  usdPriceNum: number | null
+  hasValidFloorPrice: boolean
+}): string {
+  if (!hasValidFloorPrice) {
+    return ''
+  }
+  if (denomination === 'floorPrice' && inputCurrency === 'usd') {
+    return usdPriceNum !== null ? (floorPriceNum * usdPriceNum).toString() : ''
+  }
+  if (denomination === 'fdv' && inputCurrency === 'raise') {
+    return Number.isFinite(totalSupplyNum) ? (floorPriceNum * totalSupplyNum).toString() : ''
+  }
+  if (denomination === 'fdv' && inputCurrency === 'usd') {
+    return usdPriceNum !== null && Number.isFinite(totalSupplyNum)
+      ? (floorPriceNum * totalSupplyNum * usdPriceNum).toString()
+      : ''
+  }
+  // floorPrice + raise: parent-controlled, caller can use floorPrice string directly
+  return ''
+}
 
 export function FloorPriceSection({
   chainId,
@@ -23,28 +108,24 @@ export function FloorPriceSection({
   chainId: UniverseChainId
   floorPrice: string
   raiseCurrency: RaiseCurrency
-  tokenTotalSupply?: string
+  tokenTotalSupply: CurrencyAmount<Currency>
   onFloorPriceChange: (value: string) => void
 }) {
   const { t } = useTranslation()
   const mirrorRef = useRef<HTMLSpanElement>(null)
   const [inputWidth, setInputWidth] = useState<number | null>(null)
 
+  const [denomination, setDenomination] = useState<Denomination>('floorPrice')
+  const [inputCurrency, setInputCurrency] = useState<InputCurrency>('raise')
+  // Local value (dot-normalized) used in all modes except floorPrice+raise,
+  // where the parent's `floorPrice` prop is the direct source of truth.
+  const [localValue, setLocalValue] = useState('')
+
   const { convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
   const { code: fiatCurrencyCode } = useAppFiatCurrencyInfo()
   const locale = useCurrentLocale()
 
-  const nativeCurrencyInfo = useNativeCurrencyInfo(chainId)
-  const usdcCurrencyId = useMemo(() => {
-    const usdc = getChainInfo(chainId).tokens.USDC
-    return usdc ? buildCurrencyId(chainId, usdc.address) : undefined
-  }, [chainId])
-  const usdcCurrencyInfo = useCurrencyInfo(usdcCurrencyId, { skip: !usdcCurrencyId })
-
-  const raiseCurrencyObj = useMemo(
-    () => (raiseCurrency === RaiseCurrency.ETH ? nativeCurrencyInfo?.currency : usdcCurrencyInfo?.currency),
-    [raiseCurrency, nativeCurrencyInfo?.currency, usdcCurrencyInfo?.currency],
-  )
+  const raiseCurrencyObj = useMemo(() => getRaiseCurrencyAsCurrency(raiseCurrency, chainId), [raiseCurrency, chainId])
 
   const { price: raiseCurrencyUsdPrice } = useUSDCPrice(raiseCurrencyObj)
 
@@ -56,62 +137,173 @@ export function FloorPriceSection({
     [locale],
   )
 
-  // Re-format the stored (dot-based) value for display in the user's locale.
-  const displayValue = floorPrice.replace('.', decimalSeparator)
-
   const floorPriceNum = parseFloat(floorPrice)
-  const totalSupplyNum = parseFloat(tokenTotalSupply ?? '')
-  const hasValidInputs = Number.isFinite(floorPriceNum) && floorPriceNum > 0
+  const totalSupplyNum = parseFloat(tokenTotalSupply.toExact())
+  const hasValidFloorPrice = Number.isFinite(floorPriceNum) && floorPriceNum > 0
 
-  // FDV in raise currency shown in the pill: floorPrice × totalSupply
-  const fdvRaiseCurrencyDisplay = useMemo(() => {
-    if (!hasValidInputs || !Number.isFinite(totalSupplyNum)) {
+  const usdPriceNum = useMemo(() => {
+    if (!raiseCurrencyUsdPrice) {
       return null
     }
-    const fdv = floorPriceNum * totalSupplyNum
-    return formatNumberOrString({ value: fdv.toString(), type: NumberType.TokenNonTx })
-  }, [hasValidInputs, floorPriceNum, totalSupplyNum, formatNumberOrString])
-
-  // Floor price in user's local fiat currency shown below
-  const floorPriceFiatDisplay = useMemo(() => {
-    if (!hasValidInputs || !raiseCurrencyUsdPrice) {
-      return convertFiatAmountFormatted(0, NumberType.FiatTokenPrice)
-    }
     try {
-      const priceNum = Number(raiseCurrencyUsdPrice.toSignificant(18))
-      return convertFiatAmountFormatted(floorPriceNum * priceNum, NumberType.FiatTokenPrice)
+      return Number(raiseCurrencyUsdPrice.toSignificant(18))
     } catch {
-      return convertFiatAmountFormatted(0, NumberType.FiatTokenPrice)
+      return null
     }
-  }, [hasValidInputs, floorPriceNum, raiseCurrencyUsdPrice, convertFiatAmountFormatted])
+  }, [raiseCurrencyUsdPrice])
 
-  const handleFloorPriceChange = useCallback(
+  // FDV in raise currency, always derived from the canonical floorPrice prop.
+  const fdvRaiseNum = hasValidFloorPrice && Number.isFinite(totalSupplyNum) ? floorPriceNum * totalSupplyNum : null
+
+  // In floorPrice+raise mode the parent prop is the source of truth; all other modes use localValue.
+  const isParentControlled = denomination === 'floorPrice' && inputCurrency === 'raise'
+  const activeDisplayValue = isParentControlled
+    ? floorPrice.replace('.', decimalSeparator)
+    : localValue.replace('.', decimalSeparator)
+
+  // ─── Derived display strings ──────────────────────────────────────────────
+
+  // Label next to the input: currency + optional "FDV" suffix.
+  const inputLabel = useMemo(() => {
+    const currencyStr = inputCurrency === 'usd' ? fiatCurrencyCode : raiseCurrency
+    return denomination === 'fdv' ? `${currencyStr} ${t('stats.fdv')}` : currencyStr
+  }, [inputCurrency, denomination, fiatCurrencyCode, raiseCurrency, t])
+
+  // Pill: always shows the other denomination in raise currency.
+  const pillText = useMemo(() => {
+    if (denomination === 'floorPrice') {
+      const display =
+        fdvRaiseNum !== null
+          ? formatNumberOrString({ value: fdvRaiseNum.toString(), type: NumberType.TokenNonTx })
+          : '0'
+      return `${display} ${raiseCurrency} ${t('stats.fdv')}`
+    }
+    const display = hasValidFloorPrice ? formatNumberOrString({ value: floorPrice, type: NumberType.TokenNonTx }) : '0'
+    return `${display} ${raiseCurrency} ${t('toucan.createAuction.step.configureAuction.tokenPrice')}`
+  }, [denomination, fdvRaiseNum, hasValidFloorPrice, floorPrice, raiseCurrency, formatNumberOrString, t])
+
+  // Bottom row: shows the other currency representation.
+  const bottomText = useMemo(() => {
+    if (inputCurrency === 'usd') {
+      // Show raise-currency equivalent.
+      if (denomination === 'floorPrice') {
+        const display = hasValidFloorPrice
+          ? formatNumberOrString({ value: floorPrice, type: NumberType.TokenNonTx })
+          : '0'
+        return `${display} ${raiseCurrency}`
+      }
+      const display =
+        fdvRaiseNum !== null
+          ? formatNumberOrString({ value: fdvRaiseNum.toString(), type: NumberType.TokenNonTx })
+          : '0'
+      return `${display} ${raiseCurrency} ${t('stats.fdv')}`
+    }
+    // Show fiat equivalent.
+    if (!hasValidFloorPrice || usdPriceNum === null) {
+      return `${convertFiatAmountFormatted(0, NumberType.FiatTokenPrice)} ${fiatCurrencyCode}`
+    }
+    const raiseAmount = denomination === 'fdv' && fdvRaiseNum !== null ? fdvRaiseNum : floorPriceNum
+    return `${convertFiatAmountFormatted(raiseAmount * usdPriceNum, NumberType.FiatTokenPrice)} ${fiatCurrencyCode}`
+  }, [
+    inputCurrency,
+    denomination,
+    hasValidFloorPrice,
+    floorPrice,
+    floorPriceNum,
+    fdvRaiseNum,
+    raiseCurrency,
+    usdPriceNum,
+    convertFiatAmountFormatted,
+    fiatCurrencyCode,
+    formatNumberOrString,
+    t,
+  ])
+
+  // ─── Input handler ────────────────────────────────────────────────────────
+
+  const handleChange = useCallback(
     (value: string) => {
-      // Normalize: replace the locale decimal separator with '.' so validation and
-      // parseFloat always work with a canonical dot-based string. A literal '.' is
-      // also accepted as a fallback so copy-pasted values work in any locale.
-      const normalizedValue = decimalSeparator !== '.' ? value.replace(decimalSeparator, '.') : value
-      if (!/^\d*\.?\d*$/.test(normalizedValue)) {
+      const normalized = normalizeDecimalInput(value, decimalSeparator)
+      if (normalized === null) {
         return
       }
-      const maxDecimals = raiseCurrencyObj?.decimals
-      if (maxDecimals !== undefined) {
-        const dotIndex = normalizedValue.indexOf('.')
-        if (dotIndex !== -1 && normalizedValue.length - dotIndex - 1 > maxDecimals) {
+
+      if (isParentControlled) {
+        const maxDecimals = raiseCurrencyObj?.decimals
+        if (maxDecimals !== undefined && exceedsDecimalCap(normalized, maxDecimals)) {
           return
         }
+        onFloorPriceChange(normalized)
+        return
       }
-      onFloorPriceChange(normalizedValue)
+
+      setLocalValue(normalized)
+
+      const num = parseFloat(normalized)
+      if (!Number.isFinite(num) || num <= 0) {
+        onFloorPriceChange('')
+        return
+      }
+
+      const floorPriceResult = computeFloorPriceFromLocalInput({
+        denomination,
+        inputCurrency,
+        num,
+        usdPriceNum,
+        totalSupplyNum,
+      })
+      onFloorPriceChange(floorPriceResult)
     },
-    [decimalSeparator, raiseCurrencyObj?.decimals, onFloorPriceChange],
+    [
+      decimalSeparator,
+      isParentControlled,
+      denomination,
+      inputCurrency,
+      raiseCurrencyObj?.decimals,
+      usdPriceNum,
+      totalSupplyNum,
+      onFloorPriceChange,
+    ],
   )
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: floorPrice is the trigger to re-measure the mirror span after it re-renders
+  // ─── Toggle handlers ──────────────────────────────────────────────────────
+
+  // Pill: toggle denomination, keeping inputCurrency unchanged.
+  const toggleDenomination = useCallback(() => {
+    const next: Denomination = denomination === 'floorPrice' ? 'fdv' : 'floorPrice'
+    const displayValue = getDisplayValueForMode({
+      denomination: next,
+      inputCurrency,
+      floorPriceNum,
+      totalSupplyNum,
+      usdPriceNum,
+      hasValidFloorPrice,
+    })
+    setLocalValue(displayValue)
+    setDenomination(next)
+  }, [denomination, inputCurrency, hasValidFloorPrice, floorPriceNum, totalSupplyNum, usdPriceNum])
+
+  // Bottom row: toggle inputCurrency, keeping denomination unchanged.
+  const toggleInputCurrency = useCallback(() => {
+    const next: InputCurrency = inputCurrency === 'raise' ? 'usd' : 'raise'
+    const displayValue = getDisplayValueForMode({
+      denomination,
+      inputCurrency: next,
+      floorPriceNum,
+      totalSupplyNum,
+      usdPriceNum,
+      hasValidFloorPrice,
+    })
+    setLocalValue(displayValue)
+    setInputCurrency(next)
+  }, [inputCurrency, denomination, hasValidFloorPrice, floorPriceNum, totalSupplyNum, usdPriceNum])
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: active input value is the trigger to re-measure the mirror span after it re-renders
   useLayoutEffect(() => {
     if (mirrorRef.current) {
       setInputWidth(mirrorRef.current.offsetWidth)
     }
-  }, [floorPrice])
+  }, [activeDisplayValue])
 
   return (
     <Flex gap="$spacing8">
@@ -144,8 +336,8 @@ export function FloorPriceSection({
                 <Input
                   height={fonts.heading3.lineHeight}
                   width="100%"
-                  value={displayValue}
-                  onChangeText={handleFloorPriceChange}
+                  value={activeDisplayValue}
+                  onChangeText={handleChange}
                   placeholder={`0${decimalSeparator}00`}
                   placeholderTextColor="$neutral3"
                   keyboardType="decimal-pad"
@@ -170,24 +362,26 @@ export function FloorPriceSection({
                     lineHeight: `${fonts.heading3.lineHeight}px`,
                   }}
                 >
-                  {displayValue || `0${decimalSeparator}00`}
+                  {activeDisplayValue || `0${decimalSeparator}00`}
                 </span>
               </Flex>
               <Text variant="heading3" color="$neutral2" flexShrink={0}>
-                {raiseCurrency}
+                {inputLabel}
               </Text>
             </Flex>
-            {fdvRaiseCurrencyDisplay && (
-              <Flex backgroundColor="$surface3" borderRadius="$roundedFull" p="$spacing8" flexShrink={0}>
+            <TouchableArea onPress={toggleDenomination} flexShrink={0}>
+              <Flex backgroundColor="$surface3" borderRadius="$roundedFull" p="$spacing8">
                 <Text variant="buttonLabel4" color="$neutral1">
-                  {fdvRaiseCurrencyDisplay} {raiseCurrency} {t('stats.fdv')}
+                  {pillText}
                 </Text>
               </Flex>
-            )}
+            </TouchableArea>
           </Flex>
-          <Text variant="subheading2" color="$neutral2">
-            {`${floorPriceFiatDisplay} ${fiatCurrencyCode}`}
-          </Text>
+          <TouchableArea onPress={toggleInputCurrency}>
+            <Text variant="subheading2" color="$neutral2">
+              {bottomText}
+            </Text>
+          </TouchableArea>
         </Flex>
       </Flex>
     </Flex>

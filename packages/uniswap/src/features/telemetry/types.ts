@@ -956,6 +956,9 @@ export type UniverseEventProperties = {
     collection_address?: string
     token_id?: string
     link_type?: string
+    // Covering ElementName.DisconnectWalletButton
+    connector_id?: string
+    svm_connector_id?: string
   }
   [SharedEventName.PAGE_VIEWED]: ITraceContext
   [SharedEventName.ANALYTICS_SWITCH_TOGGLED]: {
@@ -1116,6 +1119,8 @@ export type UniverseEventProperties = {
         volume?: boolean
         price_chart?: boolean
         token_details?: boolean
+        performance?: boolean
+        performance_text?: string
         something_else?: boolean
       })
     | (TokenReportProperties & {

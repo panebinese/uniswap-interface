@@ -112,10 +112,10 @@ export function WebBottomSheet({
   const sheetHeightStyles: FlexProps | undefined =
     snapPointsMode !== 'percent'
       ? {
-          height: rest.$sm?.['$platform-web']?.height as DimensionValue,
+          height: rest.$md?.['$platform-web']?.height as DimensionValue,
           maxHeight: (isWebApp
             ? `calc(100vh - ${INTERFACE_NAV_HEIGHT}px)`
-            : (rest.$sm?.['$platform-web']?.maxHeight ?? '100dvh')) as DimensionValue,
+            : (rest.$md?.['$platform-web']?.maxHeight ?? '100dvh')) as DimensionValue,
         }
       : undefined
 

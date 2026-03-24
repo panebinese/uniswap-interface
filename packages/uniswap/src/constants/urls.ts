@@ -3,15 +3,38 @@ import {
   getCloudflareApiBaseUrl,
   getMigratedForApiUrl,
   helpUrl,
+  PROD_ENTRY_GATEWAY_API_BASE_URL,
+  STAGING_ENTRY_GATEWAY_API_BASE_URL,
   TrafficFlows,
 } from '@universe/api'
 import { FeatureFlags, getFeatureFlag } from '@universe/gating'
 import { config } from 'uniswap/src/config'
-import { isDevEnv, isPlaywrightEnv } from 'utilities/src/environment/env'
+import { isBetaEnv, isDevEnv, isPlaywrightEnv } from 'utilities/src/environment/env'
 import { isWebApp } from 'utilities/src/platform'
+
+function getComplianceApiBaseUrl(): string {
+  if (isPlaywrightEnv()) {
+    return PROD_ENTRY_GATEWAY_API_BASE_URL
+  }
+  // Dev and staging both use the staging compliance backend
+  if (isDevEnv() || isBetaEnv()) {
+    return STAGING_ENTRY_GATEWAY_API_BASE_URL
+  }
+  return PROD_ENTRY_GATEWAY_API_BASE_URL
+}
 
 export const UNISWAP_WEB_HOSTNAME = 'app.uniswap.org'
 const EMBEDDED_WALLET_HOSTNAME = isPlaywrightEnv() || isDevEnv() ? 'staging.ew.unihq.org' : UNISWAP_WEB_HOSTNAME
+
+function getPrivyEmbeddedWalletUrl(): string {
+  if (isDevEnv()) {
+    return 'https://privy-embedded-wallet.backend-dev.api.uniswap.org'
+  }
+  if (isBetaEnv()) {
+    return 'https://privy-embedded-wallet.backend-staging.api.uniswap.org'
+  }
+  return 'https://privy-embedded-wallet.backend-prod.api.uniswap.org'
+}
 
 /**
  * Returns the FOR API URL based on the ForUrlMigration feature flag.
@@ -156,6 +179,7 @@ export const uniswapUrls = {
   // Core API Urls
   apiOrigin: 'https://api.uniswap.org',
   apiBaseUrl: config.apiBaseUrlOverride || getCloudflareApiBaseUrl(),
+  complianceApiBaseUrl: getComplianceApiBaseUrl(),
   apiBaseUrlV2: config.apiBaseUrlV2Override || getCloudflareApiBaseUrl({ postfix: 'v2' }),
   dataApiBaseUrlV2:
     config.apiBaseUrlV2Override || getCloudflareApiBaseUrl({ flow: TrafficFlows.DataApi, postfix: 'v2' }),
@@ -192,10 +216,9 @@ export const uniswapUrls = {
   evervaultProductionUrl: 'https://embedded-wallet.app-907329d19a06.enclave.evervault.com',
   embeddedWalletUrl: `https://${EMBEDDED_WALLET_HOSTNAME}`,
   passkeysManagementUrl: `https://${EMBEDDED_WALLET_HOSTNAME}/manage/passkey`,
-  privyEmbeddedWalletUrl: 'https://privy-embedded-wallet.backend-dev.api.uniswap.org',
+  privyEmbeddedWalletUrl: getPrivyEmbeddedWalletUrl(),
 
   // API Paths
-  trmPath: '/v1/screen',
   gasServicePath: '/v1/gas-fee',
   tradingApiPaths: {
     approval: `${tradingApiVersionPrefix}/check_approval`,

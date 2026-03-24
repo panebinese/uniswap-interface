@@ -171,7 +171,6 @@ function BidDistributionChartRendererComponent({
     incrementChartHoverResetKey,
     clearChartZoomCommand,
     setCustomBidTick,
-    setActiveBidFormTab,
   } = useAuctionStoreActions()
 
   const {
@@ -369,10 +368,6 @@ function BidDistributionChartRendererComponent({
   const handleSelectedTickPrice = useEvent((tickPriceDecimalString: string) => {
     if (!isAuctionEnded) {
       setSelectedTickPrice(tickPriceDecimalString)
-      // Auto-switch to PLACE_A_BID tab when clicking chart
-      if (activeBidFormTab !== BidInfoTab.PLACE_A_BID) {
-        setActiveBidFormTab(BidInfoTab.PLACE_A_BID)
-      }
     }
   })
   const handleZoomStateChange = useEvent<[Parameters<typeof setChartZoomState>[1]], void>((state) => {

@@ -126,8 +126,46 @@ const portWarningPlugin = (isProduction: boolean) =>
 // Get git commit hash
 const commitHash = execSync('git rev-parse HEAD').toString().trim()
 
+// Compute next dev version from latest non-RC web/* git tag
+function getNextDevVersion(): string {
+  try {
+    const latestTag = execSync("git tag --list 'web/*' --sort=-version:refname | grep -v '\\-rc\\.' | head -1")
+      .toString()
+      .trim()
+    if (!latestTag) {
+      return ''
+    }
+    const version = latestTag.replace('web/', '')
+    const parts = version.split('.').map(Number)
+    if (parts.length < 3 || parts.some(isNaN)) {
+      return ''
+    }
+    return `${parts[0]}.${parts[1] + 1}.0`
+  } catch {
+    return ''
+  }
+}
+
 export default defineConfig(({ mode }) => {
   let env = loadEnv(mode, __dirname, '')
+
+  // Load root .env.defaults.local as a base layer (app-level env files take precedence)
+  const rootEnvDefaultsLocalPath = path.resolve(__dirname, '../../.env.defaults.local')
+  if (fs.existsSync(rootEnvDefaultsLocalPath)) {
+    try {
+      const result = dotenvConfig({ path: rootEnvDefaultsLocalPath })
+      if (result.parsed) {
+        // Only set values that aren't already defined (lowest priority)
+        for (const [key, value] of Object.entries(result.parsed)) {
+          if (!(key in env)) {
+            env[key] = value
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`Warning: Failed to read ${rootEnvDefaultsLocalPath}:`, error instanceof Error ? error.message : String(error))
+    }
+  }
 
   // Force load .env.[mode] files since NX ignores them
   const modeEnvPath = path.resolve(__dirname, `.env.${mode}`)
@@ -142,7 +180,7 @@ export default defineConfig(({ mode }) => {
         console.warn(`Warning: Failed to parse ${modeEnvPath}:`, result.error.message)
       }
     } catch (error) {
-      console.warn(`Warning: Failed to read ${modeEnvPath}:`, error.message)
+      console.warn(`Warning: Failed to read ${modeEnvPath}:`, error instanceof Error ? error.message : String(error))
     }
   }
 
@@ -206,6 +244,10 @@ export default defineConfig(({ mode }) => {
     // So getConfig().isVercelEnvironment is true in the client on Vercel; enables direct staging WS URL to match EGW
     ...(isVercelDeploy ? { 'process.env.VERCEL': JSON.stringify(process.env.VERCEL ?? '0') } : {}),
     ...envDefines,
+    // Fallback: compute next version from git tags when not set by CI
+    ...(!env.REACT_APP_VERSION_TAG
+      ? { 'process.env.REACT_APP_VERSION_TAG': JSON.stringify(getNextDevVersion()) }
+      : {}),
   }
 
   const cacheDir = path.resolve(__dirname, 'node_modules/.vite')
@@ -457,13 +499,6 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
           rewrite: (path) => path.replace(/^\/config/, '/v1/statsig-proxy'),
-        },
-        // Must match PRIVY_EW_DEV_PROXY_PATH in packages/uniswap/src/data/rest/embeddedWallet/requests.ts
-        '/privy-ew': {
-          target: 'https://privy-embedded-wallet.backend-dev.api.uniswap.org',
-          changeOrigin: true,
-          secure: true,
-          rewrite: (path) => path.replace(/^\/privy-ew/, ''),
         },
         ...(ENABLE_PROXY ? { '/entry-gateway': createEntryGatewayProxy({ getLogger }) } : {}),
       },

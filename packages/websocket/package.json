@@ -7,7 +7,7 @@
   },
   "devDependencies": {
     "@types/node": "22.13.1",
-    "@typescript/native-preview": "7.0.0-dev.20260108.1",
+    "@typescript/native-preview": "7.0.0-dev.20260311.1",
     "@uniswap/eslint-config": "workspace:^",
     "@vitest/coverage-v8": "3.2.1",
     "depcheck": "1.4.7",
@@ -17,7 +17,6 @@
   },
   "scripts": {
     "test": "nx test websocket",
-    "test:coverage": "nx test:coverage websocket",
     "typecheck": "nx typecheck websocket",
     "typecheck:tsgo": "nx typecheck:tsgo websocket",
     "lint": "nx lint websocket",

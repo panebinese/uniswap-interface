@@ -14,6 +14,8 @@ export interface UniconProps {
   className?: string
   /** Custom icon to render instead of the default generated icon. Will be colored with the computed unicon color. */
   icon?: React.ReactNode
+  /** When true, removes the background circle and scales the shape to fill the full container. */
+  bare?: boolean
 }
 
 /**
@@ -28,7 +30,7 @@ export interface UniconProps {
  * <Unicon input="user@example.com" size={32} className="border border-neutral1" />
  * ```
  */
-export function Unicon({ input, size = 32, className, icon }: UniconProps): React.ReactElement {
+export function Unicon({ input, size = 32, className, icon, bare }: UniconProps): React.ReactElement {
   const { colorVar, paths } = useMemo(() => {
     const hash = hashString(input)
     const iconKeys = Object.keys(Icons)
@@ -43,7 +45,7 @@ export function Unicon({ input, size = 32, className, icon }: UniconProps): Reac
     }
   }, [input])
 
-  const scale = (size / 48 / 1.5) * 0.9
+  const scale = bare ? size / 48 : (size / 48 / 1.5) * 0.9
   const scaledSize = 48 * scale
   const translate = (size - scaledSize) / 2
 
@@ -53,7 +55,7 @@ export function Unicon({ input, size = 32, className, icon }: UniconProps): Reac
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={cn('shrink-0', className)}>
-      <circle cx={size / 2} cy={size / 2} r={size / 2} fill={colorVar} opacity="var(--unicon-bg-opacity)" />
+      {!bare && <circle cx={size / 2} cy={size / 2} r={size / 2} fill={colorVar} opacity="var(--unicon-bg-opacity)" />}
       {icon ? (
         <foreignObject x={iconOffset} y={iconOffset} width={iconSize} height={iconSize}>
           {/* biome-ignore lint/correctness/noRestrictedElements: div required inside SVG foreignObject */}

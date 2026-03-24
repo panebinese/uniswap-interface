@@ -11,6 +11,7 @@ import type {
   ChartCoordinates,
   ClearingPriceTooltipState,
   NormalizedClearingPriceSeries,
+  YAxisLabel,
 } from '~/components/Charts/ToucanChart/clearingPrice/types'
 import { formatTickMarks } from '~/components/Charts/utils'
 import { CHART_DIMENSIONS } from '~/components/Toucan/Auction/BidDistributionChart/constants'
@@ -24,13 +25,15 @@ import { deprecatedStyled } from '~/lib/deprecated-styled'
  */
 const IN_PROGRESS_DATA_WIDTH_PERCENT = 75
 
+const Y_AXIS_LABEL_WIDTH = 50
+
 const ChartContainer = deprecatedStyled.div<{ height: number }>`
-  width: 100%;
+  width: calc(100% - ${Y_AXIS_LABEL_WIDTH}px);
   height: 100%;
+  margin-left: ${Y_AXIS_LABEL_WIDTH}px;
 
   /* Override lightweight-charts inline overflow:hidden to prevent x-axis label cutoff */
   .tv-lightweight-charts {
-    padding-top: 10px;
     overflow: visible !important;
   }
 
@@ -42,12 +45,6 @@ const ChartContainer = deprecatedStyled.div<{ height: number }>`
   /* Match x-axis background to app surface color */
   .tv-lightweight-charts table tr:last-child td {
     background-color: ${({ theme }) => theme.surface1};
-  }
-
-  /* Shift y-axis canvas closer to the chart */
-  .tv-lightweight-charts td:first-child canvas {
-    left: 5px !important;
-    top: -5px !important;
   }
 `
 
@@ -86,7 +83,6 @@ const XAxisChartContainer = deprecatedStyled.div<{ height: number }>`
   pointer-events: none;
 
   .tv-lightweight-charts {
-    padding-top: 10px;
     overflow: visible !important;
   }
 
@@ -105,21 +101,28 @@ const XAxisChartContainer = deprecatedStyled.div<{ height: number }>`
 const DataChartContainer = deprecatedStyled.div<{ height: number; $widthPercent: number }>`
   position: absolute;
   top: 0;
-  left: 0;
-  width: ${({ $widthPercent }) => $widthPercent}%;
+  left: ${Y_AXIS_LABEL_WIDTH}px;
+  width: calc(${({ $widthPercent }) => $widthPercent}% - ${Y_AXIS_LABEL_WIDTH}px);
   height: ${({ height }) => height}px;
   overflow: hidden;
 
   .tv-lightweight-charts {
-    padding-top: 10px;
     overflow: hidden !important;
   }
+`
 
-  /* Shift y-axis canvas closer to the chart */
-  .tv-lightweight-charts td:first-child canvas {
-    left: 5px !important;
-    top: -5px !important;
-  }
+const YAxisLabelEl = deprecatedStyled.span`
+  position: absolute;
+  left: 0;
+  font-size: 10px;
+  font-family: 'Basel', sans-serif;
+  color: ${({ theme }) => theme.neutral2};
+  background-color: ${({ theme }) => theme.surface1};
+  padding-right: 6px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1;
 `
 
 interface ClearingPriceChartRendererProps {
@@ -154,15 +157,13 @@ export function ClearingPriceChartRenderer({
 
   const [tooltipState, setTooltipState] = useState<ClearingPriceTooltipState | null>(null)
   const [hoverCoordinates, setHoverCoordinates] = useState<ChartCoordinates | null>(null)
+  const [yAxisLabels, setYAxisLabels] = useState<YAxisLabel[]>([])
   const [isControllerReady, setIsControllerReady] = useState(false)
   const { chartZoomCommand, clearingPriceZoomState } = useAuctionStore((state) => ({
     chartZoomCommand: state.chartZoomCommand,
     clearingPriceZoomState: state.clearingPriceZoomState,
   }))
   const { setClearingPriceZoomState, clearChartZoomCommand } = useAuctionStoreActions()
-
-  // Total chart height includes extra height to fill the space where distribution chart's header row would be
-  const effectiveHeight = height + CHART_DIMENSIONS.CLEARING_PRICE_EXTRA_HEIGHT
 
   const handleTooltipStateChange = useEvent((state: ClearingPriceTooltipState | null) => {
     setTooltipState(state)
@@ -172,6 +173,9 @@ export function ClearingPriceChartRenderer({
   })
   const handleZoomStateChange = useEvent((state: ChartZoomState) => {
     setClearingPriceZoomState(state)
+  })
+  const handleYAxisLabelsChange = useEvent((labels: YAxisLabel[]) => {
+    setYAxisLabels(labels)
   })
 
   const dataChartWidthPercent = normalizedData.isAuctionInProgress ? IN_PROGRESS_DATA_WIDTH_PERCENT : 100
@@ -206,7 +210,7 @@ export function ClearingPriceChartRenderer({
     const container = xAxisChartContainerRef.current
     const xAxisChart = createChart(container, {
       width: container.clientWidth,
-      height: effectiveHeight,
+      height,
       layout: {
         textColor: colors.neutral2.val,
         background: { color: 'transparent' },
@@ -277,7 +281,7 @@ export function ClearingPriceChartRenderer({
     normalizedData.visibleRangeStart,
     xAxisEndTime,
     normalizedData.timeSpanDays,
-    effectiveHeight,
+    height,
     colors,
   ])
 
@@ -293,7 +297,7 @@ export function ClearingPriceChartRenderer({
 
     controllerRef.current = new ToucanClearingPriceChartController({
       container: chartContainerRef.current,
-      height: effectiveHeight,
+      height,
       colors,
       tokenColor,
       bidTokenInfo,
@@ -302,6 +306,7 @@ export function ClearingPriceChartRenderer({
         onTooltipStateChange: handleTooltipStateChange,
         onHoverCoordinatesChange: handleHoverCoordinatesChange,
         onZoomStateChange: handleZoomStateChange,
+        onYAxisLabelsChange: handleYAxisLabelsChange,
       },
     })
     setIsControllerReady(true)
@@ -403,16 +408,17 @@ export function ClearingPriceChartRenderer({
   // For in-progress auctions, use two-chart layout
   if (normalizedData.isAuctionInProgress) {
     return (
-      <Flex width="100%" height={effectiveHeight}>
-        <ChartWrapper height={effectiveHeight}>
+      <Flex width="100%" height={height}>
+        <ChartWrapper height={height}>
+          {yAxisLabels.map((tick) => (
+            <YAxisLabelEl key={tick.y} style={{ top: tick.y }}>
+              {tick.label}
+            </YAxisLabelEl>
+          ))}
           {/* Background: X-axis chart showing full auction time range */}
-          <XAxisChartContainer ref={xAxisChartContainerRef} height={effectiveHeight} />
+          <XAxisChartContainer ref={xAxisChartContainerRef} height={height} />
           {/* Foreground: Data chart showing actual price data */}
-          <DataChartContainer
-            ref={chartContainerRef}
-            height={effectiveHeight - 15}
-            $widthPercent={dataChartWidthPercent}
-          />
+          <DataChartContainer ref={chartContainerRef} height={height - 15} $widthPercent={dataChartWidthPercent} />
           <TooltipContainer
             $isVisible={tooltipState !== null}
             style={tooltipTransform ? { transform: tooltipTransform } : undefined}
@@ -444,9 +450,14 @@ export function ClearingPriceChartRenderer({
 
   // For ended auctions, use single chart layout
   return (
-    <Flex width="100%" height={effectiveHeight}>
-      <ChartWrapper height={200}>
-        <ChartContainer ref={chartContainerRef} height={effectiveHeight} />
+    <Flex width="100%" height={height}>
+      <ChartWrapper height={height}>
+        {yAxisLabels.map((tick) => (
+          <YAxisLabelEl key={tick.y} style={{ top: tick.y }}>
+            {tick.label}
+          </YAxisLabelEl>
+        ))}
+        <ChartContainer ref={chartContainerRef} height={height} />
         <TooltipContainer
           $isVisible={tooltipState !== null}
           style={tooltipTransform ? { transform: tooltipTransform } : undefined}

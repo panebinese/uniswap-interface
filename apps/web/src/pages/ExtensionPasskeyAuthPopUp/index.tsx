@@ -208,7 +208,13 @@ export default function ExtensionPasskeyAuthPopUp() {
 
               <Flex row py="$spacing16">
                 <Button
-                  icon={signInAttemptStatus === ReferrerVerification.Verifying ? <SpinningLoader /> : <Passkey />}
+                  icon={
+                    signInAttemptStatus === ReferrerVerification.Verifying ? (
+                      <SpinningLoader />
+                    ) : (
+                      <Passkey color="$neutral1" />
+                    )
+                  }
                   size="large"
                   variant="branded"
                   onPress={onPressSignIn}

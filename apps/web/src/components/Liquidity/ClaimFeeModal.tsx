@@ -423,7 +423,7 @@ export function ClaimFeeModal() {
             size="large"
             variant="branded"
             onPress={onPressConfirm}
-            icon={needsPasskeySignin ? <Passkey size="$icon.24" /> : undefined}
+            icon={needsPasskeySignin ? <Passkey size="$icon.24" color="$neutral1" /> : undefined}
           >
             {currentTransactionStep
               ? isSignedInWithPasskey

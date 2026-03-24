@@ -27,6 +27,8 @@ export type ConvertFiatAmountFormattedCallback = (
 export enum TokenSelectorFlow {
   Swap = 0,
   Send = 1,
+  Liquidity = 2,
+  Limit = 3,
 }
 
 export enum TokenSelectorVariation {

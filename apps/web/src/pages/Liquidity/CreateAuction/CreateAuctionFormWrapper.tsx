@@ -80,7 +80,12 @@ export function CreateAuctionFormWrapper({ children }: { children: React.ReactNo
         <Text variant="heading2">{t('toucan.createAuction.title')}</Text>
       </Flex>
       {media.xl && step !== CreateAuctionStep.REVIEW_LAUNCH && <PoolProgressIndicatorHeader steps={progressSteps} />}
-      <Flex row gap="$spacing20" justifyContent="space-between" width="100%">
+      <Flex
+        row
+        gap="$spacing20"
+        justifyContent={step === CreateAuctionStep.REVIEW_LAUNCH ? 'center' : 'space-between'}
+        width="100%"
+      >
         {!media.xl && step !== CreateAuctionStep.REVIEW_LAUNCH && <PoolProgressIndicator steps={progressSteps} />}
         <Flex gap="$spacing24" flex={1} maxWidth={WIDTH.positionCard} mb="$spacing28" $xl={{ maxWidth: '100%' }}>
           {children}

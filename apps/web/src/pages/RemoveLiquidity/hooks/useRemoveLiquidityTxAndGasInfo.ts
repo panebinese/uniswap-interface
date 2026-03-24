@@ -64,6 +64,7 @@ function buildCheckApprovalLPRequest({
               ?.multiply(JSBI.BigInt(percent))
               .divide(JSBI.BigInt(100))
               .quotient.toString(),
+            simulateTransaction: true,
           }),
         },
       })
@@ -262,7 +263,7 @@ export function useRemoveLiquidityTxAndGasInfo({ account }: { account?: string }
       v2LpTokenApproval?.gasFeePositionTokenApproval,
     ) ?? undefined
 
-  const approvalsNeeded = Boolean(v2LpTokenApproval)
+  const approvalsNeeded = !v2ApprovalLoading && Boolean(v2LpTokenApproval?.positionTokenApproval)
 
   const decreaseCalldataQueryParams = useMemo((): DecreaseLPPositionRequest | undefined => {
     if (!positionInfo || !account || percentInvalid || !currency0 || !currency1) {

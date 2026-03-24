@@ -12,7 +12,6 @@
     "lint:eslint:fix": "nx lint:eslint:fix sessions",
     "check:deps:usage": "nx check:deps:usage sessions",
     "test": "nx test sessions",
-    "test:coverage": "nx test:coverage sessions",
     "test:integration:backend": "nx test:integration:backend sessions"
   },
   "nx": {
@@ -34,7 +33,7 @@
     "@types/chrome": "0.0.304",
     "@types/node": "22.13.1",
     "@types/react": "19.0.10",
-    "@typescript/native-preview": "7.0.0-dev.20260108.1",
+    "@typescript/native-preview": "7.0.0-dev.20260311.1",
     "@uniswap/eslint-config": "workspace:^",
     "@vitest/coverage-v8": "3.2.1",
     "depcheck": "1.4.7",

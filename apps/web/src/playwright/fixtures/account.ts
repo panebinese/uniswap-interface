@@ -22,14 +22,18 @@ export async function mockUnitagResponse({
   address: string
   unitag: string | null
 }) {
-  await page.route(`${uniswapUrls.unitagsApiUrl}/address?address=${address}`, async (route) => {
-    await route.fulfill({
-      body: JSON.stringify({
-        username: unitag,
-        address,
-      }),
-    })
-  })
+  await page.route(
+    // eslint-disable-next-line security/detect-non-literal-regexp -- Test fixture using known-safe URL constant
+    new RegExp(`${uniswapUrls.unitagsApiUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/address\\?address=${address}`),
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          username: unitag,
+          address,
+        }),
+      })
+    },
+  )
 }
 
 /**

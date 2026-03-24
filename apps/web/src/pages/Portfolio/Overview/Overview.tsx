@@ -5,6 +5,7 @@ import { useGetPortfolioHistoricalValueChartQuery } from 'uniswap/src/data/rest/
 import { useActivityData } from 'uniswap/src/features/activity/hooks/useActivityData'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { usePortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/balancesRest'
+import { usePortfolioChartBalanceMismatch } from 'uniswap/src/features/portfolio/usePortfolioChartBalanceMismatch'
 import { ElementName, InterfacePageName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import { Trace } from 'uniswap/src/features/telemetry/Trace'
 import { EmptyWalletCards } from '~/components/emptyWallet/EmptyWalletCards'
@@ -16,10 +17,7 @@ import { useIsPortfolioZero } from '~/pages/Portfolio/Overview/hooks/useIsPortfo
 import { PortfolioOverviewTables } from '~/pages/Portfolio/Overview/OverviewTables'
 import { PortfolioChart } from '~/pages/Portfolio/Overview/PortfolioChart'
 import { OverviewStatsTiles } from '~/pages/Portfolio/Overview/StatsTiles'
-import { checkBalanceDiffWithinRange } from '~/pages/Portfolio/Overview/utils/checkBalanceDiffWithinRange'
 import { filterDefinedWalletAddresses } from '~/utils/filterDefinedWalletAddresses'
-
-const BALANCE_PERCENT_DIFFERENCE_THRESHOLD = 2
 
 const ActionsAndStatsContainer = styled(Flex, {
   width: OVERVIEW_RIGHT_COLUMN_WIDTH,
@@ -71,19 +69,17 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   })
 
   // Get the latest value from chart endpoint (last point in the array) for comparison
-  const chartTotalBalanceUSD = useMemo(() => {
+  const lastChartValue = useMemo(() => {
     if (!portfolioChartData?.points || portfolioChartData.points.length === 0) {
       return undefined
     }
-    const lastPoint = portfolioChartData.points[portfolioChartData.points.length - 1]
-    return lastPoint.value
+    return portfolioChartData.points[portfolioChartData.points.length - 1]?.value
   }, [portfolioChartData])
 
-  // Compare portfolio balance (EVM + Solana) with chart endpoint balance (for debugging/validation)
-  const isTotalValueMatch = checkBalanceDiffWithinRange({
-    chartTotalBalanceUSD,
+  // Compare portfolio balance (EVM + Solana) with chart endpoint balance to detect spam-token divergence
+  const { isTotalValueMatch } = usePortfolioChartBalanceMismatch({
+    lastChartValue,
     portfolioTotalBalanceUSD: portfolioData?.balanceUSD,
-    percentDifferenceThreshold: BALANCE_PERCENT_DIFFERENCE_THRESHOLD,
   })
 
   // Fetch activity data once at the top level to share between useSwapsThisWeek and MiniActivityTable

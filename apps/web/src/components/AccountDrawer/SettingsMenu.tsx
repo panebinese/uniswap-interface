@@ -9,6 +9,8 @@ import { ShieldCheck } from 'ui/src/components/icons/ShieldCheck'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
 import { useAppFiatCurrency } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useCurrentLanguage, useLanguageInfo } from 'uniswap/src/features/language/hooks'
+import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { AnalyticsToggle } from '~/components/AccountDrawer/AnalyticsToggle'
 import { AppVersionRow } from '~/components/AccountDrawer/AppVersionRow'
@@ -101,16 +103,18 @@ export default function SettingsMenu({
           <TestnetsToggle />
         </Flex>
 
-        <Flex row alignSelf="stretch" display={connectedWithEmbeddedWallet ? 'flex' : 'none'} mb="$padding8">
-          <Button
-            size="medium"
-            emphasis="secondary"
-            icon={<Power size="$icon.20" color="$neutral2" />}
-            onPress={onLogOut}
-          >
-            {t('settings.logOut')}
-          </Button>
-        </Flex>
+        <Trace logPress element={ElementName.SignOut}>
+          <Flex row alignSelf="stretch" display={connectedWithEmbeddedWallet ? 'flex' : 'none'} mb="$padding8">
+            <Button
+              size="medium"
+              emphasis="secondary"
+              icon={<Power size="$icon.20" color="$neutral2" />}
+              onPress={onLogOut}
+            >
+              {t('settings.logOut')}
+            </Button>
+          </Flex>
+        </Trace>
       </Flex>
     </SlideOutMenu>
   )

@@ -188,6 +188,9 @@ export const TestID = {
   PortfolioTokensSearchInput: 'portfolio-tokens-search-input',
   PortfolioTokensSeeAllNetworksButton: 'portfolio-tokens-see-all-networks-button',
   PortfolioTokensTable: 'portfolio-tokens-table',
+  PreviewPassphraseError: 'preview-passphrase-error',
+  PreviewPassphraseInput: 'preview-passphrase-input',
+  PreviewPassphraseSubmit: 'preview-passphrase-submit',
   PriceCell: 'price-cell',
   PriceExplorerAnimatedNumber: 'price-explorer-animated-number',
   PriceExplorerChart: 'price-explorer-chart',
@@ -200,6 +203,7 @@ export const TestID = {
   Receive: 'receive',
   RelativePriceChange: 'relative-price-change',
   Remove: 'remove',
+  RemoveBackupLoginOverflow: 'remove-backup-login-overflow',
   RestoreFromCloud: 'restore-from-cloud',
   RestoreWallet: 'restore-wallet',
   ReviewSwap: 'review-swap',
@@ -298,6 +302,8 @@ export const TestID = {
   WalletSettingsRecoveryPhrase: 'wallet-settings-recovery-phrase',
   WatchWallet: 'watch-wallet',
   WCDappNetworks: 'wc-dapp-networks',
+  StepHeaderBack: 'step-header-back',
+  StepHeaderClose: 'step-header-close',
   Web3StatusConnected: 'web3-status-connected',
   // alphabetize additional values.
 } as const

@@ -54,6 +54,12 @@ export function MenuContent({
         e.preventDefault()
         e.stopPropagation()
       }}
+      onClick={(e) => {
+        e.stopPropagation()
+      }}
+      onMouseDown={(e) => {
+        e.stopPropagation()
+      }}
     >
       <Flex
         gap="$spacing4"

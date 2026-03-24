@@ -1,20 +1,21 @@
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, TouchableArea, useMedia } from 'ui/src'
 import { zIndexes } from 'ui/src/theme'
+import { NoResultsFound } from 'uniswap/src/components/lists/NoResultsFound'
 import type { TieredNetworkOptions } from 'uniswap/src/components/network/NetworkFilterV2/types'
 import { NetworkOption } from 'uniswap/src/components/network/NetworkOption'
 import { useNewChainIds } from 'uniswap/src/features/chains/hooks/useNewChainIds'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { SearchTextInput } from 'uniswap/src/features/search/SearchTextInput'
 import { isExtensionApp, isWebApp } from 'utilities/src/platform'
 import { useEvent } from 'utilities/src/react/hooks'
 
-export interface NetworkFilterContentProps {
+interface NetworkFilterContentProps {
+  searchQuery: string
   tieredOptions?: TieredNetworkOptions
   selectedChain: UniverseChainId | null
   onPressChain: (chainId: UniverseChainId | null) => void
-  includeAllNetworks?: boolean
   chainIds: UniverseChainId[]
+  showAllNetworks: boolean
 }
 
 interface SelectableNetworkOptionProps {
@@ -65,60 +66,30 @@ function SelectableNetworkOption({
   )
 }
 
-function NetworkOptionRows({
-  chainIds,
-  selectedChain,
-  newChains,
-  onPressChain,
-}: Omit<SelectableNetworkOptionProps, 'chainId'> & { chainIds: UniverseChainId[] }): JSX.Element {
-  return (
-    <>
-      {chainIds.map((chainId) => (
-        <SelectableNetworkOption
-          key={chainId}
-          chainId={chainId}
-          selectedChain={selectedChain}
-          newChains={newChains}
-          onPressChain={onPressChain}
-        />
-      ))}
-    </>
-  )
-}
-
-export function NetworkSearchBar(): JSX.Element {
-  const { t } = useTranslation()
-
-  return (
-    <Flex px="$spacing8" pt="$spacing4" pb="$spacing8">
-      {/* TODO(SWAP-2139): Add search functionality */}
-      <SearchTextInput
-        hideIcon={false}
-        placeholder={t('common.input.search') as string}
-        py="$spacing8"
-        px="$spacing12"
-      />
-    </Flex>
-  )
-}
-
 export function NetworkFilterContent({
+  searchQuery,
   tieredOptions,
   selectedChain,
   onPressChain,
-  includeAllNetworks,
   chainIds,
+  showAllNetworks,
 }: NetworkFilterContentProps): JSX.Element {
   const { t } = useTranslation()
   const newChains = useNewChainIds()
+  const hasVisibleOptions = chainIds.length > 0 || showAllNetworks
 
-  const shouldShowTieredOptions = !!tieredOptions?.withBalances.length
+  if (!hasVisibleOptions) {
+    return (
+      <Flex pb="$spacing24">
+        <NoResultsFound searchFilter={searchQuery} />
+      </Flex>
+    )
+  }
 
-  // When tiered options are unavailable or there are no "with balances" entries, show a flat list.
-  if (!shouldShowTieredOptions) {
+  if (!tieredOptions) {
     return (
       <Flex gap="$spacing4" py="$spacing4" pl="$spacing2">
-        {includeAllNetworks && (
+        {showAllNetworks && (
           <SelectableNetworkOption
             chainId={null}
             selectedChain={selectedChain}
@@ -126,23 +97,27 @@ export function NetworkFilterContent({
             onPressChain={onPressChain}
           />
         )}
-        <NetworkOptionRows
-          chainIds={chainIds}
-          selectedChain={selectedChain}
-          newChains={newChains}
-          onPressChain={onPressChain}
-        />
+        {chainIds.map((chainId) => (
+          <SelectableNetworkOption
+            key={chainId}
+            chainId={chainId}
+            selectedChain={selectedChain}
+            newChains={newChains}
+            onPressChain={onPressChain}
+          />
+        ))}
       </Flex>
     )
   }
 
+  const hasWithBalances = tieredOptions.withBalances.length > 0
   const hasOtherNetworks = tieredOptions.otherNetworks.length > 0
   const withBalanceChainIds = tieredOptions.withBalances.map((option) => option.chainId)
   const otherNetworkChainIds = tieredOptions.otherNetworks.map((option) => option.chainId)
 
   return (
     <Flex gap="$spacing4" py="$spacing4" pl="$spacing2">
-      {includeAllNetworks && (
+      {showAllNetworks && (
         <SelectableNetworkOption
           chainId={null}
           selectedChain={selectedChain}
@@ -151,23 +126,33 @@ export function NetworkFilterContent({
         />
       )}
 
-      <SectionHeader title={t('network.filter.withBalances')} />
-      <NetworkOptionRows
-        chainIds={withBalanceChainIds}
-        selectedChain={selectedChain}
-        newChains={newChains}
-        onPressChain={onPressChain}
-      />
+      {hasWithBalances && (
+        <>
+          <SectionHeader title={t('network.filter.withBalances')} />
+          {withBalanceChainIds.map((chainId) => (
+            <SelectableNetworkOption
+              key={chainId}
+              chainId={chainId}
+              selectedChain={selectedChain}
+              newChains={newChains}
+              onPressChain={onPressChain}
+            />
+          ))}
+        </>
+      )}
 
       {hasOtherNetworks && (
         <>
           <SectionHeader title={t('network.filter.otherNetworks')} />
-          <NetworkOptionRows
-            chainIds={otherNetworkChainIds}
-            selectedChain={selectedChain}
-            newChains={newChains}
-            onPressChain={onPressChain}
-          />
+          {otherNetworkChainIds.map((chainId) => (
+            <SelectableNetworkOption
+              key={chainId}
+              chainId={chainId}
+              selectedChain={selectedChain}
+              newChains={newChains}
+              onPressChain={onPressChain}
+            />
+          ))}
         </>
       )}
     </Flex>

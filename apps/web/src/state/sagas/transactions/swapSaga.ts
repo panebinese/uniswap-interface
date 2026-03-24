@@ -90,6 +90,7 @@ function* handleSwapTransactionStep(params: HandleSwapStepParams): SagaGenerator
     trade,
     swapStartTimestamp: analytics.swap_start_timestamp,
     planAnalytics: planAnalyticsToCamelCase(analytics),
+    transactedUSDValue: analytics.token_in_amount_usd,
   })
   const txRequest = yield* call(getSwapTxRequest, step, signature)
 
@@ -152,6 +153,7 @@ function createHandleSwapTransactionBatchedStep(ctx: { disableOneClickSwap: () =
       trade,
       swapStartTimestamp: analytics.swap_start_timestamp,
       planAnalytics: planAnalyticsToCamelCase(analytics),
+      transactedUSDValue: analytics.token_in_amount_usd,
     })
 
     const batchId = yield* handleAtomicSendCalls({

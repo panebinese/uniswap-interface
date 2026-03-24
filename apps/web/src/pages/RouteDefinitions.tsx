@@ -48,6 +48,7 @@ const Portfolio = lazy(() => import('~/pages/Portfolio/Portfolio'))
 const ToucanToken = lazy(() => import('~/pages/Explore/ToucanToken'))
 const CreateAuction = lazy(() => import('~/pages/Liquidity/CreateAuction/CreateAuction'))
 const XOAuthCallbackPage = lazy(() => import('~/pages/Liquidity/CreateAuction/XOAuthCallbackPage'))
+const BetaPage = lazy(() => import('~/pages/Beta'))
 const Wrapped = lazy(() => import('~/pages/Wrapped'))
 
 interface RouterConfig {
@@ -432,6 +433,15 @@ export const routes: RouteDefinition[] = [
     getElement: () => <Wrapped />,
     getTitle: () => 'Uniswap Wrapped',
     enabled: (args) => args.isWrappedEnabled ?? false,
+  }),
+  createRouteDefinition({
+    path: '/preview',
+    getTitle: () => 'Uniswap Preview',
+    getElement: () => (
+      <Suspense fallback={null}>
+        <BetaPage />
+      </Suspense>
+    ),
   }),
   createRouteDefinition({ path: '*', getElement: () => <Navigate to="/not-found" replace /> }),
   createRouteDefinition({ path: '/not-found', getElement: () => <NotFound /> }),

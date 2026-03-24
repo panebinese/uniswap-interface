@@ -85,6 +85,7 @@ export enum DynamicConfigs {
 
   // Web
   AstroChain = 'astro_chain',
+  EmbeddedWalletBetaPassphrases = 'embedded_wallet_beta_passphrases',
   ExternallyConnectableExtension = 'externally_connectable_extension',
   LPConfig = 'lp_config',
   AllowedV4WethHookAddresses = 'allowed_v4_weth_hook_addresses',
@@ -244,6 +245,10 @@ export enum CreateAuctionConfigKey {
   AllowedTokenCreationNetworks = 'allowedTokenCreationNetworks',
 }
 
+export enum EmbeddedWalletBetaPassphrasesKey {
+  Passphrases = 'passphrases',
+}
+
 export type DynamicConfigKeys = {
   // Shared
   [DynamicConfigs.Swap]: SwapConfigKey
@@ -270,6 +275,7 @@ export type DynamicConfigKeys = {
   [DynamicConfigs.BlockedAsyncSubmissionChainIds]: BlockedAsyncSubmissionChainIdsConfigKey
   [DynamicConfigs.OutageBannerChainId]: OutageBannerChainIdConfigKey
   [DynamicConfigs.CreateAuction]: CreateAuctionConfigKey
+  [DynamicConfigs.EmbeddedWalletBetaPassphrases]: EmbeddedWalletBetaPassphrasesKey
 }
 
 // This type must match the format in statsig dynamic config for uwulink

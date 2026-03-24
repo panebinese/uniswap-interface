@@ -28,7 +28,7 @@ import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { type PortfolioBalance, TokenList } from 'uniswap/src/features/dataApi/types'
 import { useIsSupportedFiatOnRampCurrency } from 'uniswap/src/features/fiatOnRamp/hooks'
-import { useOnChainNativeCurrencyBalance } from 'uniswap/src/features/portfolio/api'
+import { useChainGasToken } from 'uniswap/src/features/gas/hooks/useChainGasToken'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
 import { CurrencyField } from 'uniswap/src/types/currency'
@@ -60,11 +60,8 @@ export const TokenDetailsActionButtonsWrapper = memo(function _TokenDetailsActio
   const isNativeCurrency = isNativeCurrencyAddress(chainId, address)
   const nativeCurrencyAddress = getChainInfo(chainId).nativeCurrency.address
 
-  const { balance: nativeCurrencyBalance, isLoading: isNativeCurrencyBalanceLoading } = useOnChainNativeCurrencyBalance(
-    chainId,
-    activeAddress,
-  )
-  const hasZeroNativeBalance = nativeCurrencyBalance && nativeCurrencyBalance.equalTo('0')
+  const { gasBalance, isLoading: isGasBalanceLoading } = useChainGasToken({ chainId, accountAddress: activeAddress })
+  const hasZeroGasBalance = gasBalance && gasBalance.equalTo('0')
 
   const { currency: nativeFiatOnRampCurrency, isLoading: isNativeFiatOnRampCurrencyLoading } =
     useIsSupportedFiatOnRampCurrency(buildCurrencyId(chainId, nativeCurrencyAddress))
@@ -180,7 +177,7 @@ export const TokenDetailsActionButtonsWrapper = memo(function _TokenDetailsActio
     nativeFiatOnRampCurrency,
     fiatOnRampCurrency,
     bridgingTokenWithHighestBalance,
-    hasZeroNativeBalance,
+    hasZeroGasBalance,
     tokenSymbol: token.symbol,
     onPressBuyFiatOnRamp,
     onPressGet,
@@ -281,7 +278,7 @@ export const TokenDetailsActionButtonsWrapper = memo(function _TokenDetailsActio
   const hideActionButtons =
     !isScreenNavigationReady ||
     tokenColorLoading ||
-    isNativeCurrencyBalanceLoading ||
+    isGasBalanceLoading ||
     isNativeFiatOnRampCurrencyLoading ||
     isFiatOnRampCurrencyLoading ||
     isBridgingTokenLoading
@@ -300,7 +297,7 @@ export const TokenDetailsActionButtonsWrapper = memo(function _TokenDetailsActio
     nativeFiatOnRampCurrency,
     fiatOnRampCurrency,
     bridgingTokenWithHighestBalance,
-    hasZeroNativeBalance,
+    hasZeroGasBalance,
     tokenSymbol: token.symbol,
     onPressBuyWithCash,
     onPressGet,

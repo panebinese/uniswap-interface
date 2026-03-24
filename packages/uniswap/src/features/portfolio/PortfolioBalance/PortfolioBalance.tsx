@@ -20,6 +20,7 @@ import { isWebPlatform } from 'utilities/src/platform'
 function periodToTimeLabel(t: ReturnType<typeof useTranslation>['t'], period: ChartPeriod): string {
   switch (period) {
     case ChartPeriod.HOUR:
+      return t('common.thisHour')
     case ChartPeriod.DAY:
       return t('common.today')
     case ChartPeriod.WEEK:
@@ -41,6 +42,8 @@ interface PortfolioBalanceProps {
   endText?: JSX.Element | string
   chainIds?: UniverseChainId[]
   chartPeriod?: ChartPeriod
+  /** When set, overrides the displayed balance (e.g. during chart scrubbing) */
+  overrideBalanceUSD?: number
 }
 
 export const PortfolioBalance = memo(function _PortfolioBalance({
@@ -49,6 +52,7 @@ export const PortfolioBalance = memo(function _PortfolioBalance({
   endText,
   chainIds,
   chartPeriod,
+  overrideBalanceUSD,
 }: PortfolioBalanceProps): JSX.Element {
   const { t } = useTranslation()
   const { data, loading, networkStatus, refetch } = usePortfolioTotalValue({
@@ -74,7 +78,8 @@ export const PortfolioBalance = memo(function _PortfolioBalance({
 
   const isRightToLeft = i18next.dir() === 'rtl'
 
-  const totalBalance = convertFiatAmountFormatted(balanceUSD, NumberType.PortfolioBalance)
+  const displayBalanceUSD = overrideBalanceUSD ?? balanceUSD
+  const totalBalance = convertFiatAmountFormatted(displayBalanceUSD, NumberType.PortfolioBalance)
   const absoluteChange = absoluteChangeUSD && convertFiatAmount(absoluteChangeUSD).amount
   // TODO gary re-enabling this for USD/Euros only, replace with more scalable approach
   const shouldFadePortfolioDecimals =
@@ -90,8 +95,9 @@ export const PortfolioBalance = memo(function _PortfolioBalance({
   return (
     <Flex gap="$spacing4">
       <AnimatedNumber
-        balance={balanceUSD}
-        colorIndicationDuration={BALANCE_CHANGE_INDICATION_DURATION}
+        balance={displayBalanceUSD}
+        colorIndicationDuration={overrideBalanceUSD !== undefined ? 0 : BALANCE_CHANGE_INDICATION_DURATION}
+        disableAnimations={overrideBalanceUSD !== undefined}
         loading={isLoading}
         loadingPlaceholderText="000000.00"
         shouldFadeDecimals={shouldFadePortfolioDecimals}

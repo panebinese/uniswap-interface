@@ -69,7 +69,9 @@ async function getSendTransaction({
     case AssetType.ERC721:
       return getErc721SendRequest({ params, provider, contractManager })
     case AssetType.Currency:
-      return isNativeCurrencyAddress(chainId, tokenAddress)
+      // On Tempo, CALLVALUE always returns 0, so native sends via the value field
+      // silently fail. Always use the ERC-20 transfer path for Tempo.
+      return isNativeCurrencyAddress(chainId, tokenAddress) && chainId !== UniverseChainId.Tempo
         ? getNativeSendRequest(params)
         : getTokenSendRequest({ params, provider, contractManager })
   }

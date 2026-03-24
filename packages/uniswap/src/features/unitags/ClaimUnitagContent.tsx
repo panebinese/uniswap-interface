@@ -180,6 +180,7 @@ export function ClaimUnitagContent({
 
       if (text.length > MAX_UNITAG_CHAR_LENGTH) {
         setUnitagAvailableError(getUnitagFormatError(text, t))
+        setUnitagInputValue(text.slice(0, MAX_UNITAG_CHAR_LENGTH).trim())
         return
       }
 
@@ -328,6 +329,7 @@ export function ClaimUnitagContent({
                   returnKeyType="done"
                   testID={TestID.WalletNameInput}
                   textAlign="left"
+                  maxLength={MAX_UNITAG_CHAR_LENGTH}
                   value={unitagInputValue}
                   allowFontScaling={false}
                   maxFontSizeMultiplier={1}
@@ -395,7 +397,7 @@ export function ClaimUnitagContent({
           <Button
             size="large"
             variant="branded"
-            isDisabled={shouldBlockContinue || !isUnitagAvailable}
+            isDisabled={shouldBlockContinue || !isUnitagAvailable || !!unitagAvailableError}
             testID={TestID.Continue}
             loading={showVerificationLoading && isCheckingUnitag} // the validation happens really quickly so only show a loading spinner when the user explicitly tries to continue and we're still checking availability
             onPress={onPressContinue}

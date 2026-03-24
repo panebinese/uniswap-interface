@@ -7,6 +7,7 @@ export const getFeatureFlaggedChainIds = createGetFeatureFlaggedChainIds({
   getMonadStatus: () => getFeatureFlag(FeatureFlags.Monad),
   getSoneiumStatus: () => getFeatureFlag(FeatureFlags.Soneium),
   getSolanaStatus: () => getFeatureFlag(FeatureFlags.Solana),
+  getTempoStatus: () => getFeatureFlag(FeatureFlags.Tempo),
   getXLayerStatus: () => getFeatureFlag(FeatureFlags.XLayer),
 })
 
@@ -15,6 +16,7 @@ export function useFeatureFlaggedChainIds(): UniverseChainId[] {
   const monadStatus = useFeatureFlag(FeatureFlags.Monad)
   const soneiumStatus = useFeatureFlag(FeatureFlags.Soneium)
   const solanaStatus = useFeatureFlag(FeatureFlags.Solana)
+  const tempoStatus = useFeatureFlag(FeatureFlags.Tempo)
   const xLayerStatus = useFeatureFlag(FeatureFlags.XLayer)
 
   return useMemo(
@@ -23,9 +25,10 @@ export function useFeatureFlaggedChainIds(): UniverseChainId[] {
         getMonadStatus: () => monadStatus,
         getSoneiumStatus: () => soneiumStatus,
         getSolanaStatus: () => solanaStatus,
+        getTempoStatus: () => tempoStatus,
         getXLayerStatus: () => xLayerStatus,
       })(),
-    [monadStatus, soneiumStatus, solanaStatus, xLayerStatus],
+    [monadStatus, soneiumStatus, solanaStatus, tempoStatus, xLayerStatus],
   )
 }
 
@@ -33,6 +36,7 @@ export function createGetFeatureFlaggedChainIds(ctx: {
   getMonadStatus: () => boolean
   getSoneiumStatus: () => boolean
   getSolanaStatus: () => boolean
+  getTempoStatus: () => boolean
   getXLayerStatus: () => boolean
 }): () => UniverseChainId[] {
   return () =>
@@ -42,6 +46,7 @@ export function createGetFeatureFlaggedChainIds(ctx: {
       [UniverseChainId.Monad]: ctx.getMonadStatus(),
       [UniverseChainId.Soneium]: ctx.getSoneiumStatus(),
       [UniverseChainId.Solana]: ctx.getSolanaStatus(),
+      [UniverseChainId.Tempo]: ctx.getTempoStatus(),
       [UniverseChainId.XLayer]: ctx.getXLayerStatus(),
     })
 }

@@ -36,7 +36,7 @@ test.describe(
       await getVisibleDropdownElementByTestId(page, TestID.CreateAccount).click()
 
       // Stub the unitag availability endpoint
-      await page.route(`*/username?username=*`, (route) =>
+      await page.route(/\/username\?username=/, (route) =>
         route.fulfill({ body: JSON.stringify({ available: true, requiresEnsMatch: false }) }),
       )
 
@@ -52,7 +52,7 @@ test.describe(
       await page.getByTestId(TestID.NavConnectWalletButton).click()
       await getVisibleDropdownElementByTestId(page, TestID.CreateAccount).click()
 
-      await page.route(`*/username?username=*`, (route) =>
+      await page.route(/\/username\?username=/, (route) =>
         route.fulfill({ body: JSON.stringify({ available: true, requiresEnsMatch: false }) }),
       )
 
@@ -74,7 +74,7 @@ test.describe(
       await page.getByTestId(TestID.NavConnectWalletButton).click()
       await getVisibleDropdownElementByTestId(page, TestID.CreateAccount).click()
 
-      await page.route(`*/username?username=*`, (route) =>
+      await page.route(/\/username\?username=/, (route) =>
         route.fulfill({ body: JSON.stringify({ available: true, requiresEnsMatch: false }) }),
       )
 
@@ -96,7 +96,7 @@ test.describe(
       await page.getByTestId(TestID.NavConnectWalletButton).click()
       await getVisibleDropdownElementByTestId(page, TestID.CreateAccount).click()
 
-      await page.route(`*/username?username=*`, (route) =>
+      await page.route(/\/username\?username=/, (route) =>
         route.fulfill({ body: JSON.stringify({ available: true, requiresEnsMatch: false }) }),
       )
 

@@ -162,6 +162,7 @@ function PlanDetailsSteps({ typeInfo }: { typeInfo: PlanTransactionInfo }): JSX.
   return (
     <Flex
       width="100%"
+      overflow="hidden"
       gap="$spacing2"
       p="$spacing12"
       backgroundColor="$surface2"

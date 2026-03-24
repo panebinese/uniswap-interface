@@ -49,12 +49,6 @@
         "cwd": "{projectRoot}"
       }
     },
-    "test:coverage": {
-      "command": "vitest run --coverage",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
     "watch": {
       "command": "bun run build --watch",
       "options": {

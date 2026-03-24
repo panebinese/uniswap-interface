@@ -1,12 +1,18 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { ChartPeriod } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { PortfolioChart } from 'src/components/home/PortfolioChart/PortfolioChart'
+import { PERIOD_OPTIONS, PortfolioChart } from 'src/components/home/PortfolioChart/PortfolioChart'
+import { type ChartData } from 'src/components/home/PortfolioChart/SparklineChart'
 import { usePortfolioChartData } from 'src/components/home/PortfolioChart/usePortfolioChartData'
 import { Flex, TouchableArea } from 'ui/src'
 import { useLayoutAnimationOnChange } from 'ui/src/animations/layout'
 import { AnglesMaximize } from 'ui/src/components/icons/AnglesMaximize'
 import { AnglesMinimize } from 'ui/src/components/icons/AnglesMinimize'
+import { getPortfolioHistoricalValueChartQuery } from 'uniswap/src/data/rest/getPortfolioChart'
+import { usePortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/balancesRest'
 import { PortfolioBalance } from 'uniswap/src/features/portfolio/PortfolioBalance/PortfolioBalance'
+import { usePortfolioChartBalanceMismatch } from 'uniswap/src/features/portfolio/usePortfolioChartBalanceMismatch'
+import { useHapticFeedback } from 'uniswap/src/features/settings/useHapticFeedback/useHapticFeedback'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 
 interface PortfolioChartSectionProps {
@@ -18,6 +24,25 @@ interface PortfolioChartSectionProps {
 export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: PortfolioChartSectionProps): JSX.Element {
   const [isChartExpanded, setIsChartExpanded] = useState(false)
   const [chartPeriod, setChartPeriod] = useState(ChartPeriod.DAY)
+  const [chartScrubFiatValue, setChartScrubFiatValue] = useState<number | undefined>(undefined)
+  const queryClient = useQueryClient()
+  const { hapticFeedback } = useHapticFeedback()
+
+  const handleScrub = useCallback(
+    async (point: ChartData[number] | null) => {
+      if (point) {
+        await hapticFeedback.light()
+      }
+      setChartScrubFiatValue(point?.value)
+    },
+    [hapticFeedback],
+  )
+
+  useEffect(() => {
+    if (!isChartExpanded) {
+      setChartScrubFiatValue(undefined)
+    }
+  }, [isChartExpanded])
 
   const {
     data: chartData,
@@ -28,6 +53,23 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
     chartPeriod,
     chainIds,
     enabled: isPnLEnabled,
+  })
+
+  const lastChartValue = useMemo(() => {
+    if (chartData.length === 0) {
+      return undefined
+    }
+    return chartData[chartData.length - 1]?.value
+  }, [chartData])
+
+  const { data: portfolioData } = usePortfolioTotalValue({
+    evmAddress,
+    chainIds,
+  })
+
+  const { isTotalValueMatch } = usePortfolioChartBalanceMismatch({
+    lastChartValue,
+    portfolioTotalBalanceUSD: portfolioData?.balanceUSD,
   })
 
   const canShowChart = isPnLEnabled && chartData.length > 0
@@ -42,6 +84,25 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
       setIsChartExpanded(false)
     }
   }, [canShowChart, chartLoading])
+
+  // Prefetch all chart periods when expanded so switching is instant
+  useEffect(() => {
+    if (!isChartExpanded || !evmAddress) {
+      return
+    }
+    for (const period of PERIOD_OPTIONS) {
+      if (period === chartPeriod) {
+        continue
+      }
+      queryClient
+        .prefetchQuery(
+          getPortfolioHistoricalValueChartQuery({
+            input: { evmAddress, chartPeriod: period, chainIds },
+          }),
+        )
+        .catch(() => undefined)
+    }
+  }, [isChartExpanded, evmAddress, chartPeriod, chainIds, queryClient])
 
   const toggleChartExpanded = useCallback(() => {
     setIsChartExpanded((prev) => !prev)
@@ -71,7 +132,12 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
           {canShowChart && !isChartExpanded ? (
             <Flex row alignItems="flex-start">
               <Flex flex={1}>
-                <PortfolioBalance evmOwner={evmAddress} endText={chartToggleIcon} chartPeriod={chartPeriod} />
+                <PortfolioBalance
+                  evmOwner={evmAddress}
+                  endText={chartToggleIcon}
+                  chartPeriod={chartPeriod}
+                  overrideBalanceUSD={chartScrubFiatValue}
+                />
               </Flex>
               <PortfolioChart
                 data={chartData}
@@ -79,6 +145,7 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
                 chartColor={chartColor}
                 isExpanded={false}
                 chartPeriod={chartPeriod}
+                isTotalValueMatch={isTotalValueMatch}
                 onChartPeriodChange={setChartPeriod}
               />
             </Flex>
@@ -87,6 +154,7 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
               evmOwner={evmAddress}
               endText={chartToggleIcon}
               chartPeriod={canShowChart ? chartPeriod : undefined}
+              overrideBalanceUSD={chartScrubFiatValue}
             />
           )}
         </Flex>
@@ -99,7 +167,9 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
             chartColor={chartColor}
             isExpanded={true}
             chartPeriod={chartPeriod}
+            isTotalValueMatch={isTotalValueMatch}
             onChartPeriodChange={setChartPeriod}
+            onScrub={handleScrub}
           />
         </Flex>
       )}

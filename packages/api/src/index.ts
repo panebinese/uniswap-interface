@@ -150,11 +150,18 @@ export {
 // Uniswap API
 export {
   createUniswapApiClient,
-  type ScreenRequest,
-  type ScreenResponse,
   type UniswapApiClient,
   type UniswapApiClientContext,
 } from '@universe/api/src/clients/uniswap/createUniswapApiClient'
+
+// Compliance API
+export {
+  createComplianceApiClient,
+  type ComplianceApiClient,
+  type ComplianceApiClientContext,
+  type ScreenRequest,
+  type ScreenResponse,
+} from '@universe/api/src/clients/compliance/createComplianceApiClient'
 
 // Unitags API
 export {
@@ -182,6 +189,17 @@ export {
 } from '@universe/api/src/clients/unitags/types'
 export { createUnitagsApiClient } from '@universe/api/src/clients/unitags/createUnitagsApiClient'
 
+// Gas Service API (ConnectRPC - estimateGasFee via UniRPC v2)
+export {
+  createGasServiceClient,
+  type GasServiceClient,
+  type GasServiceClientContext,
+} from '@universe/api/src/clients/gasService/createGasServiceClient'
+export type {
+  EstimateGasFeeRequest as GasServiceEstimateRequest,
+  EstimateGasFeeResponse as GasServiceEstimateResponse,
+} from '@uniswap/client-unirpc-v2/dist/uniswap/unirpc/v2/service_pb'
+
 // Data API Service (ConnectRPC - listTopTokens, listTopPools, getPortfolio, etc.)
 export {
   createDataApiServiceClient,
@@ -194,11 +212,11 @@ export {
 } from '@universe/api/src/clients/dataApi/getGetPortfolioQueryOptions'
 export {
   TopPoolsOrderBy,
-  TopTokensOrderBy,
+  TokensOrderBy,
   type GetPortfolioRequest,
   type GetPortfolioResponse,
   type ListTopPoolsResponse,
-  type ListTopTokensResponse,
+  type ListTokensResponse,
 } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 export { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 export { type Pool as DataApiPool, type Token as DataApiToken } from '@uniswap/client-data-api/dist/data/v1/types_pb'
@@ -286,6 +304,8 @@ export {
   createEmbeddedWalletApiClient,
   type EmbeddedWalletApiClient,
   type EmbeddedWalletClientContext,
+  type RecoveryMethod,
+  type SignAuth,
 } from '@universe/api/src/clients/embeddedWallet/createEmbeddedWalletApiClient'
 
 // Other Utilities
@@ -295,12 +315,13 @@ export {
 } from '@universe/api/src/clients/base/utils'
 
 // Session API
-export { ApiInit, SESSION_INIT_QUERY_KEY } from '@universe/api/src/components/ApiInit'
+export { ApiInit, reinitializeSession, SESSION_INIT_QUERY_KEY } from '@universe/api/src/components/ApiInit'
 export { provideSessionService } from '@universe/api/src/provideSessionService'
 export { useIsSessionInitialized } from '@universe/api/src/hooks/useIsSessionInitialized'
 
 // Session Transport (pure factory, no platform detection)
 export { createSessionTransport, type CreateSessionTransportOptions } from '@universe/api/src/session'
+export { createWithSessionRetry } from '@universe/api/src/session/createWithSessionRetry'
 
 export type {
   UseQueryApiHelperHookArgs,

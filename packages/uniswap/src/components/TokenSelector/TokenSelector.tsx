@@ -52,7 +52,6 @@ export interface TokenSelectorProps {
   input?: TradeableAsset
   output?: TradeableAsset
   isSurfaceReady?: boolean
-  isLimits?: boolean
   onClose: () => void
   focusHook?: ComponentProps<typeof BottomSheetView>['focusHook']
   onSelectChain?: (chainId: UniverseChainId | null) => void
@@ -95,7 +94,6 @@ export function TokenSelectorContent({
   chainId,
   chainIds,
   isSurfaceReady = true,
-  isLimits,
   onClose,
   onSelectChain,
   onSelectCurrency,
@@ -168,8 +166,8 @@ export function TokenSelectorContent({
   const shouldAutoFocusSearch = isWebPlatform && !media.sm
 
   const shouldShowCrosschainPromoBanner = useMemo(
-    () => !isLimits && (!chainFilter || isChainSupportedForChainedActions(chainFilter)),
-    [isLimits, chainFilter],
+    () => flow === TokenSelectorFlow.Swap && (!chainFilter || isChainSupportedForChainedActions(chainFilter)),
+    [flow, chainFilter],
   )
 
   const tokenSelector = useTokenSelectorList({
@@ -233,7 +231,7 @@ export function TokenSelectorContent({
             onChangeText={onChangeText}
             onFocus={onFocus}
           />
-          {isLimits && (
+          {flow === TokenSelectorFlow.Limit && (
             <Flex
               row
               backgroundColor="$surface2"

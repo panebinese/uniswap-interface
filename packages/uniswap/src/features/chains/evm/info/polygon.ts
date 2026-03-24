@@ -2,6 +2,7 @@ import { GraphQLApi } from '@universe/api'
 import { SwapConfigKey } from '@universe/gating'
 import { POLYGON_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import { getQuicknodeEndpointUrl } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import {
@@ -70,7 +71,7 @@ export const POLYGON_CHAIN_INFO = {
   statusPage: undefined,
   supportsV4: true,
   supportsNFTs: true,
-  urlParam: 'polygon',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Polygon],
   wrappedNativeCurrency: {
     name: 'Wrapped POL',
     symbol: 'WPOL',

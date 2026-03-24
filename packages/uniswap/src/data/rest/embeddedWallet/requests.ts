@@ -7,30 +7,14 @@ import { getVersionHeader } from 'uniswap/src/data/getVersionHeader'
 import { isMobileApp } from 'utilities/src/platform'
 import { REQUEST_SOURCE } from 'utilities/src/platform/requestSource'
 
-const PRIVY_EW_DEV_PROXY_PATH = '/privy-ew'
-
-function getPrivyEmbeddedWalletBaseUrl(): string {
-  // In local browser dev, route through the Vite proxy (/privy-ew) so the
-  // SameSite=strict session cookie set by StartAuthenticatedSession is sent
-  // back on AddAuthenticator (cross-site cookies are blocked from localhost).
-  if (typeof window !== 'undefined') {
-    const { hostname } = window.location
-    if (hostname === 'localhost' || hostname.endsWith('-uniswap.vercel.app') || hostname === 'app.corn-staging.com') {
-      return `${window.location.origin}${PRIVY_EW_DEV_PROXY_PATH}`
-    }
-  }
-  return uniswapUrls.privyEmbeddedWalletUrl
-}
-
 function createEmbeddedWalletTransport(): Transport {
   return getTransport({
-    getBaseUrl: getPrivyEmbeddedWalletBaseUrl,
+    getBaseUrl: () => uniswapUrls.privyEmbeddedWalletUrl,
     getHeaders: () => ({
       ...(isMobileApp && { Origin: uniswapUrls.requestOriginUrl }),
       'x-request-source': REQUEST_SOURCE,
       'x-app-version': getVersionHeader(),
     }),
-    options: { credentials: 'include' },
   })
 }
 
@@ -83,4 +67,10 @@ export const EmbeddedWalletApiClient: EmbeddedWalletApiClientType = {
     getApiClient().then((c) => c.fetchStartAuthenticatedSessionRequest(...args)),
   fetchAddAuthenticatorRequest: (...args) => getApiClient().then((c) => c.fetchAddAuthenticatorRequest(...args)),
   fetchDeleteAuthenticatorRequest: (...args) => getApiClient().then((c) => c.fetchDeleteAuthenticatorRequest(...args)),
+  fetchOprfEvaluate: (...args) => getApiClient().then((c) => c.fetchOprfEvaluate(...args)),
+  fetchSetupRecovery: (...args) => getApiClient().then((c) => c.fetchSetupRecovery(...args)),
+  fetchExecuteRecovery: (...args) => getApiClient().then((c) => c.fetchExecuteRecovery(...args)),
+  fetchReportDecryptionResult: (...args) => getApiClient().then((c) => c.fetchReportDecryptionResult(...args)),
+  fetchGetRecoveryConfig: (...args) => getApiClient().then((c) => c.fetchGetRecoveryConfig(...args)),
+  fetchDeleteRecovery: (...args) => getApiClient().then((c) => c.fetchDeleteRecovery(...args)),
 }

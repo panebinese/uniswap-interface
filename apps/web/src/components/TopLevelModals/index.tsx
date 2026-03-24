@@ -9,6 +9,8 @@ import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { shortenAddress } from 'utilities/src/addresses'
 import { isBetaEnv, isDevEnv } from 'utilities/src/environment/env'
 import { useEvent } from 'utilities/src/react/hooks'
+import { OAuthRedirectProvider } from '~/components/Passkey/OAuthRedirectContext'
+import { useOAuthRedirectRouter } from '~/components/Passkey/useOAuthRedirectRouter'
 import { POPUP_MEDIUM_DISMISS_MS } from '~/components/Popups/constants'
 import { popupRegistry } from '~/components/Popups/registry'
 import { PopupType } from '~/components/Popups/types'
@@ -18,6 +20,7 @@ import { PageType, useIsPage } from '~/hooks/useIsPage'
 import { PasskeysHelpModalTypeAtom } from '~/hooks/usePasskeyAuthWithHelpModal'
 
 export default function TopLevelModals() {
+  useOAuthRedirectRouter()
   const { t } = useTranslation()
   const isLandingPage = useIsPage(PageType.LANDING)
   const { evmAddress, svmAddress } = useActiveAddresses()
@@ -51,7 +54,7 @@ export default function TopLevelModals() {
   // necessary and add minimal overhead to the dom.
   if (isLandingPage) {
     return (
-      <>
+      <OAuthRedirectProvider value={true}>
         <ModalRenderer modalName={ModalName.PrivacyPolicy} />
         <ModalRenderer modalName={ModalName.PrivacyChoices} />
         <ModalRenderer modalName={ModalName.GetTheApp} />
@@ -63,12 +66,12 @@ export default function TopLevelModals() {
         <ModalRenderer modalName={ModalName.OffchainActivity} />
         <ModalRenderer modalName={ModalName.ReceiveCryptoModal} />
         <ModalRenderer modalName={ModalName.PendingWalletConnection} />
-      </>
+      </OAuthRedirectProvider>
     )
   }
 
   return (
-    <>
+    <OAuthRedirectProvider value={true}>
       <ModalRenderer modalName={ModalName.AddressClaim} />
       <ModalRenderer modalName={ModalName.BlockedAccount} componentProps={{ blockedAddress }} />
       <ModalRenderer modalName={ModalName.UniWalletConnect} />
@@ -101,6 +104,11 @@ export default function TopLevelModals() {
         modalName={ModalName.ReportTokenIssue}
         componentProps={{ ...reportTokenIssueProps, onReportSuccess }}
       />
-    </>
+      <ModalRenderer modalName={ModalName.AddPasskey} />
+      <ModalRenderer modalName={ModalName.AddBackupLogin} />
+      <ModalRenderer modalName={ModalName.RecoverWallet} />
+      <ModalRenderer modalName={ModalName.DeletePasskey} />
+      <ModalRenderer modalName={ModalName.RemoveBackupLogin} />
+    </OAuthRedirectProvider>
   )
 }

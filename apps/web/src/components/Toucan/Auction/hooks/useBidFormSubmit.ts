@@ -15,7 +15,6 @@ import { useEvent } from 'utilities/src/react/hooks'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { zeroAddress } from 'viem'
 import { getAuctionBidBaseAnalyticsProperties } from '~/components/Toucan/Auction/analytics'
-import { BidInfoTab } from '~/components/Toucan/Auction/store/types'
 import { useAuctionStore, useAuctionStoreActions } from '~/components/Toucan/Auction/store/useAuctionStore'
 import { useToucanSubmitBid } from '~/hooks/useToucanSubmitBid'
 
@@ -124,7 +123,7 @@ export function useBidFormSubmit({
   const [submissionError, setSubmissionError] = useState<Error | undefined>(undefined)
 
   // Store actions for optimistic bid management
-  const { setOptimisticBid, setPreviousBidsCount, setActiveBidFormTab } = useAuctionStoreActions()
+  const { setOptimisticBid, setPreviousBidsCount } = useAuctionStoreActions()
   const currentBidsCount = useAuctionStore((state) => state.userBids.length)
 
   const setCurrentTransactionStep = useCallback(() => {}, [])
@@ -149,9 +148,8 @@ export function useBidFormSubmit({
       // Store previous count for detection when API returns new bid
       setPreviousBidsCount(currentBidsCount)
 
-      // Set optimistic bid and switch to MY_BIDS tab
+      // Set optimistic bid
       setOptimisticBid(optimisticBid)
-      setActiveBidFormTab(BidInfoTab.MY_BIDS)
     }
 
     preparedBidRef.current = null

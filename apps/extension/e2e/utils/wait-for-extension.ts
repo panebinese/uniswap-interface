@@ -29,19 +29,7 @@ export async function waitForExtensionLoad(
       }
     }
 
-    // Check background pages
-    if (!extensionId) {
-      const backgroundPages = context.backgroundPages()
-      for (const page of backgroundPages) {
-        const url = page.url()
-        if (url.startsWith('chrome-extension://')) {
-          extensionId = url.split('/')[2]
-          break
-        }
-      }
-    }
-
-    // Check service workers
+    // Check service workers (MV3 extensions use service workers, not background pages)
     if (!extensionId) {
       const workers = context.serviceWorkers()
       for (const worker of workers) {

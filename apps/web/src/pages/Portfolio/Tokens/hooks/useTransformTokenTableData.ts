@@ -64,8 +64,10 @@ export function useTransformTokenTableData({ chainIds, limit }: { chainIds?: Uni
   })
 
   return useMemo(() => {
-    // Only show empty state on initial load, not during refetch
-    const isInitialLoading = loading && !sortedBalances
+    // Only show empty state on initial load, not during refetch.
+    // networkStatus === NetworkStatus.loading means the query has never completed.
+    // This is synchronously true from the very first render when there is no cached data, even before isFetching is set.
+    const isInitialLoading = networkStatus === NetworkStatus.loading && !sortedBalances
     const isRefetching = loading && !!sortedBalances
 
     if (isInitialLoading) {
@@ -73,7 +75,7 @@ export function useTransformTokenTableData({ chainIds, limit }: { chainIds?: Uni
         visible: null,
         hidden: null,
         totalCount: null,
-        loading,
+        loading: true,
         refetching: false,
         error,
         refetch,

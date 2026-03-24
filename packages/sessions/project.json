@@ -26,12 +26,6 @@
         "cwd": "{projectRoot}"
       }
     },
-    "test:coverage": {
-      "command": "vitest run --coverage",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
     "test:integration:backend": {
       "command": "vitest run --config vitest.integration.config.ts",
       "options": {

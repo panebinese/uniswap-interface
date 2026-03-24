@@ -17,6 +17,8 @@ type NetworkLogoProps = FlexProps & {
   loading?: boolean
 }
 
+const SUBPIXEL_COMPENSATION = 1 // prevents gaps between logo and border on different screens/zoom levels
+
 export function TransactionSummaryNetworkLogo({
   chainId,
   size = iconSizes.icon20,
@@ -42,7 +44,7 @@ function _NetworkLogo({
     height: size,
     borderRadius: borderRadius ?? shapeBorderRadius,
     borderWidth,
-    borderColor: colors.surface1.val,
+    borderColor: colors.surface1.get(),
   }
 
   if (loading) {
@@ -58,10 +60,11 @@ function _NetworkLogo({
   }
 
   const logo = getChainInfo(chainId).logo
-  const imageSize = size - borderWidth * 2 // this prevents the border from cutting off the logo
+
+  const imageSize = size + SUBPIXEL_COMPENSATION - borderWidth * 2 // this prevents the border from cutting off the logo
 
   return logo ? (
-    <Flex testID="network-logo" overflow="hidden" style={imageStyle} zIndex={zIndexes.mask}>
+    <Flex centered testID="network-logo" overflow="hidden" style={imageStyle} zIndex={zIndexes.mask}>
       <NetworkImage logo={logo} imageSize={imageSize} transition={transition} />
     </Flex>
   ) : null
@@ -81,7 +84,7 @@ function NetworkImage({
   return isMobileWeb && typeof logo === 'string' ? (
     <img src={logo} style={{ width: imageSize, height: imageSize, transition }} />
   ) : (
-    <Image resizeMode="contain" source={logo} width={imageSize} height={imageSize} transition={transition} />
+    <Image objectFit="contain" source={logo} width={imageSize} height={imageSize} transition={transition} />
   )
 }
 

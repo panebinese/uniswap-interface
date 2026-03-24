@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Flex, Input, Popover, Text } from 'ui/src'
+import { Button, Flex, Input, Popover, Text, TouchableArea } from 'ui/src'
 import { CheckCircleFilled } from 'ui/src/components/icons/CheckCircleFilled'
 import { Edit } from 'ui/src/components/icons/Edit'
 import { ImageUpload } from 'ui/src/components/icons/ImageUpload'
@@ -15,8 +15,7 @@ import { useCreateAuctionStoreActions } from '~/pages/Liquidity/CreateAuction/Cr
 import { NoWalletSection } from '~/pages/Liquidity/CreateAuction/components/NoWalletSection'
 import { TokenAdditionalInfoSection } from '~/pages/Liquidity/CreateAuction/components/TokenAdditionalInfoSection'
 import { useCreateNewTokenAllowedNetworks } from '~/pages/Liquidity/CreateAuction/hooks/useCreateNewTokenAllowedNetworks'
-import { type CreateNewTokenFields } from '~/pages/Liquidity/CreateAuction/types'
-import { ClickableTamaguiStyle } from '~/theme/components/styles'
+import { type CreateNewTokenFormState } from '~/pages/Liquidity/CreateAuction/types'
 
 function NetworkSelector({
   network,
@@ -34,13 +33,7 @@ function NetworkSelector({
   return (
     <Popover placement="bottom-start">
       <Popover.Trigger>
-        <Flex
-          gap="$spacing2"
-          p="$spacing16"
-          borderRadius="$rounded20"
-          backgroundColor="$surface2"
-          {...ClickableTamaguiStyle}
-        >
+        <TouchableArea gap="$spacing2" p="$spacing16" borderRadius="$rounded20" backgroundColor="$surface2">
           {label && (
             <Text variant="body3" color="$neutral2">
               {label}
@@ -53,7 +46,7 @@ function NetworkSelector({
             </Text>
             <RotatableChevron direction="down" color="$neutral2" size="$icon.16" />
           </Flex>
-        </Flex>
+        </TouchableArea>
       </Popover.Trigger>
       <Popover.Content
         borderRadius="$rounded12"
@@ -73,7 +66,7 @@ function NetworkSelector({
             const isSelected = chainId === network
             return (
               <Popover.Close key={chainId} asChild>
-                <Flex
+                <TouchableArea
                   row
                   alignItems="center"
                   gap="$spacing8"
@@ -81,13 +74,11 @@ function NetworkSelector({
                   borderRadius="$rounded8"
                   backgroundColor={isSelected ? '$surface3' : '$transparent'}
                   onPress={() => onSelect(chainId)}
-                  {...ClickableTamaguiStyle}
-                  hoverStyle={{ backgroundColor: '$surface2' }}
                 >
                   <NetworkLogo chainId={chainId} size={iconSizes.icon20} />
                   <Text variant="buttonLabel3">{info.label}</Text>
-                  {isSelected && <CheckCircleFilled size="$icon.20" />}
-                </Flex>
+                  {isSelected && <CheckCircleFilled color="$neutral1" size="$icon.20" />}
+                </TouchableArea>
               </Popover.Close>
             )
           })}
@@ -97,7 +88,7 @@ function NetworkSelector({
   )
 }
 
-export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFields }) {
+export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFormState }) {
   const { t } = useTranslation()
   const { updateCreateNewTokenField, commitTokenFormAndAdvance } = useCreateAuctionStoreActions()
   const [isEditingName, setIsEditingName] = useState(false)
@@ -126,7 +117,7 @@ export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFie
       </Flex>
       <Flex gap="$spacing16">
         <Flex row alignItems="center" gap="$spacing24" height={88}>
-          <Flex
+          <TouchableArea
             width={80}
             height={80}
             borderRadius="$roundedFull"
@@ -134,10 +125,9 @@ export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFie
             alignItems="center"
             justifyContent="center"
             onPress={() => {}} // TODO: launch S3 upload flow
-            {...ClickableTamaguiStyle}
           >
             <ImageUpload color="$neutral2" size="$icon.24" />
-          </Flex>
+          </TouchableArea>
           <Flex flex={1} gap="$spacing4" justifyContent="center">
             <Text variant="body3" color="$neutral2">
               {t('toucan.createAuction.step.tokenInfo.name')}
@@ -162,15 +152,14 @@ export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFie
                 <Text variant="heading2" color={createNew.name ? '$neutral1' : '$neutral3'}>
                   {createNew.name || t('toucan.createAuction.step.tokenInfo.namePlaceholder')}
                 </Text>
-                <Flex
+                <TouchableArea
                   alignItems="center"
                   px="$spacing12"
                   py="$spacing8"
                   onPress={() => setIsEditingName(true)}
-                  {...ClickableTamaguiStyle}
                 >
                   <Edit color="$neutral1" size="$icon.20" />
-                </Flex>
+                </TouchableArea>
               </Flex>
             )}
           </Flex>

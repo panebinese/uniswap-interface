@@ -24,6 +24,7 @@ interface CurrencySearchProps {
   onDismiss: () => void
   chainIds?: UniverseChainId[]
   variation?: TokenSelectorVariation
+  flow?: TokenSelectorFlow
 }
 
 export function CurrencySearch({
@@ -33,6 +34,7 @@ export function CurrencySearch({
   onDismiss,
   chainIds,
   variation,
+  flow = TokenSelectorFlow.Swap,
 }: CurrencySearchProps) {
   const addresses = useActiveAddresses()
 
@@ -75,11 +77,10 @@ export function CurrencySearch({
         <TokenSelectorContent
           renderedInModal={false}
           addresses={addresses}
-          isLimits={currentTab === SwapTab.Limit}
           chainId={!isMultichainContext || isUserSelectedToken ? chainId : undefined}
           chainIds={chainIds ?? chains}
           currencyField={currencyField}
-          flow={TokenSelectorFlow.Swap}
+          flow={currentTab === SwapTab.Limit ? TokenSelectorFlow.Limit : flow}
           isSurfaceReady={true}
           variation={
             variation ??

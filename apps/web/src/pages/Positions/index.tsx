@@ -318,12 +318,7 @@ function VirtualizedPositionsList({
                 style={{ textDecoration: 'none' }}
                 to={getPositionUrl(position)}
               >
-                <LiquidityPositionCard
-                  showVisibilityOption
-                  liquidityPosition={position}
-                  showMigrateButton
-                  isLast={index === positions.length - 1}
-                />
+                <LiquidityPositionCard showVisibilityOption liquidityPosition={position} showMigrateButton />
               </Link>
             </Flex>
           )

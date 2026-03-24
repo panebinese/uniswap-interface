@@ -16,6 +16,7 @@ export enum ReactQueryCacheKey {
   CancelPlanStepRequest = 'CancelPlanStepRequest',
   CancelTransactionRequest = 'CancelTransactionRequest',
   CancelUniswapXTransactionRequest = 'CancelUniswapXTransactionRequest',
+  Compliance = 'Compliance',
   CreateTransferTransaction = 'CreateTransferTransaction',
   DataApiService = 'DataApiService',
   DialogVisibility = 'DialogVisibility',

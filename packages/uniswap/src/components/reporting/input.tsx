@@ -2,6 +2,8 @@ import { fonts } from 'ui/src/theme'
 import { TextInput, TextInputProps } from 'uniswap/src/components/input/TextInput'
 import { isMobileApp } from 'utilities/src/platform'
 
+const MAX_REPORT_TEXT_LENGTH = 500
+
 export function ReportInput({
   setReportText,
   placeholder,
@@ -20,6 +22,7 @@ export function ReportInput({
       py="$spacing12"
       backgroundColor="$surface2"
       numberOfLines={3}
+      maxLength={MAX_REPORT_TEXT_LENGTH}
       width="100%"
       returnKeyType="done"
       onChangeText={setReportText}

@@ -16,6 +16,7 @@ import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { zeroAddress } from 'viem'
 import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { getAuctionBidInputtedAnalyticsProperties } from '~/components/Toucan/Auction/analytics'
+import { AuctionAccessIndicators } from '~/components/Toucan/Auction/BidForm/AuctionAccessIndicators'
 import { BidBudgetInput } from '~/components/Toucan/Auction/BidForm/BidBudgetInput'
 import { BidFormWarningBanner } from '~/components/Toucan/Auction/BidForm/BidFormWarningBanner'
 import { BidMaxValuationInput } from '~/components/Toucan/Auction/BidForm/BidMaxValuationInput'
@@ -201,7 +202,8 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
   )
 
   return (
-    <>
+    <Flex flexDirection="column" gap="$spacing8">
+      <AuctionAccessIndicators />
       <Flex flexGrow={1} justifyContent="space-between" gap="$spacing24">
         <Flex gap="$spacing12">
           {showDisabledState && (
@@ -304,6 +306,6 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
           onAcknowledge={() => setShowTokenWarningModal(false)}
         />
       )}
-    </>
+    </Flex>
   )
 }

@@ -180,6 +180,8 @@ export function ExploreScreen(): JSX.Element {
           hideIcon={isSearchMode}
           minHeight={MIN_SEARCH_INPUT_HEIGHT}
           placeholder={t('explore.search.placeholder')}
+          borderColor="$transparent"
+          borderWidth="$none"
           onCancel={onSearchCancel}
           onChangeText={onSearchChangeText}
           onFocus={onSearchFocus}

@@ -90,7 +90,7 @@ export function Modal({
           hideHandlebar={hideHandlebar}
           snapPointsMode={snapPointsMode}
           snapPoints={snapPoints}
-          $sm={{
+          $md={{
             p: padding ?? '$spacing12',
             ...(isWebApp && {
               '$platform-web': {

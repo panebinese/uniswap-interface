@@ -124,7 +124,18 @@ export function LogoWithTxStatus(props: LogoWithTxStatusProps): JSX.Element {
         break
     }
     if (Icon) {
-      icon = <Icon color={color.val} fill={fill.val} size={statusSize} testID="status-icon" />
+      icon = (
+        <Flex
+          centered
+          backgroundColor="$surface1"
+          borderRadius="$roundedFull"
+          height={statusSize}
+          overflow="hidden"
+          width={statusSize}
+        >
+          <Icon color={color.get()} fill={fill.val} size={statusSize} testID="status-icon" />
+        </Flex>
+      )
     }
   }
 

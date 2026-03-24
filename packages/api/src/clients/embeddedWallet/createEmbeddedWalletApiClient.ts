@@ -11,11 +11,17 @@ import {
   type ChallengeResponse,
   type CreateWalletResponse,
   type DeleteAuthenticatorResponse,
+  type DeleteRecoveryResponse,
   type DisconnectResponse,
+  type ExecuteRecoveryResponse,
+  type GetRecoveryConfigResponse,
   type ListAuthenticatorsResponse,
   type Action as NewAction,
   type AuthenticationTypes as NewAuthenticationTypes,
+  type OprfEvaluateResponse,
   type RegistrationOptions,
+  type ReportDecryptionResultResponse,
+  type SetupRecoveryResponse,
   type SignMessageResponse,
   type SignTransactionResponse,
   type SignTypedDataResponse,
@@ -35,15 +41,27 @@ export type {
   ChallengeResponse,
   CreateWalletResponse,
   DeleteAuthenticatorResponse,
+  DeleteRecoveryResponse,
   DisconnectResponse,
+  ExecuteRecoveryResponse,
+  GetRecoveryConfigResponse,
   ListAuthenticatorsResponse,
+  OprfEvaluateResponse,
+  RecoveryMethod,
   RegistrationOptions,
+  ReportDecryptionResultResponse,
+  SetupRecoveryResponse,
   SignMessageResponse,
   SignTransactionResponse,
   SignTypedDataResponse,
   StartAuthenticatedSessionResponse,
   WalletSignInResponse,
 } from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
+
+export type SignAuth =
+  | { case: 'credential'; value: string }
+  | { case: 'deviceAuth'; value: { deviceSignature: string; walletId: string } }
+  | { case: undefined; value?: undefined }
 
 export interface EmbeddedWalletClientContext {
   rpcClient: {
@@ -58,6 +76,12 @@ export interface EmbeddedWalletClientContext {
     startAuthenticatedSession: (req: Record<string, unknown>) => Promise<StartAuthenticatedSessionResponse>
     addAuthenticator: (req: Record<string, unknown>) => Promise<AddAuthenticatorResponse>
     deleteAuthenticator: (req: Record<string, unknown>) => Promise<DeleteAuthenticatorResponse>
+    oprfEvaluate: (req: Record<string, unknown>) => Promise<OprfEvaluateResponse>
+    setupRecovery: (req: Record<string, unknown>) => Promise<SetupRecoveryResponse>
+    executeRecovery: (req: Record<string, unknown>) => Promise<ExecuteRecoveryResponse>
+    reportDecryptionResult: (req: Record<string, unknown>) => Promise<ReportDecryptionResultResponse>
+    getRecoveryConfig: (req: Record<string, unknown>) => Promise<GetRecoveryConfigResponse>
+    deleteRecovery: (req: Record<string, unknown>) => Promise<DeleteRecoveryResponse>
   }
   legacyRpcClient?: PromiseClient<typeof OldEmbeddedWalletService>
 }
@@ -72,26 +96,23 @@ export interface EmbeddedWalletApiClient {
     transaction?: string
     typedData?: string
     authenticatorId?: string
+    devicePublicKey?: string
+    authPublicKey?: string
+    privyUserId?: string
   }) => Promise<ChallengeResponse>
 
-  fetchCreateWalletRequest: (params: { credential: string }) => Promise<CreateWalletResponse>
+  fetchCreateWalletRequest: (params: { credential: string; devicePublicKey: string }) => Promise<CreateWalletResponse>
 
   fetchWalletSigninRequest: (params: { credential: string }) => Promise<WalletSignInResponse>
 
-  fetchSignMessagesRequest: (params: {
-    messages: string[]
-    credential: string | undefined
-  }) => Promise<{ signatures: string[] }>
+  fetchSignMessagesRequest: (params: { messages: string[]; auth: SignAuth }) => Promise<{ signatures: string[] }>
 
   fetchSignTransactionsRequest: (params: {
     transactions: string[]
-    credential: string | undefined
+    auth: SignAuth
   }) => Promise<{ signatures: string[] }>
 
-  fetchSignTypedDataRequest: (params: {
-    typedDataBatch: string[]
-    credential: string | undefined
-  }) => Promise<{ signatures: string[] }>
+  fetchSignTypedDataRequest: (params: { typedDataBatch: string[]; auth: SignAuth }) => Promise<{ signatures: string[] }>
 
   fetchDisconnectRequest: () => Promise<DisconnectResponse>
 
@@ -113,14 +134,49 @@ export interface EmbeddedWalletApiClient {
 
   fetchStartAuthenticatedSessionRequest: (params: {
     existingCredential: string
+    devicePublicKey: string
   }) => Promise<StartAuthenticatedSessionResponse>
 
-  fetchAddAuthenticatorRequest: (params: { newCredential: string }) => Promise<AddAuthenticatorResponse>
+  fetchAddAuthenticatorRequest: (params: {
+    newCredential: string
+    deviceSignature: string
+  }) => Promise<AddAuthenticatorResponse>
 
   fetchDeleteAuthenticatorRequest: (params: {
     credential: string
     authenticatorId: string
   }) => Promise<DeleteAuthenticatorResponse>
+
+  fetchOprfEvaluate: (params: {
+    blindedElement: string
+    isRecovery?: boolean
+    authMethodId?: string
+  }) => Promise<OprfEvaluateResponse>
+
+  fetchSetupRecovery: (params: {
+    credential: string
+    authMethodId: string
+    authMethodType?: string
+    encryptedKeyId?: string
+    authMethodIdentifier?: string
+  }) => Promise<SetupRecoveryResponse>
+
+  fetchExecuteRecovery: (params: {
+    authMethodId: string
+    newCredential: string
+    authKeySignature: string
+    recoveryAuthSignature: string
+  }) => Promise<ExecuteRecoveryResponse>
+
+  fetchReportDecryptionResult: (params: {
+    success: boolean
+    authMethodId: string
+    newPasskeyPublicKey?: string
+  }) => Promise<ReportDecryptionResultResponse>
+
+  fetchGetRecoveryConfig: (params: { authMethodId: string }) => Promise<GetRecoveryConfigResponse>
+
+  fetchDeleteRecovery: (params: { credential: string }) => Promise<DeleteRecoveryResponse>
 }
 
 export function createEmbeddedWalletApiClient({
@@ -138,6 +194,9 @@ export function createEmbeddedWalletApiClient({
     transaction,
     typedData,
     authenticatorId,
+    devicePublicKey,
+    authPublicKey,
+    privyUserId,
   }: {
     type: NewAuthenticationTypes
     action: NewAction
@@ -147,8 +206,11 @@ export function createEmbeddedWalletApiClient({
     transaction?: string
     typedData?: string
     authenticatorId?: string
+    devicePublicKey?: string
+    authPublicKey?: string
+    privyUserId?: string
   }): Promise<ChallengeResponse> {
-    const cacheKey = `challenge:${type}:${action}:${walletId ?? 'no-wallet'}:${message ?? ''}:${transaction ?? ''}:${typedData ?? ''}:${authenticatorId ?? ''}`
+    const cacheKey = `challenge:${type}:${action}:${walletId ?? 'no-wallet'}:${message ?? ''}:${transaction ?? ''}:${typedData ?? ''}:${authenticatorId ?? ''}:${devicePublicKey ?? ''}`
 
     const existingRequest = inflightRequests.get(cacheKey) as Promise<ChallengeResponse> | undefined
     if (existingRequest) {
@@ -165,6 +227,9 @@ export function createEmbeddedWalletApiClient({
         transaction,
         typedData,
         authenticatorId,
+        devicePublicKey,
+        authPublicKey,
+        privyUserId,
       })
       .finally(() => {
         inflightRequests.delete(cacheKey)
@@ -175,8 +240,14 @@ export function createEmbeddedWalletApiClient({
     return request
   }
 
-  async function fetchCreateWalletRequest({ credential }: { credential: string }): Promise<CreateWalletResponse> {
-    return await rpcClient.createWallet({ credential })
+  async function fetchCreateWalletRequest({
+    credential,
+    devicePublicKey,
+  }: {
+    credential: string
+    devicePublicKey: string
+  }): Promise<CreateWalletResponse> {
+    return await rpcClient.createWallet({ credential, devicePublicKey })
   }
 
   async function fetchWalletSigninRequest({ credential }: { credential: string }): Promise<WalletSignInResponse> {
@@ -185,10 +256,10 @@ export function createEmbeddedWalletApiClient({
 
   async function fetchSignMessagesRequest({
     messages,
-    credential,
+    auth,
   }: {
     messages: string[]
-    credential: string | undefined
+    auth: SignAuth
   }): Promise<{ signatures: string[] }> {
     if (messages.length === 0) {
       throw new Error('At least one message required')
@@ -198,17 +269,17 @@ export function createEmbeddedWalletApiClient({
     }
     const result = await rpcClient.signMessage({
       message: messages[0],
-      credential: credential ?? '',
+      auth,
     })
     return { signatures: [result.signature] }
   }
 
   async function fetchSignTransactionsRequest({
     transactions,
-    credential,
+    auth,
   }: {
     transactions: string[]
-    credential: string | undefined
+    auth: SignAuth
   }): Promise<{ signatures: string[] }> {
     if (transactions.length === 0) {
       throw new Error('At least one transaction required')
@@ -218,17 +289,17 @@ export function createEmbeddedWalletApiClient({
     }
     const result = await rpcClient.signTransaction({
       transaction: transactions[0],
-      credential: credential ?? '',
+      auth,
     })
     return { signatures: [result.signature] }
   }
 
   async function fetchSignTypedDataRequest({
     typedDataBatch,
-    credential,
+    auth,
   }: {
     typedDataBatch: string[]
-    credential: string | undefined
+    auth: SignAuth
   }): Promise<{ signatures: string[] }> {
     if (typedDataBatch.length === 0) {
       throw new Error('At least one typed data required')
@@ -238,7 +309,7 @@ export function createEmbeddedWalletApiClient({
     }
     const result = await rpcClient.signTypedData({
       typedData: typedDataBatch[0],
-      credential: credential ?? '',
+      auth,
     })
     return { signatures: [result.signature] }
   }
@@ -305,18 +376,22 @@ export function createEmbeddedWalletApiClient({
 
   async function fetchStartAuthenticatedSessionRequest({
     existingCredential,
+    devicePublicKey,
   }: {
     existingCredential: string
+    devicePublicKey: string
   }): Promise<StartAuthenticatedSessionResponse> {
-    return await rpcClient.startAuthenticatedSession({ existingCredential })
+    return await rpcClient.startAuthenticatedSession({ existingCredential, devicePublicKey })
   }
 
   async function fetchAddAuthenticatorRequest({
     newCredential,
+    deviceSignature,
   }: {
     newCredential: string
+    deviceSignature: string
   }): Promise<AddAuthenticatorResponse> {
-    return await rpcClient.addAuthenticator({ newCredential })
+    return await rpcClient.addAuthenticator({ newCredential, deviceSignature })
   }
 
   async function fetchDeleteAuthenticatorRequest({
@@ -327,6 +402,75 @@ export function createEmbeddedWalletApiClient({
     authenticatorId: string
   }): Promise<DeleteAuthenticatorResponse> {
     return await rpcClient.deleteAuthenticator({ credential, authenticatorId })
+  }
+
+  async function fetchOprfEvaluate({
+    blindedElement,
+    isRecovery,
+    authMethodId,
+  }: {
+    blindedElement: string
+    isRecovery?: boolean
+    authMethodId?: string
+  }): Promise<OprfEvaluateResponse> {
+    return await rpcClient.oprfEvaluate({ blindedElement, isRecovery, authMethodId })
+  }
+
+  async function fetchSetupRecovery({
+    credential,
+    authMethodId,
+    authMethodType,
+    encryptedKeyId,
+    authMethodIdentifier,
+  }: {
+    credential: string
+    authMethodId: string
+    authMethodType?: string
+    encryptedKeyId?: string
+    authMethodIdentifier?: string
+  }): Promise<SetupRecoveryResponse> {
+    return await rpcClient.setupRecovery({
+      credential,
+      authMethodId,
+      authMethodType,
+      encryptedKeyId,
+      authMethodIdentifier,
+    })
+  }
+
+  async function fetchExecuteRecovery({
+    authMethodId,
+    newCredential,
+    authKeySignature,
+    recoveryAuthSignature,
+  }: {
+    authMethodId: string
+    newCredential: string
+    authKeySignature: string
+    recoveryAuthSignature: string
+  }): Promise<ExecuteRecoveryResponse> {
+    return await rpcClient.executeRecovery({
+      authMethodId,
+      newCredential,
+      authKeySignature,
+      recoveryAuthSignature,
+    })
+  }
+
+  async function fetchReportDecryptionResult(params: {
+    success: boolean
+    authMethodId: string
+    newPasskeyPublicKey?: string
+  }): Promise<ReportDecryptionResultResponse> {
+    return await rpcClient.reportDecryptionResult(params)
+  }
+
+  async function fetchGetRecoveryConfig(params: { authMethodId: string }): Promise<GetRecoveryConfigResponse> {
+    return await rpcClient.getRecoveryConfig(params)
+  }
+
+  async function fetchDeleteRecovery({ credential }: { credential: string }): Promise<DeleteRecoveryResponse> {
+    return await rpcClient.deleteRecovery({ credential })
   }
 
   return {
@@ -343,5 +487,11 @@ export function createEmbeddedWalletApiClient({
     fetchStartAuthenticatedSessionRequest,
     fetchAddAuthenticatorRequest,
     fetchDeleteAuthenticatorRequest,
+    fetchOprfEvaluate,
+    fetchSetupRecovery,
+    fetchExecuteRecovery,
+    fetchReportDecryptionResult,
+    fetchGetRecoveryConfig,
+    fetchDeleteRecovery,
   }
 }

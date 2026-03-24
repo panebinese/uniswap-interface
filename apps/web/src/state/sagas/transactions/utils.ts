@@ -544,25 +544,30 @@ export function getSwapTransactionInfo(params: {
   trade: ClassicTrade | BridgeTrade | SolanaTrade | ChainedActionTrade
   swapStartTimestamp?: number
   planAnalytics?: PlanSwapTransactionInfoFields
+  transactedUSDValue?: number
 }): SwapInfo | BridgeTransactionInfo
 export function getSwapTransactionInfo(params: {
   trade: UniswapXTrade
   swapStartTimestamp?: number
   planAnalytics?: PlanSwapTransactionInfoFields
+  transactedUSDValue?: number
 }): SwapInfo & { isUniswapXOrder: true }
 export function getSwapTransactionInfo({
   trade,
   swapStartTimestamp,
   planAnalytics,
+  transactedUSDValue,
 }: {
   trade: ClassicTrade | BridgeTrade | UniswapXTrade | SolanaTrade | ChainedActionTrade
   swapStartTimestamp?: number
   planAnalytics?: PlanSwapTransactionInfoFields
+  transactedUSDValue?: number
 }): SwapInfo | BridgeTransactionInfo {
   const commonAttributes = {
     inputCurrencyId: currencyId(trade.inputAmount.currency),
     outputCurrencyId: currencyId(trade.outputAmount.currency),
     swapStartTimestamp,
+    transactedUSDValue,
     ...planAnalytics,
   }
 

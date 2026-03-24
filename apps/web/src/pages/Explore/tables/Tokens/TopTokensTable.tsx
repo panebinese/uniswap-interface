@@ -9,7 +9,7 @@ import {
   useTokenTableSortStore,
 } from '~/pages/Explore/tables/Tokens/tokenTableSortStore'
 import { TABLE_PAGE_SIZE } from '~/state/explore'
-import { useTopTokens } from '~/state/explore/topTokens/useTopTokens'
+import { useListTokens } from '~/state/explore/listTokens/useListTokens'
 import { useChainIdFromUrlParam } from '~/utils/chainParams'
 
 const TableWrapper = styled(Flex, {
@@ -29,7 +29,7 @@ function TopTokensTableContent(): JSX.Element {
     [sortMethod, sortAscending, filterString, timePeriod],
   )
 
-  const { topTokens, tokenSortRank, isLoading, sparklines, isError, loadMore } = useTopTokens(chainId, options)
+  const { topTokens, tokenSortRank, isLoading, sparklines, isError, loadMore } = useListTokens(chainId, options)
 
   const { page, loadMore: clientLoadMore } = useSimplePagination()
   const effectiveLoadMore = loadMore ?? clientLoadMore

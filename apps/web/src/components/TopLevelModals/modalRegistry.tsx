@@ -86,6 +86,27 @@ const ReportTokenModal = createLazy(() =>
     default: module.ReportTokenIssueModal,
   })),
 )
+
+const AddBackupLoginModal = createLazy(() =>
+  import('~/components/Passkey/AddBackupLoginModal').then((module) => ({ default: module.AddBackupLoginModal })),
+)
+
+const AddPasskeyModal = createLazy(() =>
+  import('~/components/Passkey/AddPasskeyModal').then((module) => ({ default: module.AddPasskeyModal })),
+)
+const RecoverWalletModal = createLazy(() =>
+  import('~/components/Passkey/RecoverWalletModal').then((module) => ({ default: module.RecoverWalletModal })),
+)
+
+const RemovePasskeyModal = createLazy(() =>
+  import('~/components/Passkey/RemovePasskeyModal').then((module) => ({ default: module.RemovePasskeyModal })),
+)
+
+const RemoveBackupLoginModal = createLazy(() =>
+  import('~/components/Passkey/RemoveBackupLoginModal').then((module) => ({
+    default: module.RemoveBackupLoginModal,
+  })),
+)
 function ModalLoadingFallback(): null {
   return null
 }
@@ -213,6 +234,26 @@ export const modalRegistry: ModalRegistry = {
   [ModalName.ReportTokenIssue]: {
     component: ReportTokenModal,
     shouldMount: (state) => state.application.openModal?.name === ModalName.ReportTokenIssue,
+  },
+  [ModalName.AddBackupLogin]: {
+    component: AddBackupLoginModal,
+    shouldMount: (state) => state.application.openModal?.name === ModalName.AddBackupLogin,
+  },
+  [ModalName.AddPasskey]: {
+    component: AddPasskeyModal,
+    shouldMount: (state) => state.application.openModal?.name === ModalName.AddPasskey,
+  },
+  [ModalName.RecoverWallet]: {
+    component: RecoverWalletModal,
+    shouldMount: (state) => state.application.openModal?.name === ModalName.RecoverWallet,
+  },
+  [ModalName.DeletePasskey]: {
+    component: RemovePasskeyModal,
+    shouldMount: (state) => state.application.openModal?.name === ModalName.DeletePasskey,
+  },
+  [ModalName.RemoveBackupLogin]: {
+    component: RemoveBackupLoginModal,
+    shouldMount: (state) => state.application.openModal?.name === ModalName.RemoveBackupLogin,
   },
 } as const
 

@@ -11,6 +11,7 @@ import { MONAD_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/monad'
 import { OPTIMISM_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/optimism'
 import { POLYGON_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/polygon'
 import { SONEIUM_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/soneium'
+import { TEMPO_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/tempo'
 import { UNICHAIN_CHAIN_INFO, UNICHAIN_SEPOLIA_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/unichain'
 import { WORLD_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/worldchain'
 import { XLAYER_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/xlayer'
@@ -32,6 +33,8 @@ export const { USDC: USDC_UNICHAIN } = UNICHAIN_CHAIN_INFO.tokens
 export const { USDC: USDC_UNICHAIN_SEPOLIA } = UNICHAIN_SEPOLIA_CHAIN_INFO.tokens
 
 export const { USDC: USDC_SONEIUM } = SONEIUM_CHAIN_INFO.tokens
+
+export const { pathUSD: PATHUSD_TEMPO, 'USDC.e': USDC_E_TEMPO } = TEMPO_CHAIN_INFO.tokens
 
 export const { USDC: USDC_XLAYER, USDT0: USDT0_XLAYER } = XLAYER_CHAIN_INFO.tokens
 
@@ -350,6 +353,13 @@ export const WRAPPED_NATIVE_CURRENCY: { [chainId: number]: Token | undefined } =
     18,
     'WETH',
     'Wrapped Ether',
+  ),
+  [UniverseChainId.Tempo]: new Token(
+    UniverseChainId.Tempo,
+    '0x20c0000000000000000000000000000000000000',
+    6,
+    'pathUSD',
+    'pathUSD',
   ),
   [UniverseChainId.Solana]: new SolanaToken(
     UniverseChainId.Solana,

@@ -20,11 +20,20 @@ const GRADIENT_WIDTH = 40
 // Horizontal padding: 24px each side from contentHeader + wrapper padding layers
 const CHART_HORIZONTAL_PADDING = 48
 
-const PERIOD_OPTIONS: ChartPeriod[] = [ChartPeriod.DAY, ChartPeriod.WEEK, ChartPeriod.MONTH, ChartPeriod.YEAR]
+export const PERIOD_OPTIONS: ChartPeriod[] = [
+  ChartPeriod.HOUR,
+  ChartPeriod.DAY,
+  ChartPeriod.WEEK,
+  ChartPeriod.MONTH,
+  ChartPeriod.YEAR,
+  ChartPeriod.MAX,
+]
 
 // TODO(CONS-1374): move periodToTestIdSuffixValue and periodToLabel to shared uniswap package
 function periodToTestIdSuffixValue(period: ChartPeriod): string {
   switch (period) {
+    case ChartPeriod.HOUR:
+      return '1h'
     case ChartPeriod.DAY:
       return '1d'
     case ChartPeriod.WEEK:
@@ -33,6 +42,8 @@ function periodToTestIdSuffixValue(period: ChartPeriod): string {
       return '1m'
     case ChartPeriod.YEAR:
       return '1y'
+    case ChartPeriod.MAX:
+      return 'all'
     default:
       return 'unknown'
   }
@@ -40,6 +51,8 @@ function periodToTestIdSuffixValue(period: ChartPeriod): string {
 
 function periodToLabel(t: TFunction, period: ChartPeriod): string {
   switch (period) {
+    case ChartPeriod.HOUR:
+      return t('token.priceExplorer.timeRangeLabel.hour')
     case ChartPeriod.DAY:
       return t('token.priceExplorer.timeRangeLabel.day')
     case ChartPeriod.WEEK:
@@ -48,6 +61,8 @@ function periodToLabel(t: TFunction, period: ChartPeriod): string {
       return t('token.priceExplorer.timeRangeLabel.month')
     case ChartPeriod.YEAR:
       return t('token.priceExplorer.timeRangeLabel.year')
+    case ChartPeriod.MAX:
+      return t('common.all')
     default:
       return ''
   }
@@ -60,6 +75,8 @@ interface PortfolioChartProps {
   isExpanded: boolean
   chartPeriod: ChartPeriod
   onChartPeriodChange: (period: ChartPeriod) => void
+  onScrub?: (point: ChartData[number] | null) => void
+  isTotalValueMatch: boolean
 }
 
 export const PortfolioChart = memo(function PortfolioChart({
@@ -69,6 +86,8 @@ export const PortfolioChart = memo(function PortfolioChart({
   isExpanded,
   chartPeriod,
   onChartPeriodChange,
+  onScrub,
+  isTotalValueMatch,
 }: PortfolioChartProps): JSX.Element | null {
   const { t } = useTranslation()
   const colors = useSporeColors()
@@ -133,17 +152,20 @@ export const PortfolioChart = memo(function PortfolioChart({
             <Flex direction="ltr" style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }}>
               <SparklineChart
                 showDot
+                interactive={isTotalValueMatch}
                 data={data}
                 width={chartWidth}
                 height={EXPANDED_CHART_HEIGHT}
                 color={chartColor}
                 yGutter={20}
                 dotStrokeColor={colors.surface1.val}
+                onScrub={isTotalValueMatch ? onScrub : undefined}
               />
             </Flex>
           </>
         )}
         <LinearGradient
+          pointerEvents="none"
           colors={[colors.surface1.val, opacify(0, colors.surface1.val)]}
           end={{ x: 1, y: 0 }}
           start={{ x: 0, y: 0 }}
@@ -161,7 +183,7 @@ export const PortfolioChart = memo(function PortfolioChart({
               <Flex
                 alignItems="center"
                 justifyContent="center"
-                px="$spacing12"
+                px={isSelected ? '$spacing8' : '$none'}
                 py="$spacing6"
                 borderRadius="$rounded16"
                 backgroundColor={isSelected ? '$surface3' : undefined}
@@ -169,6 +191,7 @@ export const PortfolioChart = memo(function PortfolioChart({
               >
                 <Text
                   allowFontScaling={false}
+                  numberOfLines={1}
                   testID={`${TestID.PortfolioChartPeriodPrefix}${periodIdSuffix}`}
                   variant="buttonLabel3"
                   color={isSelected ? '$neutral1' : '$neutral2'}

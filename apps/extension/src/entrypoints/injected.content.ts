@@ -15,6 +15,7 @@ import {
   ContentScriptUtilityMessageType,
   ExtensionToDappRequestType,
 } from 'src/background/messagePassing/types/requests'
+import { isSandboxedFrame } from 'src/contentScript/isSandboxedFrame'
 import { ExtensionEthMethodHandler } from 'src/contentScript/methodHandlers/ExtensionEthMethodHandler'
 import { emitAccountsChanged, emitChainChanged } from 'src/contentScript/methodHandlers/emitUtils'
 import { ProviderDirectMethodHandler } from 'src/contentScript/methodHandlers/ProviderDirectMethodHandler'
@@ -51,6 +52,11 @@ import { defineContentScript } from 'wxt/utils/define-content-script'
 import { ZodError } from 'zod'
 
 function makeInjected(): void {
+  // Do not inject into sandboxed frames without allow-same-origin.
+  if (isSandboxedFrame()) {
+    return
+  }
+
   // arc styles aren't available on load
   const ARC_STYLE_INJECTION_DELAY = ONE_SECOND_MS
 

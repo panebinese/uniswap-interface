@@ -205,7 +205,7 @@ export const DepositStep = () => {
         amount1Loading={requestLoading && exactField === PositionField.TOKEN0}
       />
       <LowLPSlippageWarning
-        isNativePool={Boolean(currencies.display.TOKEN0?.isNative || currencies.display.TOKEN1?.isNative)}
+        isNativePool={Boolean(currencies.sdk.TOKEN0?.isNative || currencies.sdk.TOKEN1?.isNative)}
       />
       <Flex row>
         {account.isConnected ? (

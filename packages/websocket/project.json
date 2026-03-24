@@ -9,10 +9,6 @@
       "command": "vitest run --passWithNoTests",
       "options": { "cwd": "{projectRoot}" }
     },
-    "test:coverage": {
-      "command": "vitest run --coverage --passWithNoTests",
-      "options": { "cwd": "{projectRoot}" }
-    },
     "typecheck": {},
     "typecheck:tsgo": {},
     "lint:biome": {},

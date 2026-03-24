@@ -18,6 +18,7 @@ export {
   DatadogIgnoredErrorsConfigKey,
   DatadogSessionSampleRateKey,
   DynamicConfigs,
+  EmbeddedWalletBetaPassphrasesKey,
   EmbeddedWalletConfigKey,
   ExtensionBiometricUnlockConfigKey,
   ExternallyConnectableExtensionConfigKey,

@@ -42,12 +42,8 @@
       "dependsOn": ["contracts:compile:abi", "contracts:compile:v3"]
     },
     "check:deps:usage": {},
-    "typecheck": {
-      "dependsOn": ["prepare", "^typecheck"]
-    },
-    "typecheck:tsgo": {
-      "dependsOn": ["prepare"]
-    },
+    "typecheck": {},
+    "typecheck:tsgo": {},
     "lint:biome": {},
     "lint:biome:fix": {},
     "lint:eslint": {},
@@ -56,12 +52,6 @@
     "lint:fix": {},
     "test": {
       "command": "vitest run",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
-    "test:coverage": {
-      "command": "vitest run --coverage",
       "options": {
         "cwd": "{projectRoot}"
       }

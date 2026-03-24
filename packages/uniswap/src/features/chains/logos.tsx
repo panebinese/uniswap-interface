@@ -36,6 +36,7 @@ const BLOCK_EXPLORER_LOGOS_LIGHT: Record<UniverseChainId, GeneratedIcon> = {
   [UniverseChainId.Sepolia]: EtherscanLogoLight,
   [UniverseChainId.Solana]: SolscanLogoLight,
   [UniverseChainId.Soneium]: BlockExplorer,
+  [UniverseChainId.Tempo]: BlockExplorer,
   [UniverseChainId.XLayer]: BlockExplorer,
   [UniverseChainId.Unichain]: BlockExplorer,
   [UniverseChainId.UnichainSepolia]: BlockExplorer,

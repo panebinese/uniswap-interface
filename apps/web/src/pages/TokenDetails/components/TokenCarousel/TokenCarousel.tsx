@@ -10,7 +10,7 @@ import {
   TOKEN_CARD_WIDTH,
   TokenCarouselCard,
 } from '~/pages/TokenDetails/components/TokenCarousel/TokenCarouselCard'
-import { useTopTokens } from '~/state/explore/topTokens/useTopTokens'
+import { useListTokens } from '~/state/explore/listTokens/useListTokens'
 
 const MAX_CAROUSEL_TOKENS = 20
 const GRADIENT_WIDTH = 80
@@ -33,7 +33,7 @@ export function TokenCarousel({
   tooltipText?: string
   chainId: UniverseChainId
 }): JSX.Element | null {
-  const { topTokens, sparklines } = useTopTokens(chainId)
+  const { topTokens, sparklines } = useListTokens(chainId)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isMaxScrolled, setIsMaxScrolled] = useState(false)

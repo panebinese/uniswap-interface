@@ -48,7 +48,7 @@
     "@types/fs-extra": "11.0.2",
     "@types/node": "22.13.1",
     "@types/qrcode": "1.5.5",
-    "@typescript/native-preview": "7.0.0-dev.20260108.1",
+    "@typescript/native-preview": "7.0.0-dev.20260311.1",
     "@uniswap/eslint-config": "workspace:^",
     "@vitejs/plugin-react": "4.7.0",
     "camelcase": "6.3.0",
@@ -77,7 +77,6 @@
     "lint:eslint": "nx lint:eslint ui",
     "lint:eslint:fix": "nx lint:eslint:fix ui",
     "test": "nx test ui",
-    "test:coverage": "nx test:coverage ui",
     "typecheck": "nx typecheck ui",
     "typecheck:tsgo": "nx typecheck:tsgo ui",
     "watch": "nx watch ui"

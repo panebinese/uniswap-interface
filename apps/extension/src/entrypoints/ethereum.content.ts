@@ -1,4 +1,5 @@
 import { addWindowMessageListener } from 'src/background/messagePassing/messageUtils'
+import { isSandboxedFrame } from 'src/contentScript/isSandboxedFrame'
 import {
   ETH_PROVIDER_CONFIG,
   isValidContentScriptToProxyEmission,
@@ -21,6 +22,11 @@ declare global {
 function makeEthereum(): void {
   // Guard against running in Node environment during WXT prepare
   if (typeof window === 'undefined') {
+    return
+  }
+
+  // Do not inject the provider into sandboxed frames without allow-same-origin.
+  if (isSandboxedFrame()) {
     return
   }
   // TODO(xtine): Get this working by importing the svg file directly. The svg text comes from packages/ui/src/assets/icons/uniswap-logo.svg

@@ -22,6 +22,7 @@ export enum FeatureFlags {
   ForcePermitTransactions,
   ForSessionsEnabled,
   ForUrlMigration,
+  GasServiceV2,
   HashcashSolverEnabled,
   Monad,
   MultichainTokenUx,
@@ -36,6 +37,7 @@ export enum FeatureFlags {
   SmartWalletDisableVideo,
   Solana,
   Soneium,
+  Tempo,
   TurnstileSolverEnabled,
   TwoSecondSwapQuotePollingInterval,
   UnichainFlashblocks,
@@ -70,6 +72,7 @@ export enum FeatureFlags {
 
   // Web
   AATestWeb,
+  AuctionDetailsV2,
   BatchedSwaps,
   DummyFlagTest,
   LimitsFees,
@@ -106,6 +109,7 @@ export const SHARED_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   [FeatureFlags.ForcePermitTransactions, 'force_permit_transactions'],
   [FeatureFlags.ForSessionsEnabled, 'for_sessions_enabled'],
   [FeatureFlags.ForUrlMigration, 'for_url_migration'],
+  [FeatureFlags.GasServiceV2, 'gas_service_v2'],
   [FeatureFlags.HashcashSolverEnabled, 'sessions_hashcash_solver_enabled'],
   [FeatureFlags.Monad, 'monad'],
   [FeatureFlags.MultichainTokenUx, 'multichain_token_ux'],
@@ -122,6 +126,7 @@ export const SHARED_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   [FeatureFlags.SmartWalletDisableVideo, 'smart_wallet_disable_video'],
   [FeatureFlags.Solana, 'solana'],
   [FeatureFlags.Soneium, 'soneium'],
+  [FeatureFlags.Tempo, 'tempo'],
   [FeatureFlags.TurnstileSolverEnabled, 'sessions_turnstile_solver_enabled'],
   [FeatureFlags.TwoSecondSwapQuotePollingInterval, 'two_second_swap_quote_polling_interval'],
   [FeatureFlags.UnichainFlashblocks, 'unichain_flashblocks'],
@@ -142,6 +147,7 @@ export const SHARED_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
 export const WEB_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   ...SHARED_FEATURE_FLAG_NAMES,
   [FeatureFlags.AATestWeb, 'aatest_web'],
+  [FeatureFlags.AuctionDetailsV2, 'auction_details_v2'],
   [FeatureFlags.BatchedSwaps, 'batched_swaps'],
   [FeatureFlags.DummyFlagTest, 'dummy_flag_test'],
   [FeatureFlags.LimitsFees, 'limits_fees'],

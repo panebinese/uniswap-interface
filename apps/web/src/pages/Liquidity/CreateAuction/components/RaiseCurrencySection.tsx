@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text } from 'ui/src'
 import { CheckCircleFilled } from 'ui/src/components/icons/CheckCircleFilled'
-import { QuestionInCircle } from 'ui/src/components/icons/QuestionInCircle'
+import { QuestionInCircleFilled } from 'ui/src/components/icons/QuestionInCircleFilled'
 import { iconSizes } from 'ui/src/theme'
 import { CurrencyLogo } from 'uniswap/src/components/CurrencyLogo/CurrencyLogo'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
@@ -30,8 +30,8 @@ export function RaiseCurrencySection({
   const chainId = useMemo(
     () =>
       tokenForm.mode === TokenMode.CREATE_NEW
-        ? tokenForm.createNew.network
-        : (tokenForm.existing.existingTokenCurrencyInfo?.currency.chainId ?? UniverseChainId.Mainnet),
+        ? tokenForm.network
+        : (tokenForm.existingTokenCurrencyInfo?.currency.chainId ?? UniverseChainId.Mainnet),
     [tokenForm],
   )
 
@@ -124,9 +124,9 @@ export function RaiseCurrencySection({
           </HookTileContainer>
         </Flex>
         <Flex row gap="$spacing4" alignItems="center">
-          <QuestionInCircle size="$icon.16" color="$neutral2" />
+          <QuestionInCircleFilled size="$icon.16" color="$neutral2" />
           <ExternalLink href="https://support.uniswap.org/hc/en-us">
-            <Text variant="body3" color="$neutral2" textDecorationLine="underline">
+            <Text variant="body3" color="$neutral2" textDecorationLine="underline" textDecorationStyle="dashed">
               {t('toucan.createAuction.step.configureAuction.raiseCurrency.helpLink')}
             </Text>
           </ExternalLink>

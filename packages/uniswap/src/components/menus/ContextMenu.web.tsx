@@ -142,7 +142,7 @@ export function ContextMenu({
         </div>
       </Popover.Trigger>
 
-      <RemoveScroll enabled={isOpen && !isSheet && isWebApp} />
+      <RemoveScroll blockScrollEvents enabled={isOpen && !isSheet && isWebApp} />
 
       <AdaptiveWebPopoverContent
         ref={containerRef}

@@ -16,12 +16,12 @@ import { isMobileWeb } from 'utilities/src/platform'
  * behind a ContextMenu). removeScrollBar is disabled to avoid injecting
  * overflow:hidden + position:relative on <body> which breaks sticky headers.
  */
-export function RemoveScroll({ enabled = false, children }: RemoveScrollProps): ReactNode {
+export function RemoveScroll({ enabled = false, blockScrollEvents = false, children }: RemoveScrollProps): ReactNode {
   if (!enabled) {
     return children
   }
 
-  const RemoveScrollComponent = isMobileWeb ? TamaguiRemoveScroll : ReactRemoveScroll
+  const RemoveScrollComponent = !isMobileWeb && blockScrollEvents ? ReactRemoveScroll : TamaguiRemoveScroll
 
   return <RemoveScrollComponent removeScrollBar={false}>{children}</RemoveScrollComponent>
 }

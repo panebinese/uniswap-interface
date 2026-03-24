@@ -2,9 +2,7 @@ import { ContentStyle } from '@shopify/flash-list'
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { Currency } from '@uniswap/sdk-core'
 import { memo, useState } from 'react'
-import { Flex, styled, TouchableArea } from 'ui/src'
-import { MoreHorizontal } from 'ui/src/components/icons/MoreHorizontal'
-import { iconSizes } from 'ui/src/theme'
+import { Flex } from 'ui/src'
 import { PoolOptionItem } from 'uniswap/src/components/lists/items/pools/PoolOptionItem'
 import {
   PoolContextMenuAction,
@@ -22,6 +20,7 @@ import { WalletByAddressOptionItem } from 'uniswap/src/components/lists/items/wa
 import { ItemRowInfo } from 'uniswap/src/components/lists/OnchainItemList/OnchainItemList'
 import type { OnchainItemSection } from 'uniswap/src/components/lists/OnchainItemList/types'
 import { SelectorBaseList } from 'uniswap/src/components/lists/SelectorBaseList'
+import { ContextMenuTriggerButton } from 'uniswap/src/components/menus/ContextMenuTriggerButton'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
 import { useAddToSearchHistory } from 'uniswap/src/components/TokenSelector/hooks/useAddToSearchHistory'
 import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
@@ -31,24 +30,19 @@ import { SearchFilterContext } from 'uniswap/src/features/search/SearchModal/ana
 import { isHoverable, isWebPlatform } from 'utilities/src/platform'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 
-const OptionItemMoreButton = styled(TouchableArea, {
-  borderWidth: 1,
-  borderRadius: '$rounded12',
-  hoverStyle: {
-    borderColor: '$surface3Hovered',
-  },
-})
-
 // Context menu button components that manage their own state
 const TokenRowContextMenuButton = memo(function TokenRowContextMenuButton({
   currency,
+  isVisible = true,
 }: {
   currency: Currency
+  isVisible?: boolean
 }): JSX.Element {
   const { value: isOpen, setTrue: openMenu, setFalse: closeMenu } = useBooleanState(false)
+  const shouldShow = isVisible || isOpen
 
   return (
-    <OptionItemMoreButton>
+    <Flex opacity={shouldShow ? 1 : 0} pointerEvents={shouldShow ? 'auto' : 'none'}>
       <TokenOptionItemContextMenu
         actions={[
           TokenContextMenuAction.CopyAddress,
@@ -64,11 +58,9 @@ const TokenRowContextMenuButton = memo(function TokenRowContextMenuButton({
         openMenu={openMenu}
         closeMenu={closeMenu}
       >
-        <Flex p="$spacing6">
-          <MoreHorizontal size={iconSizes.icon16} color="$neutral2" />
-        </Flex>
+        <ContextMenuTriggerButton />
       </TokenOptionItemContextMenu>
-    </OptionItemMoreButton>
+    </Flex>
   )
 })
 
@@ -76,15 +68,18 @@ const PoolRowContextMenuButton = memo(function PoolRowContextMenuButton({
   poolId,
   chainId,
   protocolVersion,
+  isVisible = true,
 }: {
   poolId: string
   chainId: UniverseChainId
   protocolVersion: ProtocolVersion
+  isVisible?: boolean
 }): JSX.Element {
   const { value: isOpen, setTrue: openMenu, setFalse: closeMenu } = useBooleanState(false)
+  const shouldShow = isVisible || isOpen
 
   return (
-    <OptionItemMoreButton>
+    <Flex opacity={shouldShow ? 1 : 0} pointerEvents={shouldShow ? 'auto' : 'none'}>
       <PoolOptionItemContextMenu
         actions={[PoolContextMenuAction.CopyAddress, PoolContextMenuAction.Share]}
         isOpen={isOpen}
@@ -95,11 +90,9 @@ const PoolRowContextMenuButton = memo(function PoolRowContextMenuButton({
         protocolVersion={protocolVersion}
         triggerMode={ContextMenuTriggerMode.Primary}
       >
-        <Flex p="$spacing6">
-          <MoreHorizontal size={iconSizes.icon16} color="$neutral2" />
-        </Flex>
+        <ContextMenuTriggerButton />
       </PoolOptionItemContextMenu>
-    </OptionItemMoreButton>
+    </Flex>
   )
 })
 
@@ -152,11 +145,12 @@ export const SearchModalList = memo(function _SearchModalList({
               focusedRowIndex,
             }}
             rightElement={
-              isHoverable && rowIndex === focusedRowIndex ? (
+              isHoverable ? (
                 <PoolRowContextMenuButton
                   poolId={item.poolId}
                   chainId={item.chainId}
                   protocolVersion={item.protocolVersion}
+                  isVisible={rowIndex === focusedRowIndex}
                 />
               ) : undefined
             }
@@ -189,8 +183,11 @@ export const SearchModalList = memo(function _SearchModalList({
               rowIndex,
             }}
             rightElement={
-              isHoverable && rowIndex === focusedRowIndex ? (
-                <TokenRowContextMenuButton currency={item.currencyInfo.currency} />
+              isHoverable ? (
+                <TokenRowContextMenuButton
+                  currency={item.currencyInfo.currency}
+                  isVisible={rowIndex === focusedRowIndex}
+                />
               ) : undefined
             }
             onPress={() => {
@@ -227,8 +224,11 @@ export const SearchModalList = memo(function _SearchModalList({
               rowIndex,
             }}
             rightElement={
-              isHoverable && rowIndex === focusedRowIndex ? (
-                <TokenRowContextMenuButton currency={item.primaryCurrencyInfo.currency} />
+              isHoverable ? (
+                <TokenRowContextMenuButton
+                  currency={item.primaryCurrencyInfo.currency}
+                  isVisible={rowIndex === focusedRowIndex}
+                />
               ) : undefined
             }
             onPress={() => {

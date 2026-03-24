@@ -65,6 +65,7 @@ export function toGraphQLChain(chainId: UniverseChainId): GqlChainId {
   return getChainInfo(chainId).backendChain.chain
 }
 
+// eslint-disable-next-line complexity
 export function fromGraphQLChain(chain: GraphQLApi.Chain | string | undefined): UniverseChainId | null {
   switch (chain) {
     case GraphQLApi.Chain.Ethereum:
@@ -105,6 +106,8 @@ export function fromGraphQLChain(chain: GraphQLApi.Chain | string | undefined): 
       return UniverseChainId.Zksync
     case GraphQLApi.Chain.Zora:
       return UniverseChainId.Zora
+    case GraphQLApi.Chain.Tempo:
+      return UniverseChainId.Tempo
   }
 
   return null
@@ -114,6 +117,7 @@ export function getPollingIntervalByBlocktime(chainId?: UniverseChainId): Pollin
   return isMainnetChainId(chainId) ? PollingInterval.Fast : PollingInterval.LightningMcQueen
 }
 
+// eslint-disable-next-line complexity
 export function fromUniswapWebAppLink(network: string | null): UniverseChainId {
   switch (network) {
     case GraphQLApi.Chain.Ethereum.toLowerCase():
@@ -153,6 +157,8 @@ export function fromUniswapWebAppLink(network: string | null): UniverseChainId {
       return UniverseChainId.Zksync
     case GraphQLApi.Chain.Zora.toLowerCase():
       return UniverseChainId.Zora
+    case GraphQLApi.Chain.Tempo.toLowerCase():
+      return UniverseChainId.Tempo
     default:
       throw new Error(`Network "${network}" can not be mapped`)
   }
@@ -196,6 +202,8 @@ export function toUniswapWebAppLink(chainId: UniverseChainId): string | null {
       return GraphQLApi.Chain.Zksync.toLowerCase()
     case UniverseChainId.Zora:
       return GraphQLApi.Chain.Zora.toLowerCase()
+    case UniverseChainId.Tempo:
+      return GraphQLApi.Chain.Tempo.toLowerCase()
     default:
       throw new Error(`ChainID "${chainId}" can not be mapped`)
   }

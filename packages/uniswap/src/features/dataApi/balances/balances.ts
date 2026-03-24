@@ -495,7 +495,7 @@ export function useSortedPortfolioBalancesMultichain(
 
   const data = useMemo((): SortedPortfolioBalancesMultichain | undefined => {
     if (!balancesById) {
-      return { balances: [], hiddenBalances: [] }
+      return undefined
     }
     const multichainList = Object.values(balancesById)
     const { shown, hidden } = multichainList.reduce<{

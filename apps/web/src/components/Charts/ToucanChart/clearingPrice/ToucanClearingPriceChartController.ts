@@ -14,8 +14,10 @@ import type {
   ClearingPriceChartControllerUpdateParams,
   ClearingPriceChartPoint,
   ClearingPriceZoomState,
+  YAxisLabel,
 } from '~/components/Charts/ToucanChart/clearingPrice/types'
 import { createYAxisPriceFormatter } from '~/components/Charts/ToucanChart/clearingPrice/utils/priceFormatter'
+import { calculateYAxisTicks } from '~/components/Charts/ToucanChart/clearingPrice/utils/yAxisRange'
 import { calculateZoomedRange, getIsZoomed } from '~/components/Charts/ToucanChart/utils/zoomRange'
 import { formatTickMarks } from '~/components/Charts/utils'
 import { ZOOM_FACTORS } from '~/components/Toucan/Auction/BidDistributionChart/constants'
@@ -55,6 +57,8 @@ export class ToucanClearingPriceChartController {
     visibleRange: null,
     isZoomed: false,
   }
+  private latestScaleFactor = 1
+  private latestMaxFractionDigits = 4
 
   constructor(params: ClearingPriceChartControllerCreateParams) {
     this.createParams = params
@@ -248,7 +252,40 @@ export class ToucanClearingPriceChartController {
       // Chart not ready yet - ignore the error
     }
 
+    this.latestScaleFactor = scaleFactor
+    this.latestMaxFractionDigits = maxFractionDigits
+
     this.syncZoomStateFromChart()
+    this.emitYAxisLabels()
+  }
+
+  private emitYAxisLabels(): void {
+    const series = this.series
+    if (!series || this.latestData.length === 0) {
+      this.callbacks.onYAxisLabelsChange?.([])
+      return
+    }
+
+    const chartHeight = this.createParams.height
+    const formatter = createYAxisPriceFormatter({
+      scaleFactor: this.latestScaleFactor,
+      maxFractionDigits: this.latestMaxFractionDigits,
+    })
+
+    const ticks = calculateYAxisTicks({
+      values: this.latestData.map((d) => d.value),
+      formatter,
+    })
+
+    const labels: YAxisLabel[] = []
+    for (const tick of ticks) {
+      const y = series.priceToCoordinate(tick.value)
+      if (y != null && y >= 0 && y <= chartHeight) {
+        labels.push({ label: tick.label, y: Number(y) })
+      }
+    }
+
+    this.callbacks.onYAxisLabelsChange?.(labels)
   }
 
   private init(): void {
@@ -306,9 +343,11 @@ export class ToucanClearingPriceChartController {
           to: UTCTimestamp
         },
       )
+      this.emitYAxisLabels()
       return
     }
     this.applyInitialRange()
+    this.emitYAxisLabels()
   }
 
   private onCrosshairMove(param: MouseEventParams<Time>): void {
@@ -370,6 +409,7 @@ export class ToucanClearingPriceChartController {
     }
 
     this.updateZoomState({ from, to })
+    this.emitYAxisLabels()
   }
 
   private applyInitialRange(): void {

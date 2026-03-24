@@ -298,6 +298,7 @@ export default function FeatureFlagModal(): JSX.Element {
             <FeatureFlagOption flag={FeatureFlags.LimitsFees} label="Enable Limits fees" />
             <FeatureFlagOption flag={FeatureFlags.EnablePermitMismatchUX} label="Enable Permit2 mismatch detection" />
             <FeatureFlagOption flag={FeatureFlags.NetworkFilterV2} label="Enable Network Filter V2" />
+            <FeatureFlagOption flag={FeatureFlags.GasServiceV2} label="Enable Gas Service V2" />
             <FeatureFlagOption
               flag={FeatureFlags.ForcePermitTransactions}
               label="Force Permit2 transaction instead of signatures, always"
@@ -334,6 +335,7 @@ export default function FeatureFlagModal(): JSX.Element {
           <FeatureFlagGroup name="Toucan">
             <FeatureFlagOption flag={FeatureFlags.ToucanAuctionKYC} label="Enable Toucan Auction KYC" />
             <FeatureFlagOption flag={FeatureFlags.ToucanLaunchAuction} label="Enable Toucan Launch Auction" />
+            <FeatureFlagOption flag={FeatureFlags.AuctionDetailsV2} label="Enable Auction Details V2" />
           </FeatureFlagGroup>
           <FeatureFlagGroup name="Embedded Wallet">
             <FeatureFlagOption flag={FeatureFlags.EmbeddedWallet} label="Add internal embedded wallet functionality" />
@@ -348,6 +350,7 @@ export default function FeatureFlagModal(): JSX.Element {
           </FeatureFlagGroup>
           <FeatureFlagGroup name="New Chains">
             <FeatureFlagOption flag={FeatureFlags.Soneium} label="Enable Soneium" />
+            <FeatureFlagOption flag={FeatureFlags.Tempo} label="Enable Tempo" />
           </FeatureFlagGroup>
           <FeatureFlagGroup name="Network Requests">
             <NetworkRequestsConfig />

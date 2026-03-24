@@ -310,7 +310,7 @@ export function ReviewModal({
           )}
           <Flex gap="$spacing12">
             <LowLPSlippageWarning
-              isNativePool={Boolean(currencies.display.TOKEN0?.isNative || currencies.display.TOKEN1?.isNative)}
+              isNativePool={Boolean(currencies.sdk.TOKEN0?.isNative || currencies.sdk.TOKEN1?.isNative)}
             />
             <ErrorCallout errorMessage={transactionError} onPress={refetch} />
             <PoolOutOfSyncError />
@@ -355,7 +355,7 @@ export function ReviewModal({
                 onPress={onConfirm}
                 isDisabled={isDisabled}
                 fill={false}
-                icon={needsPasskeySignin ? <Passkey size="$icon.24" /> : undefined}
+                icon={needsPasskeySignin ? <Passkey size="$icon.24" color="$neutral1" /> : undefined}
               >
                 {isSignedInWithPasskey && isSessionAuthenticated ? t('position.create.confirm') : confirmButtonText}
               </Button>
