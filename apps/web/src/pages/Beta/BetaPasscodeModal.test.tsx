@@ -12,8 +12,6 @@ vi.mock('ui/src/assets', async (importOriginal) => {
 })
 
 const mockGetDynamicConfigValue = vi.fn().mockReturnValue([])
-const mockNavigate = vi.fn()
-
 vi.mock('@universe/gating', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@universe/gating')>()
   return {
@@ -23,18 +21,17 @@ vi.mock('@universe/gating', async (importOriginal) => {
   }
 })
 
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router')
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  }
-})
+const mockLocationReplace = vi.fn()
 
 describe('BetaPasscodeModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetDynamicConfigValue.mockReturnValue([])
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, replace: mockLocationReplace },
+      configurable: true,
+      writable: true,
+    })
   })
 
   it('renders default state', () => {
@@ -81,6 +78,6 @@ describe('BetaPasscodeModal', () => {
     })
 
     expect(getOverrideAdapter().overrideGate).toHaveBeenCalledWith('embedded_wallet', true)
-    expect(mockNavigate).toHaveBeenCalledWith('/?intro=true', { replace: true })
+    expect(mockLocationReplace).toHaveBeenCalledWith('/?intro=true')
   })
 })

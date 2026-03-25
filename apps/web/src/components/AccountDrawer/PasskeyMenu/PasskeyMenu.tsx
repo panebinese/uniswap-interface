@@ -353,10 +353,8 @@ export default function PasskeyMenu({ onClose }: { onClose: () => void }) {
               ))}
               <Flex row alignSelf="stretch">
                 <Trace logPress element={ElementName.AddPasskey}>
-                  <Button size="medium" variant="branded" emphasis="secondary" onPress={handleAddPasskey}>
-                    <Text variant="buttonLabel2" color="$blue400">
-                      {t('common.passkeys.add')}
-                    </Text>
+                  <Button variant="default" emphasis="secondary" size="medium" onPress={handleAddPasskey}>
+                    <Text variant="buttonLabel2">{t('common.passkeys.add')}</Text>
                   </Button>
                 </Trace>
               </Flex>

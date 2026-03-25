@@ -355,7 +355,7 @@ export function ReviewModal({
                 onPress={onConfirm}
                 isDisabled={isDisabled}
                 fill={false}
-                icon={needsPasskeySignin ? <Passkey size="$icon.24" color="$neutral1" /> : undefined}
+                icon={needsPasskeySignin ? <Passkey size="$icon.24" color="$white" /> : undefined}
               >
                 {isSignedInWithPasskey && isSessionAuthenticated ? t('position.create.confirm') : confirmButtonText}
               </Button>

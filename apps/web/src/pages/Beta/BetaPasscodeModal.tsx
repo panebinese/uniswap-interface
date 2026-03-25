@@ -6,7 +6,6 @@ import {
 } from '@universe/gating'
 import { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router'
 import { Button, Flex, Image, Input, Text } from 'ui/src'
 import { BETA_LOGO } from 'ui/src/assets'
 import { Modal } from 'uniswap/src/components/modals/Modal'
@@ -16,7 +15,6 @@ import { useTimeout } from 'utilities/src/time/timing'
 
 export function BetaPasscodeModal(): JSX.Element {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const [passphrase, setPassphrase] = useState('')
   const [hasError, setHasError] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -35,7 +33,8 @@ export function BetaPasscodeModal(): JSX.Element {
     })
     if (validCodes.includes(passphrase)) {
       getOverrideAdapter().overrideGate('embedded_wallet', true)
-      navigate('/?intro=true', { replace: true })
+      // Full reload so modal registrations (add passkey, recovery) mount fresh
+      window.location.replace('/?intro=true')
     } else {
       setHasError(true)
     }

@@ -87,7 +87,7 @@ export function PasskeyGenerationModal({
                 hasWalletCreationSuccess ? (
                   <Check size="$icon.24" color="$neutral2" />
                 ) : (
-                  <Passkey size="$icon.24" color="$neutral1" />
+                  <Passkey size="$icon.24" color="$white" />
                 )
               }
               emphasis="primary"
