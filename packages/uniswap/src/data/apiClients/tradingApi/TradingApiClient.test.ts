@@ -506,10 +506,13 @@ describe('getFeatureFlaggedHeaders', () => {
       mockGetFeatureFlag.mockImplementation(
         (flag) => flag === FeatureFlags.ViemProviderEnabled || flag === FeatureFlags.UniquoteEnabled,
       )
-      const expectedHeaders = {
+      const expectedHeaders: Record<string, string> = {
         [TradingApiHeaders.UniversalRouterVersion]: TradingApi.UniversalRouterVersion._2_0,
         [TradingApiHeaders.ViemProviderEnabled]: 'true',
         [TradingApiHeaders.UniquoteEnabled]: 'true',
+      }
+      if (path === TRADING_API_PATHS.quote || path === TRADING_API_PATHS.swap7702) {
+        expectedHeaders[TradingApiHeaders.UniroutePulumiEnabled] = 'true'
       }
       const headers = getFeatureFlaggedHeaders(path)
       expect(headers).toEqual(expectedHeaders)

@@ -61,7 +61,6 @@ export const getFeatureFlaggedHeaders = (
 
   const chainedActionsEnabled = getFeatureFlag(FeatureFlags.ChainedActions)
   const unirouteEnabled = getFeatureFlag(FeatureFlags.UnirouteEnabled)
-  const uniroutePulumiEnabled = getFeatureFlag(FeatureFlags.UniroutePulumiEnabled)
   const ethAsErc20UniswapXEnabled = getExperimentValueFromLayer<
     typeof Layers.SwapPage,
     Experiments.EthAsErc20UniswapX,
@@ -75,7 +74,8 @@ export const getFeatureFlaggedHeaders = (
   switch (tradingApiPath) {
     case TRADING_API_PATHS.quote:
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.UnirouteEnabled, enabled: unirouteEnabled })
-      addHeaderIfEnabled({ headers, key: TradingApiHeaders.UniroutePulumiEnabled, enabled: uniroutePulumiEnabled })
+      // TODO(INFRA-1595): remove once backend is fully migrated to new route
+      headers[TradingApiHeaders.UniroutePulumiEnabled] = 'true'
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.Erc20EthEnabled, enabled: ethAsErc20UniswapXEnabled })
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.ChainedActionsEnabled, enabled: chainedActionsEnabled })
       addHeaderIfEnabled({
@@ -93,7 +93,8 @@ export const getFeatureFlaggedHeaders = (
       break
     case TRADING_API_PATHS.swap7702:
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.UnirouteEnabled, enabled: unirouteEnabled })
-      addHeaderIfEnabled({ headers, key: TradingApiHeaders.UniroutePulumiEnabled, enabled: uniroutePulumiEnabled })
+      // TODO(INFRA-1595): remove once backend is fully migrated to new route
+      headers[TradingApiHeaders.UniroutePulumiEnabled] = 'true'
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.Erc20EthEnabled, enabled: ethAsErc20UniswapXEnabled })
       break
   }
@@ -107,9 +108,9 @@ export const getFeatureFlaggedHeaders = (
 export const getQuoteHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = {}
   const unirouteEnabled = getFeatureFlag(FeatureFlags.UnirouteEnabled)
-  const uniroutePulumiEnabled = getFeatureFlag(FeatureFlags.UniroutePulumiEnabled)
   addHeaderIfEnabled({ headers, key: 'x-uniroute-enabled', enabled: unirouteEnabled })
-  addHeaderIfEnabled({ headers, key: 'x-uniroute-pulumi-enabled', enabled: uniroutePulumiEnabled })
+  // TODO(INFRA-1595): remove once backend is fully migrated to new route
+  headers['x-uniroute-pulumi-enabled'] = 'true'
   return headers
 }
 
