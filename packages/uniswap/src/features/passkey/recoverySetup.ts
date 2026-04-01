@@ -1,8 +1,8 @@
 import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
+import { deriveArgon2InWorker } from 'uniswap/src/features/passkey/deriveArgon2InWorker'
 import {
   blindPin,
   combineAndDeriveKey,
-  deriveArgon2InWorker,
   encryptAuthKey,
   finalizeOprf,
   generateAuthKeyPair,

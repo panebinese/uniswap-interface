@@ -24,6 +24,7 @@ import {
   USDC_BSC,
   USDC_CELO,
   USDC_E_TEMPO,
+  USDC_LINEA,
   USDC_MAINNET,
   USDC_MONAD,
   USDC_OPTIMISM,
@@ -40,6 +41,7 @@ import {
   USDT_ARBITRUM_ONE,
   USDT_AVALANCHE,
   USDT_BSC,
+  USDT_LINEA,
   USDT_OPTIMISM,
   USDT_POLYGON,
   USDT0_XLAYER,
@@ -51,6 +53,7 @@ import {
   WETH_POLYGON,
   WRAPPED_NATIVE_CURRENCY,
 } from 'uniswap/src/constants/tokens'
+import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { CurrencyInfo, TokenList } from 'uniswap/src/features/dataApi/types'
@@ -144,6 +147,13 @@ export const COMMON_BASES: ChainCurrencyList = {
     WRAPPED_NATIVE_CURRENCY[UniverseChainId.Sepolia] as Token,
     USDC_SEPOLIA,
     UNI[UniverseChainId.Sepolia],
+  ].map(buildPartialCurrencyInfo),
+
+  [UniverseChainId.Linea]: [
+    nativeOnChain(UniverseChainId.Linea),
+    WRAPPED_NATIVE_CURRENCY[UniverseChainId.Linea] as Token,
+    USDC_LINEA,
+    USDT_LINEA,
   ].map(buildPartialCurrencyInfo),
 
   [UniverseChainId.Soneium]: [
@@ -241,7 +251,7 @@ function getTokenLogoURI(chainId: UniverseChainId, address: string): ImageSource
   }
 
   return networkName
-    ? `https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/${networkName}/assets/${address}/logo.png`
+    ? `${uniswapUrls.uniswapAssetsBlockchainsBaseUrl}/${networkName}/assets/${address}/logo.png`
     : undefined
 }
 

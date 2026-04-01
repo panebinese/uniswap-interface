@@ -52,6 +52,7 @@ export const ARBITRUM_CHAIN_INFO = {
   },
   openseaName: 'arbitrum',
   interfaceName: 'arbitrum',
+  searchAliases: ['arb', 'arbitrum one', 'arb one'],
   label: 'Arbitrum',
   logo: ARBITRUM_LOGO,
   nativeCurrency: {

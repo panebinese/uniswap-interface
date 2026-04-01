@@ -74,7 +74,7 @@ function getLogo(props: LogoWithTxStatusProps): JSX.Element {
   )
 }
 
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 export function LogoWithTxStatus(props: LogoWithTxStatusProps): JSX.Element {
   const { assetType, txType, txStatus, size, chainId } = props
   const colors = useSporeColors()

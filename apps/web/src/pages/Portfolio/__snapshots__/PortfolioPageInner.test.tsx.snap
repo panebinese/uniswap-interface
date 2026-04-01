@@ -77,7 +77,6 @@ exports[`PortfolioPageInner > demo view (disconnected) > should render demo view
         Connect Wallet Button Mock
       </div>
       <div
-        data-scroll-y="0"
         data-testid="portfolio-header"
       >
         Portfolio Header Mock
@@ -121,7 +120,6 @@ exports[`PortfolioPageInner > demo view (disconnected) > should render demo view
         Connect Wallet Button Mock
       </div>
       <div
-        data-scroll-y="0"
         data-testid="portfolio-header"
       >
         Portfolio Header Mock

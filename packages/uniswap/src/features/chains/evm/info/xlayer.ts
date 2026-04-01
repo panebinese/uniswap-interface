@@ -49,6 +49,7 @@ export const XLAYER_CHAIN_INFO = {
     url: 'https://web3.okx.com/explorer/x-layer/',
   },
   interfaceName: 'xlayer',
+  searchAliases: ['x layer', 'x-layer', 'xchain'],
   label: 'X Layer',
   logo: XLAYER_LOGO,
   nativeCurrency: {

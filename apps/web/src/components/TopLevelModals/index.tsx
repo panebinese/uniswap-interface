@@ -86,6 +86,7 @@ export default function TopLevelModals() {
       <ModalRenderer modalName={ModalName.UniWalletConnect} />
       <ModalRenderer modalName={ModalName.Banners} />
       <ModalRenderer modalName={ModalName.OffchainActivity} />
+      <ModalRenderer modalName={ModalName.TransactionDetails} />
       <ModalRenderer modalName={ModalName.TransactionConfirmation} />
       <ModalRenderer modalName={ModalName.UkDisclaimer} />
       <ModalRenderer modalName={ModalName.TestnetMode} componentProps={{ showCloseButton: true }} />

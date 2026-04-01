@@ -1,3 +1,4 @@
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useNavigate } from 'react-router'
 import { Flex, useMedia } from 'ui/src'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -11,6 +12,7 @@ import { useAppHeaderHeight } from '~/hooks/useAppHeaderHeight'
 import { useScrollCompact } from '~/hooks/useScrollCompact'
 import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
 import { PortfolioAddressDisplay } from '~/pages/Portfolio/Header/PortfolioAddressDisplay/PortfolioAddressDisplay'
+import { PortfolioMoreMenu } from '~/pages/Portfolio/Header/PortfolioMoreMenu'
 import { SharePortfolioButton } from '~/pages/Portfolio/Header/SharePortfolioButton'
 import { PortfolioTabs } from '~/pages/Portfolio/Header/Tabs'
 import { useShowDemoView } from '~/pages/Portfolio/hooks/useShowDemoView'
@@ -46,6 +48,7 @@ export function PortfolioHeader({ scrollY }: PortfolioHeaderProps) {
   const { tab, chainId: currentChainId, externalAddress, isExternalWallet } = usePortfolioRoutes()
   const activeAddresses = useActiveAddresses()
   const showDemoView = useShowDemoView()
+  const isPnLEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
   const isCompact = useScrollCompact({ scrollY })
   const headerHeight = useAppHeaderHeight()
   const buttonSize = media.md || isCompact ? 'small' : 'medium'
@@ -85,6 +88,7 @@ export function PortfolioHeader({ scrollY }: PortfolioHeaderProps) {
           <PortfolioAddressDisplay isCompact={isCompact} />
 
           <Flex row gap="$spacing8" alignItems="center">
+            {!showDemoView && isPnLEnabled && <PortfolioMoreMenu size={buttonSize} transition={HEADER_TRANSITION} />}
             {showShareButton && (
               <SharePortfolioButton size={buttonSize} showLabel={!media.sm} transition={HEADER_TRANSITION} />
             )}

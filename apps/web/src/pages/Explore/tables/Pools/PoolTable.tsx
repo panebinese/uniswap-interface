@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable max-lines */
+/* oxlint-disable typescript/no-unnecessary-condition */
+/* oxlint-disable max-lines */
 
 import { ApolloError } from '@apollo/client'
 import { createColumnHelper, Row } from '@tanstack/react-table'
@@ -25,11 +25,11 @@ import { NumberType } from 'utilities/src/format/types'
 import { supportedChainIdFromGQLChain } from '~/appGraphql/data/chainUtils'
 import { PoolSortFields, TablePool } from '~/appGraphql/data/pools/useTopPools'
 import { gqlToCurrency, OrderDirection, unwrapToken } from '~/appGraphql/data/util'
-import { PortfolioLogo } from '~/components/AccountDrawer/MiniPortfolio/PortfolioLogo'
 import { FeeData } from '~/components/Liquidity/Create/types'
 import LPIncentiveFeeStatTooltip from '~/components/Liquidity/LPIncentives/LPIncentiveFeeStatTooltip'
 import { isDynamicFeeTier } from '~/components/Liquidity/utils/feeTiers'
 import CurrencyLogo from '~/components/Logo/CurrencyLogo'
+import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
 import { Table } from '~/components/Table'
 import { Cell } from '~/components/Table/Cell'
 import { ClickableHeaderRow, HeaderArrow, HeaderSortText } from '~/components/Table/shared/SortableHeader'
@@ -73,17 +73,18 @@ interface PoolTableValues {
 function PoolDescription({
   token0,
   token1,
-  chainId,
+  showMainnetNetworkLogo,
 }: {
   token0?: Token | TokenStats
   token1?: Token | TokenStats
   chainId: UniverseChainId
+  showMainnetNetworkLogo?: boolean
 }) {
   const currencies = [token0 ? gqlToCurrency(token0) : undefined, token1 ? gqlToCurrency(token1) : undefined]
 
   return (
     <Flex row gap="$gap8" alignItems="center" maxWidth="100%">
-      <PortfolioLogo currencies={currencies} chainId={chainId} size={24} />
+      <DoubleCurrencyLogo currencies={currencies} size={24} showMainnetNetworkLogo={showMainnetNetworkLogo} />
       <EllipsisText>
         {token0?.symbol}/{token1?.symbol}
       </EllipsisText>
@@ -282,6 +283,7 @@ export function PoolsTable({
               token0={unwrapToken(chainId, pool.token0) as TokenStats | Token | undefined}
               token1={unwrapToken(chainId, pool.token1) as TokenStats | Token | undefined}
               chainId={chainId}
+              showMainnetNetworkLogo={isMultichainTokenUx}
             />
           ),
           protocolVersion: pool.protocolVersion?.toLowerCase(),
@@ -312,7 +314,7 @@ export function PoolsTable({
           },
         }
       }) ?? [],
-    [convertFiatAmountFormatted, defaultChainId, filterString, pools],
+    [convertFiatAmountFormatted, defaultChainId, filterString, isMultichainTokenUx, pools],
   )
 
   const showLoadingSkeleton = loading || !!error

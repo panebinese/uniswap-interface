@@ -290,6 +290,7 @@ query TokenDetailsScreen(
     ...TokenBasicProjectParts
     ...TokenProjectUrlsParts
     ...TokenProjectMarketsParts
+    ...TokenProjectTokensTvlParts
   }
 }
 
@@ -672,6 +673,22 @@ fragment TokenBasicProjectParts on Token {
     tokens {
       chain
       address
+    }
+  }
+}
+
+fragment TokenProjectTokensTvlParts on Token {
+  project {
+    id
+    tokens {
+      chain
+      address
+      market(currency: USD) {
+        id
+        totalValueLocked {
+          value
+        }
+      }
     }
   }
 }

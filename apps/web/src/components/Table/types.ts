@@ -29,6 +29,7 @@ export type TableProps<T extends RowData = unknown> = {
   hideHeader?: boolean
   externalScrollSync?: boolean
   scrollGroup?: string
+  // oxlint-disable-next-line max-params -- matches @tanstack/react-table getRowId signature
   getRowId?: (originalRow: T, index: number, parent?: Row<T>) => string
   rowWrapper?: (row: Row<T>, content: JSX.Element) => JSX.Element
   loadingRowsCount?: number

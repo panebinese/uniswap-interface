@@ -17,14 +17,7 @@ import { ElementName } from 'uniswap/src/features/telemetry/constants'
 
 const tokens = buildChainTokens({
   stables: {
-    // Worldchain USDC.e has non standard symbol and name
-    USDC: new Token(
-      UniverseChainId.WorldChain,
-      '0x79A02482A880bCE3F13e09Da970dC34db4CD24d1',
-      6,
-      'USDC.e',
-      'Bridged USDC',
-    ),
+    USDC: new Token(UniverseChainId.WorldChain, '0x79A02482A880bCE3F13e09Da970dC34db4CD24d1', 6, 'USDC', 'USD Coin'),
   },
 })
 
@@ -49,6 +42,7 @@ export const WORLD_CHAIN_INFO = {
     url: 'https://worldscan.org/',
   },
   interfaceName: 'worldchain',
+  searchAliases: ['world chain'],
   label: 'World Chain',
   logo: WORLD_CHAIN_LOGO,
   nativeCurrency: {

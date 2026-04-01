@@ -26,9 +26,23 @@ export function useTableLoadMore(params: {
   const lastLoadedLengthRef = useRef(0)
   const canLoadMore = useRef(true)
   const dataLengthRef = useRef(dataLength)
+  const prevLoadMoreRef = useRef(loadMore)
+
   useEffect(() => {
     dataLengthRef.current = dataLength
   }, [dataLength])
+
+  // Reset load-more state when switching between pagination modes (e.g. experiment off → on).
+  // Otherwise canLoadMore stays false or loadingMore stays true and infinite scroll never runs again.
+  useEffect(() => {
+    if (loadMore !== prevLoadMoreRef.current) {
+      canLoadMore.current = true
+      if (!loadMore) {
+        setLoadingMore(false)
+      }
+      prevLoadMoreRef.current = loadMore
+    }
+  }, [loadMore])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run it also when loadMore, loadingMore are changed
   useEffect(() => {

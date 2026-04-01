@@ -6,7 +6,7 @@
  *
  * For tests of the full migration chain, see uniswapMigrationTests.ts.
  */
-/* biome-ignore-all lint/suspicious/noExplicitAny: legacy code needs review */
+/* oxlint-disable typescript/no-explicit-any -- legacy code needs review */
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { SearchHistoryResultType } from 'uniswap/src/features/search/SearchHistoryResult'
 import { TokenProtectionWarning } from 'uniswap/src/features/tokens/warnings/types'

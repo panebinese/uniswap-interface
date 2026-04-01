@@ -13,28 +13,10 @@ import { usePortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/ba
 import { FiatCurrency } from 'uniswap/src/features/fiatCurrency/constants'
 import { useAppFiatCurrency, useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { chartPeriodToTimeLabel } from 'uniswap/src/features/portfolio/chartPeriod'
 import i18next from 'uniswap/src/i18n'
 import { NumberType } from 'utilities/src/format/types'
 import { isWebPlatform } from 'utilities/src/platform'
-
-function periodToTimeLabel(t: ReturnType<typeof useTranslation>['t'], period: ChartPeriod): string {
-  switch (period) {
-    case ChartPeriod.HOUR:
-      return t('common.thisHour')
-    case ChartPeriod.DAY:
-      return t('common.today')
-    case ChartPeriod.WEEK:
-      return t('common.thisWeek')
-    case ChartPeriod.MONTH:
-      return t('common.thisMonth')
-    case ChartPeriod.YEAR:
-      return t('common.thisYear')
-    case ChartPeriod.MAX:
-      return t('common.allTime')
-    default:
-      return t('common.today')
-  }
-}
 
 interface PortfolioBalanceProps {
   evmOwner?: Address
@@ -44,15 +26,21 @@ interface PortfolioBalanceProps {
   chartPeriod?: ChartPeriod
   /** When set, overrides the displayed balance (e.g. during chart scrubbing) */
   overrideBalanceUSD?: number
+  /** When set, overrides the backend 1-day percent change with a period-aware value */
+  overridePercentChange?: number
+  /** When set, overrides the backend 1-day absolute change with a period-aware value */
+  overrideAbsoluteChangeUSD?: number
 }
 
-export const PortfolioBalance = memo(function _PortfolioBalance({
+export const PortfolioBalance = memo(function PortfolioBalanceInner({
   evmOwner,
   svmOwner,
   endText,
   chainIds,
   chartPeriod,
   overrideBalanceUSD,
+  overridePercentChange,
+  overrideAbsoluteChangeUSD,
 }: PortfolioBalanceProps): JSX.Element {
   const { t } = useTranslation()
   const { data, loading, networkStatus, refetch } = usePortfolioTotalValue({
@@ -74,7 +62,10 @@ export const PortfolioBalance = memo(function _PortfolioBalance({
   const isLoading = loading && !data
   const isWarmLoading = !!data && isWarmLoadingStatus(networkStatus)
 
-  const { percentChange, absoluteChangeUSD, balanceUSD } = data || {}
+  const { percentChange: backendPercentChange, absoluteChangeUSD: backendAbsoluteChangeUSD, balanceUSD } = data || {}
+
+  const percentChange = overridePercentChange ?? backendPercentChange
+  const absoluteChangeUSD = overrideAbsoluteChangeUSD ?? backendAbsoluteChangeUSD
 
   const isRightToLeft = i18next.dir() === 'rtl'
 
@@ -120,7 +111,7 @@ export const PortfolioBalance = memo(function _PortfolioBalance({
         </Shine>
         {chartPeriod !== undefined && (
           <Text variant="body3" color="$neutral3" ml="$spacing4">
-            {periodToTimeLabel(t, chartPeriod).toLocaleLowerCase()}
+            {chartPeriodToTimeLabel(t, chartPeriod).toLocaleLowerCase()}
           </Text>
         )}
         {endText}

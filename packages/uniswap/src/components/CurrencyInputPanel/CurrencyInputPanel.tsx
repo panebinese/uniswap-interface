@@ -1,6 +1,6 @@
 //! tamagui-ignore
 // tamagui-ignore
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 import { forwardRef, memo, useCallback } from 'react'
 import { Flex, TouchableArea, useIsShortMobileDevice, useShakeAnimation } from 'ui/src'
 import {
@@ -22,7 +22,7 @@ import { isExtensionApp, isMobileWeb, isWebAppDesktop } from 'utilities/src/plat
 
 export const CurrencyInputPanel = memo(
   forwardRef<CurrencyInputPanelRef, CurrencyInputPanelProps>(
-    function _CurrencyInputPanel(props, forwardedRef): JSX.Element {
+    function CurrencyInputPanelInner(props, forwardedRef): JSX.Element {
       const {
         autoFocus,
         currencyAmount,

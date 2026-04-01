@@ -66,30 +66,21 @@ export enum RaiseCurrency {
   USDC = 'USDC',
 }
 
-export type BootstrapAuctionConfig = {
-  auctionType: AuctionType.BOOTSTRAP_LIQUIDITY
-  auctionSupplyAmount: CurrencyAmount<Currency>
-}
-
-export type FundraiseAuctionConfig = {
-  auctionType: AuctionType.FUNDRAISE
+/**
+ * Token amounts committed after confirming the token info step.
+ * Holds the total supply alongside the auction allocation amounts.
+ */
+export type AuctionTokenAmounts = {
+  totalSupply: CurrencyAmount<Currency>
   auctionSupplyAmount: CurrencyAmount<Currency>
   postAuctionLiquidityAmount: CurrencyAmount<Currency>
-}
-
-type AuctionTypeConfig = BootstrapAuctionConfig | FundraiseAuctionConfig
-
-type CommittedAuctionState = {
-  totalSupply: CurrencyAmount<Currency>
-  activeAuctionType: AuctionType
-  bootstrap: BootstrapAuctionConfig
-  fundraise: FundraiseAuctionConfig
 }
 
 export type ConfigureAuctionFormState = {
   startTime: Date | undefined
   maxDurationDays: number
-  committed: CommittedAuctionState | undefined
+  activeAuctionType: AuctionType
+  committed: AuctionTokenAmounts | undefined
   raiseCurrency: RaiseCurrency
   floorPrice: string
 }
@@ -110,6 +101,9 @@ type CustomizePoolState = {
   poolOwner: string
   timeLockEnabled: boolean
   timeLockDurationDays: number
+  sendFeesEnabled: boolean
+  feesRecipientAddress: string
+  buybackAndBurnEnabled: boolean
 }
 
 const DEFAULT_FEE_DATA: FeeData = {
@@ -121,6 +115,7 @@ const DEFAULT_FEE_DATA: FeeData = {
 interface CreateAuctionState {
   step: CreateAuctionStep
   tokenForm: TokenFormState
+  tokenColor: string | undefined
   configureAuction: ConfigureAuctionFormState
   customizePool: CustomizePoolState
   xVerification: XVerification | undefined
@@ -136,6 +131,7 @@ export const DEFAULT_EXISTING_TOKEN_FORM: ExistingTokenFormState = {
 
 export const DEFAULT_CREATE_AUCTION_STATE: CreateAuctionState = {
   step: CreateAuctionStep.ADD_TOKEN_INFO,
+  tokenColor: undefined,
   xVerification: undefined,
   customizePool: {
     fee: DEFAULT_FEE_DATA,
@@ -143,6 +139,9 @@ export const DEFAULT_CREATE_AUCTION_STATE: CreateAuctionState = {
     poolOwner: '',
     timeLockEnabled: false,
     timeLockDurationDays: 5,
+    sendFeesEnabled: false,
+    feesRecipientAddress: '',
+    buybackAndBurnEnabled: false,
   },
   tokenForm: {
     mode: TokenMode.CREATE_NEW,
@@ -157,6 +156,7 @@ export const DEFAULT_CREATE_AUCTION_STATE: CreateAuctionState = {
   configureAuction: {
     startTime: undefined,
     maxDurationDays: 5,
+    activeAuctionType: AuctionType.BOOTSTRAP_LIQUIDITY,
     committed: undefined,
     raiseCurrency: RaiseCurrency.ETH,
     floorPrice: '',
@@ -174,7 +174,10 @@ interface CreateAuctionStoreActions {
   commitTokenFormAndAdvance: () => void
   setXVerification: (value: XVerification | undefined) => void
   setAuctionType: (type: AuctionType) => void
-  setAuctionConfig: (config: AuctionTypeConfig) => void
+  setAuctionConfig: (config: {
+    auctionSupplyAmount: CurrencyAmount<Currency>
+    postAuctionLiquidityAmount: CurrencyAmount<Currency>
+  }) => void
   setStartTime: (startTime: Date | undefined) => void
   setMaxDurationDays: (days: number) => void
   setRaiseCurrency: (currency: RaiseCurrency) => void
@@ -184,6 +187,10 @@ interface CreateAuctionStoreActions {
   setPoolOwner: (owner: string) => void
   setTimeLockEnabled: (enabled: boolean) => void
   setTimeLockDurationDays: (days: number) => void
+  setSendFeesEnabled: (enabled: boolean) => void
+  setFeesRecipientAddress: (address: string) => void
+  setBuybackAndBurnEnabled: (enabled: boolean) => void
+  setTokenColor: (color: string | undefined) => void
   reset: () => void
 }
 

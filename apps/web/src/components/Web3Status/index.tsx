@@ -185,7 +185,7 @@ function Web3StatusInner() {
       eventOnTrigger={InterfaceEventName.ConnectWalletButtonClicked}
       element={ElementName.ConnectWalletButton}
     >
-      {/* biome-ignore lint/correctness/noRestrictedElements: needed here */}
+      {/* oxlint-disable-next-line react/forbid-elements -- needed here */}
       <div onKeyDown={(e) => e.key === 'Enter' && handleWalletDropdownClick()}>
         <ExistingUserCTAButton ref={ref} onPress={handleWalletDropdownClick} />
       </div>

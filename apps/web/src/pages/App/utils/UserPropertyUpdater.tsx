@@ -49,7 +49,7 @@ export function UserPropertyUpdater() {
 
     // Service Worker analytics
     // This null check is necessary to avoid a crash on mobile browsers like Safari.
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     const isServiceWorkerInstalled = Boolean(window.navigator.serviceWorker?.controller)
     const serviceWorkerProperty = isServiceWorkerInstalled ? 'installed' : 'uninstalled'
 

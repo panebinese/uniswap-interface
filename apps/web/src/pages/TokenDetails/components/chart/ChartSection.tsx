@@ -43,7 +43,7 @@ export function ChartSection() {
   // Use API's 24hr change for 1d, calculated change for other durations
   const pricePercentChange = timePeriod === TimePeriod.DAY ? priceChange24h : calculatedPriceChange
 
-  // eslint-disable-next-line consistent-return
+  // oxlint-disable-next-line consistent-return
   const getSection = () => {
     if (activeQuery.dataQuality === DataQuality.INVALID) {
       return (

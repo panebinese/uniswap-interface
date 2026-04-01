@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition, max-lines */
+/* oxlint-disable typescript/no-unnecessary-condition, max-lines */
 import { createColumnHelper } from '@tanstack/react-table'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useAtom } from 'jotai'
@@ -46,6 +46,7 @@ import { auctionCommittedVolumeComparator, useTopAuctions } from '~/state/explor
  * Uses bigint comparison to avoid precision loss.
  * Treats 0n as "no data" and sorts it to the end.
  */
+/* oxlint-disable max-params -- sort comparators conventionally take (a, b, direction) */
 const AuctionSortMethods: Record<
   AuctionSortField,
   (a: TopAuctionsTableValue, b: TopAuctionsTableValue, sortAscending?: boolean) => number
@@ -68,7 +69,7 @@ const AuctionSortMethods: Record<
   },
 
   // Sorting by time remaining sorts not completed or not started auction first (sorted by end block timestamp), followed by completed auction (sorted by end block timestamp).
-  // eslint-disable-next-line max-params
+
   [AuctionSortField.TIME_REMAINING]: (a, b, sortAscending = false) => {
     const aMs = a.auction.timeRemaining.endBlockTimestamp
     const bMs = b.auction.timeRemaining.endBlockTimestamp
@@ -108,6 +109,7 @@ const AuctionSortMethods: Record<
     }
   },
 }
+/* oxlint-enable max-params */
 
 /**
  * Sorts auctions using the specified sort method.
@@ -412,7 +414,7 @@ function ToucanTableComponent({
         header: () => (
           <HeaderCell justifyContent="flex-start">
             <Text variant="body3" color="$neutral2" fontWeight="500">
-              {t('common.tokenName')}
+              {t('explore.table.column.token')}
             </Text>
           </HeaderCell>
         ),

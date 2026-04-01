@@ -24,6 +24,9 @@ export function useAddToSearchHistory(): {
       case OnchainItemListOptionType.Token:
         dispatch(addToSearchHistory({ searchResult: currencyInfoToTokenSearchHistoryResult(item.currencyInfo) }))
         break
+      case OnchainItemListOptionType.MultichainToken:
+        dispatch(addToSearchHistory({ searchResult: currencyInfoToTokenSearchHistoryResult(item.primaryCurrencyInfo) }))
+        break
       case OnchainItemListOptionType.WalletByAddress:
       case OnchainItemListOptionType.Unitag:
       case OnchainItemListOptionType.ENSAddress:

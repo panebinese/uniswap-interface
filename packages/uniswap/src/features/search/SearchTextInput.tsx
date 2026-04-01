@@ -76,8 +76,8 @@ export type SearchTextInputProps = InputProps & {
 }
 
 export const SearchTextInput = forwardRef<NativeTextInput, SearchTextInputProps>(
-  // eslint-disable-next-line complexity
-  function _SearchTextInput(props, ref) {
+  // oxlint-disable-next-line complexity
+  function SearchTextInputInner(props, ref) {
     const dimensions = useDeviceDimensions()
     const { t } = useTranslation()
     const {
@@ -102,7 +102,7 @@ export const SearchTextInput = forwardRef<NativeTextInput, SearchTextInputProps>
       keyboardType = 'default',
       inputMode: inputModeProp,
       placeholderTextColor = '$neutral2',
-      borderColor = '$surface3',
+      borderColor = '$surface5',
       borderWidth = '$spacing1',
     } = props
 

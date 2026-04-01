@@ -78,8 +78,8 @@ export function TokenSelectorPanel({
               {currencyInfo && (
                 <Text color="$neutral2" variant="body3">
                   {t('send.input.token.balance.title', {
-                    balance: formattedCurrencyBalance,
-                    symbol: currencyInfo.currency.symbol,
+                    balance: formattedCurrencyBalance ?? '',
+                    symbol: currencyInfo.currency.symbol ?? '',
                   })}
                 </Text>
               )}

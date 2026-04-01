@@ -21,15 +21,15 @@ export function createConsoleTransport(): LogTransport {
         switch (entry.level) {
           case 'error':
           case 'fatal':
-            // biome-ignore lint/suspicious/noConsole: Logger transport implementation
+            // oxlint-disable-next-line no-console -- Logger transport implementation
             console.error(formatted, entry.error ?? '', extra)
             break
           case 'warn':
-            // biome-ignore lint/suspicious/noConsole: Logger transport implementation
+            // oxlint-disable-next-line no-console -- Logger transport implementation
             console.warn(formatted, extra)
             break
           default:
-            // biome-ignore lint/suspicious/noConsole: Logger transport implementation
+            // oxlint-disable-next-line no-console -- Logger transport implementation
             console.debug(formatted, extra)
             break
         }

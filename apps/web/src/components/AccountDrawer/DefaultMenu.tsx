@@ -6,8 +6,8 @@ import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import LanguageMenu from '~/components/AccountDrawer/LanguageMenu'
 import LocalCurrencyMenu from '~/components/AccountDrawer/LocalCurrencyMenu'
 import { MainMenu } from '~/components/AccountDrawer/MainMenu/MainMenu'
-import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { MenuStateVariant, useMenuState, useSetMenuCallback } from '~/components/AccountDrawer/menuState'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import PasskeyMenu from '~/components/AccountDrawer/PasskeyMenu/PasskeyMenu'
 import PortfolioBalanceMenu from '~/components/AccountDrawer/PortfolioBalanceMenu'
 import SettingsMenu from '~/components/AccountDrawer/SettingsMenu'
@@ -48,7 +48,9 @@ export function DefaultMenu() {
       return 'forward'
     }
 
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     const newIndex = menuIndices[menuState.variant] ?? 2
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     const oldIndex = menuIndices[prevMenuVariant] ?? 2
     return newIndex > oldIndex ? 'forward' : 'backward'
   }, [menuState.variant, prevMenuVariant])
@@ -77,6 +79,7 @@ export function DefaultMenu() {
     )
   }, [menuState])
 
+  // oxlint-disable-next-line consistent-return
   const SubMenu = useMemo(() => {
     switch (menuState.variant) {
       case MenuStateVariant.MAIN:

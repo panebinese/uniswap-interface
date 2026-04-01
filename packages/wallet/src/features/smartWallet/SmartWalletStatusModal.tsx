@@ -43,7 +43,7 @@ export function SmartWalletStatusModal({
     setFalse: collapseActiveNetworks,
   } = useBooleanState(false)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -wallet
+  // oxlint-disable-next-line react/exhaustive-deps -- -wallet
   useEffect(() => {
     collapseActiveNetworks()
   }, [collapseActiveNetworks, wallet])

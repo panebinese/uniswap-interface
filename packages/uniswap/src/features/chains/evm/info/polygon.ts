@@ -47,6 +47,7 @@ export const POLYGON_CHAIN_INFO = {
   },
   openseaName: 'matic',
   interfaceName: 'polygon',
+  searchAliases: ['poly'],
   label: 'Polygon',
   logo: POLYGON_LOGO,
   name: 'Polygon Mainnet',

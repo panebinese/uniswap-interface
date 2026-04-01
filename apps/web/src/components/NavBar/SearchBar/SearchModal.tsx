@@ -17,7 +17,7 @@ import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { useDebounce } from 'utilities/src/time/timing'
 import { useModalState } from '~/hooks/useModalState'
 
-export const SearchModal = memo(function _SearchModal(): JSX.Element {
+export const SearchModal = memo(function SearchModalInner(): JSX.Element {
   const colors = useSporeColors()
   const { t } = useTranslation()
   const media = useMedia()
@@ -62,11 +62,6 @@ export const SearchModal = memo(function _SearchModal(): JSX.Element {
     onChangeText('')
     onClose()
   }, [onChangeText, onClose])
-
-  const onResetFilters = useCallback(() => {
-    onChangeChainFilter(null)
-    setActiveTab(SearchTab.All)
-  }, [onChangeChainFilter])
 
   const { chains: enabledChains } = useEnabledChains()
 
@@ -155,7 +150,6 @@ export const SearchModal = memo(function _SearchModal(): JSX.Element {
               searchFilter={searchFilter}
               activeTab={activeTab}
               onSelect={onSelect}
-              onResetFilters={onResetFilters}
               renderedInModal={false}
             />
           ) : (

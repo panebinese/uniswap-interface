@@ -222,7 +222,7 @@ export function RecentlyConnectedModal() {
     }
   }, [walletAddress, account, isEmbeddedWalletEnabled, openModal, recentConnectorId])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: account.isConnecting dependency is sufficient for this effect
+  // oxlint-disable-next-line react/exhaustive-deps -- account.isConnecting dependency is sufficient for this effect
   useEffect(() => {
     if (account.isConnected && isOpen) {
       closeModal()

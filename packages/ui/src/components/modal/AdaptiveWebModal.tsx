@@ -220,7 +220,7 @@ type ModalProps = GetProps<typeof View> &
  * On larger screens, it renders as a dialog modal.
  * On smaller screens (mobile devices), it adapts into a bottom sheet.
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function AdaptiveWebModal({
   isOpen,
   onClose,
@@ -267,25 +267,24 @@ export function AdaptiveWebModal({
       <VisuallyHidden>
         <Dialog.Title />
       </VisuallyHidden>
-      {adaptToSheet &&
-        !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
-          <Adapt when="md">
-            <WebBottomSheet
-              isOpen={isOpen}
-              gap={gap ?? '$spacing4'}
-              px={px ?? p ?? '$spacing24'}
-              py={py ?? p ?? '$spacing16'}
-              style={style}
-              hideHandlebar={hideHandlebar}
-              snapPointsMode={snapPointsMode}
-              snapPoints={snapPoints}
-              onClose={onClose}
-              {...filteredRest}
-            >
-              <Adapt.Contents />
-            </WebBottomSheet>
-          </Adapt>
-        )}
+      {adaptToSheet && !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
+        <Adapt when="md">
+          <WebBottomSheet
+            isOpen={isOpen}
+            gap={gap ?? '$spacing4'}
+            px={px ?? p ?? '$spacing24'}
+            py={py ?? p ?? '$spacing16'}
+            style={style}
+            hideHandlebar={hideHandlebar}
+            snapPointsMode={snapPointsMode}
+            snapPoints={snapPoints}
+            onClose={onClose}
+            {...filteredRest}
+          >
+            <Adapt.Contents />
+          </WebBottomSheet>
+        </Adapt>
+      )}
 
       <Dialog.Portal zIndex={zIndex ?? zIndexes.modal}>
         <Overlay key="overlay" {...(overlayOpacity !== undefined && { opacity: overlayOpacity })} />
@@ -370,22 +369,21 @@ export function WebModalWithBottomAttachment({
       <VisuallyHidden>
         <Dialog.Title />
       </VisuallyHidden>
-      {adaptToSheet &&
-        !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
-          <Adapt when="md">
-            <WebBottomSheet
-              isOpen={isOpen}
-              style={style}
-              hideHandlebar={hideHandlebar}
-              snapPointsMode={snapPointsMode}
-              snapPoints={snapPoints}
-              onClose={onClose}
-              {...filteredRest}
-            >
-              <Adapt.Contents />
-            </WebBottomSheet>
-          </Adapt>
-        )}
+      {adaptToSheet && !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
+        <Adapt when="md">
+          <WebBottomSheet
+            isOpen={isOpen}
+            style={style}
+            hideHandlebar={hideHandlebar}
+            snapPointsMode={snapPointsMode}
+            snapPoints={snapPoints}
+            onClose={onClose}
+            {...filteredRest}
+          >
+            <Adapt.Contents />
+          </WebBottomSheet>
+        </Adapt>
+      )}
 
       <Dialog.Portal zIndex={zIndex ?? zIndexes.modal}>
         <Overlay key="overlay" {...(overlayOpacity !== undefined && { opacity: overlayOpacity })} />

@@ -31,7 +31,7 @@ export function SlippageControl(props: SlippageControlProps): JSX.Element {
     isZeroSlippage: props.isZeroSlippage,
   })
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +isLayoutReady
+  // oxlint-disable-next-line react/exhaustive-deps -- +isLayoutReady
   useEffect(() => {
     inputRef.current?.blur()
   }, [isLayoutReady])

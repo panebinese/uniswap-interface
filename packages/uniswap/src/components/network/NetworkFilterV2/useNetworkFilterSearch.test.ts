@@ -4,8 +4,10 @@ import {
   useNetworkFilterSearch,
 } from 'uniswap/src/components/network/NetworkFilterV2/useNetworkFilterSearch'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import i18next from 'uniswap/src/i18n'
 import { renderHookWithProviders } from 'uniswap/src/test/render'
 import { act } from 'uniswap/src/test/test-utils'
+import { vi } from 'vitest'
 
 describe('useNetworkFilterSearch', () => {
   it('normalizes whitespace and casing in the search query', () => {
@@ -26,7 +28,7 @@ describe('useNetworkFilterSearch', () => {
     expect(result.showAllNetworks).toBe(true)
   })
 
-  it('filters flat options by label and preserves the original order', () => {
+  it('filters flat options by word-prefix matches and preserves the original order', () => {
     const chainIds = [
       UniverseChainId.WorldChain,
       UniverseChainId.Unichain,
@@ -39,21 +41,28 @@ describe('useNetworkFilterSearch', () => {
       searchQuery: ' chain ',
     })
 
-    expect(result.filteredChainIds).toEqual([UniverseChainId.WorldChain, UniverseChainId.Unichain])
+    expect(result.filteredChainIds).toEqual([UniverseChainId.WorldChain])
   })
 
-  it('matches the all-networks option through the same search pipeline', () => {
+  it('does not match when the query only appears in the middle of a word', () => {
     const result = filterNetworkOptions({
-      chainIds: [UniverseChainId.Base, UniverseChainId.Polygon],
-      includeAllNetworks: true,
-      searchQuery: 'all',
+      chainIds: [UniverseChainId.WorldChain, UniverseChainId.Unichain],
+      searchQuery: 'ich',
     })
 
     expect(result.filteredChainIds).toEqual([])
-    expect(result.showAllNetworks).toBe(true)
   })
 
-  it('filters tiered options by interface alias and preserves section ordering', () => {
+  it('matches multi-word prefixes within a label', () => {
+    const result = filterNetworkOptions({
+      chainIds: [UniverseChainId.WorldChain, UniverseChainId.Unichain],
+      searchQuery: 'world ch',
+    })
+
+    expect(result.filteredChainIds).toEqual([UniverseChainId.WorldChain])
+  })
+
+  it('filters tiered options by word-prefix matches and preserves section ordering', () => {
     const tieredOptions = {
       withBalances: [
         { chainId: UniverseChainId.WorldChain, label: 'World Chain', balanceUSD: 900 },
@@ -74,9 +83,7 @@ describe('useNetworkFilterSearch', () => {
     expect(result.filteredTieredOptions?.withBalances.map((option) => option.chainId)).toEqual([
       UniverseChainId.WorldChain,
     ])
-    expect(result.filteredTieredOptions?.otherNetworks.map((option) => option.chainId)).toEqual([
-      UniverseChainId.Unichain,
-    ])
+    expect(result.filteredTieredOptions?.otherNetworks.map((option) => option.chainId)).toEqual([])
   })
 
   it('returns filtered data from the hook when search changes', () => {

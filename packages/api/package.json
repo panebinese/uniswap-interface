@@ -2,8 +2,6 @@
   "name": "@universe/api",
   "version": "0.0.0",
   "scripts": {
-    "lint:biome": "nx lint:biome api",
-    "lint:biome:fix": "nx lint:biome:fix api",
     "lint:eslint": "nx lint:eslint api",
     "lint:eslint:fix": "nx lint:eslint:fix api",
     "lint": "nx lint api",
@@ -16,7 +14,11 @@
     "graphql:schema": "nx graphql:schema api",
     "tradingapi:schema": "nx tradingapi:schema api",
     "tradingapi:generate:openapi": "nx tradingapi:generate:openapi api",
-    "tradingapi:generate": "nx tradingapi:generate api"
+    "tradingapi:generate": "nx tradingapi:generate api",
+    "oxlint": "nx oxlint api",
+    "oxlint:fix": "nx oxlint:fix api",
+    "oxfmt": "nx oxfmt api",
+    "oxfmt:fix": "nx oxfmt:fix api"
   },
   "nx": {
     "includedScripts": []
@@ -32,13 +34,13 @@
     "@uniswap/client-embeddedwallet": "0.0.16",
     "@uniswap/client-explore": "0.0.17",
     "@uniswap/client-for": "0.1.5",
-    "@uniswap/client-liquidity": "0.1.2",
+    "@uniswap/client-liquidity": "0.3.0",
     "@uniswap/client-notification-service": "0.0.11",
     "@uniswap/client-unirpc-v2": "0.0.2",
     "@universe/config": "workspace:^",
     "@universe/sessions": "workspace:^",
     "expo-secure-store": "14.0.1",
-    "graphql": "16.6.0",
+    "graphql": "16.10.0",
     "react": "19.0.3",
     "utilities": "workspace:^"
   },
@@ -56,7 +58,7 @@
     "@uniswap/eslint-config": "workspace:^",
     "@vitest/coverage-v8": "3.2.1",
     "depcheck": "1.4.7",
-    "eslint": "8.57.1",
+    "eslint": "10.0.2",
     "openapi-typescript-codegen": "0.27.0",
     "ts-morph": "23.0.0",
     "typescript": "5.8.3",

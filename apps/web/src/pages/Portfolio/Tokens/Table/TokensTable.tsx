@@ -1,6 +1,7 @@
 import { NetworkStatus } from '@apollo/client'
 import { SharedEventName } from '@uniswap/analytics-events'
-import { useCallback, useState } from 'react'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollSync } from 'react-scroll-sync'
 import { Flex } from 'ui/src'
@@ -10,6 +11,7 @@ import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { PortfolioExpandoRow } from '~/pages/Portfolio/components/PortfolioExpandoRow'
 import { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
+import { TokenColumns } from '~/pages/Portfolio/Tokens/Table/columns/useTokenColumns'
 import { TokensTableInner } from '~/pages/Portfolio/Tokens/Table/TokensTableInner'
 
 const TOKENS_TABLE_MAX_HEIGHT = 700
@@ -28,6 +30,14 @@ export function TokensTable({ visible, hidden, loading, refetching, error }: Tok
   const [isOpen, setIsOpen] = useState(false)
   const tableLoading = loading && !refetching
   const trace = useTrace()
+  const isProfitLossEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
+
+  const hiddenColumns = useMemo(() => {
+    if (isProfitLossEnabled) {
+      return undefined
+    }
+    return [TokenColumns.AvgCost, TokenColumns.UnrealizedPnl]
+  }, [isProfitLossEnabled])
 
   const handleToggleHiddenTokens = useCallback(() => {
     const newIsOpen = !isOpen
@@ -51,6 +61,7 @@ export function TokensTable({ visible, hidden, loading, refetching, error }: Tok
           tokenData={visible}
           loading={tableLoading}
           error={error}
+          hiddenColumns={hiddenColumns}
           maxHeight={TOKENS_TABLE_MAX_HEIGHT}
         />
         {hidden.length > 0 && (
@@ -68,6 +79,7 @@ export function TokensTable({ visible, hidden, loading, refetching, error }: Tok
                 hideHeader
                 loading={tableLoading}
                 error={error}
+                hiddenColumns={hiddenColumns}
                 maxHeight={TOKENS_TABLE_MAX_HEIGHT}
               />
             )}

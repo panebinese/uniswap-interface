@@ -62,7 +62,7 @@ function AnimatedBidRow({ children }: { children: React.ReactNode }) {
   )
 }
 
-export const BidActivities = () => {
+export const BidActivities = ({ hideHeader = false }: { hideHeader?: boolean } = {}) => {
   const { t } = useTranslation()
   const { convertFiatAmount } = useLocalizationContext()
   const { symbol: currencySymbol } = useAppFiatCurrencyInfo()
@@ -288,7 +288,7 @@ export const BidActivities = () => {
 
   return (
     <Flex width="100%" minWidth={0} flexShrink={1} gap="$spacing24">
-      <Text variant={media.lg ? 'subheading1' : 'heading3'}>{t('toucan.auction.latestActivity')}</Text>
+      {!hideHeader && <Text variant={media.lg ? 'subheading1' : 'heading3'}>{t('toucan.auction.latestActivity')}</Text>}
       {showPlaceholder ? (
         <Flex
           height={160}

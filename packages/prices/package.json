@@ -18,7 +18,7 @@
     "@uniswap/eslint-config": "workspace:^",
     "@vitest/coverage-v8": "3.2.1",
     "depcheck": "1.4.7",
-    "eslint": "8.57.1",
+    "eslint": "10.0.2",
     "react": "19.0.3",
     "typescript": "5.8.3",
     "vitest": "3.2.1"
@@ -29,11 +29,13 @@
     "typecheck:tsgo": "nx typecheck:tsgo prices",
     "lint": "nx lint prices",
     "lint:fix": "nx lint:fix prices",
-    "lint:biome": "nx lint:biome prices",
-    "lint:biome:fix": "nx lint:biome:fix prices",
     "lint:eslint": "nx lint:eslint prices",
     "lint:eslint:fix": "nx lint:eslint:fix prices",
-    "check:deps:usage": "nx check:deps:usage prices"
+    "check:deps:usage": "nx check:deps:usage prices",
+    "oxlint": "nx oxlint prices",
+    "oxlint:fix": "nx oxlint:fix prices",
+    "oxfmt": "nx oxfmt prices",
+    "oxfmt:fix": "nx oxfmt:fix prices"
   },
   "nx": {
     "includedScripts": []

@@ -1,4 +1,4 @@
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'

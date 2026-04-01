@@ -40,18 +40,16 @@ const MobileSearchTab = ({
   )
 }
 
-export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearchResultsList({
+export const ExploreScreenSearchResultsList = memo(function ExploreScreenSearchResultsListInner({
   searchQuery,
   parsedSearchQuery,
   chainFilter,
   parsedChainFilter,
-  onResetChainFilter,
 }: {
   searchQuery: string
   parsedSearchQuery: string | null
   chainFilter: UniverseChainId | null
   parsedChainFilter: UniverseChainId | null
-  onResetChainFilter?: () => void
 }): JSX.Element {
   const debouncedSearchQuery = useDebounce(searchQuery)
   const debouncedParsedSearchQuery = useDebounce(parsedSearchQuery)
@@ -62,7 +60,7 @@ export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearch
 
   const getTabLabel = useCallback(
     // So that the linter errors if someone adds a new tab without updating the switch statement
-    // eslint-disable-next-line consistent-return
+    // oxlint-disable-next-line consistent-return
     (tab: SearchTab): string => {
       switch (tab) {
         case SearchTab.All:
@@ -77,11 +75,6 @@ export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearch
     },
     [t],
   )
-
-  const onResetFilters = useCallback(() => {
-    setActiveTab(SearchTab.All)
-    onResetChainFilter?.()
-  }, [onResetChainFilter])
 
   const contentContainerStyle = useMemo(
     () => ({
@@ -114,7 +107,6 @@ export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearch
             activeTab={activeTab}
             renderedInModal={!isBottomTabsEnabled}
             contentContainerStyle={contentContainerStyle}
-            onResetFilters={onResetFilters}
           />
         ) : (
           <SearchModalNoQueryList

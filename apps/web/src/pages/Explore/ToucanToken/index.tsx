@@ -15,13 +15,13 @@ import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants/trace/page'
 import { Trace } from 'uniswap/src/features/telemetry/Trace'
+import { ActivitySection } from '~/components/Toucan/Auction/ActivityTimeline/ActivitySection'
 import { BidDistributionChartTab } from '~/components/Toucan/Auction/AuctionChartShared'
 import { AuctionHeader } from '~/components/Toucan/Auction/AuctionHeader'
 import { AuctionStats } from '~/components/Toucan/Auction/AuctionStats/AuctionStats'
 import { AuctionIntroBanner } from '~/components/Toucan/Auction/Banners/AuctionIntro/AuctionIntroBanner'
 import { AuctionStatsBanner } from '~/components/Toucan/Auction/Banners/AuctionStatsBanner/AuctionStatsBanner'
 import { TokenLaunchedBanner } from '~/components/Toucan/Auction/Banners/TokenLaunched/TokenLaunchedBanner'
-import { BidActivities } from '~/components/Toucan/Auction/BidActivities/BidActivities'
 import { AuctionChartContainer } from '~/components/Toucan/Auction/BidDistributionChart/AuctionChartContainer'
 import { BidForm } from '~/components/Toucan/Auction/BidForm/BidForm'
 import { AuctionGraduated } from '~/components/Toucan/Auction/Bids/AuctionGraduated'
@@ -156,8 +156,8 @@ function ToucanTokenContent({
               onTabChange={setChartActiveTab}
               onMobileScreenChange={setMobileScreenConfig}
             />
+            <ActivitySection />
             <AuctionStats />
-            <BidActivities />
           </LeftPanel>
 
           <RightPanel

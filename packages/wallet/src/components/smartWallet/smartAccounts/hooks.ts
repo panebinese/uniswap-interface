@@ -47,7 +47,7 @@ export function useSmartWalletDelegationStatus({ overrideAddress }: { overrideAd
     activeAccount ? selectHasDismissedSmartWalletHomeScreenNudge(state, activeAccount.address) : false,
   )
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -signerMnemonicAccounts
+  // oxlint-disable-next-line react/exhaustive-deps -- -signerMnemonicAccounts
   useEffect(() => {
     if (!activeAccount) {
       return

@@ -164,6 +164,7 @@ export function ClaimUnitagContent({
     })
 
     return unsubscribe
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [navigationEventConsumer, showTextInputView, focusUnitagTextInput])
 
   const onChangeTextInput = useCallback(
@@ -224,6 +225,7 @@ export function ClaimUnitagContent({
         }
       }, initialDelay + translateYDuration)
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [onComplete, onNavigateContinue, entryPoint, unitagAddress, fontSize],
   )
 

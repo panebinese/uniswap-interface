@@ -228,6 +228,7 @@ export const routes: RouteDefinition[] = [
               window.location.href = 'https://vote.uniswapfoundation.org'
               return null
             }}
+            // oxlint-disable-next-line react/self-closing-comp -- biome-parity: oxlint is stricter here
           ></Route>
         </Routes>
       )

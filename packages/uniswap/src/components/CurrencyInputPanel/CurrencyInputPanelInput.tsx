@@ -59,7 +59,7 @@ type CurrencyInputPanelInputProps = {
 
 export const CurrencyInputPanelInput = memo(
   forwardRef<CurrencyInputPanelRef, CurrencyInputPanelInputProps>(
-    function _CurrencyInputPanel(props, forwardedRef): JSX.Element {
+    function CurrencyInputPanelInner(props, forwardedRef): JSX.Element {
       const {
         autoFocus,
         currencyField,

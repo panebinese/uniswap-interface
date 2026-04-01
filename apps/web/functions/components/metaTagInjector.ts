@@ -11,7 +11,7 @@ import { MetaTagInjectorInput } from '~/shared-cloud/metatags'
 function doesMatchPath(path: string): boolean {
   const regexPaths = paths.map((p) => '^' + p.replace(/:[^/]+/g, '[^/]+').replace(/\*/g, '.*') + '$')
   // These come from a constant we define (paths.ts), so we don't need to worry about them being malicious.
-  // eslint-disable-next-line security/detect-non-literal-regexp
+  // oxlint-disable-next-line security/detect-non-literal-regexp
   return regexPaths.some((regex) => new RegExp(regex).test(path))
 }
 
@@ -49,7 +49,7 @@ function parsePositionPath(
   return null
 }
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function append(tags: string, attribute: string, content: string): string {
   return tags + `<meta ${attribute} content="${encode(content)}" data-rh="true">\n`
 }

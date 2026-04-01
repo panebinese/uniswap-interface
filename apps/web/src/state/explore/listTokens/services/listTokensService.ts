@@ -30,7 +30,7 @@ interface ListTokensResult {
  * shape. Delegates to legacy explore API, backend-sorted legacy response, or
  * backend-sorted multichain response depending on feature flags and context.
  */
-export interface ListTokensService {
+interface ListTokensService {
   /**
    * Fetches tokens for the given chains and options. Returns paginated
    * multichain tokens and an optional nextPageToken for pagination.

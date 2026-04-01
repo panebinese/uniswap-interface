@@ -1,7 +1,7 @@
 import { argon2id } from '@noble/hashes/argon2.js'
 import { ARGON2_PARAMS } from 'uniswap/src/features/passkey/pinCrypto'
 
-// biome-ignore lint/style/noRestrictedGlobals: Web Worker global is the standard API
+// oxlint-disable-next-line no-restricted-globals -- Web Worker global is the standard API
 const workerSelf = self
 
 workerSelf.onmessage = (e: MessageEvent<{ type: 'derive'; pin: string; salt1: Uint8Array }>): void => {

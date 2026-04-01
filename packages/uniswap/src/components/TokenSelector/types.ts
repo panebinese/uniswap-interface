@@ -6,6 +6,7 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { FiatNumberType } from 'utilities/src/format/types'
 
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 export type OnSelectCurrency = (
   currency: CurrencyInfo,
   section: OnchainItemSection<TokenSelectorOption>,
@@ -18,6 +19,7 @@ export type TokenSectionsHookProps = {
   oppositeSelectedToken?: TradeableAsset
 }
 
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 export type ConvertFiatAmountFormattedCallback = (
   fromAmount: Maybe<string | number>,
   numberType: FiatNumberType,

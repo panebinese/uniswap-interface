@@ -27,7 +27,7 @@ interface SearchModalNoQueryListProps {
   contentContainerStyle?: ContentStyle
 }
 
-export const SearchModalNoQueryList = memo(function _SearchModalNoQueryList({
+export const SearchModalNoQueryList = memo(function SearchModalNoQueryListInner({
   chainFilter,
   activeTab,
   onSelect,

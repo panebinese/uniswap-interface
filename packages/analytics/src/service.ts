@@ -43,6 +43,7 @@ export class AmplitudeAnalyticsService<E extends string = string> implements Ana
     }
   }
 
+  // oxlint-disable-next-line max-params
   track(event: E, properties: Record<string, unknown>, serverContext: ServerEventContext): void {
     amplitude.track({
       event_type: event,

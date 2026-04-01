@@ -24,7 +24,6 @@ export function NetworkSearchBar({
         py="$spacing8"
         px="$spacing12"
         backgroundColor="$surface2"
-        borderColor="$surface3"
         borderWidth="$spacing1"
         value={value}
         onChangeText={onChangeText}

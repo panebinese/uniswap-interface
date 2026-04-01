@@ -9,7 +9,7 @@ import { NavBarSearchTypes } from 'uniswap/src/features/telemetry/types'
 import { logger } from 'utilities/src/logger/logger'
 import { isMobileApp } from 'utilities/src/platform'
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function sendSearchOptionItemClickedAnalytics({
   item,
   section,

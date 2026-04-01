@@ -24,7 +24,7 @@ import { isWebPlatform } from 'utilities/src/platform'
 import { noop } from 'utilities/src/react/noop'
 import { usePreviousWithLayoutEffect } from 'utilities/src/react/usePreviousWithLayoutEffect'
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 function useSectionsForSearchResults({
   chainFilter,
   searchFilter,
@@ -119,7 +119,7 @@ function useSectionsForSearchResults({
     refetchSearchPools?.()
   }, [refetchSearchPools, refetchSearchTokens])
 
-  // eslint-disable-next-line complexity
+  // oxlint-disable-next-line complexity
   return useMemo((): GqlResult<OnchainItemSection<SearchModalOption>[]> => {
     let sections: OnchainItemSection<SearchModalOption>[] = []
     switch (activeTab) {
@@ -202,7 +202,7 @@ interface SearchModalResultsListProps {
   contentContainerStyle?: ContentStyle
 }
 
-function _SearchModalResultsList({
+function SearchModalResultsListInner({
   chainFilter,
   parsedChainFilter,
   searchFilter,
@@ -282,4 +282,4 @@ function _SearchModalResultsList({
   )
 }
 
-export const SearchModalResultsList = memo(_SearchModalResultsList)
+export const SearchModalResultsList = memo(SearchModalResultsListInner)

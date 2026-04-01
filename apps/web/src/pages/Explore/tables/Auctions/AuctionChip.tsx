@@ -53,7 +53,7 @@ export function AuctionChip({
   const lockedTokenColorRef = useRef<string | null>(null)
 
   // Reset locked color when logoUrl changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: logoUrl is intentionally a dependency to trigger reset on logo change
+  // oxlint-disable-next-line react/exhaustive-deps -- logoUrl is intentionally a dependency to trigger reset on logo change
   useEffect(() => {
     lockedTokenColorRef.current = null
   }, [logoUrl])

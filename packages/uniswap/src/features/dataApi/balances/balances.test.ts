@@ -221,6 +221,8 @@ describe(useSortedPortfolioBalancesMultichain, () => {
     const { result } = renderHook(() => useSortedPortfolioBalancesMultichain({ evmAddress: '0xuser' }))
 
     expect(result.current.data).toBeDefined()
+    expect(result.current.balancesById).toBeDefined()
+    expect(result.current.balancesById).toEqual(multichainMap)
     expect(Array.isArray(result.current.data?.balances)).toBe(true)
     expect(Array.isArray(result.current.data?.hiddenBalances)).toBe(true)
     result.current.data?.balances.forEach((b) => {

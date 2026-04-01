@@ -44,6 +44,7 @@ export const UNICHAIN_CHAIN_INFO = {
   },
   openseaName: 'unichain',
   interfaceName: 'unichain',
+  searchAliases: ['uni chain'],
   label: 'Unichain',
   logo: UNICHAIN_LOGO,
   nativeCurrency: {

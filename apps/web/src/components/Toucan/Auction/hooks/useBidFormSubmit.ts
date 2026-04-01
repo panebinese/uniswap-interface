@@ -109,6 +109,7 @@ export function useBidFormSubmit({
   budgetAmountUsd,
   maxFdvUsd,
   pricePerToken,
+  // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
   expectedReceiveAmount,
   minExpectedReceiveAmount,
   maxReceivableAmount,

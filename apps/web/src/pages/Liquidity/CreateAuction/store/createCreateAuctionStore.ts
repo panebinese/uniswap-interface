@@ -5,13 +5,12 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { FeeData } from '~/components/Liquidity/Create/types'
 import {
+  type AuctionTokenAmounts,
   AuctionType,
-  type BootstrapAuctionConfig,
   CreateAuctionStep,
   type CreateAuctionStoreState,
   DEFAULT_CREATE_AUCTION_STATE,
   DEFAULT_EXISTING_TOKEN_FORM,
-  type FundraiseAuctionConfig,
   NEW_TOKEN_DECIMALS,
   type PriceRangeStrategy,
   type TokenFormState,
@@ -20,21 +19,21 @@ import {
 import { getRecommendedStrategy } from '~/pages/Liquidity/CreateAuction/utils'
 
 const DEFAULT_AUCTION_SUPPLY_PERCENT = new Percent(25, 100)
-export const DEFAULT_POST_AUCTION_LIQUIDITY_PERCENT = new Percent(75, 100)
+// 100% means all auctioned tokens go to LP (50% token-side kept, 50% sold for raise-side)
+export const BOOTSTRAP_POST_LIQUIDITY_PERCENT = new Percent(100, 100)
+// 50% means half go to LP (25% token-side kept, 25% sold); the other 50% are the fundraise
+export const FUNDRAISE_POST_LIQUIDITY_PERCENT = new Percent(50, 100)
 
-function buildDefaultBootstrap(totalSupply: CurrencyAmount<Currency>): BootstrapAuctionConfig {
-  return {
-    auctionType: AuctionType.BOOTSTRAP_LIQUIDITY,
-    auctionSupplyAmount: totalSupply.multiply(DEFAULT_AUCTION_SUPPLY_PERCENT),
-  }
-}
-
-function buildDefaultFundraise(totalSupply: CurrencyAmount<Currency>): FundraiseAuctionConfig {
+function buildDefaultAmounts(totalSupply: CurrencyAmount<Currency>, auctionType: AuctionType): AuctionTokenAmounts {
   const auctionSupplyAmount = totalSupply.multiply(DEFAULT_AUCTION_SUPPLY_PERCENT)
+  const lpPercent =
+    auctionType === AuctionType.BOOTSTRAP_LIQUIDITY
+      ? BOOTSTRAP_POST_LIQUIDITY_PERCENT
+      : FUNDRAISE_POST_LIQUIDITY_PERCENT
   return {
-    auctionType: AuctionType.FUNDRAISE,
+    totalSupply,
     auctionSupplyAmount,
-    postAuctionLiquidityAmount: auctionSupplyAmount.multiply(DEFAULT_POST_AUCTION_LIQUIDITY_PERCENT),
+    postAuctionLiquidityAmount: auctionSupplyAmount.multiply(lpPercent),
   }
 }
 
@@ -46,6 +45,7 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
       (set) => ({
         step: DEFAULT_CREATE_AUCTION_STATE.step,
         tokenForm: DEFAULT_CREATE_AUCTION_STATE.tokenForm,
+        tokenColor: DEFAULT_CREATE_AUCTION_STATE.tokenColor,
         configureAuction: DEFAULT_CREATE_AUCTION_STATE.configureAuction,
         customizePool: DEFAULT_CREATE_AUCTION_STATE.customizePool,
         xVerification: DEFAULT_CREATE_AUCTION_STATE.xVerification,
@@ -100,10 +100,18 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
               if (!committed) {
                 return {}
               }
+              const lpPercent =
+                activeAuctionType === AuctionType.BOOTSTRAP_LIQUIDITY
+                  ? BOOTSTRAP_POST_LIQUIDITY_PERCENT
+                  : FUNDRAISE_POST_LIQUIDITY_PERCENT
               return {
                 configureAuction: {
                   ...state.configureAuction,
-                  committed: { ...committed, activeAuctionType },
+                  activeAuctionType,
+                  committed: {
+                    ...committed,
+                    postAuctionLiquidityAmount: committed.auctionSupplyAmount.multiply(lpPercent),
+                  },
                 },
                 customizePool: {
                   ...state.customizePool,
@@ -118,12 +126,10 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
               if (!committed) {
                 return {}
               }
-              const update =
-                config.auctionType === AuctionType.BOOTSTRAP_LIQUIDITY ? { bootstrap: config } : { fundraise: config }
               return {
                 configureAuction: {
                   ...state.configureAuction,
-                  committed: { ...committed, ...update },
+                  committed: { ...committed, ...config },
                 },
               }
             })
@@ -155,6 +161,15 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
           setTimeLockDurationDays: (timeLockDurationDays: number) => {
             set((state) => ({ customizePool: { ...state.customizePool, timeLockDurationDays } }))
           },
+          setSendFeesEnabled: (sendFeesEnabled: boolean) => {
+            set((state) => ({ customizePool: { ...state.customizePool, sendFeesEnabled } }))
+          },
+          setFeesRecipientAddress: (feesRecipientAddress: string) => {
+            set((state) => ({ customizePool: { ...state.customizePool, feesRecipientAddress } }))
+          },
+          setBuybackAndBurnEnabled: (buybackAndBurnEnabled: boolean) => {
+            set((state) => ({ customizePool: { ...state.customizePool, buybackAndBurnEnabled } }))
+          },
           commitTokenFormAndAdvance: () => {
             set((state) => {
               const { tokenForm } = state
@@ -172,34 +187,32 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
                 return {}
               }
 
-              const existingCommitted = state.configureAuction.committed
+              const { activeAuctionType, committed: existingCommitted } = state.configureAuction
               const isSameSupply =
                 existingCommitted !== undefined &&
                 existingCommitted.totalSupply.currency.equals(totalSupply.currency) &&
                 existingCommitted.totalSupply.equalTo(totalSupply)
               // When supply changes, slider percentages derived from the old supply become stale,
-              // so we intentionally reset bootstrap/fundraise to defaults rather than carry them forward.
-              const bootstrap = isSameSupply ? existingCommitted.bootstrap : buildDefaultBootstrap(totalSupply)
-              const fundraise = isSameSupply ? existingCommitted.fundraise : buildDefaultFundraise(totalSupply)
+              // so we intentionally reset amounts to defaults rather than carry them forward.
+              const committed = isSameSupply ? existingCommitted : buildDefaultAmounts(totalSupply, activeAuctionType)
 
               return {
                 configureAuction: {
                   ...state.configureAuction,
-                  committed: {
-                    totalSupply,
-                    activeAuctionType: existingCommitted?.activeAuctionType ?? AuctionType.BOOTSTRAP_LIQUIDITY,
-                    bootstrap,
-                    fundraise,
-                  },
+                  committed,
                 },
                 step: Math.min(state.step + 1, CreateAuctionStep.REVIEW_LAUNCH) as CreateAuctionStep,
               }
             })
           },
+          setTokenColor: (tokenColor) => {
+            set({ tokenColor })
+          },
           reset: () => {
             set({
               step: DEFAULT_CREATE_AUCTION_STATE.step,
               tokenForm: DEFAULT_CREATE_AUCTION_STATE.tokenForm,
+              tokenColor: DEFAULT_CREATE_AUCTION_STATE.tokenColor,
               configureAuction: DEFAULT_CREATE_AUCTION_STATE.configureAuction,
               customizePool: DEFAULT_CREATE_AUCTION_STATE.customizePool,
               xVerification: DEFAULT_CREATE_AUCTION_STATE.xVerification,

@@ -120,7 +120,7 @@ export function getExplorerLink({
   const chainInfo = getChainInfo(chainId)
 
   // Handle unsupported chain IDs gracefully
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- chainInfo can be undefined in edge cases (SDK mismatch)
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- chainInfo can be undefined in edge cases (SDK mismatch)
   if (!chainInfo) {
     return ''
   }

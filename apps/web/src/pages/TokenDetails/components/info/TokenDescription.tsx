@@ -1,5 +1,5 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { useCallback, useMemo, useReducer, useState } from 'react'
+import { useCallback, useReducer, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatableCopyIcon, Flex, styled, Text, TouchableArea } from 'ui/src'
 import { BlockExplorer } from 'ui/src/components/icons/BlockExplorer'
@@ -11,10 +11,7 @@ import { useShadowPropsMedium } from 'ui/src/theme/shadows'
 import { getBlockExplorerIcon } from 'uniswap/src/components/chains/BlockExplorerIcon'
 import { MultichainAddressList } from 'uniswap/src/components/MultichainTokenDetails/MultichainAddressList'
 import { MultichainExplorerList } from 'uniswap/src/components/MultichainTokenDetails/MultichainExplorerList'
-import type { MultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
-import { useOrderedMultichainEntries } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
-import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
@@ -29,8 +26,8 @@ import {
   TokenInfoButton,
   tokenPillStyles,
 } from '~/pages/TokenDetails/components/info/MultichainPillDropdown'
-import { MultiChainMap } from '~/pages/TokenDetails/context/TDPContext'
 import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
+import { useMultichainTokenEntries } from '~/pages/TokenDetails/hooks/useMultichainTokenEntries'
 import { EllipsisTamaguiStyle } from '~/theme/components/styles'
 
 const TRUNCATE_CHARACTER_COUNT = 300
@@ -75,22 +72,6 @@ function TokenLinkButton({ uri, icon, name }: { uri: string; icon: JSX.Element; 
       </Text>
     </TouchableArea>
   )
-}
-
-/** Converts TDPContext's multiChainMap into a list of MultichainTokenEntry items ordered by network selector order. */
-function useMultichainTokenEntries(multiChainMap: MultiChainMap): MultichainTokenEntry[] {
-  const entries = useMemo(() => {
-    const result: MultichainTokenEntry[] = []
-    for (const [graphqlChain, data] of Object.entries(multiChainMap)) {
-      const chainId = fromGraphQLChain(graphqlChain)
-      if (chainId && data.address) {
-        result.push({ chainId, address: data.address })
-      }
-    }
-    return result
-  }, [multiChainMap])
-
-  return useOrderedMultichainEntries(entries)
 }
 
 export function TokenDescription() {

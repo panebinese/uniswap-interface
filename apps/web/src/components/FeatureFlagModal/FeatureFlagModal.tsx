@@ -290,7 +290,6 @@ export default function FeatureFlagModal(): JSX.Element {
             <FeatureFlagOption flag={FeatureFlags.NoUniswapInterfaceFees} label="Turn off Uniswap interface fees" />
             <FeatureFlagOption flag={FeatureFlags.ChainedActions} label="Enable Chained Actions" />
             <FeatureFlagOption flag={FeatureFlags.BatchedSwaps} label="Enable Batched Swaps" />
-            <FeatureFlagOption flag={FeatureFlags.UnichainFlashblocks} label="Enable Unichain Flashblocks" />
             <FeatureFlagOption flag={FeatureFlags.UniquoteEnabled} label="Enable Uniquote" />
             <FeatureFlagOption flag={FeatureFlags.UnirouteEnabled} label="Enable Uniroute" />
             <FeatureFlagOption flag={FeatureFlags.ViemProviderEnabled} label="Enable Viem Provider" />
@@ -330,6 +329,11 @@ export default function FeatureFlagModal(): JSX.Element {
             />
             <FeatureFlagOption flag={FeatureFlags.LpDynamicNativeSlippage} label="Enable Dynamic Native Slippage" />
             <FeatureFlagOption flag={FeatureFlags.LpIncentives} label="Enable LP Incentives" />
+            <FeatureFlagOption flag={FeatureFlags.ClaimFeesV2} label="Enable Claim Fees V2" />
+            <FeatureFlagOption flag={FeatureFlags.CreatePositionV2} label="Enable Create Position V2" />
+            <FeatureFlagOption flag={FeatureFlags.DecreasePositionV2} label="Enable Decrease Position V2" />
+            <FeatureFlagOption flag={FeatureFlags.IncreasePositionV2} label="Enable Increase Position V2" />
+            <FeatureFlagOption flag={FeatureFlags.CheckApprovalV2} label="Enable Check Approval V2" />
           </FeatureFlagGroup>
           <FeatureFlagGroup name="Toucan">
             <FeatureFlagOption flag={FeatureFlags.ToucanAuctionKYC} label="Enable Toucan Auction KYC" />
@@ -348,6 +352,7 @@ export default function FeatureFlagModal(): JSX.Element {
             />
           </FeatureFlagGroup>
           <FeatureFlagGroup name="New Chains">
+            <FeatureFlagOption flag={FeatureFlags.Linea} label="Enable Linea" />
             <FeatureFlagOption flag={FeatureFlags.Soneium} label="Enable Soneium" />
             <FeatureFlagOption flag={FeatureFlags.Tempo} label="Enable Tempo" />
           </FeatureFlagGroup>

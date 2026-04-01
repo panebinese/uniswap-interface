@@ -46,6 +46,7 @@ export const BNB_CHAIN_INFO = {
     apiURL: 'https://api.bscscan.com',
   },
   interfaceName: 'bnb',
+  searchAliases: ['bnb', 'bnb chain', 'binance'],
   label: 'BNB Chain',
   logo: BNB_LOGO,
   name: 'BNB Smart Chain Mainnet',

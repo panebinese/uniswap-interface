@@ -234,6 +234,11 @@ function useBridgingTokensToTokenOptions(
           type: OnchainItemListOptionType.Token,
         }
       })
-      .filter((tokenOption): tokenOption is TokenOption => tokenOption !== undefined)
+      .filter((tokenOption): tokenOption is TokenOption => {
+        if (!tokenOption || !('currencyInfo' in tokenOption)) {
+          return false
+        }
+        return enabledChainIds.includes(tokenOption.currencyInfo.currency.chainId)
+      })
   }, [bridgingTokens, portfolioBalancesById, enabledChainIds])
 }

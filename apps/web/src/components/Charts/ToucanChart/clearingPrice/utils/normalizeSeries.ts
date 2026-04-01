@@ -256,9 +256,10 @@ export function normalizeClearingSeries({
   const scaleFactor = calculateScaleFactor(maxValue)
   // Use tight range with minimal buffer — y-axis labels are rendered as a custom overlay
   const range = maxValue - minValue
-  const topBuffer = range > 0 ? range * 0.05 : maxValue * 0.1
-  const yMin = Math.max(0, minValue)
-  const yMax = maxValue + topBuffer
+  // When price is flat (range ≈ 0), add symmetric buffer so the line is centered
+  const buffer = range > 0 ? range * 0.05 : minValue * 0.2
+  const yMin = Math.max(0, minValue - buffer)
+  const yMax = maxValue + buffer
   const scaledYMin = yMin * scaleFactor
   const scaledYMax = yMax * scaleFactor
 

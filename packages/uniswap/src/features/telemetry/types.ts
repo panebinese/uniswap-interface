@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { type ApolloError } from '@apollo/client'
 import { type PartialMessage } from '@bufbuild/protobuf'
 import { type TransactionRequest as EthersTransactionRequest } from '@ethersproject/providers'
@@ -840,7 +840,6 @@ export type UniverseEventProperties = {
     createPosition?: boolean
     expectedAmountBaseRaw: string
     expectedAmountQuoteRaw: string
-    price_discrepancy?: string
   } & LiquidityAnalyticsProperties
   [LiquidityEventName.RemoveLiquiditySubmitted]: {
     expectedAmountBaseRaw: string
@@ -850,14 +849,6 @@ export type UniverseEventProperties = {
   [LiquidityEventName.TransactionModifiedInWallet]: {
     expected?: string
     actual: string
-  } & LiquidityAnalyticsProperties
-  [LiquidityEventName.PriceDiscrepancyChecked]: {
-    event_name: LiquidityEventName
-    status: number
-    price_discrepancy: string
-    absolute_price_discrepancy: number
-    sqrt_ratio_x96_before: string
-    sqrt_ratio_x96_after: string
   } & LiquidityAnalyticsProperties
   [AuctionEventName.AuctionWithdrawSubmitted]: AuctionWithdrawAnalyticsProperties
   [AuctionEventName.AuctionBidSubmitted]: AuctionBidAnalyticsProperties
@@ -1135,6 +1126,13 @@ export type UniverseEventProperties = {
         something_else: boolean
         text?: string
       })
+    | {
+        type: 'portfolio'
+        performance: boolean
+        performance_text?: string
+        something_else: boolean
+        text?: string
+      }
   [UniswapEventName.TokenSelected]:
     | (ITraceContext &
         AssetDetailsBaseProperties &

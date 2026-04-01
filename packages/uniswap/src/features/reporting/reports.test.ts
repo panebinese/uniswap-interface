@@ -1,7 +1,9 @@
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import {
   PoolDataReportOption,
+  PortfolioDataReportOption,
   submitPoolDataReport,
+  submitPortfolioDataReport,
   submitTokenDataReport,
   submitTokenIssueReport,
   TokenDataReportOption,
@@ -198,6 +200,71 @@ describe('report submission analytics', () => {
         expect.objectContaining({
           type: 'pool',
           volume: true,
+          something_else: false,
+          text: undefined,
+        }),
+      )
+    })
+  })
+
+  describe('submitPortfolioDataReport', () => {
+    it('sends performance and text when both options selected with text', () => {
+      const reportTexts = new Map<PortfolioDataReportOption, string>([
+        [PortfolioDataReportOption.Performance, 'balance is wrong'],
+        [PortfolioDataReportOption.Other, 'something else is off'],
+      ])
+
+      submitPortfolioDataReport({
+        reportOptions: [PortfolioDataReportOption.Performance, PortfolioDataReportOption.Other],
+        reportTexts,
+      })
+
+      expect(mockSendAnalyticsEvent).toHaveBeenCalledWith(
+        UniswapEventName.DataReportSubmitted,
+        expect.objectContaining({
+          type: 'portfolio',
+          performance: true,
+          performance_text: 'balance is wrong',
+          something_else: true,
+          text: 'something else is off',
+        }),
+      )
+    })
+
+    it('sends only other when performance is not selected', () => {
+      const reportTexts = new Map<PortfolioDataReportOption, string>([
+        [PortfolioDataReportOption.Other, 'something seems off'],
+      ])
+
+      submitPortfolioDataReport({
+        reportOptions: [PortfolioDataReportOption.Other],
+        reportTexts,
+      })
+
+      expect(mockSendAnalyticsEvent).toHaveBeenCalledWith(
+        UniswapEventName.DataReportSubmitted,
+        expect.objectContaining({
+          type: 'portfolio',
+          performance: false,
+          performance_text: undefined,
+          something_else: true,
+          text: 'something seems off',
+        }),
+      )
+    })
+
+    it('sends undefined text when no text entries exist', () => {
+      submitPortfolioDataReport({
+        reportOptions: [PortfolioDataReportOption.Performance],
+        reportTexts: new Map(),
+      })
+
+      expect(mockSendAnalyticsEvent).toHaveBeenCalledWith(
+        UniswapEventName.DataReportSubmitted,
+        expect.objectContaining({
+          type: 'portfolio',
+          performance: true,
+          performance_text: undefined,
           something_else: false,
           text: undefined,
         }),

@@ -41,7 +41,7 @@ export function ExploreScreen(): JSX.Element {
   const isBottomTabsEnabled = useFeatureFlag(FeatureFlags.BottomTabs)
   const navigation = useNavigation()
   const route = useRoute<RouteProp<ExploreStackParamList, MobileScreens.Explore>>()
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- route.params can be null
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- route.params can be null
   const { chainId, orderByMetric, showFavorites } = route.params ?? {}
 
   const { isSheetReady } = useBottomSheetContext({ forceSafeReturn: isBottomTabsEnabled })
@@ -111,6 +111,7 @@ export function ExploreScreen(): JSX.Element {
     })
 
     return unsubscribe
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [isBottomTabsEnabled, navigation])
 
   // TODO(WALL-5482): investigate list rendering performance/scrolling issue
@@ -118,10 +119,6 @@ export function ExploreScreen(): JSX.Element {
 
   const { onChangeChainFilter, onChangeText, searchFilter, chainFilter, parsedChainFilter, parsedSearchFilter } =
     useFilterCallbacks(chainId ?? null, ModalName.Search)
-
-  const onResetChainFilter = useEvent(() => {
-    onChangeChainFilter(null)
-  })
 
   const onSearchChangeText = useEvent((newSearchFilter: string): void => {
     onChangeText(newSearchFilter)
@@ -193,7 +190,6 @@ export function ExploreScreen(): JSX.Element {
           parsedSearchQuery={parsedSearchFilter}
           chainFilter={chainFilter}
           parsedChainFilter={parsedChainFilter}
-          onResetChainFilter={onResetChainFilter}
         />
       ) : isSheetReady && canRenderList ? (
         <ExploreSections

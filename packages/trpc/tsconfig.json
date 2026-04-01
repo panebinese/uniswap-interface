@@ -8,5 +8,9 @@
     "types": ["node"],
     "paths": {}
   },
-  "references": []
+  "references": [
+    {
+      "path": "../logger"
+    }
+  ]
 }

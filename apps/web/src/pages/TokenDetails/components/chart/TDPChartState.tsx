@@ -67,7 +67,7 @@ export function useCreateTDPChartState(
 
   return useMemo(() => {
     const { disableCandlestickUI } = priceQuery
-    // eslint-disable-next-line consistent-return
+    // oxlint-disable-next-line consistent-return
     const activeQuery = (() => {
       switch (chartType) {
         case ChartType.PRICE:

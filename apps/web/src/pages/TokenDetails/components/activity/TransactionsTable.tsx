@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* oxlint-disable typescript/no-unnecessary-condition */
 
 import { ApolloError } from '@apollo/client'
 import { createColumnHelper } from '@tanstack/react-table'
@@ -65,6 +65,7 @@ export function TransactionsTable({ chainId, referenceToken }: { chainId: Univer
     address: referenceToken.address,
     chainId,
     filter,
+    multichain: isMultichainTokenUx,
   })
 
   // Only show full error state when ALL versions fail
@@ -246,7 +247,7 @@ export function TransactionsTable({ chainId, referenceToken }: { chainId: Univer
                   type: NumberType.TokenQuantityStats,
                 })}
               </EllipsisText>
-              <TokenLinkCell token={nonReferenceSwapLeg.token} />
+              <TokenLinkCell token={nonReferenceSwapLeg.token} showMainnetNetworkLogo={isMultichainTokenUx} />
             </Flex>
           )
         },
@@ -316,6 +317,7 @@ export function TransactionsTable({ chainId, referenceToken }: { chainId: Univer
     chainId,
     filterModalIsOpen,
     filter,
+    isMultichainTokenUx,
     referenceToken.address,
     unwrappedReferenceToken.symbol,
     formatNumberOrString,

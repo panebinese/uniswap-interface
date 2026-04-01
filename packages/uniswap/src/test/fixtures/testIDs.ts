@@ -146,6 +146,7 @@ export const TestID = {
   PortfolioChartExpanded: 'portfolio-chart-expanded',
   PortfolioChartSelectedPeriodPrefix: 'portfolio-chart-selected-period-',
   PortfolioChartToggle: 'portfolio-chart-toggle',
+  PortfolioPerformance: 'portfolio-performance',
   PortfolioHeader: 'portfolio-header',
   PortfolioTabActivity: 'portfolio-tab-activity',
   PortfolioTabDefi: 'portfolio-tab-defi',

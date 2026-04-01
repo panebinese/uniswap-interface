@@ -180,7 +180,7 @@ function DappRequestQueueContent(): JSX.Element {
   )
 }
 
-const DappRequest = memo(function _DappRequest(): JSX.Element | null {
+const DappRequest = memo(function DappRequestInner(): JSX.Element | null {
   const { t } = useTranslation()
   const { request } = useDappRequestQueueContext()
 

@@ -1,3 +1,4 @@
+import { isAddress } from '@ethersproject/address'
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { type Currency, Token } from '@uniswap/sdk-core'
 import { useCallback, useMemo, useState } from 'react'
@@ -18,16 +19,20 @@ import { FeeTierSelector } from '~/components/Liquidity/FeeTierSelector'
 import { useAllFeeTierPoolData } from '~/components/Liquidity/hooks/useAllFeeTierPoolData'
 import { getDefaultFeeTiersWithData } from '~/components/Liquidity/utils/feeTiers'
 import { useActiveAddress } from '~/features/accounts/store/hooks'
+import { AdvancedSettingsSeparator } from '~/pages/Liquidity/CreateAuction/components/AdvancedSettingsSeparator'
+import { BuybackAndBurnSection } from '~/pages/Liquidity/CreateAuction/components/BuybackAndBurnSection'
+import { PoolOwnerSection } from '~/pages/Liquidity/CreateAuction/components/PoolOwnerSection'
+import { PriceRangeStrategySelector } from '~/pages/Liquidity/CreateAuction/components/PriceRangeStrategySelector'
+import { SendFeesToAddressSection } from '~/pages/Liquidity/CreateAuction/components/SendFeesToAddressSection'
+import { MIN_LOCK_DURATION_DAYS, TimeLockSection } from '~/pages/Liquidity/CreateAuction/components/TimeLockSection'
+import { TokenSummaryCard, useTokenSummaryCardProps } from '~/pages/Liquidity/CreateAuction/components/TokenSummaryCard'
 import {
   useCreateAuctionStore,
   useCreateAuctionStoreActions,
 } from '~/pages/Liquidity/CreateAuction/CreateAuctionContext'
-import { isValidPoolOwner, PoolOwnerSection } from '~/pages/Liquidity/CreateAuction/components/PoolOwnerSection'
-import { PriceRangeStrategySelector } from '~/pages/Liquidity/CreateAuction/components/PriceRangeStrategySelector'
-import { MIN_LOCK_DURATION_DAYS, TimeLockSection } from '~/pages/Liquidity/CreateAuction/components/TimeLockSection'
-import { TokenSummaryCard, useTokenSummaryCardProps } from '~/pages/Liquidity/CreateAuction/components/TokenSummaryCard'
+import { useCreateAuctionTokenColor } from '~/pages/Liquidity/CreateAuction/hooks/useCreateAuctionTokenColor'
+import { useIsStepValid } from '~/pages/Liquidity/CreateAuction/hooks/useIsStepValid'
 import {
-  AuctionType,
   CreateAuctionStep,
   NEW_TOKEN_DECIMALS,
   NEW_TOKEN_PLACEHOLDER_ADDRESS,
@@ -39,6 +44,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 export function CustomizePoolStep() {
   const { t } = useTranslation()
+  const tokenColor = useCreateAuctionTokenColor()
   const colors = useSporeColors()
   const { formatNumberOrString } = useLocalizationContext()
   const {
@@ -49,6 +55,9 @@ export function CustomizePoolStep() {
     setPoolOwner,
     setTimeLockEnabled,
     setTimeLockDurationDays,
+    setSendFeesEnabled,
+    setFeesRecipientAddress,
+    setBuybackAndBurnEnabled,
   } = useCreateAuctionStoreActions()
   const locale = useCurrentLocale()
   const [feeTierSearchModalOpen, setFeeTierSearchModalOpen] = useState(false)
@@ -56,7 +65,11 @@ export function CustomizePoolStep() {
   const activeAddress = useActiveAddress(Platform.EVM)
   const configureAuction = useCreateAuctionStore((state) => state.configureAuction)
   const customizePool = useCreateAuctionStore((state) => state.customizePool)
+  const [advancedSettingsExpanded, setAdvancedSettingsExpanded] = useState(
+    customizePool.sendFeesEnabled || customizePool.buybackAndBurnEnabled,
+  )
   const tokenForm = useCreateAuctionStore((state) => state.tokenForm)
+  const isNextStepDisabled = !useIsStepValid(CreateAuctionStep.CUSTOMIZE_POOL)
 
   const handleEditToken = useCallback(() => setStep(CreateAuctionStep.ADD_TOKEN_INFO), [setStep])
   const handleEditAuction = useCallback(() => setStep(CreateAuctionStep.CONFIGURE_AUCTION), [setStep])
@@ -101,8 +114,14 @@ export function CustomizePoolStep() {
     [chainId, feeTierData],
   )
 
-  const { committed, startTime, maxDurationDays } = configureAuction
-  const { timeLockEnabled, timeLockDurationDays } = customizePool
+  const { committed, startTime, maxDurationDays, activeAuctionType } = configureAuction
+  const { timeLockEnabled, timeLockDurationDays, sendFeesEnabled, feesRecipientAddress, buybackAndBurnEnabled } =
+    customizePool
+
+  const feesRecipientPlaceholder = useMemo(
+    () => (isAddress(customizePool.poolOwner) ? customizePool.poolOwner : (activeAddress ?? '')),
+    [customizePool.poolOwner, activeAddress],
+  )
 
   const auctionEndDate = useMemo(() => {
     const ref = startTime ?? new Date()
@@ -139,11 +158,9 @@ export function CustomizePoolStep() {
     return null
   }
 
-  const { activeAuctionType: committedAuctionType, bootstrap } = committed
-  const activeConfig = committedAuctionType === AuctionType.BOOTSTRAP_LIQUIDITY ? bootstrap : committed.fundraise
   const auctionSupplyText = t('toucan.createAuction.tokenSummaryCard.auctioning', {
     amount: formatNumberOrString({
-      value: activeConfig.auctionSupplyAmount.toExact(),
+      value: committed.auctionSupplyAmount.toExact(),
       type: NumberType.TokenNonTx,
       placeholder: '0',
     }),
@@ -164,9 +181,8 @@ export function CustomizePoolStep() {
         borderWidth="$spacing1"
         borderColor="$surface3"
         borderRadius="$rounded20"
-        px="$spacing20"
-        py="$spacing12"
-        gap="$spacing20"
+        p="$spacing24"
+        gap="$spacing24"
       >
         <Flex>
           <Text variant="heading3" color="$neutral1" py="$spacing12">
@@ -220,8 +236,8 @@ export function CustomizePoolStep() {
           <PriceRangeStrategySelector
             selectedStrategy={customizePool.priceRangeStrategy}
             onStrategySelect={setPriceRangeStrategy}
-            auctionType={committed.activeAuctionType}
-            histogramBarColor={colors.statusSuccess.val}
+            auctionType={activeAuctionType}
+            histogramBarColor={tokenColor ?? colors.statusSuccess.val}
           />
         </Flex>
 
@@ -241,14 +257,37 @@ export function CustomizePoolStep() {
           onUnlockDateChange={handleUnlockDateChange}
           minUnlockDate={minUnlockDate}
         />
+
+        {timeLockEnabled && (
+          <>
+            <AdvancedSettingsSeparator
+              isExpanded={advancedSettingsExpanded}
+              onToggle={() => setAdvancedSettingsExpanded(!advancedSettingsExpanded)}
+            />
+
+            {advancedSettingsExpanded && (
+              <>
+                <SendFeesToAddressSection
+                  enabled={sendFeesEnabled}
+                  onEnabledChange={setSendFeesEnabled}
+                  value={feesRecipientAddress}
+                  onValueChange={setFeesRecipientAddress}
+                  placeholderAddress={feesRecipientPlaceholder}
+                />
+                <BuybackAndBurnSection enabled={buybackAndBurnEnabled} onEnabledChange={setBuybackAndBurnEnabled} />
+              </>
+            )}
+          </>
+        )}
       </Flex>
       <Flex row>
         <Button
+          fill
           size="medium"
           emphasis="primary"
           onPress={goToNextStep}
-          fill
-          isDisabled={!isValidPoolOwner(customizePool.poolOwner)}
+          isDisabled={isNextStepDisabled}
+          backgroundColor={tokenColor}
         >
           {t('toucan.createAuction.reviewLaunch')}
         </Button>

@@ -25,6 +25,22 @@ export function normalizeNetworkSearchQuery(query: string): string {
   return query.trim().replace(/\s+/g, ' ').toLowerCase()
 }
 
+function doesFieldMatchSearchPrefix(field: string, searchQuery: string): boolean {
+  const normalizedField = normalizeNetworkSearchQuery(field)
+  const normalizedQuery = normalizeNetworkSearchQuery(searchQuery)
+
+  if (!normalizedField || !normalizedQuery) {
+    return false
+  }
+
+  const fieldWords = normalizedField.split(' ')
+  const queryWords = normalizedQuery.split(' ')
+
+  return fieldWords.some((_, startIndex) =>
+    queryWords.every((queryWord, queryIndex) => fieldWords[startIndex + queryIndex]?.startsWith(queryWord)),
+  )
+}
+
 function doesChainMatchSearchQuery(chainId: UniverseChainId, normalizedSearchQuery: string): boolean {
   if (!normalizedSearchQuery) {
     return true
@@ -33,7 +49,7 @@ function doesChainMatchSearchQuery(chainId: UniverseChainId, normalizedSearchQue
   const chainInfo = getChainInfo(chainId)
   const searchableFields = [chainInfo.label, chainInfo.interfaceName]
 
-  return searchableFields.some((field) => field.toLowerCase().includes(normalizedSearchQuery))
+  return searchableFields.some((field) => doesFieldMatchSearchPrefix(field, normalizedSearchQuery))
 }
 
 function shouldIncludeAllNetworksOption({
@@ -51,8 +67,8 @@ function shouldIncludeAllNetworksOption({
     return true
   }
 
-  const allNetworksLabel = i18next.t('transaction.network.all') as string
-  return normalizeNetworkSearchQuery(allNetworksLabel).includes(normalizedSearchQuery)
+  const allNetworksLabel = i18next.t('transaction.network.all')
+  return doesFieldMatchSearchPrefix(allNetworksLabel, normalizedSearchQuery)
 }
 
 export function filterNetworkOptions({

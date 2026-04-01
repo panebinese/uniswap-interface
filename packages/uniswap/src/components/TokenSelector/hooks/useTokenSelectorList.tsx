@@ -36,6 +36,7 @@ export function useTokenSelectorList({
   input: TradeableAsset | undefined
   output: TradeableAsset | undefined
   renderedInModal: boolean
+  // oxlint-disable-next-line max-params
   onSelectCurrency: (
     currencyInfo: CurrencyInfo,
     section: OnchainItemSection<TokenSelectorOption>,

@@ -14,11 +14,13 @@ import { hasRow } from '~/components/Table/utils/hasRow'
 import { EmptyTableCell } from '~/pages/Portfolio/EmptyTableCell'
 import { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
 import { Allocation } from '~/pages/Portfolio/Tokens/Table/columns/Allocation'
+import { AvgCost } from '~/pages/Portfolio/Tokens/Table/columns/AvgCost'
 import { Balance } from '~/pages/Portfolio/Tokens/Table/columns/Balance'
 import { ContextMenuButton } from '~/pages/Portfolio/Tokens/Table/columns/ContextMenuButton'
 import { Price } from '~/pages/Portfolio/Tokens/Table/columns/Price'
 import { RelativeChange1D } from '~/pages/Portfolio/Tokens/Table/columns/RelativeChange1D'
 import { TokenDisplay } from '~/pages/Portfolio/Tokens/Table/columns/TokenDisplay'
+import { UnrealizedPnl } from '~/pages/Portfolio/Tokens/Table/columns/UnrealizedPnl'
 import { Value } from '~/pages/Portfolio/Tokens/Table/columns/Value'
 import type { TokenTableRow } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
 import { getTokenDataForRow } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
@@ -26,9 +28,11 @@ import { getTokenDataForRow } from '~/pages/Portfolio/Tokens/Table/tokenTableRow
 export enum TokenColumns {
   Token = 'token',
   Price = 'price',
+  AvgCost = 'avgCost',
   Change1d = 'change1d',
   Balance = 'balance',
   Value = 'value',
+  UnrealizedPnl = 'unrealizedPnl',
   Allocation = 'allocation',
   Actions = 'actions',
 }
@@ -36,9 +40,11 @@ export enum TokenColumns {
 export function useTokenColumns({
   hiddenColumns = [],
   showLoadingSkeleton,
+  showUnrealizedPnlPercent = false,
 }: {
   hiddenColumns?: TokenColumns[]
   showLoadingSkeleton: boolean
+  showUnrealizedPnlPercent?: boolean
 }) {
   const { t } = useTranslation()
   const multichainExpandable = useFeatureFlag(FeatureFlags.MultichainTokenUx)
@@ -52,7 +58,7 @@ export function useTokenColumns({
       columns.push(
         columnHelper.accessor((row) => (row.type === 'parent' ? row.tokenData.currencyInfo : row.chainToken.chainId), {
           id: 'currencyInfo',
-          size: 240,
+          size: 180,
           header: () => (
             <HeaderCell justifyContent="flex-start">
               <Text variant="body3" color="$neutral2">
@@ -96,6 +102,7 @@ export function useTokenColumns({
       columns.push(
         columnHelper.accessor((row) => (row.type === 'parent' ? row.tokenData.price : null), {
           id: 'price',
+          size: 120,
           header: () => (
             <HeaderCell justifyContent="flex-end">
               <Text variant="body3" color="$neutral2">
@@ -115,10 +122,35 @@ export function useTokenColumns({
       )
     }
 
+    if (!isHidden(TokenColumns.AvgCost)) {
+      columns.push(
+        columnHelper.accessor((row) => (row.type === 'parent' ? row.tokenData.avgCost : null), {
+          id: 'avgCost',
+          size: 120,
+          header: () => (
+            <HeaderCell justifyContent="flex-end">
+              <Text variant="body3" color="$neutral2">
+                {t('portfolio.tokens.table.column.avgCost')}
+              </Text>
+            </HeaderCell>
+          ),
+          cell: (info) => {
+            const row = hasRow<TokenTableRow>(info) ? info.row.original : null
+            return (
+              <Cell loading={showLoadingSkeleton} justifyContent="flex-end">
+                {row && row.type === 'parent' && <AvgCost value={row.tokenData.avgCost} />}
+              </Cell>
+            )
+          },
+        }),
+      )
+    }
+
     if (!isHidden(TokenColumns.Change1d)) {
       columns.push(
         columnHelper.accessor((row) => (row.type === 'parent' ? row.tokenData.change1d : null), {
           id: 'change1d',
+          size: 120,
           header: () => (
             <HeaderCell justifyContent="flex-end">
               <Text variant="body3" color="$neutral2">
@@ -147,6 +179,7 @@ export function useTokenColumns({
               : { quantity: row.chainToken.quantity, symbol: row.chainToken.symbol },
           {
             id: 'balance',
+            size: 120,
             header: () => (
               <HeaderCell justifyContent="flex-end">
                 <Text variant="body3" color="$neutral2">
@@ -156,7 +189,7 @@ export function useTokenColumns({
             ),
             cell: (info) => {
               const row = hasRow<TokenTableRow>(info) ? info.row.original : null
-              /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
+
               const balance = info.getValue?.()
               if (!row) {
                 return (
@@ -181,6 +214,7 @@ export function useTokenColumns({
       columns.push(
         columnHelper.accessor((row) => (row.type === 'parent' ? row.tokenData.totalValue : row.chainToken.valueUsd), {
           id: 'totalValue',
+          size: 120,
           header: () => (
             <HeaderCell justifyContent="flex-end">
               <Text variant="body3" color="$neutral2">
@@ -190,7 +224,7 @@ export function useTokenColumns({
           ),
           cell: (info) => {
             const row = hasRow<TokenTableRow>(info) ? info.row.original : null
-            /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
+
             const value = info.getValue?.()
             if (!row) {
               return (
@@ -216,10 +250,42 @@ export function useTokenColumns({
       )
     }
 
+    if (!isHidden(TokenColumns.UnrealizedPnl)) {
+      columns.push(
+        columnHelper.accessor((row) => (row.type === 'parent' ? row.tokenData.unrealizedPnl : null), {
+          id: 'unrealizedPnl',
+          size: 160,
+          header: () => (
+            <HeaderCell justifyContent="flex-end">
+              <Text variant="body3" color="$neutral2">
+                {t('portfolio.tokens.table.column.unrealizedPnl')}
+              </Text>
+            </HeaderCell>
+          ),
+          cell: (info) => {
+            const row = hasRow<TokenTableRow>(info) ? info.row.original : null
+            return (
+              <Cell loading={showLoadingSkeleton} justifyContent="flex-end">
+                {row && row.type === 'parent' && (
+                  <UnrealizedPnl
+                    value={row.tokenData.unrealizedPnl}
+                    percent={row.tokenData.unrealizedPnlPercent}
+                    isStablecoin={row.tokenData.isStablecoin}
+                    showPercent={showUnrealizedPnlPercent}
+                  />
+                )}
+              </Cell>
+            )
+          },
+        }),
+      )
+    }
+
     if (!isHidden(TokenColumns.Allocation)) {
       columns.push(
         columnHelper.accessor((row) => (row.type === 'parent' ? row.tokenData.allocation : null), {
           id: 'allocation',
+          size: 130,
           header: () => (
             <HeaderCell justifyContent="flex-end">
               <Text variant="body3" color="$neutral2">
@@ -292,5 +358,5 @@ export function useTokenColumns({
     }
 
     return columns
-  }, [t, showLoadingSkeleton, hiddenColumns, multichainExpandable])
+  }, [t, showLoadingSkeleton, hiddenColumns, multichainExpandable, showUnrealizedPnlPercent])
 }

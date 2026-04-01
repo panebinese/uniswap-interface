@@ -4,7 +4,7 @@ import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import ms from 'ms'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-// biome-ignore lint/style/noRestrictedImports: styled-components needed for custom component styling
+// oxlint-disable-next-line no-restricted-imports -- styled-components needed for custom component styling
 import styled from 'styled-components'
 import { Button, Flex, ModalCloseIcon, Text, Tooltip } from 'ui/src'
 import { BackArrow } from 'ui/src/components/icons/BackArrow'
@@ -311,7 +311,7 @@ export function FeeTierSearchModal({
                   onClose()
                 }}
               >
-                {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+                {/* oxlint-disable-next-line typescript/no-unnecessary-condition */}
                 {feeTierData[feeHundredthsOfBips] ? t('fee.tier.select.existing.button') : t('fee.tier.create.button')}
               </Button>
             </Flex>

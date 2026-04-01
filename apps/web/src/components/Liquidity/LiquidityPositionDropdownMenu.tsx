@@ -40,7 +40,7 @@ export const LiquidityPositionDropdownMenu = memo(function LiquidityPositionDrop
       elementName={ElementName.PortfolioPoolContextMenu}
       sectionName={SectionName.PortfolioPoolsTab}
     >
-      {/* biome-ignore lint/correctness/noRestrictedElements: needed here */}
+      {/* oxlint-disable-next-line react/forbid-elements -- raw div needed for onContextMenu */}
       <div style={{ cursor: 'pointer' }} onContextMenu={openMenu}>
         <TouchableArea
           onPressIn={(e) => e.stopPropagation()}

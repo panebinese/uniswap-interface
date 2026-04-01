@@ -164,9 +164,9 @@ export default function PoolDetailsPage() {
   const showRewardsDistribution = useMemo(() => {
     return Boolean(
       isLPIncentivesEnabled &&
-        poolData &&
-        poolData.rewardsCampaign?.boostedApr &&
-        poolData.rewardsCampaign.boostedApr > 0,
+      poolData &&
+      poolData.rewardsCampaign?.boostedApr &&
+      poolData.rewardsCampaign.boostedApr > 0,
     )
   }, [isLPIncentivesEnabled, poolData])
 

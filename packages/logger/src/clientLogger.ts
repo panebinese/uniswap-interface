@@ -1,3 +1,4 @@
+/* oxlint-disable max-params */
 /**
  * Client Logger
  *
@@ -13,7 +14,7 @@ function shouldLog(level: LogLevel, minLevel: LogLevel): boolean {
 }
 
 function serializeError(err: unknown): LogEntry['error'] | undefined {
-  if (err == null) {
+  if (!err) {
     return undefined
   }
   if (err instanceof Error) {
@@ -35,7 +36,7 @@ function buildEntry(
     ...(service ? { service } : {}),
     message,
     ...(context && Object.keys(context).length > 0 ? { context } : {}),
-    ...(error != null ? { error: serializeError(error) } : {}),
+    ...(error ? { error: serializeError(error) } : {}),
   }
 }
 

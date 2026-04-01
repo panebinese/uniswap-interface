@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 
 import { NetworkStatus } from '@apollo/client'
 import { QueryHookOptions } from '@apollo/client/react/types/types'
@@ -276,7 +276,7 @@ function shouldHideMultichainBalance({
   isTestnetModeEnabled: boolean
   currencyIdToTokenVisibility: ReturnType<typeof useCurrencyIdToVisibility>
 }): boolean {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const firstToken = balance.tokens?.[0]
   if (!firstToken) {
     return true
@@ -307,7 +307,7 @@ function shouldHideMultichainBalance({
  * Sorts multichain balances by totalValueUsd desc, then by name.
  * Uses optional chaining on tokens/name to guard against malformed API data.
  */
-/* eslint-disable @typescript-eslint/no-unnecessary-condition -- defensive checks for malformed API data */
+/* oxlint-disable typescript/no-unnecessary-condition -- defensive checks for malformed API data */
 function sortMultichainBalances(
   balances: PortfolioMultichainBalance[],
   isTestnetModeEnabled: boolean,
@@ -389,7 +389,9 @@ type SortedPortfolioBalancesResultBase = {
 }
 export type SortedPortfolioBalancesResult = GqlResult<SortedPortfolioBalances> & SortedPortfolioBalancesResultBase
 export type SortedPortfolioBalancesResultMultichain = GqlResult<SortedPortfolioBalancesMultichain> &
-  SortedPortfolioBalancesResultBase
+  SortedPortfolioBalancesResultBase & {
+    balancesById: Record<string, PortfolioMultichainBalance> | undefined
+  }
 
 type UseSortedPortfolioBalancesOptions = {
   evmAddress?: Address
@@ -525,6 +527,7 @@ export function useSortedPortfolioBalancesMultichain(
 
   return {
     data,
+    balancesById,
     loading,
     networkStatus,
     refetch,

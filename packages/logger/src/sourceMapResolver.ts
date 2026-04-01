@@ -55,7 +55,7 @@ export function createStackResolver(ctx: StackResolverCtx): StackResolver {
   // Parse stack frames like:
   // "    at functionName (https://host/assets/index-abc123.js:10:42)"
   // "    at https://host/assets/index-abc123.js:10:42"
-  // eslint-disable-next-line security/detect-unsafe-regex -- regex is applied to individual stack frame lines, not unbounded input
+  // oxlint-disable-next-line security/detect-unsafe-regex -- regex is applied to individual stack frame lines, not unbounded input
   const FRAME_RE = /^(\s+at\s+(?:.*?\s+\()?)(.+?):(\d+):(\d+)(\)?\s*)$/
 
   return {

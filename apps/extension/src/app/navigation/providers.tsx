@@ -205,7 +205,7 @@ function useNavigateToPoolDetails(): (args: { poolId: Address; chainId: Universe
     await focusOrCreateUniswapInterfaceTab({
       url: getPoolDetailsURL(poolId, chainId),
       // We want to reuse the active tab only if it's already in any other PDP.
-      // eslint-disable-next-line security/detect-non-literal-regexp
+      // oxlint-disable-next-line security/detect-non-literal-regexp
       reuseActiveTabIfItMatches: new RegExp(`^${escapeRegExp(uniswapUrls.webInterfacePoolsUrl)}`),
     })
   }, [])

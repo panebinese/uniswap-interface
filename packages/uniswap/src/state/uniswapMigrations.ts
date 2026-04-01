@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* biome-ignore-all lint/suspicious/noExplicitAny: legacy code needs review */
+/* oxlint-disable typescript/no-unsafe-return */
+/* oxlint-disable typescript/no-explicit-any -- legacy code needs review */
 import { FiatCurrency } from 'uniswap/src/features/fiatCurrency/constants'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import {

@@ -42,7 +42,7 @@ export function TokenCarousel({
   const [showRightGradient, setShowRightGradient] = useState(true)
 
   const carouselTokens = useMemo(() => {
-    return topTokens?.slice(0, MAX_CAROUSEL_TOKENS) ?? []
+    return topTokens.slice(0, MAX_CAROUSEL_TOKENS)
   }, [topTokens])
 
   const moveScroll = useEvent((direction: 'left' | 'right'): void => {
@@ -141,7 +141,7 @@ export function TokenCarousel({
         )}
         <Flex ref={scrollRef} row overflow="scroll" gap="$gap12" pl="$spacing2" scrollbarWidth="none">
           {carouselTokens.map((token) => (
-            <TokenCarouselCard key={`${token.address}-${token.chain}`} token={token} sparklines={sparklines} />
+            <TokenCarouselCard key={token.multichainId} token={token} sparklines={sparklines} />
           ))}
         </Flex>
       </Flex>

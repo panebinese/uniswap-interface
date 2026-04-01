@@ -27,7 +27,7 @@ interface TokenLogoProps {
   size?: number
   hideNetworkLogo?: boolean
   alwaysShowNetworkLogo?: boolean
-  /** When > 1, show a gray badge with this number instead of the network logo (for multichain tokens). */
+  showMainnetNetworkLogo?: boolean
   networkCount?: number
   networkLogoBorderWidth?: number
   loading?: boolean
@@ -104,25 +104,29 @@ function NetworkLogoBadge({
   )
 }
 
-function shouldShowNetworkLogo({
+/** Exported for unit tests. */
+export function shouldShowNetworkLogo({
+  chainId,
   alwaysShowNetworkLogo,
   hideNetworkLogo,
-  chainId,
+  showMainnetNetworkLogo,
 }: {
+  chainId: UniverseChainId | null | undefined
   alwaysShowNetworkLogo: boolean | undefined
   hideNetworkLogo: boolean | undefined
-  chainId: UniverseChainId | null | undefined
+  showMainnetNetworkLogo: boolean
 }): boolean {
   if (alwaysShowNetworkLogo && chainId) {
     return true
   }
-  if (!hideNetworkLogo && !!chainId && chainId !== UniverseChainId.Mainnet) {
-    return true
+  if (!hideNetworkLogo && !!chainId) {
+    // Historically we hid the Ethereum badge on mainnet; with multichain UX we show it for clarity.
+    return chainId !== UniverseChainId.Mainnet || showMainnetNetworkLogo
   }
   return false
 }
 
-export const TokenLogo = memo(function _TokenLogo({
+export const TokenLogo = memo(function TokenLogoInner({
   url,
   symbol,
   name,
@@ -130,6 +134,7 @@ export const TokenLogo = memo(function _TokenLogo({
   size = iconSizes.icon40,
   hideNetworkLogo,
   alwaysShowNetworkLogo,
+  showMainnetNetworkLogo = false,
   networkCount,
   networkLogoBorderWidth = isMobileApp ? 2 : 1.5,
   loading,
@@ -153,6 +158,7 @@ export const TokenLogo = memo(function _TokenLogo({
     alwaysShowNetworkLogo,
     hideNetworkLogo,
     chainId,
+    showMainnetNetworkLogo,
   })
   const networkLogoSize = Math.round(size * STATUS_RATIO)
 

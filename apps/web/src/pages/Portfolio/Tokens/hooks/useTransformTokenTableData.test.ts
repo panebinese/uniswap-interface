@@ -73,6 +73,7 @@ describe('useTransformTokenTableData', () => {
     })
     mockUseSortedPortfolioBalancesMultichain.mockReturnValue({
       data: undefined,
+      balancesById: undefined,
       loading: false,
       error: undefined,
       refetch: undefined,
@@ -83,6 +84,7 @@ describe('useTransformTokenTableData', () => {
   it('returns empty visible and hidden when no sorted balances', () => {
     mockUseSortedPortfolioBalancesMultichain.mockReturnValue({
       data: undefined,
+      balancesById: undefined,
       loading: false,
       error: undefined,
       refetch: undefined,
@@ -111,6 +113,7 @@ describe('useTransformTokenTableData', () => {
         balances: [balanceWithTokens, balanceWithNoTokens],
         hiddenBalances: [],
       },
+      balancesById: undefined,
       loading: false,
       error: undefined,
       refetch: vi.fn(),
@@ -140,6 +143,7 @@ describe('useTransformTokenTableData', () => {
         balances: [],
         hiddenBalances: [hiddenWithTokens, hiddenWithNoTokens],
       },
+      balancesById: undefined,
       loading: false,
       error: undefined,
       refetch: vi.fn(),
@@ -166,6 +170,7 @@ describe('useTransformTokenTableData', () => {
         balances: [balance1, balance2],
         hiddenBalances: [],
       },
+      balancesById: undefined,
       loading: false,
       error: undefined,
       refetch: vi.fn(),
@@ -209,6 +214,7 @@ describe('useTransformTokenTableData', () => {
         balances: [chain1Only, multichain, chain42161Only],
         hiddenBalances: [],
       },
+      balancesById: undefined,
       loading: false,
       error: undefined,
       refetch: vi.fn(),

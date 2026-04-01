@@ -1,3 +1,4 @@
+import '~/components/Toucan/Auction/Bids/AuctionGraduated.css'
 import { Currency, CurrencyAmount, Price } from '@uniswap/sdk-core'
 import JSBI from 'jsbi'
 import { useMemo } from 'react'
@@ -9,14 +10,13 @@ import { useCurrencyInfoWithLoading } from 'uniswap/src/features/tokens/useCurre
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { NumberType } from 'utilities/src/format/types'
 import { formatUnits } from 'viem'
+import { useTokenLaunchedBannerColorData } from '~/components/Toucan/Auction/Banners/TokenLaunched/useTokenLaunchedBannerColorData'
 import { q96ToPriceString } from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
+import { AuctionGraduatedSkeleton } from '~/components/Toucan/Auction/Bids/AuctionGraduatedSkeleton'
 import { useBidTokenInfo } from '~/components/Toucan/Auction/hooks/useBidTokenInfo'
 import { useAuctionStore } from '~/components/Toucan/Auction/store/useAuctionStore'
-import { SubscriptZeroPrice } from '~/components/Toucan/Shared/SubscriptZeroPrice'
-import '~/components/Toucan/Auction/Bids/AuctionGraduated.css'
-import { useTokenLaunchedBannerColorData } from '~/components/Toucan/Auction/Banners/TokenLaunched/useTokenLaunchedBannerColorData'
-import { AuctionGraduatedSkeleton } from '~/components/Toucan/Auction/Bids/AuctionGraduatedSkeleton'
 import { getClearingPrice } from '~/components/Toucan/Auction/utils/clearingPrice'
+import { SubscriptZeroPrice } from '~/components/Toucan/Shared/SubscriptZeroPrice'
 
 const AuctionGraduatedSuccess = ({
   auctionLogoUrl,

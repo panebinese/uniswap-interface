@@ -88,6 +88,7 @@ export function useTDPPriceChartData({
 
     // Data source strategy: prefer CoinGecko for line charts, use subgraph for candlesticks
     // Prefer per-chain CoinGecko history when available so multi-chain tokens render correctly
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     const coinGeckoProject = coinGeckoData?.tokenProjects?.[0]
     const coinGeckoMarket = coinGeckoProject?.markets?.[0]
     const coinGeckoTokenMarket = coinGeckoProject?.tokens.find((token) => token.chain === variables.chain)?.market
@@ -152,7 +153,7 @@ export function useTDPPriceChartData({
         }
       }
       // Special case: backend data for OHLC data is currently too granular, so points should be combined, halving the data
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       else if (priceChartType === PriceChartType.CANDLESTICK) {
         const combinedEntries = []
 
@@ -201,9 +202,11 @@ export function useTDPPriceChartData({
 
     const dataQuality = checkDataQuality({ data: entries, chartType: ChartType.PRICE, duration: variables.duration })
     return { chartType: ChartType.PRICE, entries, loading, dataQuality, disableCandlestickUI: fallback }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- coinGeckoData.tokenProjects is intentionally accessed via optional chaining
   }, [
     currentPriceOverride,
     subgraphData?.token?.market,
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     coinGeckoData?.tokenProjects?.[0],
     fallback,
     loading,

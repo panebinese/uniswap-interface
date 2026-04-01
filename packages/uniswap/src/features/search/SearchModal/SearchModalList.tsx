@@ -27,6 +27,8 @@ import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { sendSearchOptionItemClickedAnalytics } from 'uniswap/src/features/search/SearchModal/analytics/analytics'
 import { SearchFilterContext } from 'uniswap/src/features/search/SearchModal/analytics/SearchContext'
+import { useDelayedMenuClose } from 'uniswap/src/features/search/SearchModal/hooks/useDelayedMenuClose'
+import { MultichainTokenContextMenuButton } from 'uniswap/src/features/search/SearchModal/MultichainTokenContextMenuButton'
 import { isHoverable, isWebPlatform } from 'utilities/src/platform'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 
@@ -39,6 +41,8 @@ const TokenRowContextMenuButton = memo(function TokenRowContextMenuButton({
   isVisible?: boolean
 }): JSX.Element {
   const { value: isOpen, setTrue: openMenu, setFalse: closeMenu } = useBooleanState(false)
+  useDelayedMenuClose({ isVisible, isOpen, closeMenu })
+
   const shouldShow = isVisible || isOpen
 
   return (
@@ -76,6 +80,8 @@ const PoolRowContextMenuButton = memo(function PoolRowContextMenuButton({
   isVisible?: boolean
 }): JSX.Element {
   const { value: isOpen, setTrue: openMenu, setFalse: closeMenu } = useBooleanState(false)
+  useDelayedMenuClose({ isVisible, isOpen, closeMenu })
+
   const shouldShow = isVisible || isOpen
 
   return (
@@ -109,7 +115,7 @@ export interface SearchModalListProps {
   contentContainerStyle?: ContentStyle
 }
 
-export const SearchModalList = memo(function _SearchModalList({
+export const SearchModalList = memo(function SearchModalListInner({
   sections,
   refetch,
   loading,
@@ -126,7 +132,7 @@ export const SearchModalList = memo(function _SearchModalList({
 
   const [focusedRowIndex, setFocusedRowIndex] = useState<number | undefined>()
 
-  // eslint-disable-next-line consistent-return
+  // oxlint-disable-next-line consistent-return
   const renderItem = ({ item, section, rowIndex, index }: ItemRowInfo<SearchModalOption>): JSX.Element => {
     switch (item.type) {
       case OnchainItemListOptionType.Pool:
@@ -218,6 +224,10 @@ export const SearchModalList = memo(function _SearchModalList({
             }}
             networkCount={item.multichainResult.tokens.length}
             contextMenuVariant={TokenContextMenuVariant.Search}
+            multichainData={{
+              tokens: item.multichainResult.tokens,
+              primaryCurrencyInfo: item.primaryCurrencyInfo,
+            }}
             focusedRowControl={{
               focusedRowIndex,
               setFocusedRowIndex,
@@ -225,8 +235,9 @@ export const SearchModalList = memo(function _SearchModalList({
             }}
             rightElement={
               isHoverable ? (
-                <TokenRowContextMenuButton
-                  currency={item.primaryCurrencyInfo.currency}
+                <MultichainTokenContextMenuButton
+                  multichainResult={item.multichainResult}
+                  primaryCurrencyInfo={item.primaryCurrencyInfo}
                   isVisible={rowIndex === focusedRowIndex}
                 />
               ) : undefined
@@ -335,7 +346,7 @@ export const SearchModalList = memo(function _SearchModalList({
   )
 })
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 function key(item: SearchModalOption): string {
   switch (item.type) {
     case OnchainItemListOptionType.Pool:

@@ -38,7 +38,7 @@ const STATS_PLACEHOLDER = '--'
  * Formats the implied token price for display.
  * Renders range prices on two lines for better readability.
  */
-function formatImpliedTokenPrice(impliedTokenPrice: { start: string; end?: string } | null): ReactNode {
+export function formatImpliedTokenPrice(impliedTokenPrice: { start: string; end?: string } | null): ReactNode {
   if (!impliedTokenPrice) {
     return STATS_PLACEHOLDER
   }

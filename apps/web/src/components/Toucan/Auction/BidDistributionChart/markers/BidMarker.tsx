@@ -76,17 +76,17 @@ function BidTooltipRow({ bid, bidTokenInfo, formatPrice, formatTokenAmount, isIn
  * @param formatTokenAmount - Token amount formatting function
  */
 export function BidMarker({ marker, bidTokenInfo, formatPrice, formatTokenAmount }: BidMarkerProps) {
-  const { bids, left, top, address, isInRange } = marker
+  const { bids, left, top, address, bidRangeMap } = marker
   const media = useMedia()
   const { t } = useTranslation()
   const { setChartSelectedBid, setActiveBidFormTab } = useAuctionStoreActions()
 
   const handleClick = useCallback(() => {
     if (bids.length === 1) {
-      setChartSelectedBid({ bidId: bids[0].bidId, isInRange })
+      setChartSelectedBid({ bidId: bids[0].bidId, isInRange: bidRangeMap[bids[0].bidId] })
       setActiveBidFormTab(BidInfoTab.MY_BIDS)
     }
-  }, [bids, isInRange, setChartSelectedBid, setActiveBidFormTab])
+  }, [bids, bidRangeMap, setChartSelectedBid, setActiveBidFormTab])
 
   // Sort bids by creation time descending (newest first)
   const sortedBids = useMemo(() => {
@@ -106,7 +106,7 @@ export function BidMarker({ marker, bidTokenInfo, formatPrice, formatTokenAmount
   }
 
   return (
-    <Tooltip placement="right" delay={75} offset={{ mainAxis: 8 }}>
+    <Tooltip placement="left" delay={75} offset={{ mainAxis: 8 }}>
       <Tooltip.Trigger asChild>
         <Flex
           position="absolute"
@@ -168,7 +168,7 @@ export function BidMarker({ marker, bidTokenInfo, formatPrice, formatTokenAmount
                 bidTokenInfo={bidTokenInfo}
                 formatPrice={formatPrice}
                 formatTokenAmount={formatTokenAmount}
-                isInRange={isInRange}
+                isInRange={bidRangeMap[bid.bidId]}
               />
             </Flex>
           ))}

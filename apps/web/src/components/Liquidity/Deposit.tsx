@@ -168,11 +168,11 @@ export const DepositStep = () => {
 
   const requestLoading = Boolean(
     !transactionError &&
-      !inputError &&
-      !txInfo?.txRequest &&
-      currencyAmounts?.TOKEN0 &&
-      currencyAmounts.TOKEN1 &&
-      !invalidRange,
+    !inputError &&
+    !txInfo?.txRequest &&
+    currencyAmounts?.TOKEN0 &&
+    currencyAmounts.TOKEN1 &&
+    !invalidRange,
   )
 
   return (

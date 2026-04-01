@@ -16,8 +16,8 @@ import {
   ExtensionToDappRequestType,
 } from 'src/background/messagePassing/types/requests'
 import { isSandboxedFrame } from 'src/contentScript/isSandboxedFrame'
-import { ExtensionEthMethodHandler } from 'src/contentScript/methodHandlers/ExtensionEthMethodHandler'
 import { emitAccountsChanged, emitChainChanged } from 'src/contentScript/methodHandlers/emitUtils'
+import { ExtensionEthMethodHandler } from 'src/contentScript/methodHandlers/ExtensionEthMethodHandler'
 import { ProviderDirectMethodHandler } from 'src/contentScript/methodHandlers/ProviderDirectMethodHandler'
 import { UniswapMethodHandler } from 'src/contentScript/methodHandlers/UniswapMethodHandler'
 import {
@@ -291,7 +291,7 @@ function makeInjected(): void {
   // notify background script if arc browser detected so we can disable the extension
   window.addEventListener('load', () => {
     // if styles aren't available at all, then we cannot check for the arc styles
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     const isStylesAvailable = document.documentElement && !!getComputedStyle(document.documentElement).length
     if (!isStylesAvailable) {
       return
@@ -306,7 +306,7 @@ function makeInjected(): void {
   })
 }
 
-// eslint-disable-next-line import/no-unused-modules
+// oxlint-disable-next-line import/no-unused-modules
 export default defineContentScript({
   matches:
     __DEV__ || process.env.BUILD_ENV === 'dev'

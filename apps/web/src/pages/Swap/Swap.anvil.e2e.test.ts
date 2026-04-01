@@ -33,7 +33,8 @@ test.describe(
 
       await page.getByTestId(TestID.ChooseOutputToken).click()
       await page.getByTestId(TestID.ExploreSearchInput).fill('USDT') // necessary to guarantee token option shows up in DOM bc of virtualized token selector list
-      // eslint-disable-next-line
+      // Select USDT token
+      // oxlint-disable-next-line
       await page.getByTestId('token-option-1-USDT').first().click()
       // Confirm wallet balance is shown
       await expect(page.getByText('100 USDT')).toBeVisible()

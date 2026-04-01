@@ -9,7 +9,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260311.1",
     "@uniswap/eslint-config": "workspace:^",
     "depcheck": "1.4.7",
-    "eslint": "8.57.1",
+    "eslint": "10.0.2",
     "typescript": "5.8.3"
   },
   "scripts": {
@@ -17,8 +17,6 @@
     "typecheck:tsgo": "nx typecheck:tsgo react-query",
     "lint": "nx lint react-query",
     "lint:fix": "nx lint:fix react-query",
-    "lint:biome": "nx lint:biome react-query",
-    "lint:biome:fix": "nx lint:biome:fix react-query",
     "lint:eslint": "nx lint:eslint react-query",
     "lint:eslint:fix": "nx lint:eslint:fix react-query",
     "check:deps:usage": "nx check:deps:usage react-query"

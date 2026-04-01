@@ -57,6 +57,9 @@ env:
     id: ${output.testIds.PortfolioChartCollapsed}
 
 - assertVisible:
+    id: ${output.testIds.PortfolioPerformance}
+
+- assertVisible:
     id: ${output.testIds.PortfolioChartPeriodPrefix}1h
 
 - assertVisible:

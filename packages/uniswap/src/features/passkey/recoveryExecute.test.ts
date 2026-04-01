@@ -1,5 +1,5 @@
 import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
-import { deriveArgon2InWorker } from 'uniswap/src/features/passkey/pinCrypto'
+import { deriveArgon2InWorker } from 'uniswap/src/features/passkey/deriveArgon2InWorker'
 import { fetchEncryptedBlob } from 'uniswap/src/features/passkey/privyBlobStore'
 import { attemptPinDecryption } from 'uniswap/src/features/passkey/recoveryExecute'
 
@@ -14,19 +14,21 @@ vi.mock('uniswap/src/features/passkey/privyBlobStore', () => ({
   fetchEncryptedBlob: vi.fn(),
 }))
 
+vi.mock('uniswap/src/features/passkey/deriveArgon2InWorker', () => ({
+  deriveArgon2InWorker: vi.fn(),
+}))
+
 vi.mock('uniswap/src/features/passkey/pinCrypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('uniswap/src/features/passkey/pinCrypto')>()
   return {
     ...actual,
-    deriveArgon2InWorker: vi.fn(),
     blindPin: vi.fn(),
     finalizeOprf: vi.fn(),
   }
 })
 
-const { encryptAuthKey, generateAuthKeyPair, hashAuthMethodId, blindPin, finalizeOprf } = await import(
-  'uniswap/src/features/passkey/pinCrypto'
-)
+const { encryptAuthKey, generateAuthKeyPair, hashAuthMethodId, blindPin, finalizeOprf } =
+  await import('uniswap/src/features/passkey/pinCrypto')
 
 async function buildValidBlob(pin: string): Promise<{ blob: string; authPrivateKey: Uint8Array; salt1: Uint8Array }> {
   const salt1 = crypto.getRandomValues(new Uint8Array(16))

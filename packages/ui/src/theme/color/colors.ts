@@ -146,6 +146,10 @@ export const networkColors = {
     light: '#9945FF',
     dark: '#9945FF',
   },
+  linea: {
+    light: '#121212',
+    dark: '#61DFFF',
+  },
   soneium: {
     light: '#000000',
     dark: '#FFFFFF',
@@ -350,6 +354,7 @@ export const colorsLight = {
   chain_1868: networkColors.soneium.light,
   chain_4217: networkColors.tempo.light,
   chain_196: networkColors.xlayer.light,
+  chain_59144: networkColors.linea.light,
   chain_501000101: networkColors.solana.light,
   chain_143: networkColors.monad.light,
 
@@ -442,6 +447,7 @@ export const colorsDark = {
   chain_1868: networkColors.soneium.dark,
   chain_4217: networkColors.tempo.dark,
   chain_196: networkColors.xlayer.dark,
+  chain_59144: networkColors.linea.dark,
   chain_501000101: networkColors.solana.dark,
   chain_143: networkColors.monad.dark,
 

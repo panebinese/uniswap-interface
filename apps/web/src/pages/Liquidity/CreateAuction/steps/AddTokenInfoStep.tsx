@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import { Flex } from 'ui/src'
+import { CreateNewTokenForm } from '~/pages/Liquidity/CreateAuction/components/CreateNewTokenForm'
+import { ExistingTokenForm } from '~/pages/Liquidity/CreateAuction/components/ExistingTokenForm'
+import { HookTile } from '~/pages/Liquidity/CreateAuction/components/HookTile'
 import {
   useCreateAuctionStore,
   useCreateAuctionStoreActions,
 } from '~/pages/Liquidity/CreateAuction/CreateAuctionContext'
-import { CreateNewTokenForm } from '~/pages/Liquidity/CreateAuction/components/CreateNewTokenForm'
-import { ExistingTokenForm } from '~/pages/Liquidity/CreateAuction/components/ExistingTokenForm'
-import { HookTile } from '~/pages/Liquidity/CreateAuction/components/HookTile'
 import { TokenMode } from '~/pages/Liquidity/CreateAuction/types'
 
 export function AddTokenInfoStep() {

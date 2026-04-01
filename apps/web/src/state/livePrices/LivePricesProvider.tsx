@@ -30,7 +30,7 @@ function createLivePricesClient(): WebSocketClient<TokenSubscriptionParams, Toke
   const subscriptionApiUrl = getEntryGatewayUrl()
   if (!subscriptionApiUrl) {
     if (isDevEnv()) {
-      // biome-ignore lint/suspicious/noConsole: Dev-only warning
+      // oxlint-disable-next-line no-console -- Dev-only warning
       console.warn('[livePrices] subscriptionApiUrl not available, live prices disabled')
     }
     return null

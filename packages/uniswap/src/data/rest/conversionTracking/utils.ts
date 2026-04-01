@@ -31,7 +31,7 @@ export const getExternalConversionLeadsCookie = (): { key: PlatformIdType; value
   const cookieValue = document.cookie
     .split('; ')
     .find((cookie) => cookie.startsWith(CONVERSION_LEADS_EXTERNAL_COOKIE_NAME))
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     ?.split('=')?.[1]
 
   let parsedCookie
@@ -41,7 +41,7 @@ export const getExternalConversionLeadsCookie = (): { key: PlatformIdType; value
 
   let result
   if (parsedCookie) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     const key = Object.keys(parsedCookie)?.[0]
     if (key) {
       result = {

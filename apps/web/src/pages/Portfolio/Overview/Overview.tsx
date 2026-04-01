@@ -1,4 +1,5 @@
 import { ChartPeriod } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { memo, useMemo, useState } from 'react'
 import { Flex, Separator, styled, useMedia } from 'ui/src'
 import { useGetPortfolioHistoricalValueChartQuery } from 'uniswap/src/data/rest/getPortfolioChart'
@@ -16,6 +17,7 @@ import { OVERVIEW_RIGHT_COLUMN_WIDTH } from '~/pages/Portfolio/Overview/constant
 import { useIsPortfolioZero } from '~/pages/Portfolio/Overview/hooks/useIsPortfolioZero'
 import { PortfolioOverviewTables } from '~/pages/Portfolio/Overview/OverviewTables'
 import { PortfolioChart } from '~/pages/Portfolio/Overview/PortfolioChart'
+import { PortfolioPerformance } from '~/pages/Portfolio/Overview/PortfolioPerformance'
 import { OverviewStatsTiles } from '~/pages/Portfolio/Overview/StatsTiles'
 import { filterDefinedWalletAddresses } from '~/utils/filterDefinedWalletAddresses'
 
@@ -37,6 +39,7 @@ const ActionsAndStatsContainer = styled(Flex, {
 export const PortfolioOverview = memo(function PortfolioOverview() {
   const media = useMedia()
   const isFullWidth = media.xl
+  const isProfitLossEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
   const { chainId, isExternalWallet } = usePortfolioRoutes()
   const portfolioAddresses = usePortfolioAddresses()
   const { chains: allChainIds } = useEnabledChains()
@@ -122,7 +125,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
             <Trace section={SectionName.PortfolioOverviewTab} element={ElementName.PortfolioActionTiles}>
               <ActionsAndStatsContainer fullWidth={isFullWidth}>
                 <OverviewActionTiles />
-                <OverviewStatsTiles activityData={activityData} />
+                {isProfitLossEnabled ? <PortfolioPerformance /> : <OverviewStatsTiles activityData={activityData} />}
               </ActionsAndStatsContainer>
             </Trace>
           )}

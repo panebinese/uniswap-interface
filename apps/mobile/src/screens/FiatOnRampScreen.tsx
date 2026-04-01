@@ -1,5 +1,5 @@
-/* eslint-disable max-lines */
-/* eslint-disable complexity */
+/* oxlint-disable max-lines */
+/* oxlint-disable complexity */
 import { type NativeStackScreenProps } from '@react-navigation/native-stack'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { Image } from 'expo-image'
@@ -321,11 +321,11 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
     setCountryCode(country.countryCode)
   }
 
+  // oxlint-disable-next-line max-params
   const onChangeValue = (
     newAmount: string,
     source: FORAmountEnteredProperties['source'],
     newIsTokenInputMode?: boolean,
-    // eslint-disable-next-line max-params
   ): void => {
     amountUpdatedTimeRef.current = Date.now()
     sendAnalyticsEvent(

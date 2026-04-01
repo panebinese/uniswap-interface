@@ -7,6 +7,7 @@ import {
   getExperimentValueFromLayer,
   getFeatureFlag,
   Layers,
+  waitForStatsigReady,
 } from '@universe/gating'
 import { config } from 'uniswap/src/config'
 import { tradingApiVersionPrefix, uniswapUrls } from 'uniswap/src/constants/urls'
@@ -48,9 +49,10 @@ export enum TradingApiHeaders {
  * NOTE: Be sure to confirm that adding this header does not cause a CORS issue
  * with the web environments.
  */
-export const getFeatureFlaggedHeaders = (
+export const getFeatureFlaggedHeaders = async (
   tradingApiPath: (typeof TRADING_API_PATHS)[keyof typeof TRADING_API_PATHS],
-): HeadersInit => {
+): Promise<HeadersInit> => {
+  await waitForStatsigReady()
   const headers: Record<string, string> = {
     [TradingApiHeaders.UniversalRouterVersion]: TradingApi.UniversalRouterVersion._2_0,
   }
@@ -98,19 +100,6 @@ export const getFeatureFlaggedHeaders = (
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.Erc20EthEnabled, enabled: ethAsErc20UniswapXEnabled })
       break
   }
-  return headers
-}
-
-/**
- * NOTE: Be sure to confirm that adding this header does not cause a CORS issue
- * with the web environments
- */
-export const getQuoteHeaders = (): Record<string, string> => {
-  const headers: Record<string, string> = {}
-  const unirouteEnabled = getFeatureFlag(FeatureFlags.UnirouteEnabled)
-  addHeaderIfEnabled({ headers, key: 'x-uniroute-enabled', enabled: unirouteEnabled })
-  // TODO(INFRA-1595): remove once backend is fully migrated to new route
-  headers['x-uniroute-pulumi-enabled'] = 'true'
   return headers
 }
 

@@ -12,6 +12,7 @@ import {
   useCreateAuctionStore,
   useCreateAuctionStoreActions,
 } from '~/pages/Liquidity/CreateAuction/CreateAuctionContext'
+import { useIsStepValid } from '~/pages/Liquidity/CreateAuction/hooks/useIsStepValid'
 import { CreateAuctionStep } from '~/pages/Liquidity/CreateAuction/types'
 
 const WIDTH = {
@@ -24,17 +25,20 @@ export function CreateAuctionFormWrapper({ children }: { children: React.ReactNo
   const media = useMedia()
   const step = useCreateAuctionStore((state) => state.step)
   const { setStep } = useCreateAuctionStoreActions()
+  const isStep0Valid = useIsStepValid(CreateAuctionStep.ADD_TOKEN_INFO)
+  const isStep1Valid = useIsStepValid(CreateAuctionStep.CONFIGURE_AUCTION)
 
   const progressSteps = useMemo(() => {
-    const createStep = ({ label, stepEnum }: { label: string; stepEnum: CreateAuctionStep }) => ({
-      label,
-      active: step === stepEnum,
-      onPress: () => {
-        if (stepEnum < step) {
-          setStep(stepEnum)
-        }
-      },
-    })
+    const stepValidities = [isStep0Valid, isStep1Valid]
+
+    const createStep = ({ label, stepEnum }: { label: string; stepEnum: CreateAuctionStep }) => {
+      const canNavigate = stepEnum < step || stepValidities.slice(0, stepEnum).every(Boolean)
+      return {
+        label,
+        active: step === stepEnum,
+        onPress: canNavigate ? () => setStep(stepEnum) : undefined,
+      }
+    }
 
     return [
       createStep({ label: t('toucan.createAuction.step.tokenInfo'), stepEnum: CreateAuctionStep.ADD_TOKEN_INFO }),
@@ -45,7 +49,7 @@ export function CreateAuctionFormWrapper({ children }: { children: React.ReactNo
       createStep({ label: t('toucan.createAuction.step.customizePool'), stepEnum: CreateAuctionStep.CUSTOMIZE_POOL }),
       // Review step intentionally excluded - shown inline without step navigation
     ]
-  }, [step, setStep, t])
+  }, [step, setStep, t, isStep0Valid, isStep1Valid])
 
   return (
     <Flex

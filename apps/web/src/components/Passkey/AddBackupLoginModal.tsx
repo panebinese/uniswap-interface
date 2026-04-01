@@ -316,7 +316,13 @@ export function AddBackupLoginModal() {
   const isValidEmail = EMAIL_REGEX.test(email)
 
   return (
-    <Modal name={ModalName.AddBackupLogin} isModalOpen={isOpen} onClose={handleClose} maxWidth={420}>
+    <Modal
+      name={ModalName.AddBackupLogin}
+      isModalOpen={isOpen}
+      onClose={handleClose}
+      isDismissible={false}
+      maxWidth={420}
+    >
       <Flex gap="$gap24" alignItems="center" width="100%">
         {step === Step.METHOD_SELECT && (
           <MethodSelectStep

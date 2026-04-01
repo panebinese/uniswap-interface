@@ -37,6 +37,7 @@ export function TokensTableInner({
   externalScrollSync = true,
   scrollGroup = 'portfolio-tokens',
   analyticsContext,
+  showUnrealizedPnlPercent = false,
 }: {
   tokenData: TokenData[]
   hideHeader?: boolean
@@ -50,6 +51,7 @@ export function TokensTableInner({
   externalScrollSync?: boolean
   scrollGroup?: string
   analyticsContext?: { element: ElementName; section: SectionName }
+  showUnrealizedPnlPercent?: boolean
 }) {
   const { t } = useTranslation()
   const { value: isModalVisible, setTrue: openModal, setFalse: closeModal } = useBooleanState(false)
@@ -58,7 +60,7 @@ export function TokensTableInner({
   const multichainExpandable = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const rows = useMemo(() => buildTokenTableRows(tokenData, multichainExpandable), [tokenData, multichainExpandable])
 
-  const columns = useTokenColumns({ hiddenColumns, showLoadingSkeleton })
+  const columns = useTokenColumns({ hiddenColumns, showLoadingSkeleton, showUnrealizedPnlPercent })
 
   const navigateToTokenDetails = useNavigateToTokenDetails()
 

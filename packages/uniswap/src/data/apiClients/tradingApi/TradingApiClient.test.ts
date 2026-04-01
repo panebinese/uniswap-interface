@@ -4,6 +4,7 @@ vi.mock('@universe/gating', async (importOriginal) => {
     ...actual,
     getFeatureFlag: vi.fn(),
     getExperimentValueFromLayer: vi.fn(),
+    waitForStatsigReady: vi.fn().mockResolvedValue(undefined),
   }
 })
 
@@ -31,7 +32,6 @@ import {
 import {
   checkWalletDelegation,
   getFeatureFlaggedHeaders,
-  getQuoteHeaders,
   TradingApiHeaders,
 } from 'uniswap/src/data/apiClients/tradingApi/TradingApiClient'
 import type { MockedFunction } from 'vitest'
@@ -502,7 +502,7 @@ describe('getFeatureFlaggedHeaders', () => {
   })
 
   getAllTradingApiPaths().forEach((path) => {
-    it('should always include these headers for all endpoints', () => {
+    it('should always include these headers for all endpoints', async () => {
       mockGetFeatureFlag.mockImplementation(
         (flag) => flag === FeatureFlags.ViemProviderEnabled || flag === FeatureFlags.UniquoteEnabled,
       )
@@ -514,13 +514,13 @@ describe('getFeatureFlaggedHeaders', () => {
       if (path === TRADING_API_PATHS.quote || path === TRADING_API_PATHS.swap7702) {
         expectedHeaders[TradingApiHeaders.UniroutePulumiEnabled] = 'true'
       }
-      const headers = getFeatureFlaggedHeaders(path)
+      const headers = await getFeatureFlaggedHeaders(path)
       expect(headers).toEqual(expectedHeaders)
     })
 
-    it(`Endpoint: ${path} should/should not UnirouteEnabled header when feature flag is enabled`, () => {
+    it(`Endpoint: ${path} should/should not UnirouteEnabled header when feature flag is enabled`, async () => {
       mockGetFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.UnirouteEnabled)
-      const headers = getFeatureFlaggedHeaders(path)
+      const headers = await getFeatureFlaggedHeaders(path)
       switch (path) {
         case TRADING_API_PATHS.swap7702:
         case TRADING_API_PATHS.quote:
@@ -532,7 +532,7 @@ describe('getFeatureFlaggedHeaders', () => {
       }
     })
 
-    it(`Endpoint: ${path} should/should not include Erc20EthEnabled header when experiment is enabled`, () => {
+    it(`Endpoint: ${path} should/should not include Erc20EthEnabled header when experiment is enabled`, async () => {
       mockGetExperimentValueFromLayer.mockImplementation(
         ({ layerName, param }: { layerName: string; param: string }) => {
           if (layerName === Layers.SwapPage && param === EthAsErc20UniswapXProperties.EthAsErc20UniswapXEnabled) {
@@ -541,7 +541,7 @@ describe('getFeatureFlaggedHeaders', () => {
           return false
         },
       )
-      const headers = getFeatureFlaggedHeaders(path)
+      const headers = await getFeatureFlaggedHeaders(path)
       switch (path) {
         case TRADING_API_PATHS.quote:
         case TRADING_API_PATHS.order:
@@ -555,9 +555,9 @@ describe('getFeatureFlaggedHeaders', () => {
       }
     })
 
-    it(`Endpoint: ${path} should/should not include ChainedActionsEnabled header when feature flag is enabled`, () => {
+    it(`Endpoint: ${path} should/should not include ChainedActionsEnabled header when feature flag is enabled`, async () => {
       mockGetFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.ChainedActions)
-      const headers = getFeatureFlaggedHeaders(path)
+      const headers = await getFeatureFlaggedHeaders(path)
       switch (path) {
         case TRADING_API_PATHS.quote:
         case TRADING_API_PATHS.plan:
@@ -571,6 +571,7 @@ describe('getFeatureFlaggedHeaders', () => {
   })
 })
 
+// oxlint-disable-next-line jest/no-export -- suppressed
 export function getAllTradingApiPaths(): Array<(typeof TRADING_API_PATHS)[keyof typeof TRADING_API_PATHS]> {
   const paths: Array<(typeof TRADING_API_PATHS)[keyof typeof TRADING_API_PATHS]> = []
 

@@ -41,6 +41,11 @@ export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
   })
   const currency = useMemo(() => {
     if (isNative) {
+      // Tempo has a virtual "USD" native currency placeholder that is not a real token
+      // and must not be displayed on the token details page.
+      if (currencyChainInfo.id === UniverseChainId.Tempo) {
+        return undefined
+      }
       return nativeOnChain(currencyChainInfo.id)
     }
     if (tokenQuery.data?.token) {
@@ -55,7 +60,7 @@ export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
 
   // Extract color for page usage
   const colors = useSporeColors()
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const { preloadedLogoSrc } = (useLocation().state as { preloadedLogoSrc?: string }) ?? {}
   const extractedColorSrc = tokenQuery.data?.token?.project?.logoUrl ?? preloadedLogoSrc
   const tokenColor =

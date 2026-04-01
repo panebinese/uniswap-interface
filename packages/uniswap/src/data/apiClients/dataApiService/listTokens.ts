@@ -1,14 +1,16 @@
 import { type PartialMessage } from '@bufbuild/protobuf'
 import { createPromiseClient } from '@connectrpc/connect'
-import { infiniteQueryOptions } from '@tanstack/react-query'
+import { type InfiniteData, infiniteQueryOptions } from '@tanstack/react-query'
 import { DataApiService } from '@uniswap/client-data-api/dist/data/v1/api_connect'
 import type { ListTokensRequest, ListTokensResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { createDataApiServiceClient } from '@universe/api'
 import { uniswapGetTransport } from 'uniswap/src/data/rest/base'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 
+export type ListTokensParams = PartialMessage<ListTokensRequest>
+
 export type ListTokensInput = {
-  params?: Omit<PartialMessage<ListTokensRequest>, 'pageToken'>
+  params?: Omit<ListTokensParams, 'pageToken'>
   enabled?: boolean
 }
 
@@ -22,7 +24,13 @@ export function getListTokensQueryOptions({
   params,
   enabled,
 }: ListTokensInput): ReturnType<
-  typeof infiniteQueryOptions<ListTokensResponse, Error, ListTokensResponse, ListTokensQueryKey, string>
+  typeof infiniteQueryOptions<
+    ListTokensResponse,
+    Error,
+    InfiniteData<ListTokensResponse, string>,
+    ListTokensQueryKey,
+    string
+  >
 > {
   return infiniteQueryOptions({
     queryKey: [ReactQueryCacheKey.DataApiService, 'listTokens', params] as const,

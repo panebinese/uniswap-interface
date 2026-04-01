@@ -70,7 +70,7 @@ export function useAllFeeTierPoolData({
         const percentage = liquiditySum.isZero()
           ? new Percent(0, 100)
           : new Percent(totalLiquidityUsdTruncated, liquiditySum.toString())
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (feeTierData[key]) {
           feeTierData[key].totalLiquidityUsd += totalLiquidityUsdTruncated
           feeTierData[key].percentage = feeTierData[key].percentage.add(percentage)

@@ -56,6 +56,7 @@ export const SONEIUM_CHAIN_INFO = {
   },
   openseaName: 'soneium',
   interfaceName: 'soneium',
+  searchAliases: ['sony', 'sonieum'],
   label: 'Soneium',
   logo: SONEIUM_LOGO,
   nativeCurrency: {

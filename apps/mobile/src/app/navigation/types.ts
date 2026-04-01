@@ -21,6 +21,7 @@ import { ReceiveCryptoModalState } from 'src/screens/ReceiveCryptoModalState'
 import { ViewPrivateKeysScreenState } from 'src/screens/ViewPrivateKeys/ViewPrivateKeysScreenState'
 import { BridgedAssetModalProps } from 'uniswap/src/components/BridgedAsset/BridgedAssetModal'
 import { WormholeModalProps } from 'uniswap/src/components/BridgedAsset/WormholeModal'
+import { ReportPortfolioDataModalProps } from 'uniswap/src/components/reporting/ReportPortfolioDataModal'
 import { ReportTokenDataModalProps } from 'uniswap/src/components/reporting/ReportTokenDataModal'
 import { ReportTokenModalProps } from 'uniswap/src/components/reporting/ReportTokenIssueModal'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -216,6 +217,7 @@ export type AppStackParamList = {
   [ModalName.BridgedAsset]: BridgedAssetModalProps
   [ModalName.Wormhole]: WormholeModalProps
   [ModalName.ReportTokenIssue]: ReportTokenModalProps
+  [ModalName.ReportPortfolioData]: ReportPortfolioDataModalProps
   [ModalName.ReportTokenData]: ReportTokenDataModalProps
 }
 

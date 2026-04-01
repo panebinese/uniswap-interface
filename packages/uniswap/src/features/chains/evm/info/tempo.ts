@@ -1,5 +1,6 @@
 import { Token } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
+import { SwapConfigKey } from '@universe/gating'
 import { TEMPO_LOGO } from 'ui/src/assets'
 import {
   DEFAULT_MS_BEFORE_WARNING,
@@ -7,7 +8,6 @@ import {
   getQuicknodeEndpointUrl,
 } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
-import { GENERIC_L2_GAS_CONFIG } from 'uniswap/src/features/chains/gasDefaults'
 import { NetworkLayer, RPCType, UniverseChainId, UniverseChainInfo } from 'uniswap/src/features/chains/types'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
@@ -51,6 +51,7 @@ export const TEMPO_CHAIN_INFO = {
     address: DEFAULT_NATIVE_ADDRESS,
     logo: TEMPO_LOGO,
   },
+  wrappedNativeCurrency: null,
   networkLayer: NetworkLayer.L1,
   blockTimeMs: 500,
   pendingTransactionsRetryOptions: undefined,
@@ -63,14 +64,7 @@ export const TEMPO_CHAIN_INFO = {
     [RPCType.Default]: { http: ['https://rpc.tempo.xyz'] },
     [RPCType.Interface]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Tempo)] },
   },
-  // wrappedNativeCurrency points to pathUSD — structurally required but functionally inert.
-  // There is no wrapped native currency on Tempo.
-  wrappedNativeCurrency: {
-    name: 'pathUSD',
-    symbol: 'pathUSD',
-    decimals: 6,
-    address: PATHUSD_ADDRESS,
-  },
+
   blockPerMainnetEpochForChainId: 1,
   blockWaitMsBeforeWarning: DEFAULT_MS_BEFORE_WARNING,
   elementName: ElementName.ChainTempo,
@@ -81,5 +75,14 @@ export const TEMPO_CHAIN_INFO = {
   interfaceName: 'tempo',
   tokens: tempoTokens,
   tradingApiPollingIntervalMs: ONE_SECOND_MS / 2,
-  gasConfig: GENERIC_L2_GAS_CONFIG,
+  gasConfig: {
+    send: {
+      configKey: SwapConfigKey.TempoSendMinGasAmount,
+      default: 100, // .01 pathUSD
+    },
+    swap: {
+      configKey: SwapConfigKey.TempoSwapMinGasAmount,
+      default: 200, // .02 pathUSD
+    },
+  },
 } as const satisfies UniverseChainInfo

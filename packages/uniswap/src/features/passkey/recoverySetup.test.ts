@@ -12,17 +12,21 @@ vi.mock('uniswap/src/features/passkey/privyBlobStore', () => ({
   storeEncryptedBlob: vi.fn(),
 }))
 
+vi.mock('uniswap/src/features/passkey/deriveArgon2InWorker', () => ({
+  deriveArgon2InWorker: vi.fn(),
+}))
+
 vi.mock('uniswap/src/features/passkey/pinCrypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('uniswap/src/features/passkey/pinCrypto')>()
   return {
     ...actual,
     blindPin: vi.fn(),
     finalizeOprf: vi.fn(),
-    deriveArgon2InWorker: vi.fn(),
   }
 })
 
-const { blindPin, finalizeOprf, deriveArgon2InWorker } = await import('uniswap/src/features/passkey/pinCrypto')
+const { blindPin, finalizeOprf } = await import('uniswap/src/features/passkey/pinCrypto')
+const { deriveArgon2InWorker } = await import('uniswap/src/features/passkey/deriveArgon2InWorker')
 
 describe('encryptAndStoreRecovery', () => {
   const params = {

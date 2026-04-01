@@ -5,6 +5,7 @@ ignores: [
     "jest-presets",
     "depcheck",
     "typescript",
+    "eslint",
     "@typescript/native-preview",
     "typechain",
     "tamagui",

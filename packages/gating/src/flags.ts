@@ -6,7 +6,7 @@ import { isWebApp } from 'utilities/src/platform'
  * Feature flag names.
  * Add in alphabetical order for each section to decrease probability of merge conflicts.
  */
-/* biome-ignore-start lint/style/useEnumInitializers: preserve the order */
+/* oxlint-disable typescript/prefer-enum-initializers -- preserve the order */
 export enum FeatureFlags {
   // Shared
   AllowUniswapXOnlyRoutesInSwapSettings,
@@ -24,6 +24,7 @@ export enum FeatureFlags {
   ForUrlMigration,
   GasServiceV2,
   HashcashSolverEnabled,
+  Linea,
   Monad,
   MultichainTokenUx,
   NetworkFilterV2,
@@ -40,7 +41,6 @@ export enum FeatureFlags {
   Tempo,
   TurnstileSolverEnabled,
   TwoSecondSwapQuotePollingInterval,
-  UnichainFlashblocks,
   UniquoteEnabled,
   UniswapWrapped2025,
   UniswapX,
@@ -73,7 +73,12 @@ export enum FeatureFlags {
   AATestWeb,
   AuctionDetailsV2,
   BatchedSwaps,
+  CheckApprovalV2,
+  ClaimFeesV2,
+  CreatePositionV2,
+  DecreasePositionV2,
   DummyFlagTest,
+  IncreasePositionV2,
   LimitsFees,
   LiquidityBatchedTransactions,
   LpDynamicNativeSlippage,
@@ -90,7 +95,7 @@ export enum FeatureFlags {
   UnirouteEnabled,
   UniversalSwap,
 }
-/* biome-ignore-end lint/style/useEnumInitializers: preserve the order */
+/* oxlint-enable typescript/prefer-enum-initializers */
 
 // These names must match the gate name on statsig.
 // Add in alphabetical order to decrease probability of merge conflicts.
@@ -100,16 +105,17 @@ export const SHARED_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   [FeatureFlags.BlockaidFotLogging, 'blockaid_fot_logging'],
   [FeatureFlags.CentralizedPrices, 'centralized_prices'],
   [FeatureFlags.ChainedActions, 'enable_chained_actions'],
-  [FeatureFlags.DisableSwap7702, 'disable-swap-7702'],
   [FeatureFlags.DisableSessionsForPlan, 'disable_sessions_for_plan'],
+  [FeatureFlags.DisableSwap7702, 'disable-swap-7702'],
   [FeatureFlags.EmbeddedWallet, 'embedded_wallet'],
   [FeatureFlags.EnablePermitMismatchUX, 'enable_permit2_mismatch_ux'],
-  [FeatureFlags.ForceDisableWalletGetCapabilities, 'force_disable_wallet_get_capabilities'],
-  [FeatureFlags.ForcePermitTransactions, 'force_permit_transactions'],
   [FeatureFlags.ForSessionsEnabled, 'for_sessions_enabled'],
   [FeatureFlags.ForUrlMigration, 'for_url_migration'],
+  [FeatureFlags.ForceDisableWalletGetCapabilities, 'force_disable_wallet_get_capabilities'],
+  [FeatureFlags.ForcePermitTransactions, 'force_permit_transactions'],
   [FeatureFlags.GasServiceV2, 'gas_service_v2'],
   [FeatureFlags.HashcashSolverEnabled, 'sessions_hashcash_solver_enabled'],
+  [FeatureFlags.Linea, 'linea'],
   [FeatureFlags.Monad, 'monad'],
   [FeatureFlags.MultichainTokenUx, 'multichain_token_ux'],
   [FeatureFlags.NetworkFilterV2, 'network_filter_v2'],
@@ -128,7 +134,6 @@ export const SHARED_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   [FeatureFlags.Tempo, 'tempo'],
   [FeatureFlags.TurnstileSolverEnabled, 'sessions_turnstile_solver_enabled'],
   [FeatureFlags.TwoSecondSwapQuotePollingInterval, 'two_second_swap_quote_polling_interval'],
-  [FeatureFlags.UnichainFlashblocks, 'unichain_flashblocks'],
   [FeatureFlags.UniquoteEnabled, 'uniquote_enabled'],
   [FeatureFlags.UnirouteEnabled, 'uniroute_rollout'],
   [FeatureFlags.UniswapWrapped2025, 'uniswap_wrapped_2025'],
@@ -147,7 +152,12 @@ export const WEB_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   [FeatureFlags.AATestWeb, 'aatest_web'],
   [FeatureFlags.AuctionDetailsV2, 'auction_details_v2'],
   [FeatureFlags.BatchedSwaps, 'batched_swaps'],
+  [FeatureFlags.CheckApprovalV2, 'check_approval_v2'],
+  [FeatureFlags.ClaimFeesV2, 'claim_fees_v2'],
+  [FeatureFlags.CreatePositionV2, 'create_position_v2'],
+  [FeatureFlags.DecreasePositionV2, 'decrease_position_v2'],
   [FeatureFlags.DummyFlagTest, 'dummy_flag_test'],
+  [FeatureFlags.IncreasePositionV2, 'increase_position_v2'],
   [FeatureFlags.LimitsFees, 'limits_fees'],
   [FeatureFlags.LiquidityBatchedTransactions, 'liquidity_batched_transactions'],
   [FeatureFlags.LpDynamicNativeSlippage, 'lp_dynamic_native_slippage'],
@@ -160,7 +170,6 @@ export const WEB_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   [FeatureFlags.ToucanAuctionKYC, 'toucan_auction_kyc'],
   [FeatureFlags.ToucanLaunchAuction, 'toucan_launch_auction'],
   [FeatureFlags.TraceJsonRpc, 'traceJsonRpc'],
-  [FeatureFlags.UnichainFlashblocks, 'unichain_flashblocks'],
   [FeatureFlags.UnificationCopy, 'unification_copy'],
   [FeatureFlags.UniversalSwap, 'universal_swap'],
 ])

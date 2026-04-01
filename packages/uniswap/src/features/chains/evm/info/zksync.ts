@@ -43,6 +43,7 @@ export const ZKSYNC_CHAIN_INFO = {
     apiURL: 'https://block-explorer-api.mainnet.zksync.io',
   },
   interfaceName: 'zksync',
+  searchAliases: ['zk sync', 'zk'],
   label: 'ZKsync',
   logo: ZKSYNC_LOGO,
   nativeCurrency: {

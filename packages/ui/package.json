@@ -54,7 +54,7 @@
     "camelcase": "6.3.0",
     "cheerio": "1.0.0-rc.12",
     "esbuild-register": "3.6.0",
-    "eslint": "8.57.1",
+    "eslint": "10.0.2",
     "fs-extra": "11.2.0",
     "jsdom": "20.0.3",
     "typescript": "5.8.3",
@@ -62,7 +62,10 @@
     "vitest": "3.2.1",
     "vitest-presets": "workspace:^"
   },
-  "files": ["types", "dist"],
+  "files": [
+    "types",
+    "dist"
+  ],
   "main": "./src/index.ts",
   "module:jsx": "src",
   "private": true,
@@ -72,18 +75,22 @@
     "check:deps:usage": "nx check:deps:usage ui",
     "lint": "nx lint ui",
     "lint:fix": "nx lint:fix ui",
-    "lint:biome": "nx lint:biome ui",
-    "lint:biome:fix": "nx lint:biome:fix ui",
     "lint:eslint": "nx lint:eslint ui",
     "lint:eslint:fix": "nx lint:eslint:fix ui",
     "test": "nx test ui",
     "typecheck": "nx typecheck ui",
     "typecheck:tsgo": "nx typecheck:tsgo ui",
-    "watch": "nx watch ui"
+    "watch": "nx watch ui",
+    "oxlint": "nx oxlint ui",
+    "oxlint:fix": "nx oxlint:fix ui",
+    "oxfmt": "nx oxfmt ui",
+    "oxfmt:fix": "nx oxfmt:fix ui"
   },
   "nx": {
     "includedScripts": []
   },
-  "sideEffects": ["*.css"],
+  "sideEffects": [
+    "*.css"
+  ],
   "types": "./types/index"
 }

@@ -157,6 +157,7 @@ export async function createNewEmbeddedWallet(
   }
 }
 
+// oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
 export async function isSessionAuthenticatedForAction(action: Action): Promise<boolean> {
   const { Action: ActionEnum } = await loadPrivyPbModule()
   const SESSION_ACTIONS: Action[] = [

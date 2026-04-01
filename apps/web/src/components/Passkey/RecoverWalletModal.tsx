@@ -402,7 +402,13 @@ export function RecoverWalletModal() {
   const isValidEmail = EMAIL_REGEX.test(email)
 
   return (
-    <Modal name={ModalName.RecoverWallet} isModalOpen={isOpen} onClose={handleClose} maxWidth={420}>
+    <Modal
+      name={ModalName.RecoverWallet}
+      isModalOpen={isOpen}
+      onClose={handleClose}
+      isDismissible={false}
+      maxWidth={420}
+    >
       <Flex gap="$gap24" alignItems="center" width="100%">
         {step === RecoverStep.OAUTH_LOADING && <OAuthLoadingStep oauthError={oauthError} handleClose={handleClose} />}
         {step === RecoverStep.EMAIL_ENTRY && (

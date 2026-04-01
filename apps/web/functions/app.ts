@@ -101,7 +101,7 @@ export function createApp({ fetchSpaHtml, getEntryGatewayUrl, getWebSocketUrl, g
       redirect: 'manual',
     })
   })
-  
+
   // ── BFF proxy: WebSocket ────────────────────────────────────────────
   // In production, clients connect directly to the backend WebSocket
   // service — see getWebSocketUrl() in packages/api/src/getWebSocketUrl.ts.

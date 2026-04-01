@@ -14530,4 +14530,29 @@
     <lastmod>2026-03-19T21:33:33.302Z</lastmod>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://app.uniswap.org/explore/pools/arbitrum/0xb791ad21ba45c76629003b4a2f04c0d544406e37</loc>
+    <lastmod>2026-03-26T19:27:25.943Z</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://app.uniswap.org/explore/pools/optimism/0x2926736c30ef3649f9e6b5c5918ea88871f79f2b</loc>
+    <lastmod>2026-03-26T19:27:25.943Z</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://app.uniswap.org/explore/pools/base/0x7279c08a36333e12c3fc81747963264c100d66fb</loc>
+    <lastmod>2026-03-26T19:27:25.943Z</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://app.uniswap.org/explore/pools/bnb/0xe62e359809d1d2396341b7c1ec81e205501870d0</loc>
+    <lastmod>2026-03-26T19:27:25.943Z</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://app.uniswap.org/explore/pools/avalanche/0x1951bd56e82cc1edfec8546c3202ecbcc5b74a29</loc>
+    <lastmod>2026-03-26T19:27:25.943Z</lastmod>
+    <priority>0.8</priority>
+  </url>
 </urlset>

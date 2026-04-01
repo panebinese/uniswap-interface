@@ -120,7 +120,9 @@ export function TokenSelectorContent({
   const isNetworkFilterV2FlagEnabled = useFeatureFlag(FeatureFlags.NetworkFilterV2)
   const networkFilterV2Enabled =
     isNetworkFilterV2FlagEnabled &&
-    [TokenSelectorVariation.SwapInput, TokenSelectorVariation.SwapOutput].includes(variation)
+    [TokenSelectorVariation.SwapInput, TokenSelectorVariation.SwapOutput, TokenSelectorVariation.BalancesOnly].includes(
+      variation,
+    )
   const effectiveChainIds = chainIds ?? enabledChains
 
   const tieredNetworkOptions = useNetworkSelectorOptions({
@@ -210,7 +212,7 @@ export function TokenSelectorContent({
                 <TokenSelectorNetworkFilter
                   tieredOptions={tieredNetworkOptions}
                   networkFilterV2Enabled={networkFilterV2Enabled}
-                  includeAllNetworks={!isTestnetModeEnabled}
+                  includeAllNetworks={!isTestnetModeEnabled && effectiveChainIds.length > 1}
                   chainIds={effectiveChainIds}
                   selectedChain={chainFilter}
                   styles={isExtensionApp || media.md ? { dropdownZIndex: zIndexes.overlay } : undefined}
@@ -272,7 +274,7 @@ function TokenSelectorModalContent(props: TokenSelectorProps): JSX.Element {
   return <TokenSelectorContent {...props} isSurfaceReady={isSheetReady} renderedInModal={true} />
 }
 
-function _TokenSelectorModal(props: TokenSelectorProps): JSX.Element {
+function TokenSelectorModalInner(props: TokenSelectorProps): JSX.Element {
   const colors = useSporeColors()
   const { isModalOpen, onClose, focusHook } = props
 
@@ -301,4 +303,4 @@ function _TokenSelectorModal(props: TokenSelectorProps): JSX.Element {
   )
 }
 
-export const TokenSelectorModal = memo(_TokenSelectorModal)
+export const TokenSelectorModal = memo(TokenSelectorModalInner)

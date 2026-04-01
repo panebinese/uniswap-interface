@@ -1,5 +1,4 @@
 import { config } from 'uniswap/src/config'
-
 import { RetryOptions, RPCType, UniverseChainId } from 'uniswap/src/features/chains/types'
 import { ONE_MINUTE_MS } from 'utilities/src/time/time'
 
@@ -11,7 +10,7 @@ export const DEFAULT_RETRY_OPTIONS: RetryOptions = { n: 10, minWait: 250, medWai
 export const DEFAULT_MS_BEFORE_WARNING = ONE_MINUTE_MS * 10
 
 // Source: https://marketplace.quicknode.com/chains_and_networks
-// eslint-disable-next-line complexity
+
 export function getQuicknodeChainId(chainId: UniverseChainId): string {
   switch (chainId) {
     case UniverseChainId.Mainnet:
@@ -28,6 +27,8 @@ export function getQuicknodeChainId(chainId: UniverseChainId): string {
       return 'bsc'
     case UniverseChainId.Celo:
       return 'celo-mainnet'
+    case UniverseChainId.Linea:
+      return 'linea-mainnet'
     case UniverseChainId.Monad:
       return 'monad-mainnet'
     case UniverseChainId.Optimism:

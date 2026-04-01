@@ -118,6 +118,8 @@ export enum SwapConfigKey {
   SolanaSendMinGasAmount = 'solanaSendMinGasAmount',
   GenericL2SwapMinGasAmount = 'genericL2SwapMinGasAmount',
   GenericL2SendMinGasAmount = 'genericL2SendMinGasAmount',
+  TempoSwapMinGasAmount = 'tempoSwapMinGasAmount',
+  TempoSendMinGasAmount = 'tempoSendMinGasAmount',
 
   LowBalanceWarningGasPercentage = 'lowBalanceWarningGasPercentage',
 }

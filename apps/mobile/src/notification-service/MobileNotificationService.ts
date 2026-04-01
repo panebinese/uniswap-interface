@@ -94,7 +94,7 @@ function provideMobileNotificationService(ctx: { getIsApiDataSourceEnabled: () =
   const bannersDataSource = createMobileLegacyBannersNotificationDataSource({
     tracker,
     pollIntervalMs: 10 * ONE_SECOND_MS,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    // oxlint-disable-next-line typescript/no-unsafe-return
     getState: (): MobileState => store.getState(),
     getIsDarkMode: (): boolean => {
       const state = store.getState()
@@ -140,7 +140,7 @@ function provideMobileNotificationService(ctx: { getIsApiDataSourceEnabled: () =
   }
 
   const localTriggersDataSource = createMobileLocalTriggerDataSource({
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    // oxlint-disable-next-line typescript/no-unsafe-return
     getState: (): MobileState => store.getState(),
     dispatch: store.dispatch,
     tracker,
@@ -156,7 +156,7 @@ function provideMobileNotificationService(ctx: { getIsApiDataSourceEnabled: () =
       ? undefined
       : createReactiveDataSource({
           condition: createOfflineCondition({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+            // oxlint-disable-next-line typescript/no-unsafe-return
             getState: (): MobileState => store.getState(),
           }),
           tracker,

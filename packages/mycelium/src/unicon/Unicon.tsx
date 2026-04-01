@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react'
-
 import { cn } from '../cn'
 import { COLOR_COUNT } from './colors'
 import { hashString } from './hash'
@@ -58,7 +57,7 @@ export function Unicon({ input, size = 32, className, icon, bare }: UniconProps)
       {!bare && <circle cx={size / 2} cy={size / 2} r={size / 2} fill={colorVar} opacity="var(--unicon-bg-opacity)" />}
       {icon ? (
         <foreignObject x={iconOffset} y={iconOffset} width={iconSize} height={iconSize}>
-          {/* biome-ignore lint/correctness/noRestrictedElements: div required inside SVG foreignObject */}
+          {/* oxlint-disable-next-line react/forbid-elements -- div required inside SVG foreignObject */}
           <div
             style={{
               width: '100%',

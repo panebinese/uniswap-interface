@@ -30,6 +30,11 @@ export enum PoolDataReportOption {
   Other = 'other',
 }
 
+export enum PortfolioDataReportOption {
+  Performance = 'performance',
+  Other = 'other',
+}
+
 export function submitTokenIssueReport({
   source,
   chainId,
@@ -195,5 +200,21 @@ export function submitPoolDataReport({
     liquidity: reportOptions.includes(PoolDataReportOption.Liquidity),
     something_else: reportOptions.includes(PoolDataReportOption.Other),
     text: reportTexts.get(PoolDataReportOption.Other),
+  })
+}
+
+export function submitPortfolioDataReport({
+  reportOptions,
+  reportTexts,
+}: {
+  reportOptions: PortfolioDataReportOption[]
+  reportTexts: Map<PortfolioDataReportOption, string>
+}): void {
+  sendAnalyticsEvent(UniswapEventName.DataReportSubmitted, {
+    type: 'portfolio',
+    performance: reportOptions.includes(PortfolioDataReportOption.Performance),
+    performance_text: reportTexts.get(PortfolioDataReportOption.Performance),
+    something_else: reportOptions.includes(PortfolioDataReportOption.Other),
+    text: reportTexts.get(PortfolioDataReportOption.Other),
   })
 }

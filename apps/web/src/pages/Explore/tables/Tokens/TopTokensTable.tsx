@@ -10,6 +10,7 @@ import {
 } from '~/pages/Explore/tables/Tokens/tokenTableSortStore'
 import { TABLE_PAGE_SIZE } from '~/state/explore'
 import { useListTokens } from '~/state/explore/listTokens/useListTokens'
+import { useExploreBackendSortingEnabled } from '~/state/explore/useExploreBackendSortingEnabled'
 import { useChainIdFromUrlParam } from '~/utils/chainParams'
 
 const TableWrapper = styled(Flex, {
@@ -29,11 +30,12 @@ function TopTokensTableContent(): JSX.Element {
     [sortMethod, sortAscending, filterString, timePeriod],
   )
 
+  const backendSortingEnabled = useExploreBackendSortingEnabled()
   const { topTokens, tokenSortRank, isLoading, sparklines, isError, loadMore } = useListTokens(chainId, options)
 
   const { page, loadMore: clientLoadMore } = useSimplePagination()
   const effectiveLoadMore = loadMore ?? clientLoadMore
-  const displayedTokens = loadMore ? topTokens : topTokens?.slice(0, page * TABLE_PAGE_SIZE)
+  const displayedTokens = backendSortingEnabled ? topTokens : topTokens.slice(0, page * TABLE_PAGE_SIZE)
 
   return (
     <TableWrapper data-testid="top-tokens-explore-table">

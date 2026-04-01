@@ -26,7 +26,7 @@ export type TransactionDetailsOverviewProps = TransactionDetailsModalProps & {
   menuItems: MenuOptionItem[]
 }
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function TransactionDetailsOverview({
   isExternalProfile = false,
   transactionDetails,

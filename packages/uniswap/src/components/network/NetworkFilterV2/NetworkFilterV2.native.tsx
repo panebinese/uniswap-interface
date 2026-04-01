@@ -75,7 +75,7 @@ export function NetworkFilterV2({
           contentContainerStyle={CONTENT_STYLE}
           showsVerticalScrollIndicator={false}
         >
-          <Flex px="$spacing8">
+          <Flex px="$spacing8" backgroundColor="$surface1">
             <NetworkSearchBar value={searchQuery} onChangeText={setSearchQuery} />
           </Flex>
 

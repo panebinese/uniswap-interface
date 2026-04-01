@@ -80,27 +80,6 @@ export async function deriveEncryptionKey(params: {
   return finalKey
 }
 
-// --- Argon2 Worker ---
-
-export function deriveArgon2InWorker(pin: string, salt1: Uint8Array): Promise<Uint8Array> {
-  return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL('./argon2Worker.ts', import.meta.url), { type: 'module' })
-    worker.onmessage = (e: MessageEvent): void => {
-      worker.terminate()
-      if (e.data.type === 'result') {
-        resolve(e.data.pinKey)
-      } else {
-        reject(new Error(String(e.data.message || 'Argon2 worker failed')))
-      }
-    }
-    worker.onerror = (e): void => {
-      worker.terminate()
-      reject(new Error(String(e.message || 'Argon2 worker crashed — device may not have enough memory')))
-    }
-    worker.postMessage({ type: 'derive', pin, salt1 })
-  })
-}
-
 // --- AES-256-GCM Encryption ---
 
 export function encryptAuthKey(params: {
@@ -155,9 +134,13 @@ export async function generateAuthKeyPair(): Promise<{ publicKey: string; privat
   const uncompressed = p256.getPublicKey(privateKey, false) // uncompressed (65 bytes: 0x04 || x || y)
 
   // Wrap in SPKI DER via Web Crypto — Privy requires this format
-  const cryptoKey = await crypto.subtle.importKey('raw', uncompressed, { name: 'ECDSA', namedCurve: 'P-256' }, true, [
-    'verify',
-  ])
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    uncompressed as BufferSource,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    true,
+    ['verify'],
+  )
   const spkiDer = await crypto.subtle.exportKey('spki', cryptoKey)
   const publicKey = btoa(String.fromCharCode(...new Uint8Array(spkiDer)))
 

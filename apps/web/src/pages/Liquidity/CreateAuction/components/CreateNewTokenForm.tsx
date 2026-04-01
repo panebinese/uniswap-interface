@@ -11,11 +11,13 @@ import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { useActiveAddress } from '~/features/accounts/store/hooks'
-import { useCreateAuctionStoreActions } from '~/pages/Liquidity/CreateAuction/CreateAuctionContext'
 import { NoWalletSection } from '~/pages/Liquidity/CreateAuction/components/NoWalletSection'
 import { TokenAdditionalInfoSection } from '~/pages/Liquidity/CreateAuction/components/TokenAdditionalInfoSection'
+import { useCreateAuctionStoreActions } from '~/pages/Liquidity/CreateAuction/CreateAuctionContext'
+import { useCreateAuctionTokenColor } from '~/pages/Liquidity/CreateAuction/hooks/useCreateAuctionTokenColor'
 import { useCreateNewTokenAllowedNetworks } from '~/pages/Liquidity/CreateAuction/hooks/useCreateNewTokenAllowedNetworks'
-import { type CreateNewTokenFormState } from '~/pages/Liquidity/CreateAuction/types'
+import { useIsStepValid } from '~/pages/Liquidity/CreateAuction/hooks/useIsStepValid'
+import { CreateAuctionStep, type CreateNewTokenFormState } from '~/pages/Liquidity/CreateAuction/types'
 
 function NetworkSelector({
   network,
@@ -90,11 +92,11 @@ function NetworkSelector({
 
 export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFormState }) {
   const { t } = useTranslation()
+  const tokenColor = useCreateAuctionTokenColor()
   const { updateCreateNewTokenField, commitTokenFormAndAdvance } = useCreateAuctionStoreActions()
   const [isEditingName, setIsEditingName] = useState(false)
 
-  const canContinue =
-    createNew.name.trim().length > 0 && createNew.symbol.trim().length > 0 && createNew.description.trim().length > 0
+  const canContinue = useIsStepValid(CreateAuctionStep.ADD_TOKEN_INFO)
   const allowedNetworks = useCreateNewTokenAllowedNetworks()
   const address = useActiveAddress(Platform.EVM)
 
@@ -201,7 +203,14 @@ export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFor
         </Flex>
       </Flex>
       <Flex row>
-        <Button size="large" emphasis="primary" onPress={commitTokenFormAndAdvance} isDisabled={!canContinue} fill>
+        <Button
+          size="large"
+          emphasis="primary"
+          onPress={commitTokenFormAndAdvance}
+          isDisabled={!canContinue}
+          fill
+          backgroundColor={tokenColor}
+        >
           {t('common.button.continue')}
         </Button>
       </Flex>

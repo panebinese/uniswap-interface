@@ -69,7 +69,7 @@ function makeEthereum(): void {
     } catch (error) {
       if (__DEV__) {
         // Only log in dev env for debugging purposes to avoid spamming DD with these errors.
-        // eslint-disable-next-line no-restricted-syntax
+        // oxlint-disable-next-line no-restricted-syntax
         logger.error(error, { tags: { file: 'ethereum.ts', function: 'assignWindowEthereum' } })
       }
     }
@@ -156,7 +156,7 @@ function makeEthereum(): void {
   }
 }
 
-// eslint-disable-next-line import/no-unused-modules
+// oxlint-disable-next-line import/no-unused-modules
 export default defineContentScript({
   matches:
     __DEV__ || process.env.BUILD_ENV === 'dev'

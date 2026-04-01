@@ -71,13 +71,20 @@ export function CurrencySearch({
     showSwitchNetworkNotification({ chainId, prevChainId, action: switchNetworkAction })
   }, [currentTab, chainId, prevChainId, isMultichainContext, switchNetworkAction])
 
+  const isSingleChainContext = chainIds?.length === 1
+  const resolvedChainId = isSingleChainContext
+    ? chainIds[0]
+    : !isMultichainContext || isUserSelectedToken
+      ? chainId
+      : undefined
+
   return (
     <Trace logImpression eventOnTrigger={InterfaceEventName.TokenSelectorOpened} modal={ModalName.TokenSelectorWeb}>
       <Flex width="100%" flexGrow={1} flexShrink={1} flexBasis="auto">
         <TokenSelectorContent
           renderedInModal={false}
           addresses={addresses}
-          chainId={!isMultichainContext || isUserSelectedToken ? chainId : undefined}
+          chainId={resolvedChainId}
           chainIds={chainIds ?? chains}
           currencyField={currencyField}
           flow={currentTab === SwapTab.Limit ? TokenSelectorFlow.Limit : flow}

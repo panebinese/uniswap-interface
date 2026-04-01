@@ -2,10 +2,10 @@ import { Code, ConnectError } from '@connectrpc/connect'
 
 export class FetchError extends Error {
   response: Response
-  // biome-ignore lint/suspicious/noExplicitAny: Error data can be any shape from API responses
+  // oxlint-disable-next-line typescript/no-explicit-any -- Error data can be any shape from API responses
   data?: any
 
-  // biome-ignore lint/suspicious/noExplicitAny: Error data can be any shape from API responses
+  // oxlint-disable-next-line typescript/no-explicit-any -- Error data can be any shape from API responses
   constructor({ response, data, cause }: { response: Response; data?: any; cause?: unknown }) {
     super(`Response status: ${response.status}`)
     this.name = 'FetchError'

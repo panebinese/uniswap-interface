@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { TradingApi } from '@universe/api'
 import ms from 'ms'
 import { call, cancel, delay, fork } from 'typed-redux-saga'
@@ -66,7 +66,7 @@ import { ONE_SECOND_MS } from 'utilities/src/time/time'
  * to the TAPI to update the plan. As the steps are executed, the plan continues
  * to execute the next step until all last step is confirmed.
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function* plan(params: PlanParams) {
   const {
     address,
@@ -99,6 +99,7 @@ export function* plan(params: PlanParams) {
   let response: TradingApi.PlanResponse | undefined
   let wasPlanResumed = false
   let steps: TransactionAndPlanStep[]
+  // oxlint-disable-next-line prefer-const -- biome-parity: oxlint is stricter here
   let timeToCreatePlan: number | undefined
   let currentStepIndex: number
   let currentStep: TransactionAndPlanStep | undefined

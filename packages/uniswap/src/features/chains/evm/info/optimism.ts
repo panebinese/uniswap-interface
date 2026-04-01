@@ -52,6 +52,7 @@ export const OPTIMISM_CHAIN_INFO = {
   },
   openseaName: 'optimism',
   interfaceName: 'optimism',
+  searchAliases: ['op'],
   label: 'OP Mainnet',
   logo: OPTIMISM_LOGO,
   nativeCurrency: {

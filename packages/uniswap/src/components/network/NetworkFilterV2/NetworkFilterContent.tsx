@@ -5,7 +5,7 @@ import { NoResultsFound } from 'uniswap/src/components/lists/NoResultsFound'
 import type { TieredNetworkOptions } from 'uniswap/src/components/network/NetworkFilterV2/types'
 import { NetworkOption } from 'uniswap/src/components/network/NetworkOption'
 import { useNewChainIds } from 'uniswap/src/features/chains/hooks/useNewChainIds'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { isExtensionApp, isWebApp } from 'utilities/src/platform'
 import { useEvent } from 'utilities/src/react/hooks'
 
@@ -35,8 +35,7 @@ function SectionHeader({ title }: { title: string }): JSX.Element {
       pb="$spacing4"
       pt="$spacing8"
       px="$spacing8"
-      zIndex={zIndexes.sticky}
-      $platform-web={shouldStickHeader ? { position: 'sticky', top: 0 } : undefined}
+      $platform-web={shouldStickHeader ? { position: 'sticky', top: 0, zIndex: zIndexes.sticky } : undefined}
     >
       <Text color="$neutral2" variant="body4">
         {title}
@@ -61,6 +60,7 @@ function SelectableNetworkOption({
         chainId={chainId}
         currentlySelected={selectedChain === chainId}
         isNew={chainId !== null && newChains.includes(chainId)}
+        borderRadius="$rounded16"
       />
     </TouchableArea>
   )
@@ -80,7 +80,7 @@ export function NetworkFilterContent({
 
   if (!hasVisibleOptions) {
     return (
-      <Flex pb="$spacing24">
+      <Flex pb="$spacing18">
         <NoResultsFound searchFilter={searchQuery} />
       </Flex>
     )
@@ -88,7 +88,7 @@ export function NetworkFilterContent({
 
   if (!tieredOptions) {
     return (
-      <Flex gap="$spacing4" py="$spacing4" pl="$spacing2">
+      <Flex gap="$spacing4" py="$spacing4" pl="$spacing2" pb="$spacing6">
         {showAllNetworks && (
           <SelectableNetworkOption
             chainId={null}
@@ -116,7 +116,7 @@ export function NetworkFilterContent({
   const otherNetworkChainIds = tieredOptions.otherNetworks.map((option) => option.chainId)
 
   return (
-    <Flex gap="$spacing4" py="$spacing4" pl="$spacing2">
+    <Flex gap="$spacing4" py="$spacing4" pl="$spacing2" pb="$spacing6">
       {showAllNetworks && (
         <SelectableNetworkOption
           chainId={null}

@@ -18,6 +18,7 @@ import { TokenDetailsHeader } from '~/pages/TokenDetails/components/header/Token
 import { BridgedAssetSection } from '~/pages/TokenDetails/components/info/BridgedAssetSection'
 import { StatsSection } from '~/pages/TokenDetails/components/info/StatsSection'
 import { TokenDescription } from '~/pages/TokenDetails/components/info/TokenDescription'
+import { TokenPerformance } from '~/pages/TokenDetails/components/performance/TokenPerformance'
 import { LeftPanel, RightPanel, TokenDetailsLayout } from '~/pages/TokenDetails/components/skeleton/Skeleton'
 import { TDPSwapComponent } from '~/pages/TokenDetails/components/swap/TDPSwapComponent'
 import { TokenCarousel } from '~/pages/TokenDetails/components/TokenCarousel/TokenCarousel'
@@ -110,6 +111,8 @@ export function TokenDetailsContent({ isCompact }: { isCompact: boolean }) {
               isBridgedAsset={isBridgedAsset}
             />
           </Flex>
+
+          <TokenPerformance />
         </RightPanel>
 
         <MobileBottomBar hide={isTouchDevice && scrollDirection === ScrollDirection.DOWN}>

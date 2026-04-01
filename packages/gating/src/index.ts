@@ -43,7 +43,6 @@ export {
   Layers,
   NativeTokenPercentageBufferProperties,
   PrivateRpcProperties,
-  UnichainFlashblocksProperties,
 } from '@universe/gating/src/experiments'
 export {
   FeatureFlagClient,
@@ -79,11 +78,7 @@ export {
   useStatsigClientStatus,
 } from '@universe/gating/src/hooks'
 export { LocalOverrideAdapterWrapper } from '@universe/gating/src/LocalOverrideAdapterWrapper'
-export type {
-  StatsigOptions,
-  StatsigUser,
-  StorageProvider,
-} from '@universe/gating/src/sdk/statsig'
+export type { StatsigOptions, StatsigUser, StorageProvider } from '@universe/gating/src/sdk/statsig'
 export {
   getOverrideAdapter,
   getStatsigClient,
@@ -96,4 +91,4 @@ export {
   useGateValue,
   useLayer,
 } from '@universe/gating/src/sdk/statsig'
-export { getOverrides } from '@universe/gating/src/utils'
+export { getOverrides, waitForStatsigReady } from '@universe/gating/src/utils'

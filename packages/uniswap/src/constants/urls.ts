@@ -1,5 +1,6 @@
 import {
   createHelpArticleUrl,
+  DEV_ENTRY_GATEWAY_API_BASE_URL,
   getCloudflareApiBaseUrl,
   getMigratedForApiUrl,
   helpUrl,
@@ -27,13 +28,14 @@ export const UNISWAP_WEB_HOSTNAME = 'app.uniswap.org'
 const EMBEDDED_WALLET_HOSTNAME = isPlaywrightEnv() || isDevEnv() ? 'staging.ew.unihq.org' : UNISWAP_WEB_HOSTNAME
 
 function getPrivyEmbeddedWalletUrl(): string {
-  if (isDevEnv()) {
-    return 'https://privy-embedded-wallet.backend-dev.api.uniswap.org'
+  if (isPlaywrightEnv()) {
+    return PROD_ENTRY_GATEWAY_API_BASE_URL
+  } else if (isBetaEnv()) {
+    return STAGING_ENTRY_GATEWAY_API_BASE_URL
+  } else if (isDevEnv()) {
+    return DEV_ENTRY_GATEWAY_API_BASE_URL
   }
-  if (isBetaEnv()) {
-    return 'https://privy-embedded-wallet.backend-staging.api.uniswap.org'
-  }
-  return 'https://privy-embedded-wallet.backend-prod.api.uniswap.org'
+  return PROD_ENTRY_GATEWAY_API_BASE_URL
 }
 
 /**
@@ -54,6 +56,7 @@ export function getForApiUrl(): string {
 }
 
 export const UNISWAP_WEB_URL = `https://${UNISWAP_WEB_HOSTNAME}`
+
 export const UNISWAP_APP_URL = 'https://uniswap.org/app'
 export const UNISWAP_MOBILE_REDIRECT_URL = 'https://uniswap.org/mobile-redirect'
 
@@ -143,7 +146,6 @@ export const uniswapUrls = {
     routingSettings: createHelpArticleUrl('27362707722637'),
     uniswapVersionsInfo: createHelpArticleUrl('7425482965517-Uniswap-v2-v3-and-v4'),
     v4HooksInfo: createHelpArticleUrl('30998263256717'),
-    allowlistedHooks: createHelpArticleUrl('41305283155597'),
     subgraphDowntime: createHelpArticleUrl('23952001935373-Subgraph-downtime'),
     walletSecurityMeasures: createHelpArticleUrl('28278904584077-Uniswap-Wallet-Security-Measures'),
     whatIsPrivateKey: createHelpArticleUrl('11306371824653-What-is-a-private-key'),
@@ -167,6 +169,7 @@ export const uniswapUrls = {
     linkedin: 'https://www.linkedin.com/company/uniswaporg',
     tiktok: 'https://www.tiktok.com/@uniswap',
   },
+  bugBountyUrl: 'https://cantina.xyz/bounties/f9df94db-c7b1-434b-bb06-d1360abdd1be',
   termsOfServiceUrl: 'https://uniswap.org/terms-of-service',
   privacyPolicyUrl: 'https://uniswap.org/privacy-policy',
   chromeExtension: 'http://uniswap.org/ext',
@@ -208,6 +211,8 @@ export const uniswapUrls = {
 
   // Merkl Docs for LP Incentives
   merklDocsUrl: 'https://docs.merkl.xyz/earn-with-merkl/faq-earn#how-are-aprs-calculated',
+
+  uniswapAssetsBlockchainsBaseUrl: 'https://raw.githubusercontent.com/Uniswap/assets/master/blockchains',
 
   // Embedded Wallet URL's
   // Totally fine that these are public

@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import type { Currency } from '@uniswap/sdk-core'
@@ -469,8 +469,8 @@ export function SelectTokensStep({
                           </Text>
                         </Flex>
                       </MouseoverTooltip>
-                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    ) : currentFeeTierKey && !feeTierData[currentFeeTierKey]?.created ? (
+                    ) : // oxlint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                    currentFeeTierKey && !feeTierData[currentFeeTierKey]?.created ? (
                       <Flex justifyContent="center" borderRadius="$rounded6" backgroundColor="$surface3" px={7}>
                         <Text variant="buttonLabel4">
                           <Trans i18nKey="fee.tier.new" />

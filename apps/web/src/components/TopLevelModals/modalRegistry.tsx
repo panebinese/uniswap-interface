@@ -18,6 +18,11 @@ const OffchainActivityModal = createLazy(() =>
     default: module.OffchainActivityModal,
   })),
 )
+const TransactionDetailsModalDispatcher = createLazy(() =>
+  import('~/components/TopLevelModals/TransactionDetailsModalDispatcher').then((module) => ({
+    default: module.TransactionDetailsModalDispatcher,
+  })),
+)
 const UkDisclaimerModal = createLazy(() =>
   import('~/components/TopLevelModals/UkDisclaimerModal').then((module) => ({ default: module.UkDisclaimerModal })),
 )
@@ -149,6 +154,10 @@ export const modalRegistry: ModalRegistry = {
   },
   [ModalName.OffchainActivity]: {
     component: OffchainActivityModal,
+    shouldMount: () => true,
+  },
+  [ModalName.TransactionDetails]: {
+    component: TransactionDetailsModalDispatcher,
     shouldMount: () => true,
   },
   [ModalName.UkDisclaimer]: {

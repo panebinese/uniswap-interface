@@ -10,7 +10,7 @@ import { useOrderedWallets } from '~/features/wallet/connection/hooks/useOrdered
 import { mocked } from '~/test-utils/mocked'
 import { renderHook } from '~/test-utils/render'
 
-// biome-ignore lint/suspicious/noVar: Testing variable hoisting behavior requires var
+// oxlint-disable-next-line no-var -- Testing variable hoisting behavior requires var
 var mockIsMobileWeb = false
 vi.mock('utilities/src/platform', async () => {
   const actual = await vi.importActual('utilities/src/platform')

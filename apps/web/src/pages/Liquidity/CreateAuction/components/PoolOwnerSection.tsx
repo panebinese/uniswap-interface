@@ -58,7 +58,7 @@ export function PoolOwnerSection({
       </Flex>
       {hasError && (
         <Text variant="body4" color="$statusCritical" textAlign="center" pt="$spacing4">
-          {t('toucan.createAuction.step.customizePool.poolOwner.error')}
+          {t('toucan.createAuction.invalidAddressError')}
         </Text>
       )}
     </Flex>

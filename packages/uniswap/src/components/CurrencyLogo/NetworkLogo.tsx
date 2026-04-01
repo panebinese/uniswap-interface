@@ -26,7 +26,7 @@ export function TransactionSummaryNetworkLogo({
   return <NetworkLogo borderWidth={1.6} chainId={chainId} shape="square" size={size} />
 }
 
-function _NetworkLogo({
+function NetworkLogoInner({
   chainId,
   shape,
   size: sizeWithoutBorder = iconSizes.icon20,
@@ -88,4 +88,4 @@ function NetworkImage({
   )
 }
 
-export const NetworkLogo = React.memo(_NetworkLogo)
+export const NetworkLogo = React.memo(NetworkLogoInner)
