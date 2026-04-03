@@ -11,7 +11,6 @@ import { NetworkLogo } from 'uniswap/src/components/CurrencyLogo/NetworkLogo'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { GetHelpHeader } from 'uniswap/src/components/dialog/GetHelpHeader'
 import { Modal } from 'uniswap/src/components/modals/Modal'
-import { DEFAULT_TICK_SPACING } from 'uniswap/src/constants/pools'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { useGetPasskeyAuthStatus } from 'uniswap/src/features/passkey/hooks/useGetPasskeyAuthStatus'
 import { ModalNameType } from 'uniswap/src/features/telemetry/constants'
@@ -141,8 +140,13 @@ export function ReviewModal({
   const { baseCurrency, quoteCurrency } = getBaseAndQuoteCurrencies(currencies.sdk, priceInverted)
 
   const ticksAtLimit = useMemo(() => {
+    // V2 pools return 0 tick spacing because every V2 position is full range
+    if (!fee?.tickSpacing) {
+      return [false, false]
+    }
+
     return getTicksAtLimit({
-      tickSpacing: fee?.tickSpacing ?? DEFAULT_TICK_SPACING,
+      tickSpacing: fee.tickSpacing,
       lowerTick: minTick,
       upperTick: maxTick,
       fullRange,
