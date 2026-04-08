@@ -11,10 +11,10 @@ import { selectIsTestnetModeEnabled } from 'uniswap/src/features/settings/select
 import { useCurrencyInfos } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { DEFAULT_VERIFIED_AUCTION_IDS } from '~/components/Toucan/Config/config'
+import { useChainIdFromUrlParam } from '~/features/params/chainParams'
 import { BlockTimestampRequest, useGetBlockTimestamps, useMultiChainBlockInfo } from '~/hooks/useMultiChainBlockInfo'
 import { EXPLORE_API_PAGE_SIZE } from '~/state/explore/constants'
 import { isAuctionCompleted } from '~/state/explore/topAuctions/isAuctionCompleted'
-import { useChainIdFromUrlParam } from '~/utils/chainParams'
 
 export function auctionCommittedVolumeComparator(a: EnrichedAuction, b: EnrichedAuction): number {
   // Use USD values for cross-currency comparison (follows portfolio balances pattern)
@@ -155,6 +155,7 @@ export function useTopAuctions(): {
             : undefined
 
         return {
+          // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
           ...auction,
           verified: auction.auction ? verifiedSet.has(auction.auction.auctionId) : false,
           logoUrl: currencyInfos[index]?.logoUrl,
