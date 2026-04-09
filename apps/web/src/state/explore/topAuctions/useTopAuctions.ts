@@ -1,4 +1,4 @@
-import { PlainMessage } from '@bufbuild/protobuf'
+import { PlainMessage, toPlainMessage } from '@bufbuild/protobuf'
 import { useQuery } from '@tanstack/react-query'
 import { AuctionWithStats, ListTopAuctionsRequest } from '@uniswap/client-data-api/dist/data/v1/auction_pb'
 import { DynamicConfigs, useDynamicConfigValue, VerifiedAuctionsConfigKey } from '@universe/gating'
@@ -144,29 +144,44 @@ export function useTopAuctions(): {
 
     return topAuctions.auctions
       .map((auction, index) => {
+        const coreAuction = auction.auction
+        const currencyInfo = currencyInfos[index]
+
         const startBlockTimestamp =
-          auction.auction?.startBlock && auction.auction.chainId
-            ? getBlockTimestamp(auction.auction.chainId, auction.auction.startBlock)
+          coreAuction?.startBlock && coreAuction.chainId
+            ? getBlockTimestamp(coreAuction.chainId, coreAuction.startBlock)
             : undefined
 
         const endBlockTimestamp =
-          auction.auction && auction.auction.chainId && auction.auction.endBlock
-            ? getBlockTimestamp(auction.auction.chainId, auction.auction.endBlock)
+          coreAuction && coreAuction.chainId && coreAuction.endBlock
+            ? getBlockTimestamp(coreAuction.chainId, coreAuction.endBlock)
             : undefined
+
+        let auctionWithCurrency: PlainMessage<AuctionWithStats>['auction']
+        if (coreAuction !== undefined) {
+          auctionWithCurrency = {
+            ...toPlainMessage(coreAuction),
+            tokenName: currencyInfo?.currency.name,
+            tokenSymbol: currencyInfo?.currency.symbol ?? coreAuction.tokenSymbol,
+          }
+        } else {
+          auctionWithCurrency = undefined
+        }
 
         return {
           // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
           ...auction,
-          verified: auction.auction ? verifiedSet.has(auction.auction.auctionId) : false,
-          logoUrl: currencyInfos[index]?.logoUrl,
+          verified: coreAuction ? verifiedSet.has(coreAuction.auctionId) : false,
+          logoUrl: currencyInfo?.logoUrl,
           timeRemaining: {
             startBlockTimestamp,
             endBlockTimestamp,
             isCompleted: isAuctionCompleted({
-              endBlock: auction.auction?.endBlock,
-              blockNumber: auction.auction?.chainId ? blocksByChain.get(auction.auction.chainId)?.number : undefined,
+              endBlock: coreAuction?.endBlock,
+              blockNumber: coreAuction?.chainId ? blocksByChain.get(coreAuction.chainId)?.number : undefined,
             }),
           },
+          auction: auctionWithCurrency,
         }
       })
       .filter((auctionWithInfo) => {
