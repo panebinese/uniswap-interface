@@ -19,12 +19,12 @@ import {
 } from '~/components/Toucan/Auction/utils/fixedPointFdv'
 import { snapToNearestTick } from '~/components/Toucan/Auction/utils/ticks'
 
-const MAX_PERCENTAGE = 270
-const MARKER_COUNT = 10 // 0% to 270% in 30% increments = 10 dots
+const MAX_PERCENTAGE = 4900
+const MARKER_COUNT = 10 // 0% to 4900% in ~490% increments = 10 dots
 const TOOLTIP_OPEN_DELAY_MS = 2000
 
 // When the clearing-price FDV is below these thresholds,
-// expand the slider range to the target FDV instead of the default 270%.
+// expand the slider range to the target FDV instead of the default 4900% (~50x).
 const LOW_FDV_THRESHOLD_USD = 10_000
 const LOW_FDV_TARGET_USD = 1_000_000
 const LOW_FDV_THRESHOLD_BID_TOKEN = 10n
