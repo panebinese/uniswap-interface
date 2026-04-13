@@ -582,12 +582,13 @@ export function generateChartData({
   const entries = Array.from(bidData.entries())
     .map(([tickQ96, amount]) => {
       const amountInBidToken = toDecimal(amount, bidTokenInfo.decimals)
+      const tick = fromQ96ToDecimalWithTokenDecimals({
+        q96Value: tickQ96,
+        bidTokenDecimals: bidTokenInfo.decimals,
+        auctionTokenDecimals,
+      })
       return {
-        tick: fromQ96ToDecimalWithTokenDecimals({
-          q96Value: tickQ96,
-          bidTokenDecimals: bidTokenInfo.decimals,
-          auctionTokenDecimals,
-        }),
+        tick,
         tickQ96, // Preserve original Q96 string for precision
         amount: bidTokenInfo.priceFiat > 0 ? amountInBidToken * bidTokenInfo.priceFiat : amountInBidToken,
       }
@@ -766,29 +767,38 @@ export function generateChartData({
 
   // Build bars array - one bar per tick_size step
   const bars: ChartBarData[] = []
-  // Store both amount and Q96 string for precise matching
-  const bidLookup = new Map(effectiveEntries.map((e) => [e.tick, { amount: e.amount, tickQ96: e.tickQ96 }]))
 
   // Calculate base tick offset: how many ticks from floorPrice to minTick
   // This is needed to correctly calculate Q96 for ticks that don't have bid data
   const floorToMinOffset = Math.round((minTick - floorPriceDecimal) / tickSizeDecimal)
   const rawTicksPerBar = Math.max(1, Math.round(barStep / tickSizeDecimal))
 
+  // When barStep > tickSize, multiple bids can fall within a single bar's range.
+  // Pre-aggregate bid volumes into bar buckets so no volume is silently dropped.
+  const barAggregates = new Map<number, { amount: number; tickQ96: string | null }>()
+
+  for (const entry of effectiveEntries) {
+    // Find the nearest bar index for this entry
+    const barIndex = Math.floor((entry.tick - minTick) / barStep)
+    if (barIndex < 0 || barIndex >= totalBars) {
+      continue
+    }
+
+    const existing = barAggregates.get(barIndex)
+    if (existing) {
+      existing.amount += entry.amount
+      // Keep the Q96 of the first bid in this bucket (entries are sorted ascending)
+      if (!existing.tickQ96) {
+        existing.tickQ96 = entry.tickQ96
+      }
+    } else {
+      barAggregates.set(barIndex, { amount: entry.amount, tickQ96: entry.tickQ96 })
+    }
+  }
+
   for (let i = 0; i < totalBars; i++) {
     const currentTick = minTick + i * barStep
-
-    // Find exact match or very close match (within small tolerance for floating point)
-    const tolerance = barStep * TOLERANCE.TICK_COMPARISON
-    let matchedEntry = bidLookup.get(currentTick)
-    if (!matchedEntry) {
-      // Check for near matches
-      for (const [tick, data] of bidLookup.entries()) {
-        if (Math.abs(tick - currentTick) < tolerance) {
-          matchedEntry = data
-          break
-        }
-      }
-    }
+    const aggregate = barAggregates.get(i)
 
     const displayValue = calculateTickDisplayValue({
       tickValue: currentTick,
@@ -799,7 +809,7 @@ export function generateChartData({
 
     // Use matched Q96 if available, otherwise calculate from floor price
     const tickQ96 =
-      matchedEntry?.tickQ96 ??
+      aggregate?.tickQ96 ??
       calculateTickQ96({
         basePriceQ96: floorPrice,
         tickSizeQ96: tickSize,
@@ -810,7 +820,7 @@ export function generateChartData({
       tick: currentTick,
       tickQ96,
       tickDisplay: formatter(displayValue),
-      amount: matchedEntry?.amount ?? 0,
+      amount: aggregate?.amount ?? 0,
       index: i,
     })
   }
