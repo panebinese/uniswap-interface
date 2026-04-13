@@ -71,6 +71,7 @@ export function applyZoomFromState(params: {
   minTick: number
   maxTick: number
   tickSizeDecimal: number
+  barStep?: number
   priceScaleFactor: number
   chartMode?: ChartMode
 }): { hasInitializedRange: boolean } {
@@ -83,6 +84,7 @@ export function applyZoomFromState(params: {
     minTick,
     maxTick,
     tickSizeDecimal,
+    barStep,
     priceScaleFactor,
     chartMode,
   } = params
@@ -113,6 +115,7 @@ export function applyZoomFromState(params: {
         minTick,
         maxTick,
         tickSize: tickSizeDecimal,
+        barStep,
         initialTickCount: ZOOM_DEFAULTS.INITIAL_TICK_COUNT,
       })
       targetFrom = Math.round(initial.from * priceScaleFactor)

@@ -95,6 +95,37 @@ function capConcentrationData({
       }
     }
 
+    // If tick-based window excluded everything (sub-wei tick sizes), fall back to
+    // keeping the first MAX_RENDERABLE_BARS entries by price so charts have data.
+    if (filteredEntries.length === 0 && Object.keys(concentration).length > 0) {
+      const allEntries: Array<{ price: bigint; key: string; value: { volume: string } }> = []
+      for (const [priceQ96, value] of Object.entries(concentration)) {
+        try {
+          allEntries.push({ price: BigInt(priceQ96), key: priceQ96, value })
+        } catch {
+          // Ignore unparsable entries
+        }
+      }
+      allEntries.sort((a, b) => (a.price < b.price ? -1 : a.price > b.price ? 1 : 0))
+
+      const fallbackEntries: Array<[string, { volume: string }]> = []
+      let fallbackExcluded = 0n
+      for (const entry of allEntries) {
+        if (entry.price >= floor && fallbackEntries.length < MAX_RENDERABLE_BARS) {
+          fallbackEntries.push([entry.key, entry.value])
+        } else {
+          fallbackExcluded += BigInt(entry.value.volume)
+        }
+      }
+
+      const fallbackFiltered = Object.fromEntries(fallbackEntries) as Record<string, { volume: string }>
+      return {
+        cappedConcentration: fallbackFiltered,
+        capped: fallbackEntries.length < allEntries.length,
+        excludedVolume: fallbackExcluded,
+      }
+    }
+
     const filtered = Object.fromEntries(filteredEntries) as Record<string, { volume: string }>
     const capped = filteredEntries.length !== Object.keys(concentration).length
     return { cappedConcentration: filtered, capped, excludedVolume }

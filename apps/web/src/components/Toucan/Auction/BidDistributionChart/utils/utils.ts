@@ -13,6 +13,7 @@ import {
   calculateBidConcentration,
 } from '~/components/Toucan/Auction/BidDistributionChart/utils/bidConcentration'
 import {
+  Q96,
   calculateTickQ96,
   fromQ96ToDecimalWithTokenDecimals,
 } from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
@@ -45,6 +46,8 @@ export interface ProcessedChartData {
   /** Total bid volume including all entries (even those outside the windowed bars) */
   totalBidVolume: number
   labelIncrement?: number
+  /** Step size between bars — use for label calculations instead of raw tickSize */
+  barStep?: number
   concentration: BidConcentrationResult | null
   /** The max tick from actual bid data (before any extension). Used for auto-clearing custom bid tick. */
   maxTickFromData: number
@@ -137,23 +140,50 @@ function toDecimal(value: string, decimals: number): number {
  * 2. Bars step by tick_size multiples
  * 3. Range extends beyond data if needed to reach 20 bars
  */
-function calculateBarStepAndRange(params: { minTick: number; maxTick: number; tickSize: number }): {
+function calculateBarStepAndRange(params: {
+  minTick: number
+  maxTick: number
+  tickSize: number
+  /** Minimum bar step so that each bar represents a distinct display price (for sub-wei ticks) */
+  minBarStep?: number
+}): {
   barStep: number // Step size between bars (multiple of tick_size)
   rangeMax: number // Adjusted max tick to achieve min 20 bars
   totalBars: number // Total number of bars
 } {
-  const { minTick, maxTick, tickSize } = params
+  const { minTick, maxTick, tickSize, minBarStep } = params
 
   // Calculate how many tick_size steps exist in the data range
   const dataSteps = Math.round((maxTick - minTick) / tickSize) + 1
 
+  // When tickSize is sub-wei (many ticks per displayable price), enforce a minimum step
+  // so each bar represents a visually distinct price point.
+  const displayStepMultiplier = minBarStep && minBarStep > tickSize ? Math.ceil(minBarStep / tickSize) : 1
+
   if (dataSteps >= CHART_CONSTRAINTS.MIN_BARS) {
-    // We have enough steps, use them all
-    const cappedSteps = Math.min(dataSteps, MAX_RENDERABLE_BARS)
+    const countBasedMultiplier = dataSteps > MAX_RENDERABLE_BARS ? Math.ceil(dataSteps / MAX_RENDERABLE_BARS) : 1
+    const stepMultiplier = Math.max(displayStepMultiplier, countBasedMultiplier)
+
+    if (stepMultiplier <= 1) {
+      return {
+        barStep: tickSize,
+        rangeMax: maxTick,
+        totalBars: dataSteps,
+      }
+    }
+
+    const barStep = tickSize * stepMultiplier
+    let totalBars = Math.min(Math.floor((maxTick - minTick) / barStep) + 1, MAX_RENDERABLE_BARS)
+
+    // When consolidation reduces below MIN_BARS, extend range to maintain minimum
+    if (totalBars < CHART_CONSTRAINTS.MIN_BARS) {
+      totalBars = CHART_CONSTRAINTS.MIN_BARS
+    }
+
     return {
-      barStep: tickSize,
-      rangeMax: cappedSteps < dataSteps ? minTick + (cappedSteps - 1) * tickSize : maxTick,
-      totalBars: cappedSteps,
+      barStep,
+      rangeMax: minTick + (totalBars - 1) * barStep,
+      totalBars,
     }
   } else {
     // Need to extend range to reach MIN_BARS
@@ -460,43 +490,24 @@ function computeCumulativeBarsFromEntries({
 }
 
 /**
- * Computes the tick window indices for the chart, capping to MAX_RENDERABLE_BARS.
+ * Computes the tick window indices for the chart.
  *
- * When the window exceeds the limit, it anchors around the clearing price
- * (keeping a few ticks below and filling the rest above) so the clearing price
- * is always visible. Bids far from the clearing price may be outside the window.
+ * Returns the full tick range — calculateBarStepAndRange handles wide ranges
+ * by using wider bar steps (multiples of tick_size) instead of clipping.
  */
 export function computeTickWindow({
   minTickIndexAvailable,
   maxTickIndexAvailable,
-  clearingLowerIndex,
   minRequiredMaxIndex,
 }: {
   minTickIndexAvailable: number
   maxTickIndexAvailable: number
-  clearingLowerIndex: number
   minRequiredMaxIndex: number
 }): { windowMinIndex: number; windowMaxIndex: number } {
-  let windowMinIndex = minTickIndexAvailable
-  let windowMaxIndex = Math.max(maxTickIndexAvailable, minRequiredMaxIndex)
-
-  const totalWindowSize = Math.max(1, windowMaxIndex - windowMinIndex + 1)
-
-  if (totalWindowSize > MAX_RENDERABLE_BARS) {
-    // Center window around clearing price so it is always visible
-    const maxBelowAllowed = Math.max(0, MAX_RENDERABLE_BARS - CHART_CONSTRAINTS.MIN_TICKS_ABOVE_CLEARING_PRICE)
-    const desiredBelowTicks = Math.min(CHART_CONSTRAINTS.PREFERRED_TICKS_BELOW_CLEARING_PRICE, maxBelowAllowed)
-    const availableBelowTicks = Math.max(0, clearingLowerIndex - minTickIndexAvailable + 1)
-    const belowTickCount = Math.min(desiredBelowTicks, availableBelowTicks)
-
-    windowMinIndex = clearingLowerIndex - Math.max(0, belowTickCount - 1)
-    windowMaxIndex = windowMinIndex + (MAX_RENDERABLE_BARS - 1)
-
-    if (windowMaxIndex < minRequiredMaxIndex) {
-      windowMaxIndex = minRequiredMaxIndex
-      windowMinIndex = windowMaxIndex - (MAX_RENDERABLE_BARS - 1)
-    }
-  }
+  // Include the full tick range — calculateBarStepAndRange handles wide ranges
+  // by using wider bar steps (multiples of tick_size) instead of clipping
+  const windowMinIndex = minTickIndexAvailable
+  const windowMaxIndex = Math.max(maxTickIndexAvailable, minRequiredMaxIndex)
 
   return { windowMinIndex, windowMaxIndex }
 }
@@ -504,6 +515,7 @@ export function computeTickWindow({
 /**
  * Generate chart data from raw bid distribution data
  */
+// oxlint-disable-next-line complexity
 export function generateChartData({
   bidData,
   bidTokenInfo,
@@ -537,6 +549,31 @@ export function generateChartData({
     bidTokenDecimals: bidTokenInfo.decimals,
     auctionTokenDecimals,
   })
+
+  // Guard: tickSizeDecimal must be positive to avoid division-by-zero in offset calculations
+  if (!Number.isFinite(tickSizeDecimal) || tickSizeDecimal <= 0) {
+    return {
+      bars: [],
+      yAxisLevels: [...DEFAULT_Y_AXIS_LEVELS],
+      minTick: 0,
+      maxTick: 0,
+      maxAmount: 0,
+      totalBidVolume: 0,
+      concentration: null,
+      maxTickFromData: 0,
+    }
+  }
+
+  // Compute the minimum bar step (in ticks) that produces a visually distinct price.
+  // When tickSizeQ96 is sub-wei (tickSizeQ96 * auctionScale < Q96), many ticks map to the
+  // same q96ToPriceString output. Group those into a single bar.
+  const tickSizeQ96n = BigInt(tickSize)
+  const auctionScale = 10n ** BigInt(auctionTokenDecimals)
+  const q96PerDisplayStep = Q96 / auctionScale // Q96 delta for +1 raw bid token unit
+  const ticksPerDisplayStep =
+    tickSizeQ96n > 0n && q96PerDisplayStep > tickSizeQ96n ? Number(q96PerDisplayStep / tickSizeQ96n) : 1
+  // Convert to decimal space: minimum bar step that produces a distinct label
+  const minDisplayBarStep = ticksPerDisplayStep > 1 ? tickSizeDecimal * ticksPerDisplayStep : undefined
 
   // Convert map entries to sorted array using BigInt-safe conversion
   // Tick prices are in Q96 format, amounts are in token smallest units (wei)
@@ -595,7 +632,6 @@ export function generateChartData({
   const windowed = computeTickWindow({
     minTickIndexAvailable,
     maxTickIndexAvailable,
-    clearingLowerIndex,
     minRequiredMaxIndex,
   })
   const windowMinIndex = windowed.windowMinIndex
@@ -651,9 +687,11 @@ export function generateChartData({
         minTick: emptyMinTick,
         maxTick: emptyMaxTick,
         tickSize: tickSizeDecimal,
+        minBarStep: minDisplayBarStep,
       })
       const emptyTotalBars = Math.min(rawEmptyTotalBars, MAX_RENDERABLE_BARS)
       const emptyFloorOffset = Math.round((emptyMinTick - floorPriceDecimal) / tickSizeDecimal)
+      const emptyRawTicksPerBar = Math.max(1, Math.round(barStep / tickSizeDecimal))
       const emptyBars: ChartBarData[] = []
       for (let i = 0; i < emptyTotalBars; i++) {
         const currentTick = emptyMinTick + i * barStep
@@ -668,7 +706,7 @@ export function generateChartData({
           tickQ96: calculateTickQ96({
             basePriceQ96: floorPrice,
             tickSizeQ96: tickSize,
-            tickOffset: emptyFloorOffset + i,
+            tickOffset: emptyFloorOffset + i * emptyRawTicksPerBar,
           }),
           tickDisplay: formatter(displayValue),
           amount: 0,
@@ -682,6 +720,7 @@ export function generateChartData({
         maxTick: emptyMaxTick,
         maxAmount: 0,
         totalBidVolume,
+        barStep,
         concentration: null,
         maxTickFromData: maxTickFromDataValue,
       }
@@ -694,6 +733,7 @@ export function generateChartData({
       maxTick: emptyMaxTick,
       maxAmount: 0,
       totalBidVolume,
+      barStep: minDisplayBarStep ?? tickSizeDecimal,
       concentration: null,
       maxTickFromData: maxTickFromDataValue,
     }
@@ -713,13 +753,15 @@ export function generateChartData({
     minTick,
     maxTick: maxTickInWindow,
     tickSize: tickSizeDecimal,
+    minBarStep: minDisplayBarStep,
   })
 
   // Rule 4: Calculate label increment for 10 labels
+  // Use barStep so labels align to bar boundaries (avoids OOM with sub-wei tickSize)
   const labelIncrement = calculateLabelIncrement({
     minTick,
     rangeMax,
-    tickSize: tickSizeDecimal,
+    tickSize: barStep,
   })
 
   // Build bars array - one bar per tick_size step
@@ -730,6 +772,7 @@ export function generateChartData({
   // Calculate base tick offset: how many ticks from floorPrice to minTick
   // This is needed to correctly calculate Q96 for ticks that don't have bid data
   const floorToMinOffset = Math.round((minTick - floorPriceDecimal) / tickSizeDecimal)
+  const rawTicksPerBar = Math.max(1, Math.round(barStep / tickSizeDecimal))
 
   for (let i = 0; i < totalBars; i++) {
     const currentTick = minTick + i * barStep
@@ -760,7 +803,7 @@ export function generateChartData({
       calculateTickQ96({
         basePriceQ96: floorPrice,
         tickSizeQ96: tickSize,
-        tickOffset: floorToMinOffset + i,
+        tickOffset: floorToMinOffset + i * rawTicksPerBar,
       })
 
     bars.push({
@@ -810,6 +853,7 @@ export function generateChartData({
     maxAmount: finalMaxAmount,
     totalBidVolume,
     labelIncrement,
+    barStep,
     concentration,
     maxTickFromData: maxTickFromDataValue,
   }
@@ -827,9 +871,12 @@ export function calculateInitialVisibleRange(params: {
   minTick: number
   maxTick: number
   tickSize: number
+  barStep?: number
   initialTickCount?: number
 }): { from: number; to: number } {
-  const { clearingPrice, minTick, tickSize, initialTickCount = 20 } = params
+  const { clearingPrice, minTick, tickSize, barStep, initialTickCount = 20 } = params
+  // Use barStep for window sizing when available (sub-wei ticks need bar-level stepping)
+  const stepSize = barStep ?? tickSize
 
   const maxTick = params.maxTick
 
@@ -845,17 +892,17 @@ export function calculateInitialVisibleRange(params: {
 
   const anchorTick = canAnchorToClearingPrice ? clearingPrice : minTick
 
-  // Start one tick before the anchor when possible to provide padding on initial render.
-  const safeTickSize = Number.isFinite(tickSize) && tickSize > 0 ? tickSize : 0
-  const startTick = safeTickSize > 0 ? Math.max(minTick, anchorTick - safeTickSize) : minTick
+  // Start one bar before the anchor when possible to provide padding on initial render.
+  const safeStep = Number.isFinite(stepSize) && stepSize > 0 ? stepSize : 0
+  const startTick = safeStep > 0 ? Math.max(minTick, anchorTick - safeStep) : minTick
 
-  // Calculate end tick by adding initialTickCount ticks and clamp to the available data range
-  const endTick = safeTickSize > 0 ? startTick + initialTickCount * safeTickSize : maxTick
-  const clampedEndTick = Number.isFinite(maxTick) ? Math.min(maxTick, endTick) : endTick
+  // Calculate end tick by adding initialTickCount bars and clamp to the available data range.
+  const rawEndTick = safeStep > 0 ? startTick + initialTickCount * safeStep : maxTick
+  const clampedEndTick = Number.isFinite(maxTick) ? Math.min(maxTick, rawEndTick) : rawEndTick
 
   // Ensure a non-zero range (required by lightweight-charts). If maxTick is too close, allow a minimal
   // window above startTick so the range still intersects the data.
-  const minWindow = safeTickSize > 0 ? safeTickSize : 1
+  const minWindow = safeStep > 0 ? safeStep : 1
   const to = clampedEndTick > startTick ? clampedEndTick : startTick + minWindow
 
   return { from: startTick, to }

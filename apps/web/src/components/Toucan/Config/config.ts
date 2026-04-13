@@ -76,6 +76,9 @@ const AUCTION_METADATA_OVERRIDES: Record<string, AuctionMetadataOverride> = {
   '42161-0xb628b89067e8f7dfc2cb528a72bcff7d5cedce29': {
     logoUrl: '/images/logos/idos-token-launch-logo.svg',
   },
+  '1-0x4647e1fe715c9e23959022c2416c71867f5a6e80': {
+    logoUrl: '/images/logos/octra-token-launch-logo.svg',
+  },
 }
 
 /**
@@ -97,4 +100,5 @@ export const DEFAULT_VERIFIED_AUCTION_IDS = [
   '8453_0x7e867b47a94df05188c08575e8B9a52F3F69c469',
   '1_0x9084CB9a700a52909Cbef3113dB8BaC01C01EfD6',
   '42161_0xc27F8a94Df88C4f57B09067e07EA6bC11CA47e11',
+  '1_0xb3079ec6b82f22a1abfdca1a22659ab07cdf2f0f',
 ]
