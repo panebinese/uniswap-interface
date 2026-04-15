@@ -930,6 +930,7 @@ export function getPaddedConcentrationRange(params: {
   beforePercentOfFullRange: number
   afterPercentOfFullRange: number
   minPadTicks: number
+  maxPadConcentrationMultiplier?: number
 }): { from: number; to: number } {
   const {
     startTick,
@@ -940,12 +941,21 @@ export function getPaddedConcentrationRange(params: {
     beforePercentOfFullRange,
     afterPercentOfFullRange,
     minPadTicks,
+    maxPadConcentrationMultiplier,
   } = params
 
   // Full range expressed as ticks, clamped to at least 1 to keep padding sane.
   const fullTickCount = Math.max(1, Math.round((maxTick - minTick) / tickSizeDecimal))
-  const padBeforeTicks = Math.max(minPadTicks, Math.round(fullTickCount * beforePercentOfFullRange))
-  const padAfterTicks = Math.max(minPadTicks, Math.round(fullTickCount * afterPercentOfFullRange))
+  let padBeforeTicks = Math.max(minPadTicks, Math.round(fullTickCount * beforePercentOfFullRange))
+  let padAfterTicks = Math.max(minPadTicks, Math.round(fullTickCount * afterPercentOfFullRange))
+
+  // Cap padding relative to concentration band width so outlier bids don't stretch the view.
+  if (maxPadConcentrationMultiplier != null) {
+    const concentrationTickCount = Math.max(1, Math.round((endTick - startTick) / tickSizeDecimal))
+    const maxPadTicks = Math.max(minPadTicks, concentrationTickCount * maxPadConcentrationMultiplier)
+    padBeforeTicks = Math.min(padBeforeTicks, maxPadTicks)
+    padAfterTicks = Math.min(padAfterTicks, maxPadTicks)
+  }
 
   const paddedFrom = startTick - padBeforeTicks * tickSizeDecimal
   const paddedTo = endTick + padAfterTicks * tickSizeDecimal

@@ -74,6 +74,7 @@ export function computeTickGroupingConfig(params: {
         beforePercentOfFullRange: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.beforePercentOfFullRange,
         afterPercentOfFullRange: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.afterPercentOfFullRange,
         minPadTicks: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.minPadTicks,
+        maxPadConcentrationMultiplier: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.maxPadConcentrationMultiplier,
       })
     : calculateInitialVisibleRange({
         clearingPrice: clearingPriceDecimal,
