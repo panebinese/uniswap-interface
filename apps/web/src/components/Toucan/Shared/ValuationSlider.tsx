@@ -21,8 +21,6 @@ import { snapToNearestTick } from '~/components/Toucan/Auction/utils/ticks'
 
 const MAX_PERCENTAGE = 4900
 const MARKER_COUNT = 10 // 0% to 4900% in ~490% increments = 10 dots
-const TOOLTIP_OPEN_DELAY_MS = 2000
-
 // When the clearing-price FDV is below these thresholds,
 // expand the slider range to the target FDV instead of the default 4900% (~50x).
 const LOW_FDV_THRESHOLD_USD = 10_000
@@ -471,12 +469,7 @@ function ValuationSliderComponent({
           <SliderTrackActive style={tokenColor ? { backgroundColor: tokenColor } : undefined} />
         </SliderTrack>
         <SliderThumb index={0} x={thumbX}>
-          <Tooltip
-            placement="bottom"
-            delay={{ open: TOOLTIP_OPEN_DELAY_MS, close: 0 }}
-            restMs={TOOLTIP_OPEN_DELAY_MS}
-            offset={{ mainAxis: 8 }}
-          >
+          <Tooltip placement="bottom" delay={{ open: 0, close: 0 }} restMs={0} offset={{ mainAxis: 8 }}>
             <Tooltip.Trigger>
               <Flex position="relative" alignItems="center" justifyContent="center">
                 <Flex
