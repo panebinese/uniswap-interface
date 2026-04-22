@@ -1,8 +1,9 @@
+/* oxlint-disable max-lines */
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, useSporeColors } from 'ui/src'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
 import { ClearingPriceChartRenderer } from '~/components/Charts/ToucanChart/clearingPrice/ClearingPriceChartRenderer'
@@ -12,7 +13,7 @@ import { BidOutOfRangeIndicator } from '~/components/Toucan/Auction/BidDistribut
 import { ChartBarTooltip } from '~/components/Toucan/Auction/BidDistributionChart/ChartBarTooltip'
 import { ClearingPriceTooltip } from '~/components/Toucan/Auction/BidDistributionChart/ClearingPriceTooltip'
 import { ConcentrationBandOverlay } from '~/components/Toucan/Auction/BidDistributionChart/ConcentrationBandOverlay'
-import { CHART_DIMENSIONS } from '~/components/Toucan/Auction/BidDistributionChart/constants'
+import { CHART_DIMENSIONS, MARKER_CONFIG } from '~/components/Toucan/Auction/BidDistributionChart/constants'
 import { DistributionBarsOverlay } from '~/components/Toucan/Auction/BidDistributionChart/DistributionBarsOverlay'
 import { useClearingPriceData } from '~/components/Toucan/Auction/BidDistributionChart/hooks/useClearingPriceData'
 import { useYAxisPanZoom } from '~/components/Toucan/Auction/BidDistributionChart/hooks/useYAxisPanZoom'
@@ -38,6 +39,10 @@ import { getClearingPrice } from '~/components/Toucan/Auction/utils/clearingPric
 import { snapToNearestTick } from '~/components/Toucan/Auction/utils/ticks'
 
 const DISTRIBUTION_COLUMN_WIDTH = 48
+const BID_MARKER_COLUMN_WIDTH = MARKER_CONFIG.AVATAR_SIZE
+const BID_MARKER_COLUMN_GAP = 4
+/** Total left offset for the chart content area (marker column + gap) */
+const CHART_LEFT_OFFSET = BID_MARKER_COLUMN_WIDTH + BID_MARKER_COLUMN_GAP
 const PLACEHOLDER_HEIGHT = 400
 /** Height of the lightweight-charts time scale (x-axis labels) */
 const TIME_SCALE_HEIGHT = 30
@@ -54,6 +59,7 @@ interface CombinedAuctionChartProps {
  * The clearing price chart occupies the main area, distribution bars in a 48px right column.
  * Both share the same Y-axis (price scale).
  */
+// oxlint-disable-next-line complexity
 export function CombinedAuctionChart({
   auctionDetails,
   bidTokenInfo,
@@ -66,7 +72,10 @@ export function CombinedAuctionChart({
   const connectedWalletAddress = useActiveAddress(auctionDetails.chainId as UniverseChainId)
 
   // ── Clearing price data ──
-  const { normalizedData } = useClearingPriceData({ auctionDetails, bidTokenInfo })
+  const { normalizedData } = useClearingPriceData({
+    auctionDetails,
+    bidTokenInfo,
+  })
 
   // ── Distribution data (same as BidDistributionChart.tsx) ──
   const { bidDistributionData, excludedBidVolume, userBids, optimisticBid, userBidPrice } = useAuctionStore(
@@ -133,14 +142,21 @@ export function CombinedAuctionChart({
   ])
 
   // ── Visible price range from clearing price chart ──
-  const [visiblePriceRange, setVisiblePriceRange] = useState<{ min: number; max: number } | null>(null)
+  const [visiblePriceRange, setVisiblePriceRange] = useState<{
+    min: number
+    max: number
+  } | null>(null)
 
   const handleVisiblePriceRangeChange = useCallback((range: { min: number; max: number }) => {
-    setVisiblePriceRange(range)
+    setVisiblePriceRange({ min: Math.max(0, range.min), max: range.max })
   }, [])
 
   // ── Distribution bar hover (crosshair + tooltip) ──
-  const [hoverState, setHoverState] = useState<{ bar: ChartBarData | null; y: number; tickPrice: number } | null>(null)
+  const [hoverState, setHoverState] = useState<{
+    bar: ChartBarData | null
+    y: number
+    tickPrice: number
+  } | null>(null)
 
   const handleBarHover = useCallback(
     ({ bar, y, tickPrice }: { bar: ChartBarData | null; y: number; tickPrice: number }) => {
@@ -158,15 +174,13 @@ export function CombinedAuctionChart({
       if (!Number.isFinite(tickPrice) || tickPrice <= 0) {
         return
       }
-
-      let q96Value: bigint
-
-      if (bar?.tickQ96) {
-        q96Value = BigInt(bar.tickQ96)
-      } else {
-        const priceRaw = BigInt(Math.round(tickPrice * 10 ** bidTokenInfo.decimals))
-        q96Value = priceToQ96WithDecimals({ priceRaw, auctionTokenDecimals })
-      }
+      // Use the bar's exact Q96 value when available to avoid floating-point precision loss
+      const q96Value = bar?.tickQ96
+        ? BigInt(bar.tickQ96)
+        : priceToQ96WithDecimals({
+            priceRaw: BigInt(Math.round(tickPrice * 10 ** bidTokenInfo.decimals)),
+            auctionTokenDecimals,
+          })
 
       const snappedQ96 = snapToNearestTick({
         value: q96Value,
@@ -212,7 +226,7 @@ export function CombinedAuctionChart({
   const scaleFactor = normalizedData?.scaleFactor ?? 1
 
   // ── Y-axis panning, zooming, and auto-grouped bars ──
-  const { pannedNormalizedData, groupedBars, tickSizeDecimal, chartWheelRef } = useYAxisPanZoom({
+  const { pannedNormalizedData, groupedBars, tickSizeDecimal, chartWheelRef, panToPrice } = useYAxisPanZoom({
     normalizedData,
     chartData,
     clearingPriceDecimal,
@@ -234,7 +248,12 @@ export function CombinedAuctionChart({
     if (isNaN(bidPrice) || bidPrice <= 0) {
       return null
     }
-    return computeYPosition({ price: bidPrice, scaleFactor, visiblePriceRange, chartAreaHeight })
+    return computeYPosition({
+      price: bidPrice,
+      scaleFactor,
+      visiblePriceRange,
+      chartAreaHeight,
+    })
   }, [userBidPrice, visiblePriceRange, scaleFactor, chartAreaHeight])
 
   // ── Bid out-of-range indicator ──
@@ -276,7 +295,11 @@ export function CombinedAuctionChart({
     const bars = groupedBars ?? chartData.bars
     const matchingBar = bars.find((bar) => Math.abs(bar.tick - clearingPriceDecimal) < tickSizeDecimal * 0.5)
     const volumeAtClearingPrice = matchingBar?.amount ?? 0
-    return { clearingPriceDecimal, volumeAtClearingPrice, totalBidVolume: chartData.totalBidVolume }
+    return {
+      clearingPriceDecimal,
+      volumeAtClearingPrice,
+      totalBidVolume: chartData.totalBidVolume,
+    }
   }, [clearingPriceDecimal, chartData, groupedBars, tickSizeDecimal])
 
   // ── User bid markers (Unicon avatars at bid tick Y positions) ──
@@ -305,6 +328,12 @@ export function CombinedAuctionChart({
     clearingPrice,
   ])
 
+  const dottedBackgroundStyle = {
+    backgroundImage: `radial-gradient(circle, ${colors.surface3Hovered.val} 1px, transparent 1px)`,
+    backgroundSize: '20px 20px',
+    backgroundPosition: '0 0',
+  }
+
   if (!pannedNormalizedData) {
     return (
       <BidDistributionChartPlaceholder height={PLACEHOLDER_HEIGHT}>
@@ -315,8 +344,8 @@ export function CombinedAuctionChart({
 
   return (
     <Flex ref={chartWheelRef} position="relative" width="100%" height={effectiveHeight}>
-      {/* Price chart fills main area minus distribution column */}
-      <Flex position="absolute" left={0} top={0} bottom={0} right={DISTRIBUTION_COLUMN_WIDTH}>
+      {/* Price chart fills main area minus marker column and distribution column */}
+      <Flex position="absolute" left={CHART_LEFT_OFFSET} top={0} bottom={0} right={DISTRIBUTION_COLUMN_WIDTH}>
         <ClearingPriceChartRenderer
           normalizedData={pannedNormalizedData}
           bidTokenInfo={bidTokenInfo}
@@ -336,7 +365,9 @@ export function CombinedAuctionChart({
           bottom={0}
           width={80}
           pointerEvents="none"
-          style={{ background: `linear-gradient(to right, transparent, ${colors.surface1.val})` }}
+          style={{
+            background: `linear-gradient(to right, transparent, ${colors.surface1.val})`,
+          }}
         />
       </Flex>
 
@@ -382,7 +413,7 @@ export function CombinedAuctionChart({
       {hoverState && (
         <Flex
           position="absolute"
-          left={0}
+          left={CHART_LEFT_OFFSET}
           right={0}
           top={hoverState.y}
           height={1}
@@ -397,7 +428,7 @@ export function CombinedAuctionChart({
       {bidLineY !== null && (
         <Flex
           position="absolute"
-          left={0}
+          left={CHART_LEFT_OFFSET}
           right={0}
           top={bidLineY}
           height={1}
@@ -406,10 +437,10 @@ export function CombinedAuctionChart({
         />
       )}
 
-      {/* Tooltip layer — offset by Y_AXIS_LABEL_WIDTH so tooltips don't overlap the Y-axis */}
+      {/* Tooltip layer — offset by marker column + Y_AXIS_LABEL_WIDTH so tooltips don't overlap */}
       <Flex
         position="absolute"
-        left={CHART_DIMENSIONS.Y_AXIS_LABEL_WIDTH}
+        left={CHART_LEFT_OFFSET + CHART_DIMENSIONS.Y_AXIS_LABEL_WIDTH}
         top={0}
         bottom={0}
         right={0}
@@ -459,11 +490,12 @@ export function CombinedAuctionChart({
           totalSupply={totalSupply}
           auctionTokenDecimals={auctionTokenDecimals}
           formatter={formatFdvValue}
+          onClick={() => panToPrice(Number(userBidPrice))}
         />
       )}
 
-      {/* User bid markers — Unicon avatars at the left edge of distribution bars */}
-      <Flex position="absolute" right={DISTRIBUTION_COLUMN_WIDTH} top={0} bottom={TIME_SCALE_HEIGHT} width={28}>
+      {/* User bid markers — Unicon avatars at the left edge of the chart */}
+      <Flex position="absolute" left={0} top={0} bottom={TIME_SCALE_HEIGHT} width={BID_MARKER_COLUMN_WIDTH}>
         <BidMarkerOverlay
           markerPositions={bidMarkerPositions}
           bidTokenInfo={bidTokenInfo}
@@ -471,6 +503,17 @@ export function CombinedAuctionChart({
           formatTokenAmount={formatTokenAmount}
         />
       </Flex>
+
+      {/* Dotted background overlay — rendered last so it sits on top of the fade gradient */}
+      <Flex
+        position="absolute"
+        top={0}
+        left={CHART_LEFT_OFFSET}
+        right={0}
+        bottom={0}
+        pointerEvents="none"
+        style={dottedBackgroundStyle}
+      />
     </Flex>
   )
 }

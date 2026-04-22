@@ -59,7 +59,6 @@ export function useWithdrawBidAndClaimTokensReviewData({
   }, [isOpen])
 
   // Prepare transaction when modal opens
-  // oxlint-disable-next-line react/exhaustive-deps -- retryTrigger is intentionally included, submitState excluded
   useEffect(() => {
     let cancelled = false
 

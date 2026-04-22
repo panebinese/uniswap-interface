@@ -286,7 +286,6 @@ function UniversalSwapFlow({
         openSendFormModal()
       }
     } else {
-      // oxlint-disable-next-line typescript/no-unnecessary-condition
       setCurrentTab(PATHNAME_TO_TAB[pathname] ?? SwapTab.Swap)
     }
   }, [pathname, openSendFormModal, setCurrentTab])

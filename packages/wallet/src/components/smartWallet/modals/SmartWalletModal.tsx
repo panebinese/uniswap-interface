@@ -39,7 +39,6 @@ export interface SmartWalletModalProps {
   horizontalButtons?: boolean
 }
 
-// oxlint-disable-next-line complexity
 export function SmartWalletModal({
   isOpen,
   onClose,

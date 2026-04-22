@@ -1,7 +1,11 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { Flex, useMedia } from 'ui/src'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { usePortfolioData } from 'uniswap/src/features/dataApi/balances/balancesRest'
+import { DataApiOutageBanner } from 'uniswap/src/features/dataApi/outage/DataApiOutageBanner'
+import type { DataApiOutageState } from 'uniswap/src/features/dataApi/types'
 import { ElementName, InterfacePageName, UniswapEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
@@ -10,6 +14,7 @@ import { HEADER_TRANSITION } from '~/components/Explore/stickyHeader/constants'
 import { NetworkFilter } from '~/components/NetworkFilter/NetworkFilter'
 import { useActiveAddresses } from '~/features/accounts/store/hooks'
 import { useAppHeaderHeight } from '~/hooks/useAppHeaderHeight'
+import { useDataApiOutageModal } from '~/hooks/useDataApiOutageModal'
 import { useScrollCompact } from '~/hooks/useScrollCompact'
 import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
 import { PortfolioAddressDisplay } from '~/pages/Portfolio/Header/PortfolioAddressDisplay/PortfolioAddressDisplay'
@@ -17,6 +22,7 @@ import { PortfolioMoreMenu } from '~/pages/Portfolio/Header/PortfolioMoreMenu'
 import { SharePortfolioButton } from '~/pages/Portfolio/Header/SharePortfolioButton'
 import { PortfolioTabs } from '~/pages/Portfolio/Header/Tabs'
 import { useShowDemoView } from '~/pages/Portfolio/hooks/useShowDemoView'
+import { usePortfolioOutageContext } from '~/pages/Portfolio/PortfolioOutageContext'
 import { PortfolioTab } from '~/pages/Portfolio/types'
 import { buildPortfolioUrl } from '~/pages/Portfolio/utils/portfolioUrls'
 
@@ -37,11 +43,35 @@ function getPageNameFromTab(tab: PortfolioTab | undefined): InterfacePageName {
   }
 }
 
+function getOutageState({
+  tab,
+  activityError,
+  activityDataUpdatedAt,
+  portfolioError,
+  portfolioDataUpdatedAt,
+}: {
+  tab: PortfolioTab | undefined
+  activityError: Error | undefined
+  activityDataUpdatedAt: number | undefined
+  portfolioError: Error | undefined
+  portfolioDataUpdatedAt: number | undefined
+}): DataApiOutageState {
+  switch (tab) {
+    case PortfolioTab.Activity:
+      return { error: activityError, dataUpdatedAt: activityDataUpdatedAt }
+    case PortfolioTab.Nfts:
+      return { error: undefined, dataUpdatedAt: undefined }
+    default:
+      return { error: portfolioError, dataUpdatedAt: portfolioDataUpdatedAt }
+  }
+}
+
 interface PortfolioHeaderProps {
   scrollY?: number
 }
 
 export function PortfolioHeader({ scrollY }: PortfolioHeaderProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const media = useMedia()
   const { tab, chainId: currentChainId, externalAddress, isExternalWallet } = usePortfolioRoutes()
@@ -54,6 +84,29 @@ export function PortfolioHeader({ scrollY }: PortfolioHeaderProps) {
 
   const hasConnectedAddresses = Boolean(activeAddresses.evmAddress || activeAddresses.svmAddress)
   const showShareButton = !showDemoView && (isExternalWallet || hasConnectedAddresses)
+
+  const { error: portfolioError, dataUpdatedAt: portfolioDataUpdatedAt } = usePortfolioData({
+    evmAddress: activeAddresses.evmAddress,
+    svmAddress: activeAddresses.svmAddress,
+    skip: !activeAddresses.evmAddress && !activeAddresses.svmAddress,
+  })
+
+  // Activity outage (Activity tab) — reported by the Activity component via context
+  const { activityError, activityDataUpdatedAt } = usePortfolioOutageContext()
+
+  const isActivityTab = tab === PortfolioTab.Activity
+  const { error: outageError, dataUpdatedAt: outageDataUpdatedAt } = getOutageState({
+    tab,
+    activityError,
+    activityDataUpdatedAt,
+    portfolioError,
+    portfolioDataUpdatedAt,
+  })
+
+  const isOutage = !!outageError
+  const { openOutageModal } = useDataApiOutageModal({
+    dataUpdatedAt: outageDataUpdatedAt,
+  })
 
   const onNetworkPress = useEvent((chainId: UniverseChainId | undefined) => {
     const currentPageName = getPageNameFromTab(tab)
@@ -104,7 +157,15 @@ export function PortfolioHeader({ scrollY }: PortfolioHeaderProps) {
         </Flex>
       </Flex>
 
-      <PortfolioTabs />
+      <Flex gap={isCompact ? '$spacing12' : '$spacing24'} transition="gap 200ms ease">
+        <PortfolioTabs />
+        {isOutage ? (
+          <DataApiOutageBanner
+            title={isActivityTab ? t('dataApi.outage.banner.activity.title') : undefined}
+            onPress={openOutageModal}
+          />
+        ) : null}
+      </Flex>
     </Flex>
   )
 }

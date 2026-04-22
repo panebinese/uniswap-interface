@@ -25,7 +25,6 @@ import { useBottomSheetContext } from 'uniswap/src/components/modals/BottomSheet
 import { HandleBar } from 'uniswap/src/components/modals/HandleBar'
 import { PillMultiToggle } from 'uniswap/src/components/pill/PillMultiToggle'
 import { MAX_FIAT_INPUT_DECIMALS } from 'uniswap/src/constants/transactions'
-import { usePortfolioBalances } from 'uniswap/src/features/dataApi/balances/balances'
 import { FiatOnRampCountryPicker } from 'uniswap/src/features/fiatOnRamp/FiatOnRampCountryPicker'
 import {
   useFiatOnRampQuotes,
@@ -51,6 +50,7 @@ import {
 } from 'uniswap/src/features/fiatOnRamp/utils'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
+import { usePortfolioBalances } from 'uniswap/src/features/portfolio/balances/hooks'
 import { FiatOffRampEventName, FiatOnRampEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { type FORAmountEnteredProperties } from 'uniswap/src/features/telemetry/types'

@@ -13,7 +13,6 @@ import {
 } from 'ui/src'
 import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { NumberType } from 'utilities/src/format/types'
 import { ArrowChangeDown } from '~/components/Icons/ArrowChangeDown'
 import { ArrowChangeUp } from '~/components/Icons/ArrowChangeUp'
 import { useStatsBannerData } from '~/components/Toucan/Auction/hooks/useStatsBannerData'
@@ -90,7 +89,7 @@ const SUBSCRIPT_THRESHOLD = 4
 export function AuctionStatsBanner() {
   const { t } = useTranslation()
   const colors = useSporeColors()
-  const { formatPercent, formatNumberOrString } = useLocalizationContext()
+  const { formatPercent } = useLocalizationContext()
   const { symbol: currencySymbol } = useAppFiatCurrencyInfo()
   const statCellTitleVariant = useStatCellTitleVariant()
   const media = useMedia()
@@ -120,14 +119,8 @@ export function AuctionStatsBanner() {
   const arrowSize = media.lg ? 10 : 16
   const showChangePercent = changePercent !== null && changePercent > 0
 
-  const changePercentFormatted =
-    changePercent === null
-      ? null
-      : changePercent >= 1_000_000
-        ? '1M+%'
-        : changePercent >= 1000
-          ? `${formatNumberOrString({ value: changePercent, type: NumberType.TokenQuantityStats })}%`
-          : formatPercent(changePercent)
+  // Format the change percent (formatPercent expects a raw percentage like 36 for 36%)
+  const changePercentFormatted = changePercent !== null ? formatPercent(changePercent) : null
 
   return (
     <Flex
@@ -139,10 +132,12 @@ export function AuctionStatsBanner() {
       mt="$spacing24"
       mb="$spacing12"
       $lg={{
+        py: '$none',
+        gap: 0,
         '$platform-web': {
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: 0,
+          alignItems: 'stretch',
         },
       }}
     >
@@ -151,11 +146,11 @@ export function AuctionStatsBanner() {
         label={isAuctionEnded ? t('toucan.statsBanner.finalClearingPrice') : t('toucan.statsBanner.clearingPrice')}
         hasData={hasData}
         $lg={{
-          borderBottomWidth: 1,
           borderRightWidth: 1,
+          borderBottomWidth: 1,
           borderColor: '$surface3',
-          pb: '$spacing16',
-          pr: '$spacing16',
+          pb: '$spacing12',
+          pr: '$spacing12',
         }}
       >
         <Flex row alignItems="center" gap="$spacing4">
@@ -203,8 +198,8 @@ export function AuctionStatsBanner() {
         $lg={{
           borderBottomWidth: 1,
           borderColor: '$surface3',
-          pb: '$spacing16',
-          pl: '$spacing16',
+          pb: '$spacing12',
+          pl: '$spacing12',
         }}
       >
         <StatPrimaryText>{currentValuationFormatted}</StatPrimaryText>
@@ -217,7 +212,12 @@ export function AuctionStatsBanner() {
       <StatCell
         label={t('toucan.auction.committedVolume')}
         hasData={hasData}
-        $lg={{ pl: '$spacing16', pt: '$spacing16' }}
+        $lg={{
+          borderRightWidth: 1,
+          borderColor: '$surface3',
+          pt: '$spacing12',
+          pr: '$spacing12',
+        }}
       >
         <Tooltip placement="top" delay={75} offset={{ mainAxis: 8 }}>
           <Tooltip.Trigger>
@@ -264,12 +264,7 @@ export function AuctionStatsBanner() {
       <StatCell
         label={t('toucan.statsBanner.bidsConcentratedAt')}
         hasData={hasData}
-        $lg={{
-          borderRightWidth: 1,
-          borderColor: '$surface3',
-          pr: '$spacing16',
-          pt: '$spacing16',
-        }}
+        $lg={{ pt: '$spacing12', pl: '$spacing12' }}
       >
         {concentrationStartDecimal !== null && concentrationEndDecimal !== null ? (
           <>

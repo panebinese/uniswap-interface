@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/explicit-function-return-type */
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client'
 import { BigNumber, BigNumberish, providers } from 'ethers'
 import { call, cancel, delay, fork, put, race, spawn, take } from 'typed-redux-saga'

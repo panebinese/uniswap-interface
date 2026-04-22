@@ -82,7 +82,6 @@ export function useAddressesBalanceAndNames(addresses?: Address[]): {
 
   const { gqlChains } = useEnabledChains()
 
-  // oxlint-disable-next-line react/exhaustive-deps -- -refetchCount
   const fetchBalanceAndUnitags = useCallback(async (): Promise<AddressTo<AddressWithBalanceAndName>> => {
     if (addressesArray.length === 0) {
       return {} as AddressTo<AddressWithBalanceAndName>

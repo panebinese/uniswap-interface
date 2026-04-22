@@ -122,7 +122,6 @@ export function CurrencyRow({
   const blockedTokenOpacity = '0.6'
 
   const { balanceMap } = useTokenBalances({ cacheFirst: true })
-  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const { usdValue, balance: cachedBalance } = balanceMap[currencyKey(currency)] ?? {}
   const tokenBalance = balance ? balance.toExact() : cachedBalance
 

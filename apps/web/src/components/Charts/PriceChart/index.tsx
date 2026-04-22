@@ -227,6 +227,7 @@ export class PriceChartModel extends ChartModel<PriceChartData> {
     // Handles changes in data, e.g. time period selection
     if (this.originalData !== data) {
       this.originalData = data
+      // oxlint-disable-next-line no-shadow
       const { adjustedData, lowPriceRangeScaleFactor, min, max } = PriceChartModel.getAdjustedPrices(data)
       this.data = adjustedData
       this.lowPriceRangeScaleFactor = lowPriceRangeScaleFactor

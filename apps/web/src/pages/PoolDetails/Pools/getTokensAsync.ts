@@ -85,6 +85,7 @@ function parseTokens({
 }
 
 const createCalls = (target: string, callData: string[]): Call[] =>
+  // oxlint-disable-next-line no-shadow
   callData.map((callData) => ({ target, callData, gasLimit: DEFAULT_GAS_LIMIT }))
 
 function createCallsForToken(address: string) {

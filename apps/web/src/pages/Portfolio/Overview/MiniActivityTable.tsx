@@ -149,6 +149,8 @@ export const MiniActivityTable = memo(function MiniActivityTable({
   // Only show loading state if we don't have data yet
   const tableLoading = loading && !transactionData.length
 
+  const hasData = transactionData.length > 0
+
   const subtitle = useMemo(() => {
     if (showingPastWeek) {
       return t('portfolio.overview.activity.table.subtitle', { count: transactionData.length })
@@ -160,15 +162,16 @@ export const MiniActivityTable = memo(function MiniActivityTable({
     <Flex gap="$gap12">
       <TableSectionHeader
         title={
-          transactionData.length > 0
+          hasData
             ? t('portfolio.overview.activity.table.title')
             : t('portfolio.overview.activity.table.title.noRecentActivity')
         }
         subtitle={subtitle}
         loading={loading}
         testId={TestID.PortfolioOverviewActivitySection}
+        contentGap={hasData ? '$gap4' : '$gap16'}
       >
-        {transactionData.length > 0 ? (
+        {hasData ? (
           <Table
             hideHeader
             columns={columns}

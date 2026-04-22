@@ -138,7 +138,6 @@ export const SwapFormScreenStoreContextProvider = ({
   })
 
   // Keep cursor synced when derived value changes while opposite field is focused
-  // oxlint-disable-next-line react/exhaustive-deps -- -callbacks.moveCursorToEnd, decimalPadControlledField, exactCurrencyField
   useEffect(() => {
     if (decimalPadControlledField === exactCurrencyField) {
       return

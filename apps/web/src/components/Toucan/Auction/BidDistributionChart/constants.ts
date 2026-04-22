@@ -138,7 +138,7 @@ export const CHART_FONT_FAMILY =
 
 // Bid marker configuration
 export const MARKER_CONFIG = {
-  AVATAR_SIZE: 24, // Size of user avatar markers in pixels
+  AVATAR_SIZE: 12, // Size of user avatar markers in pixels
   AVATAR_BAR_OFFSET: 4, // Distance above bar top where markers are positioned (positive = closer to bar)
   POSITION_TOLERANCE: 0.5, // Tolerance in pixels for position equality checks
   MAX_TOOLTIP_BIDS: 7, // Maximum number of bids to display in tooltip before showing "+N more"

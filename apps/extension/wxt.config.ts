@@ -1,3 +1,4 @@
+/* oxlint-disable max-lines -- large config file */
 import fs from 'fs'
 import { createHash } from 'node:crypto'
 import path from 'path'
@@ -34,7 +35,7 @@ const publicAssetsVariant = getPublicAssetsVariant()
 
 const BASE_NAME = 'Uniswap Extension'
 const BASE_DESCRIPTION = "The Uniswap Extension is a self-custody crypto wallet that's built for swapping."
-const BASE_VERSION = '1.71.0'
+const BASE_VERSION = '1.72.0'
 
 const BUILD_NUM = parseInt(process.env.BUILD_NUM || '0')
 const EXTENSION_VERSION = `${BASE_VERSION}.${BUILD_NUM}`
@@ -120,7 +121,7 @@ export default defineConfig({
       const { execSync } = await import('node:child_process')
       try {
         // Run script directly to avoid Nx dependsOn chain that would trigger a full rebuild
-        execSync('bunx tsx scripts/validateBuildOutput.ts --dev', {
+        execSync('bun run scripts/validateBuildOutput.ts --dev', {
           cwd: wxt.config.root,
           stdio: 'inherit',
         })
@@ -248,7 +249,10 @@ export default defineConfig({
     }
 
     const cacheDir = path.resolve(__dirname, 'node_modules/.vite')
-    const forceOptimize = shouldInvalidateOptimizeDepsForEnv({ defines, cacheDir })
+    const forceOptimize = shouldInvalidateOptimizeDepsForEnv({
+      defines,
+      cacheDir,
+    })
 
     // External package aliases from web config
     const overrides = {

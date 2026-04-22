@@ -1,7 +1,7 @@
 import type { UseMutationResult } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import { Button, Flex, Input, SpinningLoader, Text, TouchableArea } from 'ui/src'
-import { EnvelopeLock } from 'ui/src/components/icons/EnvelopeLock'
+import { Envelope } from 'ui/src/components/icons/Envelope'
 import { Eye } from 'ui/src/components/icons/Eye'
 import { EyeOff } from 'ui/src/components/icons/EyeOff'
 import { Person } from 'ui/src/components/icons/Person'
@@ -140,7 +140,7 @@ export function EmailCodeStep({
       <StepHeader onBack={handleBack} onClose={handleClose} />
       <Flex gap="$gap16" alignItems="center" width="100%">
         <IconBox>
-          <EnvelopeLock size="$icon.24" color="$neutral1" />
+          <Envelope size="$icon.24" color="$neutral1" />
         </IconBox>
         <Flex gap="$gap8" alignItems="center" maxWidth={360}>
           <Text variant="subheading1" textAlign="center">

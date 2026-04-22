@@ -43,7 +43,6 @@ test.describe(
       await page.goto('/positions/create')
       await page.getByRole('button', { name: 'Choose token' }).click()
       await page.getByTestId(TestID.ExploreSearchInput).fill(USDT.address)
-      // oxlint-disable-next-line
       await page.getByTestId('token-option-1-USDT').first().click()
       await page.getByRole('button', { name: 'Continue' }).click()
       await graphql.waitForResponse('PoolPriceHistory')
@@ -63,7 +62,6 @@ test.describe(
       await page.goto('/positions/create')
       await page.getByRole('button', { name: 'Choose token' }).click()
       await page.getByTestId(TestID.ExploreSearchInput).fill(USDT.address)
-      // oxlint-disable-next-line
       await page.getByTestId('token-option-1-USDT').first().click()
       await page.getByRole('button', { name: 'Continue' }).click()
       await graphql.waitForResponse('PoolPriceHistory')

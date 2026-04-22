@@ -31,7 +31,6 @@ const tickSpaceLimits = [
   nearestUsableTick(TickMath.MAX_TICK, TICK_SPACINGS[FeeAmount.MEDIUM]),
 ]
 
-// oxlint-disable-next-line max-params
 function getInitialPrice(base: Currency, quote: Currency, input: string) {
   const parsedQuoteAmount = tryParseCurrencyAmount(input, quote)
   const baseAmount = tryParseCurrencyAmount('1', base)

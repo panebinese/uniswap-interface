@@ -57,6 +57,7 @@ export function UserPropertyUpdater() {
     try {
       const timing = performance
         .getEntriesByType('resource')
+        // oxlint-disable-next-line no-shadow
         .find((timing) => timing.name.match(/\/static\/js\/main\.\w{8}\.js$/)) as PerformanceResourceTiming
       if (timing.transferSize === 0) {
         cache = 'hit'

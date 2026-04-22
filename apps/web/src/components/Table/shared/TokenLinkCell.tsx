@@ -24,15 +24,7 @@ const StyledInternalLink = styled(Link, {
  * @param token
  * @returns JSX.Element showing the Token's Logo, Chain logo if non-mainnet, and Token Symbol
  */
-export const TokenLinkCell = ({
-  token,
-  hideLogo,
-  showMainnetNetworkLogo,
-}: {
-  token: GraphQLApi.Token
-  hideLogo?: boolean
-  showMainnetNetworkLogo?: boolean
-}) => {
+export const TokenLinkCell = ({ token, hideLogo }: { token: GraphQLApi.Token; hideLogo?: boolean }) => {
   const { t } = useTranslation()
   const { defaultChainId } = useEnabledChains()
   const chainId = fromGraphQLChain(token.chain) ?? defaultChainId
@@ -56,7 +48,6 @@ export const TokenLinkCell = ({
             url={currencyInfo?.logoUrl ?? token.project?.logo?.url}
             symbol={currencyInfo?.currency.symbol ?? token.symbol}
             name={currencyInfo?.currency.name}
-            showMainnetNetworkLogo={showMainnetNetworkLogo}
           />
         )}
       </Flex>

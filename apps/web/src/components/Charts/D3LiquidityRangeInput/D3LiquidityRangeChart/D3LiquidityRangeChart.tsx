@@ -1,17 +1,16 @@
 import type { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import type { Currency } from '@uniswap/sdk-core'
-import { nearestUsableTick, TickMath } from '@uniswap/v3-sdk'
 import * as d3 from 'd3'
 import { useEffect, useId, useMemo, useRef } from 'react'
 import { Flex, useSporeColors } from 'ui/src'
 import type { TickData } from '~/appGraphql/data/AllV3TicksQuery'
 import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
+import { createTickScale } from '~/components/Charts/D3LiquidityChartShared/utils/createTickScale'
 import { LiquidityActiveTooltips } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/components/LiquidityActiveTooltips'
 import { useLiquidityChartInteractions } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/hooks/useLiquidityChartInteractions'
 import { useResponsiveDimensions } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/hooks/useResponsiveDimensions'
 import { useChartPriceState } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/selectors/priceSelectors'
 import { useChartViewState } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/selectors/viewSelectors'
-import type { LinearTickScale } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/types'
 import { useLiquidityChartStoreActions } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/useLiquidityChartStore'
 import {
   priceToY,
@@ -83,39 +82,12 @@ const D3LiquidityRangeChart = ({
 
   // Create linear tick scale for continuous tick-to-Y mapping
   // Uses FULL pool tick range (MIN_TICK to MAX_TICK) aligned to tickSpacing
-  const tickScale: LinearTickScale = useMemo(() => {
+  const tickScale = useMemo(() => {
     if (liquidityData.length === 0) {
-      // Default scale when no data
-      return {
-        tickToY: () => 0,
-        yToTick: () => 0,
-        minTick: 0,
-        maxTick: 0,
-        range: [0, 0],
-      }
+      return createTickScale({ tickSpacing, size: 0, zoomLevel: 1, pan: 0 })
     }
 
-    // Use full pool tick range (aligned to tickSpacing)
-    // This ensures we visualize the entire tick space, not just where liquidity exists
-    const fullMinTick = nearestUsableTick(TickMath.MIN_TICK, tickSpacing)
-    const fullMaxTick = nearestUsableTick(TickMath.MAX_TICK, tickSpacing)
-
-    // Calculate Y range with zoom
-    const scaledHeight = totalHeight * zoomLevel
-    // Higher ticks at top (Y=0 + panY), lower ticks at bottom
-    const yTop = panY
-    const yBottom = scaledHeight + panY
-
-    // Create d3 linear scale (inverted: high tick -> low Y)
-    const d3Scale = d3.scaleLinear().domain([fullMaxTick, fullMinTick]).range([yTop, yBottom])
-
-    return {
-      tickToY: (tick: number) => d3Scale(tick),
-      yToTick: (y: number) => d3Scale.invert(y),
-      minTick: fullMinTick,
-      maxTick: fullMaxTick,
-      range: [yTop, yBottom],
-    }
+    return createTickScale({ tickSpacing, size: totalHeight, zoomLevel, pan: panY, invert: true })
   }, [liquidityData.length, tickSpacing, totalHeight, zoomLevel, panY])
 
   // Initialize renderers when component mounts or data changes
@@ -174,15 +146,15 @@ const D3LiquidityRangeChart = ({
   ])
 
   // Update renderers when state changes
-  // oxlint-disable-next-line react/exhaustive-deps -- minTick, maxTick, zoomLevel, panY should trigger re-renders
   useEffect(() => {
     drawAll()
   }, [minTick, maxTick, zoomLevel, panY, drawAll])
 
   // Reset the chart when the price data changes (currentPrice omitted), maintaining the price range from the URL
-  // oxlint-disable-next-line react/exhaustive-deps -- priceRangeState should not trigger re-renders
   useEffect(() => {
+    // oxlint-disable-next-line no-shadow
     let minTick
+    // oxlint-disable-next-line no-shadow
     let maxTick
 
     if (initialPosition) {
@@ -226,7 +198,6 @@ const D3LiquidityRangeChart = ({
           }}
           onMouseEnter={() => setChartState({ isChartHovered: true })}
           onMouseLeave={() => setChartState({ isChartHovered: false })}
-          // oxlint-disable-next-line react/self-closing-comp -- biome-parity: oxlint is stricter here
         >
           <title>Liquidity Range Chart</title>
         </svg>
@@ -238,7 +209,6 @@ const D3LiquidityRangeChart = ({
           style={{
             touchAction: 'none',
           }}
-          // oxlint-disable-next-line react/self-closing-comp -- biome-parity: oxlint is stricter here
         >
           <title>Timescale Chart</title>
         </svg>

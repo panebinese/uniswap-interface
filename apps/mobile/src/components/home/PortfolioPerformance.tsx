@@ -1,9 +1,9 @@
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, Text, TouchableArea } from 'ui/src'
+import { Flex, Text } from 'ui/src'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { ActionSheetDropdown } from 'uniswap/src/components/dropdowns/ActionSheetDropdown'
-import { MenuItemProp } from 'uniswap/src/components/modals/ActionSheetModal'
+import type { MenuItemProp } from 'uniswap/src/components/modals/ActionSheetModal'
 import {
   getProfitLossPeriodLabel,
   getProfitLossSince,
@@ -20,13 +20,11 @@ import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 interface PortfolioPerformanceProps {
   evmAddress: string
   chainIds: number[]
-  onReport?: () => void
 }
 
 export const PortfolioPerformance = memo(function PortfolioPerformance({
   evmAddress,
   chainIds,
-  onReport,
 }: PortfolioPerformanceProps): JSX.Element {
   const { t } = useTranslation()
   const [selectedPeriod, setSelectedPeriod] = useState<ProfitLossPeriod>(ProfitLossPeriod.ALL)
@@ -109,11 +107,6 @@ export const PortfolioPerformance = memo(function PortfolioPerformance({
         isLoading={isPending}
         periodSelector={periodSelector}
       />
-      {onReport && (
-        <TouchableArea mt="$spacing16" onPress={onReport}>
-          <Text variant="buttonLabel4">{t('reporting.portfolio.report.link')}</Text>
-        </TouchableArea>
-      )}
     </Flex>
   )
 })

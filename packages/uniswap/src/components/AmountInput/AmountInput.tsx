@@ -106,7 +106,6 @@ export const AmountInput = forwardRef<Input, Props>(function AmountInputInner(
       ...(adjustWidthToContent ? { fontSize } : {}),
       ...(width !== undefined ? { width } : {}),
     }),
-    // oxlint-disable-next-line react/exhaustive-deps -- TODO https://linear.app/uniswap/issue/INFRA-1031/optimize-memoization-in
     [ref, value, dimTextColor, formattedValue, handleChange, rest, width, adjustWidthToContent, fontSize],
   )
 

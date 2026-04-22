@@ -1,11 +1,18 @@
-import { Amount, PriceHistory, TokenStats } from '@uniswap/client-explore/dist/uniswap/explore/v1/service_pb'
+import {
+  ExploreStatsResponse,
+  Amount,
+  PriceHistory,
+  TokenStats,
+} from '@uniswap/client-explore/dist/uniswap/explore/v1/service_pb'
 import { useMemo } from 'react'
+import { useExploreStatsQuery } from 'uniswap/src/data/rest/exploreStats'
 import { PricePoint, TimePeriod } from '~/appGraphql/data/util'
 import { TokenSortMethod } from '~/components/Tokens/constants'
-import { useExploreStats } from '~/state/explore'
+import { useExploreChainId } from '~/state/explore'
 import { UseListTokensOptions, type UseListTokensSortOptions } from '~/state/explore/listTokens/types'
 import { TokenSortMethods } from '~/state/explore/listTokens/utils/sortTokens'
 import { TokenStat } from '~/state/explore/types'
+import { useExploreBackendSortingEnabled } from '~/state/explore/useExploreBackendSortingEnabled'
 
 function convertPriceHistoryToPricePoints(priceHistory?: PriceHistory): PricePoint[] | undefined {
   return priceHistory?.values.map((value, index) => {
@@ -75,22 +82,35 @@ function useSortedTokens({
 }
 
 /**
- * Legacy hook that uses useExploreStats() with client-side sorting only (no filter, no slice).
+ * Legacy hook that uses ExploreStats (ConnectRPC) with client-side sorting only (no filter, no slice).
+ * Default: chain from ExploreContextProvider. Returns grouped tokens when multichain is true.
  * Filter and PRICE sort are done in processMultichainTokensForDisplay; slice in useListTokens.
- * tokenSortRank and sparklines are computed in useListTokens from the final multichain tokens.
  *
  * @param enabled - Whether to process the data. When false, returns empty results.
  * @param options - Resolved sort and filter options (duration + sort used here; filter applied later).
+ * @param multichain
  */
 export function useTopTokensLegacy({
   enabled,
   options,
+  multichain = false,
 }: {
   enabled: boolean
   options: Required<UseListTokensOptions>
+  multichain?: boolean
 }) {
   const { filterTimePeriod: duration, sortMethod, sortAscending } = options
-  const { data, isLoading, error: isError } = useExploreStats()
+  const chainId = useExploreChainId()
+  const backendSorting = useExploreBackendSortingEnabled()
+
+  const {
+    data,
+    isLoading,
+    error: isError,
+  } = useExploreStatsQuery<ExploreStatsResponse>({
+    input: { chainId, multichain },
+    enabled: enabled && !backendSorting,
+  })
 
   const tokenStats = useMemo(() => {
     if (!enabled) {

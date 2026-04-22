@@ -46,6 +46,10 @@ export type ActivityRenderData = PaginationControls & {
   isLoading: boolean
   isFetching: boolean
   refetch: () => Promise<void>
+  /** Epoch ms when activity data was last successfully fetched. */
+  dataUpdatedAt?: number
+  /** Error from the underlying transaction data fetch, if any. */
+  error?: Error
 }
 
 export function useActivityData({
@@ -83,12 +87,13 @@ export function useActivityData({
     isLoading,
     isFetching,
     onRetry,
-    isError,
+    error,
     sectionData,
     keyExtractor,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    dataUpdatedAt,
   } = useFormattedTransactionDataForActivity({
     evmAddress: evmOwner,
     svmAddress: svmOwner,
@@ -143,7 +148,7 @@ export function useActivityData({
   )
 
   // We check `sectionData` instead of `hasData` because `sectionData` has either transactions or a loading skeleton.
-  const maybeEmptyComponent = sectionDataWithExtra?.length ? null : isError ? errorCard : emptyListView
+  const maybeEmptyComponent = sectionDataWithExtra?.length ? null : error ? errorCard : emptyListView
 
   return {
     maybeEmptyComponent,
@@ -156,6 +161,8 @@ export function useActivityData({
     isLoading,
     isFetching,
     refetch: onRetry,
+    dataUpdatedAt,
+    error,
   }
 }
 

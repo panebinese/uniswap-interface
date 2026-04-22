@@ -174,7 +174,6 @@ function useOnActivityUpdate(): OnActivityUpdate {
         }
         // TransactionType can only be UniswapXOrder here
         // This check is in place in case more types get added in the future
-        // oxlint-disable-next-line typescript/no-unnecessary-condition
       } else if (activity.type === ActivityUpdateTransactionType.UniswapXOrder) {
         handleUniswapXActivityUpdate({ activity, popupDismissalTime })
       } else if (

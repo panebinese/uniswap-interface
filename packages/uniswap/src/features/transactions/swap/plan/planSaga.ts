@@ -66,7 +66,7 @@ import { ONE_SECOND_MS } from 'utilities/src/time/time'
  * to the TAPI to update the plan. As the steps are executed, the plan continues
  * to execute the next step until all last step is confirmed.
  */
-// oxlint-disable-next-line complexity
+// oxlint-disable-next-line complexity typescript/explicit-function-return-type
 export function* plan(params: PlanParams) {
   const {
     address,
@@ -492,6 +492,7 @@ function buildPlanErrorToast(params: {
  *   the real plan status (e.g. AwaitingAction) instead of overriding it to Pending,
  *   which is what allows the retry button to appear for failed last steps.
  */
+// oxlint-disable-next-line typescript/explicit-function-return-type
 function* watchLastPlanStepWithCleanup(params: WatchLastPlanStepParams) {
   const {
     stepType,
@@ -577,6 +578,7 @@ function* watchLastPlanStepWithCleanup(params: WatchLastPlanStepParams) {
  * Handles the last step of a plan: forks background polling, signals success,
  * backgrounds the plan, and logs timing.
  */
+// oxlint-disable-next-line typescript/explicit-function-return-type
 function* handleLastStepCompletion(params: HandleLastStepCompletionParams) {
   const {
     planId,

@@ -59,7 +59,6 @@ function SelectorBaseListInner<T extends OnchainItemListOption>({
   const { t } = useTranslation()
   const sectionListRef = useRef<OnchainItemListRef>(undefined)
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +chainFilter
   useEffect(() => {
     if (sections?.length) {
       sectionListRef.current?.scrollToLocation({

@@ -34,6 +34,7 @@ export const SOLANA_CHAIN_INFO = {
   bridge: undefined,
   docs: 'https://docs.solana.com',
   elementName: ElementName.ChainSolana,
+  supportedURVersions: [],
   supportsV4: false,
   supportsNFTs: false,
   explorer: {

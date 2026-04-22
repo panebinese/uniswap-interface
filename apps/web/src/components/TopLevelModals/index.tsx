@@ -2,10 +2,12 @@ import { useAtomValue } from 'jotai/utils'
 import { useTranslation } from 'react-i18next'
 import { BridgedAssetModalAtom } from 'uniswap/src/components/BridgedAsset/BridgedAssetModal'
 import { WormholeModalAtom } from 'uniswap/src/components/BridgedAsset/WormholeModal'
+import { ReportTokenDataModalPropsAtom } from 'uniswap/src/components/reporting/ReportTokenDataModal'
 import { ReportTokenIssueModalPropsAtom } from 'uniswap/src/components/reporting/ReportTokenIssueModal'
 import { useUnitagsAddressQuery } from 'uniswap/src/data/apiClients/unitagsApi/useUnitagsAddressQuery'
 import { useActiveAddresses } from 'uniswap/src/features/accounts/store/hooks'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
+import { AnalyticsDebugOverlayLazy } from 'uniswap/src/features/telemetry/debug/AnalyticsDebugOverlayLazy'
 import { shortenAddress } from 'utilities/src/addresses'
 import { isBetaEnv, isDevEnv } from 'utilities/src/environment/env'
 import { useEvent } from 'utilities/src/react/hooks'
@@ -38,6 +40,7 @@ export default function TopLevelModals() {
   const wormholeModalProps = useAtomValue(WormholeModalAtom)
 
   const reportTokenIssueProps = useAtomValue(ReportTokenIssueModalPropsAtom)
+  const reportTokenDataProps = useAtomValue(ReportTokenDataModalPropsAtom)
   const onReportSuccess = useEvent(() => {
     popupRegistry.addPopup(
       { type: PopupType.Success, message: t('common.reported') },
@@ -96,6 +99,7 @@ export default function TopLevelModals() {
       <ModalRenderer modalName={ModalName.FeatureFlags} />
       <ModalRenderer modalName={ModalName.SolanaPromo} />
       {shouldShowDevFlags && <ModalRenderer modalName={ModalName.DevFlags} />}
+      {shouldShowDevFlags && <AnalyticsDebugOverlayLazy />}
       <ModalRenderer modalName={ModalName.AddLiquidity} />
       <ModalRenderer modalName={ModalName.RemoveLiquidity} />
       <ModalRenderer modalName={ModalName.ClaimFee} />
@@ -114,11 +118,16 @@ export default function TopLevelModals() {
         modalName={ModalName.ReportTokenIssue}
         componentProps={{ ...reportTokenIssueProps, onReportSuccess }}
       />
+      <ModalRenderer
+        modalName={ModalName.ReportTokenData}
+        componentProps={{ ...reportTokenDataProps, onReportSuccess }}
+      />
       <ModalRenderer modalName={ModalName.AddPasskey} />
       <ModalRenderer modalName={ModalName.AddBackupLogin} />
       <ModalRenderer modalName={ModalName.RecoverWallet} />
       <ModalRenderer modalName={ModalName.DeletePasskey} />
       <ModalRenderer modalName={ModalName.RemoveBackupLogin} />
+      <ModalRenderer modalName={ModalName.DataApiOutage} />
     </OAuthRedirectProvider>
   )
 }

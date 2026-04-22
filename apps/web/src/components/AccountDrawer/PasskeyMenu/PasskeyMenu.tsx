@@ -3,13 +3,13 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Anchor, Button, Flex, Loader, Text, TouchableArea, useSporeColors } from 'ui/src'
 import { Buoy } from 'ui/src/components/icons/Buoy'
-import { EnvelopeLock } from 'ui/src/components/icons/EnvelopeLock'
-import { GoogleLogo } from 'ui/src/components/icons/GoogleLogo'
+import { Envelope } from 'ui/src/components/icons/Envelope'
+import { GoogleLogoGradient } from 'ui/src/components/icons/GoogleLogoGradient'
+import { IcloudPasswordLogo } from 'ui/src/components/icons/IcloudPasswordLogo'
 import { MoreHorizontal } from 'ui/src/components/icons/MoreHorizontal'
 import { Passkey } from 'ui/src/components/icons/Passkey'
 import { Trash } from 'ui/src/components/icons/Trash'
 import { Windows } from 'ui/src/components/icons/Windows'
-import { GoogleChromeLogo } from 'ui/src/components/logos/GoogleChromeLogo'
 import { UseSporeColorsReturn } from 'ui/src/hooks/useSporeColors'
 import { iconSizes } from 'ui/src/theme'
 import { ContextMenu } from 'uniswap/src/components/menus/ContextMenu'
@@ -51,12 +51,12 @@ type AuthenticatorDisplay = Pick<Authenticator, 'credentialId' | 'providerName' 
   label: string
 }
 
-function getProviderIcon(provider: AuthenticatorProvider, colors: UseSporeColorsReturn) {
+function getProviderIcon(provider: AuthenticatorProvider) {
   switch (provider) {
     case AuthenticatorProvider.Google:
-      return <GoogleChromeLogo size={iconSizes.icon20} />
+      return <GoogleLogoGradient size={iconSizes.icon20} />
     case AuthenticatorProvider.Apple:
-      return <AppleLogo height={iconSizes.icon20} width={iconSizes.icon20} fill={colors.neutral1.val} />
+      return <IcloudPasswordLogo size={iconSizes.icon20} />
     case AuthenticatorProvider.Android:
       return <AndroidLogo height={iconSizes.icon20} width={iconSizes.icon20} />
     case AuthenticatorProvider.Microsoft:
@@ -157,7 +157,6 @@ const AuthenticatorRow = ({
   authenticator: AuthenticatorDisplay
   handleDeletePasskey: (authenticator: AuthenticatorDisplay) => void
 }) => {
-  const colors = useSporeColors()
   const createdAtDate = authenticator.createdAt ? new Date(Number(authenticator.createdAt)) : undefined
   const isValidDate = createdAtDate instanceof Date && !isNaN(createdAtDate.getTime())
   const formattedDate = createdAtDate?.toLocaleDateString('en-US', {
@@ -176,7 +175,7 @@ const AuthenticatorRow = ({
         alignItems="center"
         justifyContent="center"
       >
-        {getProviderIcon(authenticator.provider, colors)}
+        {getProviderIcon(authenticator.provider)}
       </Flex>
       <Flex>
         <Text variant="body2">{authenticator.label}</Text>
@@ -206,11 +205,11 @@ function LoadingPasskeyRow() {
 function getRecoveryMethodIcon(type: string, colors: UseSporeColorsReturn) {
   switch (type.toLowerCase()) {
     case 'google':
-      return <GoogleLogo size={iconSizes.icon20} />
+      return <GoogleLogoGradient size={iconSizes.icon20} />
     case 'apple':
       return <AppleLogo height={iconSizes.icon20} width={iconSizes.icon20} fill={colors.neutral1.val} />
     default:
-      return <EnvelopeLock size="$icon.20" color="$neutral1" />
+      return <Envelope size="$icon.20" color="$neutral1" />
   }
 }
 

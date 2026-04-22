@@ -50,7 +50,6 @@ export function WebAccountsStoreUpdater() {
   const shouldTrace = useFeatureFlag(FeatureFlags.TraceJsonRpc)
   const isSupportedChain = useIsSupportedChainId(account.chainId)
   const networkProvider = isSupportedChain && account.chainId ? RPC_PROVIDERS[account.chainId] : undefined
-  // oxlint-disable-next-line react/exhaustive-deps -- +analyticsContext
   useEffect(() => {
     if (shouldTrace) {
       provider?.on('debug', trace)
@@ -118,6 +117,7 @@ export function WebAccountsStoreUpdater() {
     },
   )
 
+  // oxlint-disable-next-line complexity
   useEffect(() => {
     const currentEvmAddress = activeAddresses.evmAddress
     const currentSvmAddress = activeAddresses.svmAddress
@@ -217,6 +217,7 @@ export function WebAccountsStoreUpdater() {
           evmConnector
             ?.getProvider()
             .then((externalProvider) => {
+              // oxlint-disable-next-line no-shadow
               const provider = externalProvider as ExternalProvider
               // Lookup metadata from the wallet connect external provider
               const meta = getWalletMeta(new EthersWeb3Provider(provider))

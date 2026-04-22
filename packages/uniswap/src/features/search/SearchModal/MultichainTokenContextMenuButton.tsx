@@ -19,12 +19,13 @@ import { MultichainAddressList } from 'uniswap/src/components/MultichainTokenDet
 import { useOrderedMultichainEntries } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import type { MultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
+import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { usePortfolioBalances } from 'uniswap/src/features/dataApi/balances/balances'
 import { CurrencyInfo, MultichainSearchResult } from 'uniswap/src/features/dataApi/types'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType, CopyNotificationType } from 'uniswap/src/features/notifications/slice/types'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
+import { usePortfolioBalances } from 'uniswap/src/features/portfolio/balances/hooks'
 import { useDelayedMenuClose } from 'uniswap/src/features/search/SearchModal/hooks/useDelayedMenuClose'
 import { ElementName, SectionName, UniswapEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
@@ -32,6 +33,7 @@ import { currencyAddress } from 'uniswap/src/utils/currencyId'
 import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { isWebPlatform } from 'utilities/src/platform'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 
 type ViewState = 'actions' | 'addresses'
 const ADDRESSES_POPOVER_WIDTH = 304
@@ -99,6 +101,7 @@ function MultichainTokenContextMenuButtonInner({
 }: MultichainTokenContextMenuButtonProps): JSX.Element | null {
   const { t } = useTranslation()
   const dispatch = useDispatch()
+  const trace = useTrace()
 
   const { value: isOpen, setTrue: openMenu, setFalse: rawCloseMenu } = useBooleanState(false)
   const [viewState, setViewState] = useState<ViewState>('actions')
@@ -148,20 +151,22 @@ function MultichainTokenContextMenuButtonInner({
   }, [isSingleChain, primaryCurrencyInfo.currency, dispatch])
 
   const onCopyMultichainAddress = useCallback(
-    async (address: string): Promise<void> => {
+    async (address: string, chainId: UniverseChainId): Promise<void> => {
       await setClipboard(address)
       if (!isWebPlatform) {
         dispatch(pushNotification({ type: AppNotificationType.Copied, copyType: CopyNotificationType.Address }))
       }
       sendAnalyticsEvent(UniswapEventName.ContextMenuItemClicked, {
+        ...trace,
         element: ElementName.SearchTokenContextMenu,
         section: SectionName.NavbarSearch,
         menu_item: 'Multichain Copy Address',
         menu_item_index: -1,
+        chain_name: getChainInfo(chainId).urlParam,
       })
       timerRef.current = setTimeout(handleCloseMenu, COPY_CLOSE_DELAY)
     },
-    [dispatch, handleCloseMenu],
+    [dispatch, handleCloseMenu, trace],
   )
 
   const { menuItems: actionItems } = useSearchTokenMenuItems({

@@ -2,7 +2,6 @@ import type { PartialMessage } from '@bufbuild/protobuf'
 import type { ListTokensRequest, ListTokensResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import type { MultichainToken } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { TokenSortMethod } from '~/components/Tokens/constants'
-import { backendSortedToMultichainTokens } from '~/state/explore/listTokens/services/backendSorted/backendSortedToMultichainTokens'
 import { tokenStatsToMultichainTokens } from '~/state/explore/listTokens/services/legacy/legacyToMultichainTokens'
 import { UseListTokensOptions } from '~/state/explore/listTokens/types'
 import {
@@ -11,7 +10,7 @@ import {
 } from '~/state/explore/listTokens/utils/topTokensOrderByMappings'
 import type { TokenStat } from '~/state/explore/types'
 
-type ListTokensSourceType = 'legacy' | 'backend_sorted_legacy' | 'backend_sorted_multichain'
+type ListTokensSourceType = 'legacy' | 'backend_sorted'
 
 interface ListTokensParams {
   chainIds: number[]
@@ -27,8 +26,8 @@ interface ListTokensResult {
 
 /**
  * Service for fetching and returning explore tokens in a unified MultichainToken[]
- * shape. Delegates to legacy explore API, backend-sorted legacy response, or
- * backend-sorted multichain response depending on feature flags and context.
+ * shape. Uses legacy ExploreStats-derived token stats when backend sorting is off,
+ * otherwise ListTokens with multichain: true.
  */
 interface ListTokensService {
   /**
@@ -61,30 +60,18 @@ function buildBackendRequestParams({
   }
 }
 
-async function getListTokensFromBackend({
-  listTokens,
-  params,
-  multichain,
-}: {
-  listTokens: (params: PartialMessage<ListTokensRequest>) => Promise<ListTokensResponse>
-  params: ListTokensParams
-  multichain: boolean
-}): Promise<ListTokensResult> {
+async function getListTokensFromBackend(
+  listTokens: (params: PartialMessage<ListTokensRequest>) => Promise<ListTokensResponse>,
+  params: ListTokensParams,
+): Promise<ListTokensResponse> {
   const base = buildBackendRequestParams(params)
-  const response = await listTokens({ ...base, multichain })
-  return multichain
-    ? response
-    : {
-        multichainTokens: backendSortedToMultichainTokens(response),
-        nextPageToken: response.nextPageToken,
-      }
+  return listTokens({ ...base, multichain: true })
 }
 
 /**
- * Creates a ListTokensService that uses the provided context to decide between
- * legacy explore stats, backend-sorted legacy (tokens → multichain transform), or
- * backend-sorted multichain response. Use with useListTokensService for the React hook
- * that wires feature flags and data sources.
+ * Creates a ListTokensService that uses legacy explore stats or backend-sorted
+ * ListTokens (always multichain). Use with useListTokensService for the React hook
+ * that wires experiment flags and data sources.
  */
 export function createListTokensService(ctx: {
   getSourceType: () => ListTokensSourceType
@@ -103,11 +90,7 @@ export function createListTokensService(ctx: {
         return { multichainTokens }
       }
 
-      if (source === 'backend_sorted_legacy') {
-        return getListTokensFromBackend({ listTokens, params, multichain: false })
-      }
-
-      return getListTokensFromBackend({ listTokens, params, multichain: true })
+      return getListTokensFromBackend(listTokens, params)
     },
   }
 }

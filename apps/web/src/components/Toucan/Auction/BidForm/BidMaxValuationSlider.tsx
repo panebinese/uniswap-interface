@@ -3,23 +3,20 @@ import { useAuctionTokenColor } from '~/components/Toucan/Auction/hooks/useAucti
 import { useBidTokenInfo } from '~/components/Toucan/Auction/hooks/useBidTokenInfo'
 import { useAuctionStore } from '~/components/Toucan/Auction/store/useAuctionStore'
 import { getClearingPrice } from '~/components/Toucan/Auction/utils/clearingPrice'
-import { ValuationSlider } from '~/components/Toucan/Shared/ValuationSlider'
+import { ValuationInputType, ValuationSlider } from '~/components/Toucan/Shared/ValuationSlider'
 
 interface BidMaxValuationSliderProps {
-  value: string
-  onChange: (amount: string) => void
-  valueQ96?: bigint
-  onChangeQ96?: (q96: bigint) => void
+  valueQ96: bigint | undefined
+  onChangeQ96: (q96: bigint) => void
   bidTokenDecimals?: number
   bidTokenSymbol: string
   tokenColor?: string
   disabled?: boolean
   onInteractionStart?: () => void
+  inputType?: ValuationInputType
 }
 
 function BidMaxValuationSliderComponent({
-  value,
-  onChange,
   valueQ96,
   onChangeQ96,
   bidTokenDecimals,
@@ -27,6 +24,7 @@ function BidMaxValuationSliderComponent({
   tokenColor,
   disabled,
   onInteractionStart,
+  inputType,
 }: BidMaxValuationSliderProps): JSX.Element | null {
   const { auctionDetails, checkpointData, tickGrouping, groupTicksEnabled } = useAuctionStore((state) => ({
     auctionDetails: state.auctionDetails,
@@ -58,8 +56,6 @@ function BidMaxValuationSliderComponent({
 
   return (
     <ValuationSlider
-      value={value}
-      onChange={onChange}
       valueQ96={valueQ96}
       onChangeQ96={onChangeQ96}
       bidTokenDecimals={bidTokenDecimals}
@@ -76,6 +72,7 @@ function BidMaxValuationSliderComponent({
       tickGrouping={tickGrouping}
       groupTicksEnabled={groupTicksEnabled}
       tokenColorLoading={tokenColorLoading}
+      inputType={inputType}
     />
   )
 }

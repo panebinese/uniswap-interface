@@ -136,6 +136,7 @@ function* waitForTransactionInStore(
  * Fetches the transaction receipt onchain and updates the transaction with
  * network fee and receipt data. Used when Trading API provides status but not receipt details.
  */
+// oxlint-disable-next-line typescript/explicit-function-return-type
 export function* updateTransactionWithReceipt(
   transaction: RequireNonNullable<TransactionDetails, 'hash'>,
   provider: providers.Provider,

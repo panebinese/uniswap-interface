@@ -407,7 +407,9 @@ export default function Pool() {
   }, [loadedPositions, savedPositions, chainFilter, statusFilter, versionFilter])
 
   const { visiblePositions, hiddenPositions } = useMemo(() => {
+    // oxlint-disable-next-line no-shadow
     const visiblePositions: PositionInfo[] = []
+    // oxlint-disable-next-line no-shadow
     const hiddenPositions: PositionInfo[] = []
 
     combinedPositions.forEach((position) => {

@@ -72,7 +72,6 @@ export function SwapBottomCard() {
 }
 
 // keeping this code for any future web banners
-// oxlint-disable-next-line import/no-unused-modules
 export function ImagePromoBanner({
   title,
   subtitle,

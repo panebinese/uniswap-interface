@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   applyPanZoom,
   computePanBounds,
@@ -185,5 +185,23 @@ export function useYAxisPanZoom<T extends NormalizedDataSlice>({
     }
   }, [normalizedData])
 
-  return { pannedNormalizedData, groupedBars, tickSizeDecimal, chartWheelRef }
+  /**
+   * Pan the Y-axis so that `targetPrice` is centered in the visible range.
+   * Mirrors the midpoint logic in `applyPanZoom` so the offset lands correctly.
+   */
+  const panToPrice = useCallback(
+    (targetPrice: number) => {
+      if (!normalizedData) {
+        return
+      }
+      const conc = chartData?.concentration
+      const baseYMin = conc ? Math.min(normalizedData.yMin, conc.startTick) : normalizedData.yMin
+      const baseYMax = conc ? Math.max(normalizedData.yMax, conc.endTick) : normalizedData.yMax
+      const baseMidpoint = (baseYMin + baseYMax) / 2
+      setYPanOffset(targetPrice - baseMidpoint)
+    },
+    [normalizedData, chartData?.concentration],
+  )
+
+  return { pannedNormalizedData, groupedBars, tickSizeDecimal, chartWheelRef, panToPrice }
 }

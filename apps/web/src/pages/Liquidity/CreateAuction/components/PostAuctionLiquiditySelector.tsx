@@ -10,14 +10,55 @@ type InputRef = ComponentRef<typeof Input>
 const MIN_PERCENT = 25
 const MAX_PERCENT = 100
 const QUICK_SELECT_PERCENTS = [25, 50, 75, 100] as const
+const MAX_PERCENT_DECIMAL_PLACES = 5
+
+function isValidPartialPercentInput(value: string): boolean {
+  if (value === '') {
+    return true
+  }
+  const dot = value.indexOf('.')
+  if (dot === -1) {
+    return /^\d+$/.test(value)
+  }
+  if (value.indexOf('.', dot + 1) !== -1) {
+    return false
+  }
+  const intPart = value.slice(0, dot)
+  const fracPart = value.slice(dot + 1)
+  if (fracPart.length > MAX_PERCENT_DECIMAL_PLACES) {
+    return false
+  }
+  if (intPart !== '' && !/^\d+$/.test(intPart)) {
+    return false
+  }
+  if (!/^\d*$/.test(fracPart)) {
+    return false
+  }
+  return intPart !== '' || fracPart !== '' || value === '.'
+}
+
+/** Stable string for display / focus seed (trims trailing zeros, max 5 decimal places). */
+function formatPostAuctionPercentForUi(percent: number): string {
+  if (!Number.isFinite(percent) || percent <= 0) {
+    return ''
+  }
+  const normalized = Math.round(percent * 10 ** MAX_PERCENT_DECIMAL_PLACES) / 10 ** MAX_PERCENT_DECIMAL_PLACES
+  return normalized.toFixed(MAX_PERCENT_DECIMAL_PLACES).replace(/\.?0+$/, '')
+}
 
 interface PostAuctionLiquiditySelectorProps {
   postAuctionLiquidityPercent: number
+  raiseCurrencySymbol: string
+  subtitle: string
+  showSubtitleTooltip: boolean
   onSelectPercent: (percent: number) => void
 }
 
 export function PostAuctionLiquiditySelector({
   postAuctionLiquidityPercent,
+  raiseCurrencySymbol,
+  subtitle,
+  showSubtitleTooltip,
   onSelectPercent,
 }: PostAuctionLiquiditySelectorProps) {
   const { t } = useTranslation()
@@ -48,8 +89,7 @@ export function PostAuctionLiquiditySelector({
 
   const handleChange = useCallback(
     (value: string) => {
-      // Only allow digits and dots
-      if (!/^[\d.]*$/.test(value)) {
+      if (!isValidPartialPercentInput(value)) {
         return
       }
       setRawInput(value)
@@ -71,8 +111,7 @@ export function PostAuctionLiquiditySelector({
   const handleFocus = useCallback(() => {
     setIsFocused(true)
     setShowMinTooltip(false)
-    const currentValue = String(Math.round(postAuctionLiquidityPercent))
-    setRawInput(currentValue === '0' ? '' : currentValue)
+    setRawInput(formatPostAuctionPercentForUi(postAuctionLiquidityPercent))
   }, [postAuctionLiquidityPercent])
 
   const handleBlur = useCallback(() => {
@@ -101,42 +140,78 @@ export function PostAuctionLiquiditySelector({
   const isMinActive = postAuctionLiquidityPercent === MIN_PERCENT
 
   return (
-    <Flex row alignItems="center" gap="$spacing4">
-      {/* Left: label + editable value */}
-      <Flex flex={1} flexBasis={0} minWidth={0} gap="$spacing4">
-        <Text variant="body3" color="$neutral2">
-          {t('toucan.createAuction.step.configureAuction.postAuctionLiquidity')}
+    <Flex
+      backgroundColor="$surface2"
+      borderWidth="$spacing1"
+      borderColor="$surface3"
+      borderRadius="$rounded16"
+      p="$spacing16"
+      gap="$spacing8"
+    >
+      {/* Header: label + help icon */}
+      <Flex row alignItems="center" gap="$spacing4">
+        <Text variant="buttonLabel3" color="$neutral2">
+          {t('toucan.createAuction.step.configureAuction.postAuctionLiquidity.label', {
+            raiseCurrency: raiseCurrencySymbol,
+          })}
         </Text>
-        {isFocused ? (
-          <Input
-            ref={inputRef}
-            autoFocus
-            height={fonts.heading3.lineHeight}
-            value={`${rawInput}%`}
-            onChangeText={(value: string) => handleChange(value.replace(/%/g, ''))}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onSelectionChange={clampCaret}
-            placeholder="0%"
-            placeholderTextColor="$neutral3"
-            fontSize={fonts.heading3.fontSize}
-            lineHeight={fonts.heading3.lineHeight}
-            fontWeight={fonts.heading3.fontWeight}
-            color={isInvalid ? '$statusCritical' : '$neutral1'}
-            px="$none"
-            backgroundColor="$transparent"
-            width="100%"
-          />
-        ) : (
-          <Text variant="heading3" color="$neutral1" cursor="text" onPress={handleFocus}>
-            {`${Math.round(postAuctionLiquidityPercent)}%`}
-          </Text>
-        )}
       </Flex>
 
-      {/* Right: quick selects */}
-      <Flex flex={2} flexBasis={0} minWidth={0} gap="$spacing8" alignItems="flex-end">
-        <Flex row width="100%" gap="$spacing2">
+      {/* Input row: percent + subtitle on left, quick selects on right */}
+      <Flex row alignItems="center">
+        <Flex flex={1} flexBasis={0} minWidth={0} gap="$spacing4">
+          {isFocused ? (
+            <Input
+              ref={inputRef}
+              autoFocus
+              height={fonts.heading3.lineHeight}
+              value={`${rawInput}%`}
+              onChangeText={(value: string) => handleChange(value.replace(/%/g, ''))}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onSelectionChange={clampCaret}
+              placeholder="0%"
+              placeholderTextColor="$neutral3"
+              fontSize={fonts.heading3.fontSize}
+              lineHeight={fonts.heading3.lineHeight}
+              fontWeight={fonts.heading3.fontWeight}
+              color={isInvalid ? '$statusCritical' : '$neutral1'}
+              px="$none"
+              backgroundColor="$transparent"
+              width="100%"
+            />
+          ) : (
+            <Text variant="heading3" color="$neutral1" cursor="text" onPress={handleFocus}>
+              {`${formatPostAuctionPercentForUi(postAuctionLiquidityPercent) || '0'}%`}
+            </Text>
+          )}
+          {showSubtitleTooltip ? (
+            <Tooltip placement="left">
+              <Tooltip.Trigger asChild>
+                <Flex cursor="help" alignSelf="flex-start">
+                  <Text variant="body4" color="$neutral2">
+                    {subtitle}
+                  </Text>
+                </Flex>
+              </Tooltip.Trigger>
+              <Tooltip.Content zIndex={zIndexes.overlay}>
+                <Tooltip.Arrow />
+                <Text variant="body4" color="$neutral1" maxWidth={280}>
+                  {t('toucan.createAuction.step.configureAuction.postAuctionLiquidity.subtitleFloorPriceTooltip')}
+                </Text>
+              </Tooltip.Content>
+            </Tooltip>
+          ) : (
+            <Flex alignSelf="flex-start">
+              <Text variant="body4" color="$neutral2">
+                {subtitle}
+              </Text>
+            </Flex>
+          )}
+        </Flex>
+
+        {/* Quick selects */}
+        <Flex row flex={1} flexBasis={0} minWidth={0} gap="$spacing2">
           {/* 25% button with controlled tooltip */}
           <Tooltip placement="bottom" open={showMinTooltip}>
             <TouchableArea

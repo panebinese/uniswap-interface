@@ -60,3 +60,32 @@ export function getPercentageDisplay(volume: number, totalVolume: number): strin
   const percentage = (volume / totalVolume) * 100
   return percentage === Math.round(percentage) ? `${Math.round(percentage)}%` : `${percentage.toFixed(1)}%`
 }
+
+/** Minimal shape accepted by `useNavigateToTokenDetails` for multichain API tokens. */
+export type VolumePopoverTokenDetailsInput = { chainId: number; address: string }
+
+export type NavigateVolumePopoverToTokenDetails = (
+  currency: VolumePopoverTokenDetailsInput,
+  chainFilter?: UniverseChainId,
+) => void
+
+/**
+ * Opens TDP for the given chain's deployment of a multichain token, optionally setting the chain query param.
+ */
+export function navigateVolumePopoverToTokenDetails({
+  navigateToTokenDetails,
+  mcToken,
+  chainId,
+  chainQueryFilter,
+}: {
+  navigateToTokenDetails: NavigateVolumePopoverToTokenDetails
+  mcToken: MultichainToken | undefined
+  chainId: UniverseChainId
+  chainQueryFilter?: UniverseChainId
+}): void {
+  const deployment = mcToken?.chainTokens.find((ct) => ct.chainId === chainId)
+  if (!deployment) {
+    return
+  }
+  navigateToTokenDetails({ chainId: deployment.chainId, address: deployment.address }, chainQueryFilter)
+}

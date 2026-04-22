@@ -51,6 +51,15 @@ export type RemoveBackupLoginModalParams = {
   initialState: RemoveBackupLoginModalInitialState
 }
 
+type DataApiOutageModalInitialState = {
+  dataUpdatedAt?: number
+}
+
+export type DataApiOutageModalParams = {
+  name: typeof ModalName.DataApiOutage
+  initialState: DataApiOutageModalInitialState
+}
+
 export type OpenModalParams =
   | { name: ModalNameType; initialState?: undefined }
   | AddLiquidityModalParams
@@ -60,6 +69,7 @@ export type OpenModalParams =
   | ReceiveCryptoModalParams
   | DeletePasskeyModalParams
   | RemoveBackupLoginModalParams
+  | DataApiOutageModalParams
 
 type CloseModalParams = ModalNameType
 

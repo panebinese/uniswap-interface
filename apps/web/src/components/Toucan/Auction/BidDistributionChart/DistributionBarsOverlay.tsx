@@ -253,13 +253,19 @@ export function DistributionBarsOverlay({
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current
-      if (!canvas || bars.length === 0 || !onBarClick) {
+      if (!canvas || !onBarClick) {
         return
       }
 
       const rect = canvas.getBoundingClientRect()
       const mouseY = e.clientY - rect.top
 
+      // Compute the unscaled decimal price at the click Y position
+      const { min, max } = priceRange
+      const scaledPrice = min + ((height - mouseY) / height) * (max - min)
+      const tickPrice = scaledPrice / scaleFactor
+
+      // Find nearest bar if any exist
       let nearestIdx: number | null = null
       let nearestDist = Infinity
 
@@ -274,11 +280,6 @@ export function DistributionBarsOverlay({
           nearestIdx = i
         }
       }
-
-      // Compute the unscaled decimal price at the click Y position
-      const { min, max } = priceRange
-      const scaledPrice = min + ((height - mouseY) / height) * (max - min)
-      const tickPrice = scaledPrice / scaleFactor
 
       if (nearestIdx !== null) {
         onBarClick(bars[nearestIdx]!, tickPrice)

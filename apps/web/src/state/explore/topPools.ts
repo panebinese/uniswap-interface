@@ -46,6 +46,7 @@ function useFilteredPools(pools?: PoolStat[], enabled = true) {
 }
 
 function sortPools(sortState: PoolTableSortState, pools?: PoolStat[]) {
+  // oxlint-disable-next-line complexity
   return pools?.sort((a, b) => {
     switch (sortState.sortBy) {
       case PoolSortFields.VolOverTvl:

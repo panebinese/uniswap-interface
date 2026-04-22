@@ -5,16 +5,19 @@ import { Flex, Separator } from 'ui/src'
 import { NetworkBalanceBreakdown } from 'uniswap/src/components/tokenDetails/NetworkBalanceBreakdown'
 import { computeAggregateBalance } from 'uniswap/src/components/tokenDetails/utils'
 import { AccountType } from 'uniswap/src/features/accounts/types'
+import type { DataApiOutageProps } from 'uniswap/src/features/dataApi/types'
 import { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
 import { useActiveAccount, useDisplayName } from 'wallet/src/features/wallet/hooks'
 
 export function MultichainTokenBalances({
   currentChainBalance,
   otherChainBalances,
+  isOutage,
+  dataUpdatedAt,
 }: {
   currentChainBalance: PortfolioBalance | null
   otherChainBalances: PortfolioBalance[] | null
-}): JSX.Element {
+} & DataApiOutageProps): JSX.Element {
   const { t } = useTranslation()
   const activeAccount = useActiveAccount()
   const displayName = useDisplayName(activeAccount?.address, { includeUnitagSuffix: true })?.name
@@ -44,7 +47,13 @@ export function MultichainTokenBalances({
       {aggregateBalance && (
         <Flex gap="$spacing24">
           <Separator />
-          <TokenBalanceHeader balance={aggregateBalance} displayName={displayName} isReadonly={isReadonly} />
+          <TokenBalanceHeader
+            balance={aggregateBalance}
+            displayName={displayName}
+            isReadonly={isReadonly}
+            isOutage={isOutage}
+            dataUpdatedAt={dataUpdatedAt}
+          />
         </Flex>
       )}
       {hasMultipleChains && (

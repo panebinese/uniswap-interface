@@ -116,6 +116,7 @@ export default function PositionPageWrapper() {
   )
 }
 
+// oxlint-disable-next-line complexity
 function PositionPage({ chainId }: { chainId: EVMUniverseChainId | undefined }) {
   const { tokenId: tokenIdFromUrl } = useParams<{ tokenId: string }>()
   const tokenId = parseTokenId(tokenIdFromUrl)
@@ -179,6 +180,7 @@ function PositionPage({ chainId }: { chainId: EVMUniverseChainId | undefined }) 
       return {}
     }
 
+    // oxlint-disable-next-line no-shadow
     const position = positionInfo.position
     const token0 = position.amount0.currency
     const token1 = position.amount1.currency

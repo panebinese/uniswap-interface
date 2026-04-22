@@ -24,6 +24,18 @@ export const BOOTSTRAP_POST_LIQUIDITY_PERCENT = new Percent(100, 100)
 // 50% means half go to LP (25% token-side kept, 25% sold); the other 50% are the fundraise
 export const FUNDRAISE_POST_LIQUIDITY_PERCENT = new Percent(50, 100)
 
+/**
+ * Re-wrap existing committed amounts with a new token, preserving raw values.
+ * Used when only the token metadata (name/symbol) changed but the supply didn't.
+ */
+function rebaseAmounts(committed: AuctionTokenAmounts, newToken: Currency): AuctionTokenAmounts {
+  return {
+    totalSupply: CurrencyAmount.fromRawAmount(newToken, committed.totalSupply.quotient),
+    auctionSupplyAmount: CurrencyAmount.fromRawAmount(newToken, committed.auctionSupplyAmount.quotient),
+    postAuctionLiquidityAmount: CurrencyAmount.fromRawAmount(newToken, committed.postAuctionLiquidityAmount.quotient),
+  }
+}
+
 function buildDefaultAmounts(totalSupply: CurrencyAmount<Currency>, auctionType: AuctionType): AuctionTokenAmounts {
   const auctionSupplyAmount = totalSupply.multiply(DEFAULT_AUCTION_SUPPLY_PERCENT)
   const lpPercent =
@@ -141,7 +153,18 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
             set((state) => ({ configureAuction: { ...state.configureAuction, maxDurationDays } }))
           },
           setRaiseCurrency: (raiseCurrency) => {
-            set((state) => ({ configureAuction: { ...state.configureAuction, raiseCurrency } }))
+            set((state) => {
+              if (state.configureAuction.raiseCurrency === raiseCurrency) {
+                return {}
+              }
+              return {
+                configureAuction: {
+                  ...state.configureAuction,
+                  raiseCurrency,
+                  floorPrice: '',
+                },
+              }
+            })
           },
           setFloorPrice: (floorPrice) => {
             set((state) => ({ configureAuction: { ...state.configureAuction, floorPrice } }))
@@ -194,7 +217,10 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
                 existingCommitted.totalSupply.equalTo(totalSupply)
               // When supply changes, slider percentages derived from the old supply become stale,
               // so we intentionally reset amounts to defaults rather than carry them forward.
-              const committed = isSameSupply ? existingCommitted : buildDefaultAmounts(totalSupply, activeAuctionType)
+              // When supply is unchanged, rebase with the new token to pick up name/symbol edits
+              const committed = isSameSupply
+                ? rebaseAmounts(existingCommitted, totalSupply.currency)
+                : buildDefaultAmounts(totalSupply, activeAuctionType)
 
               return {
                 configureAuction: {

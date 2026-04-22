@@ -63,7 +63,7 @@ export function useColorScheme(): ColorScheme {
       if (mediaQuery.addEventListener) {
         mediaQuery.addEventListener('change', handleChange)
 
-        // oxlint-disable-next-line consistent-return
+        // oxlint-disable-next-line typescript/consistent-return
         return (): void => {
           mediaQuery.removeEventListener('change', handleChange)
         }
@@ -73,7 +73,7 @@ export function useColorScheme(): ColorScheme {
       else if (mediaQuery.addListener) {
         mediaQuery.addListener(handleChange)
 
-        // oxlint-disable-next-line consistent-return
+        // oxlint-disable-next-line typescript/consistent-return
         return (): void => {
           mediaQuery.removeListener(handleChange)
         }

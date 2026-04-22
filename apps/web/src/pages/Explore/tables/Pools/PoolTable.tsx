@@ -73,18 +73,16 @@ interface PoolTableValues {
 function PoolDescription({
   token0,
   token1,
-  showMainnetNetworkLogo,
 }: {
   token0?: Token | TokenStats
   token1?: Token | TokenStats
   chainId: UniverseChainId
-  showMainnetNetworkLogo?: boolean
 }) {
   const currencies = [token0 ? gqlToCurrency(token0) : undefined, token1 ? gqlToCurrency(token1) : undefined]
 
   return (
     <Flex row gap="$gap8" alignItems="center" maxWidth="100%">
-      <DoubleCurrencyLogo currencies={currencies} size={24} showMainnetNetworkLogo={showMainnetNetworkLogo} />
+      <DoubleCurrencyLogo currencies={currencies} size={24} />
       <EllipsisText>
         {token0?.symbol}/{token1?.symbol}
       </EllipsisText>
@@ -283,7 +281,6 @@ export function PoolsTable({
               token0={unwrapToken(chainId, pool.token0) as TokenStats | Token | undefined}
               token1={unwrapToken(chainId, pool.token1) as TokenStats | Token | undefined}
               chainId={chainId}
-              showMainnetNetworkLogo={multichainTokenUxEnabled}
             />
           ),
           protocolVersion: pool.protocolVersion?.toLowerCase(),
@@ -314,7 +311,7 @@ export function PoolsTable({
           },
         }
       }) ?? [],
-    [convertFiatAmountFormatted, defaultChainId, filterString, multichainTokenUxEnabled, pools],
+    [convertFiatAmountFormatted, defaultChainId, filterString, pools],
   )
 
   const showLoadingSkeleton = loading || !!error

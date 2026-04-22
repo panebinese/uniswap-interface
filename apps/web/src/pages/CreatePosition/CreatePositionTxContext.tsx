@@ -56,6 +56,7 @@ import { useCreateLiquidityContext } from '~/pages/CreatePosition/CreateLiquidit
 import { PositionField } from '~/types/position'
 
 /** @internal - exported for testing */
+// oxlint-disable-next-line complexity
 export function generateCreatePositionTxRequest({
   protocolVersion,
   approvalCalldata,
@@ -171,6 +172,7 @@ interface CreatePositionTxContextType {
 
 const CreatePositionTxContext = createContext<CreatePositionTxContextType | undefined>(undefined)
 
+// oxlint-disable-next-line complexity
 export function CreatePositionTxContextProvider({ children }: PropsWithChildren): JSX.Element {
   const {
     protocolVersion,
@@ -349,7 +351,6 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
     isQueryEnabled,
   })
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +createCalldataQueryParams, +addLiquidityApprovalParams
   useEffect(() => {
     setRefetch(() => (approvalError ? approvalRefetch : createError ? createRefetch : undefined)) // this must set it as a function otherwise it will actually call createRefetch immediately
   }, [
@@ -413,7 +414,7 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
     token0PermitTransaction ||
     token1PermitTransaction,
   )
-  const { value: calculatedGasFee } = useTransactionGasFee({
+  const { displayValue: calculatedGasFee } = useTransactionGasFee({
     tx: createCalldata?.create,
     skip: !!actualGasFee || needsApprovals,
   })

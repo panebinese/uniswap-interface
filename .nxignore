@@ -36,7 +36,7 @@ node_modules
 .circleci
 
 # Ignore documentation
-docs
+/docs
 *.md
 
 # Ignore labs (experimental projects)

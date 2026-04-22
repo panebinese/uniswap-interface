@@ -1,25 +1,23 @@
 import { NetworkStatus } from '@apollo/client'
 import { isWarmLoadingStatus } from '@universe/api'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import isEqual from 'lodash/isEqual'
-import {
-  createContext,
-  Dispatch,
-  PropsWithChildren,
-  SetStateAction,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { createContext, Dispatch, PropsWithChildren, SetStateAction, useContext, useMemo, useState } from 'react'
 import { PollingInterval } from 'uniswap/src/constants/misc'
-import { useSortedPortfolioBalancesMultichain } from 'uniswap/src/features/dataApi/balances/balances'
+import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { PortfolioMultichainBalance } from 'uniswap/src/features/dataApi/types'
-import { HIDDEN_TOKEN_BALANCES_ROW, TokenBalanceListRow } from 'uniswap/src/features/portfolio/types'
+import { useSortedPortfolioBalancesMultichain } from 'uniswap/src/features/portfolio/balances/hooks'
+import { TokenBalanceListRow } from 'uniswap/src/features/portfolio/types'
+import { useMultichainBalancesListData } from 'uniswap/src/features/portfolio/useMultichainBalancesListData'
+import { useMultichainPortfolioMetricsAnalytics } from 'uniswap/src/features/portfolio/useMultichainPortfolioMetricsAnalytics'
+import { useTokenBalanceListMultichainExpansion } from 'uniswap/src/features/portfolio/useTokenBalanceListMultichainExpansion'
+import { useCurrencyIdToVisibility } from 'uniswap/src/features/transactions/selectors'
 import { CurrencyId } from 'uniswap/src/types/currency'
 
 type TokenBalanceListContextState = {
   balancesById: Record<string, PortfolioMultichainBalance> | undefined
+  expandedCurrencyIds: Set<string>
+  /** True only in the browser extension; mobile never inserts multichain child rows. */
+  multichainRowExpansionEnabled: boolean
   networkStatus: NetworkStatus
   refetch: (() => void) | undefined
   hiddenTokensCount: number
@@ -28,9 +26,12 @@ type TokenBalanceListContextState = {
   isWarmLoading: boolean
   rows: Array<TokenBalanceListRow>
   setHiddenTokensExpanded: Dispatch<SetStateAction<boolean>>
+  toggleExpanded: (currencyId: string) => void
   onPressToken?: (currencyId: CurrencyId) => void
   evmOwner?: Address
   svmOwner?: Address
+  error?: Error
+  dataUpdatedAt?: number
 }
 
 export const TokenBalanceListContext = createContext<TokenBalanceListContextState | undefined>(undefined)
@@ -54,7 +55,9 @@ export function TokenBalanceListContextProvider({
     balancesById,
     networkStatus,
     refetch,
-    loading: isPortfolioBalancesLoading,
+    loading,
+    error,
+    dataUpdatedAt,
   } = useSortedPortfolioBalancesMultichain({
     evmAddress: evmOwner,
     svmAddress: svmOwner,
@@ -62,37 +65,44 @@ export function TokenBalanceListContextProvider({
     requestMultichainFromBackend: multichainTokenUxEnabled,
   })
 
-  const hiddenTokensCount = sortedData?.hiddenBalances.length ?? 0
+  const { isTestnetModeEnabled } = useEnabledChains()
+  const ownerAddresses = useMemo(() => [evmOwner, svmOwner].filter((a): a is Address => !!a), [evmOwner, svmOwner])
+  const currencyIdToTokenVisibility = useCurrencyIdToVisibility(ownerAddresses)
 
-  const shouldShowHiddenTokens = !sortedData?.balances.length && !!sortedData?.hiddenBalances.length
+  const { sortedDataForList, balancesByIdForList, hiddenTokensCount } = useMultichainBalancesListData({
+    sortedData,
+    balancesById,
+    isTestnetModeEnabled,
+    currencyIdToTokenVisibility,
+  })
+
+  // oxlint-disable-next-line no-unnecessary-condition -- length can be undefined
+  const shouldShowHiddenTokens = !sortedDataForList?.balances?.length && !!sortedDataForList?.hiddenBalances?.length
 
   const [hiddenTokensExpanded, setHiddenTokensExpanded] = useState(shouldShowHiddenTokens)
 
-  const rowsRef = useRef<TokenBalanceListRow[]>(undefined)
-
-  const rows = useMemo<TokenBalanceListRow[]>(() => {
-    if (!sortedData) {
-      return []
-    }
-    const shownIds = sortedData.balances.map((b) => b.id)
-    const hiddenIds = sortedData.hiddenBalances.map((b) => b.id)
-    const newRowIds: TokenBalanceListRow[] = [
-      ...shownIds,
-      ...(hiddenIds.length ? [HIDDEN_TOKEN_BALANCES_ROW] : []),
-      ...(hiddenTokensExpanded ? hiddenIds : []),
-    ]
-    if (!rowsRef.current || !isEqual(rowsRef.current, newRowIds)) {
-      rowsRef.current = newRowIds
-    }
-    return rowsRef.current
-  }, [sortedData, hiddenTokensExpanded])
+  const { rows, expandedCurrencyIds, toggleExpanded, multichainRowExpansionEnabled } =
+    useTokenBalanceListMultichainExpansion({
+      sortedData: sortedDataForList,
+      hiddenTokensExpanded,
+    })
 
   const hasData = !!balancesById
   const isWarmLoading = hasData && isWarmLoadingStatus(networkStatus) && !isExternalProfile
+  // Show loading skeletons when loading OR when there's an outage with no cached data
+  const isPortfolioBalancesLoading = loading || (!!error && !sortedData)
+
+  useMultichainPortfolioMetricsAnalytics({
+    sortedDataForList,
+    isExternalProfile,
+    isPortfolioBalancesLoading,
+  })
 
   const state = useMemo<TokenBalanceListContextState>(
     (): TokenBalanceListContextState => ({
-      balancesById,
+      balancesById: balancesByIdForList,
+      expandedCurrencyIds,
+      multichainRowExpansionEnabled,
       hiddenTokensCount,
       hiddenTokensExpanded,
       isPortfolioBalancesLoading,
@@ -102,11 +112,16 @@ export function TokenBalanceListContextProvider({
       refetch,
       rows,
       setHiddenTokensExpanded,
+      toggleExpanded,
       evmOwner,
       svmOwner,
+      error,
+      dataUpdatedAt,
     }),
     [
-      balancesById,
+      balancesByIdForList,
+      expandedCurrencyIds,
+      multichainRowExpansionEnabled,
       hiddenTokensCount,
       hiddenTokensExpanded,
       isPortfolioBalancesLoading,
@@ -115,8 +130,11 @@ export function TokenBalanceListContextProvider({
       onPressToken,
       refetch,
       rows,
+      toggleExpanded,
       evmOwner,
       svmOwner,
+      error,
+      dataUpdatedAt,
     ],
   )
 

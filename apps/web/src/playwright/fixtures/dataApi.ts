@@ -62,6 +62,7 @@ function getListTransactionsMockPath({
     return defaultPath
   }
   // Only serve filtered mocks when using the full list_transactions mock (not empty or other variants)
+  // oxlint-disable-next-line no-shadow
   const base = path.basename(defaultPath, path.extname(defaultPath))
   if (base !== 'list_transactions') {
     return defaultPath

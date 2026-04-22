@@ -87,6 +87,9 @@
     },
     {
       "path": "./packages/trpc"
+    },
+    {
+      "path": "./packages/chains"
     }
   ]
 }

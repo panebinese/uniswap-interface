@@ -81,7 +81,6 @@ const InitialPriceInput = () => {
   }, [formattedDefaultInitialPrice, isInitialPriceDirty, setPriceRangeState])
 
   const { baseCurrency, quoteCurrency } = getBaseAndQuoteCurrencies(currencies.display, priceInverted)
-  // oxlint-disable-next-line react/exhaustive-deps -- +priceInverted
   useEffect(() => {
     try {
       if (initialPrice && baseCurrency && quoteCurrency) {
@@ -281,6 +280,7 @@ function RangeControl({ value, active }: { value: string; active: boolean }) {
   )
 }
 
+// oxlint-disable-next-line complexity
 export const SelectPriceRangeStep = ({
   positionInfo,
   onContinue,

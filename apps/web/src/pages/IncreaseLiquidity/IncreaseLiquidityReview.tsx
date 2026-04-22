@@ -35,6 +35,7 @@ import { useSetOverrideOneClickSwapFlag } from '~/pages/Swap/settings/OneClickSw
 import { liquiditySaga } from '~/state/sagas/liquidity/liquiditySaga'
 import { ExternalLink } from '~/theme/components/Links'
 
+// oxlint-disable-next-line complexity
 export function IncreaseLiquidityReview({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   const dispatch = useDispatch()
@@ -334,7 +335,7 @@ export function IncreaseLiquidityReview({ onClose }: { onClose: () => void }) {
                       {t('addLiquidity.shareOfPool')}
                     </Text>
                   ),
-                  Value: () => <Text>{formatPercent(poolTokenPercentage.toFixed())}</Text>,
+                  Value: () => <Text variant="body3">{formatPercent(poolTokenPercentage.toFixed())}</Text>,
                 }}
               />
             ) : null}

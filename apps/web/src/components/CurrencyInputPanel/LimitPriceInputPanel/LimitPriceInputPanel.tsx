@@ -79,6 +79,7 @@ export function LimitPriceInputPanel({ onCurrencySelect }: LimitPriceInputPanelP
   } = useLimitContext()
 
   const changeLimitPrice = useCallback(
+    // oxlint-disable-next-line no-shadow
     (limitPrice: string) => {
       // Omit parsing errors by checking if amount exceeds Number range limit
       if (!isSafeNumber(limitPrice)) {

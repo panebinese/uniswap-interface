@@ -98,6 +98,7 @@ function TokenInfo({
   )
 }
 
+// oxlint-disable-next-line complexity
 export function ReviewModal({
   modalName,
   headerTitle,
@@ -154,6 +155,7 @@ export function ReviewModal({
   }, [fee?.tickSpacing, minTick, maxTick, fullRange])
 
   const pricesAtTicks: [Maybe<Price<Currency, Currency>>, Maybe<Price<Currency, Currency>>] = useMemo(() => {
+    // oxlint-disable-next-line no-shadow
     let pricesAtTicks: [Maybe<Price<Currency, Currency>>, Maybe<Price<Currency, Currency>>] = [undefined, undefined]
     if (protocolVersion === ProtocolVersion.V4) {
       pricesAtTicks = [

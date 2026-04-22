@@ -13,6 +13,7 @@ interface BidOutOfRangeIndicatorProps {
   totalSupply?: string
   auctionTokenDecimals: number
   formatter: (amount: number) => string
+  onClick: () => void
 }
 
 /**
@@ -26,6 +27,7 @@ export function BidOutOfRangeIndicator({
   totalSupply,
   auctionTokenDecimals,
   formatter,
+  onClick,
 }: BidOutOfRangeIndicatorProps): JSX.Element {
   const { t } = useTranslation()
   const colors = useSporeColors()
@@ -49,6 +51,7 @@ export function BidOutOfRangeIndicator({
       px="$spacing8"
       gap="$spacing4"
       alignItems="center"
+      onPress={onClick}
       style={{
         left: '50%',
         transform: 'translateX(-50%)',
@@ -72,7 +75,7 @@ export function BidOutOfRangeIndicator({
 
       {/* Label and value */}
       <Text variant="body4" color="$neutral1" lineHeight={16}>
-        {t('toucan.bidDistribution.bidOutOfRange')}
+        {t('toucan.bidDistribution.yourBid')}
       </Text>
       <Text variant="body4" color="$neutral2" lineHeight={16}>
         {fdvDisplay} {fdvLabel}

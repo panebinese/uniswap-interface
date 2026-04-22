@@ -1,4 +1,3 @@
-/* oxlint-disable no-restricted-syntax */
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { expect, getTest, type Page } from '~/playwright/fixtures'
 import { getVisibleDropdownElementByTestId } from '~/playwright/fixtures/utils'

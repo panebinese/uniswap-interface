@@ -5,7 +5,6 @@ import { shortenAddress } from 'utilities/src/addresses'
 import { expect, type Page } from '~/playwright/fixtures'
 import { Mocks } from '~/playwright/mocks/mocks'
 
-// oxlint-disable-next-line multiline-comment-style
 /**
  * Mocks the Unitag API response for a specific address
  * @param page The Playwright page
@@ -41,7 +40,6 @@ export async function mockUnitagResponse({
  * @param page The Playwright page
  * @param mockPath Optional path to mock JSON (default: get_portfolio with tokens)
  */
-// oxlint-disable-next-line import/no-unused-modules
 export async function mockGetPortfolioResponse({
   page,
   mockPath = Mocks.DataApiService.get_portfolio,

@@ -1,8 +1,8 @@
+// oxlint-disable typescript/no-var-requires
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { DevSettings } from 'react-native'
 import { INCLUDE_PROTOTYPE_FEATURES, IS_E2E_TEST } from 'react-native-dotenv'
 import { useSelector } from 'react-redux'
@@ -75,7 +75,6 @@ import { ExternalProfileScreen } from 'src/screens/ExternalProfileScreen'
 import { FiatOnRampConnectingScreen } from 'src/screens/FiatOnRampConnecting'
 import { FiatOnRampScreen } from 'src/screens/FiatOnRampScreen'
 import { FiatOnRampServiceProvidersScreen } from 'src/screens/FiatOnRampServiceProviders'
-import { WrappedHomeScreen } from 'src/screens/HomeScreen/HomeScreen'
 import { ImportMethodScreen } from 'src/screens/Import/ImportMethodScreen'
 import { OnDeviceRecoveryScreen } from 'src/screens/Import/OnDeviceRecoveryScreen'
 import { OnDeviceRecoveryViewSeedPhraseScreen } from 'src/screens/Import/OnDeviceRecoveryViewSeedPhraseScreen'
@@ -96,6 +95,7 @@ import { ManualBackupScreen } from 'src/screens/Onboarding/ManualBackupScreen'
 import { NotificationsSetupScreen } from 'src/screens/Onboarding/NotificationsSetupScreen'
 import { SecuritySetupScreen } from 'src/screens/Onboarding/SecuritySetupScreen'
 import { WelcomeWalletScreen } from 'src/screens/Onboarding/WelcomeWalletScreen'
+import { PortfolioChartDetailsScreen } from 'src/screens/PortfolioChartDetailsScreen'
 import { ReceiveCryptoModal } from 'src/screens/ReceiveCryptoModal'
 import { SettingsCloudBackupPasswordConfirmScreen } from 'src/screens/SettingsCloudBackupPasswordConfirmScreen'
 import { SettingsCloudBackupPasswordCreateScreen } from 'src/screens/SettingsCloudBackupPasswordCreateScreen'
@@ -348,8 +348,6 @@ export function AppStackNavigator(): JSX.Element {
   const finishedOnboarding = useSelector(selectFinishedOnboarding)
   const navigation = useAppStackNavigation()
 
-  const isBottomTabsEnabled = useFeatureFlag(FeatureFlags.BottomTabs)
-
   useEffect(() => {
     // Adds a menu item to navigate to Storybook in debug builds
     if (__DEV__) {
@@ -372,12 +370,7 @@ export function AppStackNavigator(): JSX.Element {
         animation: 'slide_from_right',
       }}
     >
-      {finishedOnboarding && (
-        <AppStack.Screen
-          component={isBottomTabsEnabled ? TabsNavigator : WrappedHomeScreen}
-          name={MobileScreens.Home}
-        />
-      )}
+      {finishedOnboarding && <AppStack.Screen component={TabsNavigator} name={MobileScreens.Home} />}
       <AppStack.Screen
         component={OnboardingStackNavigator}
         name={MobileScreens.OnboardingStack}
@@ -386,6 +379,11 @@ export function AppStackNavigator(): JSX.Element {
             ? OnboardingEntryPoint.Sidebar.valueOf()
             : OnboardingEntryPoint.FreshInstallOrReplace.valueOf()
         }
+      />
+      <AppStack.Screen
+        component={PortfolioChartDetailsScreen}
+        name={MobileScreens.PortfolioChartDetails}
+        options={{ fullScreenGestureEnabled: false }}
       />
       <AppStack.Screen component={UnitagStackNavigator} name={MobileScreens.UnitagStack} />
       <AppStack.Screen component={ExternalProfileScreen} name={MobileScreens.ExternalProfile} />

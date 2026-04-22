@@ -767,6 +767,59 @@ const enumMemberNaming = {
   },
 }
 
+// ── no-tolowercase-address-currencyid ──────────────────────────────────
+
+const ADDRESS_NAME_RE =
+  /address|addr|token|contract|pool|currency|wallet|signer|account|recipient|sender|swapper|owner|hash|order|tx|transaction|txn/i
+const CURRENCY_NAME_RE = /currencyid|tokenid/i
+
+function getVariableName(node) {
+  if (node.type === 'Identifier') {
+    return node.name
+  }
+  if (node.type === 'MemberExpression' && node.property) {
+    if (node.property.type === 'Identifier') {
+      return node.property.name
+    }
+    if (node.property.type === 'Literal') {
+      return String(node.property.value)
+    }
+  }
+  return null
+}
+
+const noToLowerCaseAddressCurrencyId = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Disallow using .toLowerCase() on addresses or currencyIds, since Solana addresses are case-sensitive',
+    },
+    schema: [],
+    messages: {
+      noToLowerCaseAddress:
+        'Do not use .toLowerCase() on addresses. Use areAddressesEqual() or normalizeTokenAddressForCache() from packages/uniswap instead.',
+      noToLowerCaseCurrencyId:
+        'Do not use .toLowerCase() on currencyIds. Use areCurrencyIdsEqual() or normalizeCurrencyIdForMapLookup() from packages/uniswap instead.',
+    },
+  },
+  create(context) {
+    return {
+      'CallExpression[callee.property.name="toLowerCase"][arguments.length=0]'(node) {
+        const objectNode = node.callee.object
+        const variableName = getVariableName(objectNode)
+        if (!variableName) return
+
+        if (CURRENCY_NAME_RE.test(variableName)) {
+          context.report({ node, messageId: 'noToLowerCaseCurrencyId' })
+        } else if (ADDRESS_NAME_RE.test(variableName)) {
+          context.report({ node, messageId: 'noToLowerCaseAddress' })
+        }
+      },
+    }
+  },
+}
+
 // ── Plugin export ──────────────────────────────────────────────────────
 
 const plugin = {
@@ -782,6 +835,7 @@ const plugin = {
     'no-nested-component-definitions': noNestedComponentDefinitions,
     'jsx-prop-order': jsxPropOrder,
     'enum-member-naming': enumMemberNaming,
+    'no-tolowercase-address-currencyid': noToLowerCaseAddressCurrencyId,
   },
 }
 

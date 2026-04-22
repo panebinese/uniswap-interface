@@ -244,6 +244,8 @@ export interface TokenOptionItemProps {
   contextMenuVariant: TokenContextMenuVariant
   /** When provided on native, "Copy address" opens a multichain address bottom sheet. */
   multichainData?: MultichainData
+  /** Canonical name override for multichain tokens, used instead of currency.name (which may be chain-specific for native tokens). */
+  displayName?: string
 }
 
 function isLegacyTokenOptionItemProps(
@@ -266,6 +268,7 @@ const BaseTokenOptionItem = memo(function BaseTokenOptionItemInner(
     modalInfo,
     focusedRowControl,
     openContextMenu,
+    displayName,
   } = props
   const { currencyInfo } = option
   const { currency } = currencyInfo
@@ -290,7 +293,7 @@ const BaseTokenOptionItem = memo(function BaseTokenOptionItemInner(
           alwaysShowNetworkLogo={isSingleChainMultichainResult}
         />
       }
-      title={currency.name ?? currency.symbol ?? ''}
+      title={displayName ?? currency.name ?? currency.symbol ?? ''}
       subtitle={
         <Flex row alignItems="center" gap="$spacing8">
           <Text color="$neutral2" numberOfLines={1} variant="body3">

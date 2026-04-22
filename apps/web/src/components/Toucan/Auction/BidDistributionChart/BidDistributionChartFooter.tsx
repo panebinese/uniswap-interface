@@ -24,6 +24,7 @@ interface ChartFooterProps {
   groupingToggleDisabled?: boolean
   /** V2 combined chart mode: show legend on left, zoom on right */
   combinedMode?: boolean
+  onLearnMorePress?: () => void
 }
 
 type GroupingOption = 'grouped' | 'ungrouped'
@@ -42,7 +43,12 @@ const LegendDotDashed = ({ color }: LegendDotOutlineProps) => (
  * Shared chart footer component displaying auction progress.
  * Used by both ClearingPriceChart and BidDistributionChart tabs.
  */
-export const ChartFooter = ({ activeTab, groupingToggleDisabled = false, combinedMode = false }: ChartFooterProps) => {
+export const ChartFooter = ({
+  activeTab,
+  groupingToggleDisabled = false,
+  combinedMode = false,
+  onLearnMorePress,
+}: ChartFooterProps) => {
   const { formatPercent } = useLocalizationContext()
   const { t } = useTranslation()
   const colors = useSporeColors()
@@ -122,7 +128,7 @@ export const ChartFooter = ({ activeTab, groupingToggleDisabled = false, combine
   const isAuctionInProgress = progress.state === AuctionProgressState.IN_PROGRESS
   // Hide zoom controls only for clearing price chart during in-progress auctions
   const hideZoomForInProgressClearingPrice = isClearingPriceActive && isAuctionInProgress
-  const showZoomControls = !hideZoomForInProgressClearingPrice
+  const showZoomControls = combinedMode || !hideZoomForInProgressClearingPrice
   const isZoomDisabled = !isClearingPriceActive && isDistributionActive && groupTicksEnabled
 
   // In combined mode, the CombinedAuctionChart owns zoom state via clearingPriceZoomState
@@ -271,8 +277,13 @@ export const ChartFooter = ({ activeTab, groupingToggleDisabled = false, combine
       </Flex>
       <Flex my="$spacing16" pt="$spacing4" gap="$gap12" $sm={{ my: '$none', mt: '$spacing8' }}>
         <AuctionProgressBar percentage={progressPercentage} color={validTokenColor} />
-        <Flex row justifyContent="space-between">
-          <Text variant="body4" color="$neutral2">
+        <Flex
+          row
+          justifyContent="space-between"
+          onPress={onLearnMorePress}
+          cursor={onLearnMorePress ? 'pointer' : undefined}
+        >
+          <Text variant="body4" color="$neutral2" hoverStyle={{ color: onLearnMorePress ? '$neutral1' : '$neutral2' }}>
             {percentSoldLabel} {t('toucan.auction.ofSupplySold')}
           </Text>
         </Flex>

@@ -104,6 +104,7 @@ function getUnwrappedPoolToken({
     : [undefined, undefined]
 }
 
+// oxlint-disable-next-line complexity
 export default function PoolDetailsPage() {
   const { t } = useTranslation()
   const { poolAddress } = useParams<{ poolAddress: string }>()

@@ -67,7 +67,6 @@ export function SwapAndLimitContextProvider({
     }
   }, [initialInputCurrency, isUserSelectedToken, prefilledState, previousInitialInputCurrency])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +prefilledState
   useEffect(() => {
     if (!isUserSelectedToken && initialChainId && previousInitialChainId !== initialChainId) {
       setSelectedChainId(initialChainId)

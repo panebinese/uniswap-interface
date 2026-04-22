@@ -81,6 +81,7 @@ function ReviewRow({ label, children }: { label: string; children: React.ReactNo
   )
 }
 
+// oxlint-disable-next-line complexity
 export function ReviewLaunchStep() {
   const { t } = useTranslation()
   const tokenColor = useCreateAuctionTokenColor()
@@ -255,7 +256,7 @@ export function ReviewLaunchStep() {
             </Text>
           </ReviewRow>
 
-          <ReviewRow label={t('toucan.createAuction.step.configureAuction.raiseCurrency')}>
+          <ReviewRow label={t('toucan.details.raiseCurrency')}>
             <Flex row alignItems="center" gap="$spacing6">
               <CurrencyLogo hideNetworkLogo currencyInfo={raiseCurrencyInfo} size={CURRENCY_LOGO_SIZE} />
               <Text variant="body1" color="$neutral1">

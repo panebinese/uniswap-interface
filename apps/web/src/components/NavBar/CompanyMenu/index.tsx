@@ -29,11 +29,9 @@ export function CompanyMenu() {
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +popoverRef
   const closeMenu = useCallback(() => {
     popoverRef.current?.close()
   }, [popoverRef])
-  // oxlint-disable-next-line react/exhaustive-deps -- location dependency is sufficient for this effect
   useEffect(() => {
     // Immediately reset state to prevent flash during transitions
     setIsOpen(false)
@@ -53,7 +51,7 @@ export function CompanyMenu() {
           $platform-web={{ containerType: 'normal' }}
         >
           <Trace logPress element={ElementName.NavbarCompanyMenuLogo}>
-            <Link to="/?intro=true" style={{ textDecoration: 'none' }}>
+            <Link to="/?intro=true" onClick={(e) => e.stopPropagation()} style={{ textDecoration: 'none' }}>
               <Flex row alignItems="center" gap="$gap4" data-testid={TestID.NavUniswapLogo}>
                 <NavIcon />
                 {isLargeScreen && (

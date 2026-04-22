@@ -49,11 +49,11 @@ export enum FeatureFlags {
   UniswapXPriorityOrdersOptimism,
   UniswapXPriorityOrdersUnichain,
   UnitagsServiceV2,
+  UseUniversalRouterVersion211,
   ViemProviderEnabled,
   XLayer,
 
   // Wallet
-  BottomTabs,
   DisableFiatOnRampKorea,
   Eip5792Methods,
   EnableExportPrivateKeys,
@@ -74,6 +74,7 @@ export enum FeatureFlags {
   // Web
   AATestWeb,
   AuctionDetailsV2,
+  AuctionDetailsV2ActivityOnEnded,
   BatchedSwaps,
   CheckApprovalV2,
   ClaimFeesV2,
@@ -145,6 +146,7 @@ export const SHARED_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   [FeatureFlags.UniswapXPriorityOrdersOptimism, 'uniswapx_priority_orders_optimism'],
   [FeatureFlags.UniswapXPriorityOrdersUnichain, 'uniswapx_priority_orders_unichain'],
   [FeatureFlags.UnitagsServiceV2, 'unitags_service_v2'],
+  [FeatureFlags.UseUniversalRouterVersion211, 'use_ur_version_2.1.1'],
   [FeatureFlags.ViemProviderEnabled, 'viem_provider_enabled'],
   [FeatureFlags.XLayer, 'x_layer'],
 ])
@@ -155,6 +157,7 @@ export const WEB_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   ...SHARED_FEATURE_FLAG_NAMES,
   [FeatureFlags.AATestWeb, 'aatest_web'],
   [FeatureFlags.AuctionDetailsV2, 'auction_details_v2'],
+  [FeatureFlags.AuctionDetailsV2ActivityOnEnded, 'auction_details_v2_activity_on_ended'],
   [FeatureFlags.BatchedSwaps, 'batched_swaps'],
   [FeatureFlags.CheckApprovalV2, 'check_approval_v2'],
   [FeatureFlags.ClaimFeesV2, 'claim_fees_v2'],
@@ -182,7 +185,6 @@ export const WEB_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
 // Add in alphabetical order to decrease probability of merge conflicts.
 export const WALLET_FEATURE_FLAG_NAMES = new Map<FeatureFlags, string>([
   ...SHARED_FEATURE_FLAG_NAMES,
-  [FeatureFlags.BottomTabs, 'bottom_tabs'],
   [FeatureFlags.DisableFiatOnRampKorea, 'disable-fiat-onramp-korea'],
   [FeatureFlags.Eip5792Methods, 'eip_5792_methods'],
   [FeatureFlags.EnableExportPrivateKeys, 'enable-export-private-keys'],

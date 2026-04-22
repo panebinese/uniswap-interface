@@ -775,6 +775,7 @@ export async function transactionToActivity({
     const activity = { ...defaultFields, ...additionalFields }
 
     // Skip the canceled transaction override for UniswapX orders since they handle it specially
+    // oxlint-disable-next-line no-shadow
     const isUniswapX = details.typeInfo.type === TransactionType.Swap && isUniswapXActivity(details)
     const CancelledTransactionTitleTable = getCancelledTransactionTitleTable()
     if (details.status === TransactionStatus.Canceled && !isUniswapX) {

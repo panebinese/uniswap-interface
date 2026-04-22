@@ -8,13 +8,13 @@ import { useUrlContext } from 'uniswap/src/contexts/UrlContext'
 import { normalizeCurrencyIdForMapLookup } from 'uniswap/src/data/cache'
 import { TradeableAsset } from 'uniswap/src/entities/assets'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { usePortfolioBalances } from 'uniswap/src/features/dataApi/balances/balances'
 import { useAppFiatCurrency, useFiatCurrencyComponents } from 'uniswap/src/features/fiatCurrency/hooks'
 import { FiatOnRampCountryPicker } from 'uniswap/src/features/fiatOnRamp/FiatOnRampCountryPicker'
 import { useFiatOnRampAggregatorGetCountryQuery } from 'uniswap/src/features/fiatOnRamp/hooks/useFiatOnRampQueries'
 import { FiatOnRampCurrency, RampDirection } from 'uniswap/src/features/fiatOnRamp/types'
 import UnsupportedTokenModal from 'uniswap/src/features/fiatOnRamp/UnsupportedTokenModal'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { usePortfolioBalances } from 'uniswap/src/features/portfolio/balances/hooks'
 import { FiatOffRampEventName, FiatOnRampEventName, InterfacePageName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import Trace from 'uniswap/src/features/telemetry/Trace'
@@ -83,6 +83,7 @@ type BuyFormProps = {
   initialCurrency?: TradeableAsset | null
 }
 
+// oxlint-disable-next-line complexity
 function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
   const account = useAccount()
   const addresses = useActiveAddresses()
@@ -147,7 +148,6 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
   const DEFAULT_COUNTRY = useMemo(() => getCountryFromLocale(), [])
   const { data: countryResult } = useFiatOnRampAggregatorGetCountryQuery()
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +buyFormState.selectedCountry, +selectedCountry
   useEffect(() => {
     if (!selectedCountry) {
       // Use API result if available, otherwise default to locale-based country immediately
@@ -448,6 +448,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
       />
       {countryOptionsResult?.supportedCountries && (
         <CountryListModal
+          // oxlint-disable-next-line no-shadow
           onSelectCountry={(selectedCountry) => setBuyFormState((state) => ({ ...state, selectedCountry }))}
           countryList={countryOptionsResult.supportedCountries}
           isOpen={countryModalOpen}

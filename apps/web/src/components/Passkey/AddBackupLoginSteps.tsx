@@ -2,14 +2,13 @@ import type { UseMutationResult } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import { Button, Flex, Input, SpinningLoader, Text, TouchableArea } from 'ui/src'
-import { EnvelopeLock } from 'ui/src/components/icons/EnvelopeLock'
+import { Envelope } from 'ui/src/components/icons/Envelope'
 import { Eye } from 'ui/src/components/icons/Eye'
 import { EyeOff } from 'ui/src/components/icons/EyeOff'
-import { GoogleLogo } from 'ui/src/components/icons/GoogleLogo'
-import { InfoCircleFilled } from 'ui/src/components/icons/InfoCircleFilled'
-import { Lock } from 'ui/src/components/icons/Lock'
+import { GoogleLogoGradient } from 'ui/src/components/icons/GoogleLogoGradient'
+import { LockViewfinder } from 'ui/src/components/icons/LockViewfinder'
 import { Person } from 'ui/src/components/icons/Person'
-import { ShieldCheck } from 'ui/src/components/icons/ShieldCheck'
+import { Shield } from 'ui/src/components/icons/Shield'
 import { X } from 'ui/src/components/icons/X'
 import { useSporeColors } from 'ui/src/hooks/useSporeColors'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
@@ -49,7 +48,7 @@ export function MethodSelectStep({
       </Flex>
       <Flex gap="$gap16" alignItems="center" width="100%" px="$padding4">
         <IconBox>
-          <ShieldCheck size="$icon.24" color="$neutral1" />
+          <Shield size="$icon.24" color="$neutral1" />
         </IconBox>
         <Flex gap="$gap8" alignItems="center" maxWidth={360}>
           <Text variant="subheading1" textAlign="center">
@@ -70,7 +69,7 @@ export function MethodSelectStep({
           disabled={oauthLoading && oauthProvider !== 'apple'}
         />
         <OptionRow
-          icon={<GoogleLogo size="$icon.20" color="$neutral1" />}
+          icon={<GoogleLogoGradient size="$icon.20" />}
           label={t('account.passkey.backupLogin.add.google')}
           onPress={() => handleInitOAuth('google')}
           element={ElementName.AddBackupLoginGoogle}
@@ -78,7 +77,7 @@ export function MethodSelectStep({
           disabled={oauthLoading && oauthProvider !== 'google'}
         />
         <OptionRow
-          icon={<EnvelopeLock size="$icon.20" color="$neutral1" />}
+          icon={<Envelope size="$icon.20" color="$blueBase" />}
           label={t('account.passkey.backupLogin.add.email')}
           onPress={onSelectEmail}
           element={ElementName.AddBackupLoginEmail}
@@ -190,7 +189,7 @@ export function EmailCodeStep({
       <StepHeader onBack={handleBack} onClose={handleClose} />
       <Flex gap="$gap16" alignItems="center" width="100%">
         <IconBox>
-          <EnvelopeLock size="$icon.24" color="$accent1" />
+          <Envelope size="$icon.24" color="$neutral1" />
         </IconBox>
         <Flex gap="$gap8" alignItems="center" maxWidth={360}>
           <Text variant="subheading1" textAlign="center">
@@ -258,7 +257,7 @@ export function PasscodeIntroStep({
       </Flex>
       <Flex gap="$gap16" alignItems="center" width="100%" px="$padding4">
         <IconBox>
-          <ShieldCheck size="$icon.24" color="$neutral1" />
+          <Shield size="$icon.24" color="$neutral1" />
         </IconBox>
         <Flex gap="$gap8" alignItems="center" maxWidth={360}>
           <Text variant="subheading1" textAlign="center">
@@ -269,39 +268,22 @@ export function PasscodeIntroStep({
           </Text>
         </Flex>
       </Flex>
-      <Flex width="100%" borderWidth={1} borderColor="$surface3" borderRadius="$rounded20" overflow="hidden">
-        <Flex p="$padding16">
-          <BackupMethodSummary provider={oauthProvider} email={oauthProvider ? oauthEmail : email} size="sm" />
-        </Flex>
-        <Flex height={1} backgroundColor="$surface3" />
-        <Flex row gap="$gap12" alignItems="center" p="$padding16">
-          <Flex
-            height={32}
-            width={32}
-            backgroundColor="$surface2"
-            borderRadius="$rounded8"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <Lock size="$icon.16" color="$neutral2" />
-          </Flex>
-          <Flex flex={1}>
-            <Text variant="body3" color="$neutral2">
-              {t('account.passkey.backupLogin.passcodeIntro.passcodeLabel')}
-            </Text>
-          </Flex>
-          <Flex row gap="$gap4" alignItems="center">
-            <Text variant="body3" color="$neutral3">
-              {t('onboarding.home.intro.label.required')}
-            </Text>
-            <InfoCircleFilled size="$icon.16" color="$neutral3" />
-          </Flex>
-        </Flex>
+      <Flex
+        width="100%"
+        borderWidth={1}
+        borderColor="$surface3"
+        borderRadius="$rounded20"
+        p="$padding16"
+        shadowColor="rgba(0,0,0,0.03)"
+        shadowOffset={{ width: 0, height: 1 }}
+        shadowRadius={6}
+      >
+        <BackupMethodSummary provider={oauthProvider} email={oauthProvider ? oauthEmail : email} size="lg" />
       </Flex>
       <Trace logPress element={ElementName.AddBackupLoginSetPasscode}>
         <Flex row alignSelf="stretch">
           <Button variant="default" size="medium" onPress={onSetPasscode}>
-            {t('account.passkey.backupLogin.passcodeIntro.button')}
+            {t('common.button.continue')}
           </Button>
         </Flex>
       </Trace>
@@ -339,7 +321,7 @@ export function PasscodeStep({
       <StepHeader onBack={handleBack} onClose={handleClose} />
       <Flex gap="$gap16" alignItems="center" width="100%" px="$padding4">
         <IconBox>
-          <Lock size="$icon.24" color="$neutral1" />
+          <LockViewfinder size="$icon.24" color="$neutral1" />
         </IconBox>
         <Flex gap="$gap8" alignItems="center" maxWidth={360}>
           <Text variant="subheading1" textAlign="center">

@@ -44,7 +44,6 @@ export function ReportModal<T extends string>({
   const { keyboardHeight } = useBottomSheetSafeKeyboard()
 
   // Clear form whenever a new currency is selected
-  // oxlint-disable-next-line react/exhaustive-deps -- we intentionally retrigger on open/close
   useEffect(() => {
     setCheckedItems(new Set())
     setReportTexts(new Map())

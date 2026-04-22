@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-explicit-any -- Test utilities need flexible typing for generic render functions */
 import { InMemoryCache } from '@apollo/client'
 import type { EnhancedStore, PreloadedState } from '@reduxjs/toolkit'
 import { configureStore } from '@reduxjs/toolkit'

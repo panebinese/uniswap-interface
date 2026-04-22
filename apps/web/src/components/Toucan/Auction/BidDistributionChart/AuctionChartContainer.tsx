@@ -1,7 +1,7 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Flex, useIsDarkMode, useMedia } from 'ui/src'
+import { Flex, useIsDarkMode, useMedia } from 'ui/src'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import { logger } from 'utilities/src/logger/logger'
 import ErrorBoundary from '~/components/ErrorBoundary'
@@ -23,7 +23,6 @@ import {
 import { useAuctionStore } from '~/components/Toucan/Auction/store/useAuctionStore'
 import { getClearingPrice } from '~/components/Toucan/Auction/utils/clearingPrice'
 import { ToucanActionButton } from '~/components/Toucan/Shared/ToucanActionButton'
-import { MobileScreen, MobileScreenConfig } from '~/pages/Explore/ToucanToken'
 
 const PLACEHOLDER_HEIGHT = 400
 
@@ -78,7 +77,8 @@ const LazyCombinedAuctionChart = lazy(async () => {
 interface AuctionChartContainerProps {
   activeTab: BidDistributionChartTab
   onTabChange: (tab: BidDistributionChartTab) => void
-  onMobileScreenChange?: (config: MobileScreenConfig) => void
+  onShowBidFormModal?: () => void
+  onLearnMorePress?: () => void
 }
 
 /**
@@ -90,7 +90,12 @@ interface AuctionChartContainerProps {
  * - Tab switching between chart types
  * - Shared footer
  */
-export function AuctionChartContainer({ activeTab, onTabChange, onMobileScreenChange }: AuctionChartContainerProps) {
+export function AuctionChartContainer({
+  activeTab,
+  onTabChange,
+  onShowBidFormModal,
+  onLearnMorePress,
+}: AuctionChartContainerProps) {
   const isV2 = useFeatureFlag(FeatureFlags.AuctionDetailsV2)
   const { auctionDetails, auctionDetailsLoadState, auctionProgressState, isGraduated, currentBlockNumber } =
     useAuctionStore((state) => ({
@@ -116,7 +121,7 @@ export function AuctionChartContainer({ activeTab, onTabChange, onMobileScreenCh
     chainId: auctionDetails?.chainId,
   })
 
-  const { canPlaceBid, hasUserBids, showMobileWithdrawButton } = useBidFormState()
+  const { canPlaceBid, showMobileWithdrawButton } = useBidFormState()
 
   // Withdraw button state for $lg inline button (not $sm - that uses fixed bottom button)
   const {
@@ -192,37 +197,22 @@ export function AuctionChartContainer({ activeTab, onTabChange, onMobileScreenCh
               </Suspense>
             </ErrorBoundary>
           )}
-          <ChartFooter activeTab={activeTab} groupingToggleDisabled={groupingToggleDisabled} combinedMode />
-          {/* Mobile action buttons - only visible on $lg screens */}
+          <ChartFooter
+            activeTab={activeTab}
+            groupingToggleDisabled={groupingToggleDisabled}
+            onLearnMorePress={onLearnMorePress}
+            combinedMode
+          />
+          {/* Mobile action buttons - visible when layout stacks ($xl) */}
           <Flex
             display="none"
-            $lg={{ display: 'flex', mt: '$none' }}
+            $xl={{ display: 'flex', mt: '$none' }}
             $sm={{ mt: '$spacing8' }}
             gap="$spacing12"
             mt="$spacing16"
           >
-            {hasUserBids && (
-              <Button
-                flex={1}
-                emphasis="secondary"
-                onPress={() =>
-                  onMobileScreenChange?.({
-                    screen: MobileScreen.BID_FORM,
-                  })
-                }
-              >
-                {t('toucan.auction.myBids')}
-              </Button>
-            )}
             {!media.sm && canPlaceBid && (
-              <ToucanActionButton
-                label={t('toucan.bidForm.placeABid')}
-                onPress={() =>
-                  onMobileScreenChange?.({
-                    screen: MobileScreen.BID_FORM,
-                  })
-                }
-              />
+              <ToucanActionButton label={t('toucan.bidForm.placeABid')} onPress={() => onShowBidFormModal?.()} />
             )}
             {!media.sm && showMobileWithdrawButton && (
               <ToucanActionButton
@@ -283,39 +273,19 @@ export function AuctionChartContainer({ activeTab, onTabChange, onMobileScreenCh
         )}
         {/* ChartFooter is shared across all chart tabs */}
         <ChartFooter activeTab={activeTab} groupingToggleDisabled={groupingToggleDisabled} />
-        {/* Mobile action buttons - only visible on $lg screens */}
+        {/* Mobile action buttons - visible when layout stacks ($xl) */}
         <Flex
           display="none"
-          $lg={{ display: 'flex', mt: '$none' }}
+          $xl={{ display: 'flex', mt: '$none' }}
           $sm={{ mt: '$spacing8' }}
           gap="$spacing12"
           mt="$spacing16"
         >
-          {hasUserBids && (
-            <Button
-              flex={1}
-              emphasis="secondary"
-              onPress={() =>
-                onMobileScreenChange?.({
-                  screen: MobileScreen.BID_FORM,
-                })
-              }
-            >
-              {t('toucan.auction.myBids')}
-            </Button>
-          )}
-          {/* Show Place Bid button during auction ($lg but not $sm) */}
+          {/* Show Place Bid button during auction ($xl but not $sm) */}
           {!media.sm && canPlaceBid && (
-            <ToucanActionButton
-              label={t('toucan.bidForm.placeABid')}
-              onPress={() =>
-                onMobileScreenChange?.({
-                  screen: MobileScreen.BID_FORM,
-                })
-              }
-            />
+            <ToucanActionButton label={t('toucan.bidForm.placeABid')} onPress={() => onShowBidFormModal?.()} />
           )}
-          {/* Show Withdraw button after auction ($lg but not $sm - $sm uses fixed bottom button) */}
+          {/* Show Withdraw button after auction ($xl but not $sm - $sm uses fixed bottom button) */}
           {!media.sm && showMobileWithdrawButton && (
             <ToucanActionButton
               elementName={ElementName.AuctionWithdrawTokensButton}

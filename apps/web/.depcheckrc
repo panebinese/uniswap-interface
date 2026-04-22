@@ -9,6 +9,7 @@ ignores: [
     'buffer',
     'concurrently',
     'depcheck',
+    'oxlint',
     'http-server',
     'source-map-explorer',
     'swc-loader',

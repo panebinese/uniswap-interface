@@ -448,6 +448,7 @@ export function LiquidityPositionRangeChartLoader({
   )
 }
 
+// oxlint-disable-next-line complexity
 function LiquidityPositionRangeChart({
   version,
   quoteCurrency,

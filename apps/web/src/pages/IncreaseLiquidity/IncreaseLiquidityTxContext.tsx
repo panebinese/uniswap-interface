@@ -64,6 +64,7 @@ interface IncreasePositionContextType {
 
 const IncreaseLiquidityTxContext = createContext<IncreasePositionContextType | undefined>(undefined)
 
+// oxlint-disable-next-line complexity
 export function IncreaseLiquidityTxContextProvider({ children }: PropsWithChildren): JSX.Element {
   const positionInfo = useModalInitialState(ModalName.AddLiquidity)
 
@@ -301,7 +302,7 @@ export function IncreaseLiquidityTxContextProvider({ children }: PropsWithChildr
     return increaseCalldata?.dependentAmount
   }, [increaseCalldata, calldataError, fallbackDependentAmount, exactField])
 
-  const { value: calculatedGasFee } = useTransactionGasFee({ tx: increase, skip: !!actualGasFee })
+  const { displayValue: calculatedGasFee } = useTransactionGasFee({ tx: increase, skip: !!actualGasFee })
   const increaseGasFeeUsd = useUSDCurrencyAmountOfGasFee(
     toSupportedChainId(increaseCalldata?.increase?.chainId) ?? undefined,
     actualGasFee || calculatedGasFee,
@@ -316,7 +317,6 @@ export function IncreaseLiquidityTxContextProvider({ children }: PropsWithChildr
     )
   }, [approvalError, calldataError])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +token0Amount, +token1Amount
   useEffect(() => {
     setTransactionError(false)
   }, [token0Amount, token1Amount])

@@ -100,7 +100,7 @@ async function goToPasscodeIntroStep() {
 
 async function goToSetPasscodeStep() {
   await goToPasscodeIntroStep()
-  fireEvent.click(screen.getByText('Set passcode'))
+  fireEvent.click(screen.getAllByText('Continue').at(-1)!)
   expect(screen.getByText('Set your passcode')).toBeInTheDocument()
 }
 
@@ -412,7 +412,7 @@ describe('AddBackupLoginModal', () => {
       })
 
       // Navigate to SET_PASSCODE
-      fireEvent.click(screen.getByText('Set passcode'))
+      fireEvent.click(screen.getAllByText('Continue').at(-1)!)
 
       // Enter passcode
       pasteIntoFirstInput('5937')
@@ -438,7 +438,6 @@ describe('AddBackupLoginModal', () => {
 
       expect(screen.getByText('One last step')).toBeInTheDocument()
       expect(screen.getByText('test@example.com')).toBeInTheDocument()
-      expect(screen.getByText('Required')).toBeInTheDocument()
     })
 
     it('navigates to set passcode step when button clicked', async () => {

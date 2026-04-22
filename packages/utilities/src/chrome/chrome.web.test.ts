@@ -1,4 +1,3 @@
-/* oxlint-disable no-restricted-globals -- we need access to `chrome` in the global scope */
 import {
   getChrome,
   getChromeRuntime,

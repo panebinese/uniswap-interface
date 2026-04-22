@@ -30,7 +30,6 @@ export function PasskeyImportScreen({ navigation, route: { params } }: Props): J
     })
   })
 
-  // oxlint-disable-next-line react/exhaustive-deps -- We want to import the mnemonic only once
   useEffect(() => {
     const importAndGenerateAccount = async (): Promise<void> => {
       const mnemonic = await fetchSeedPhrase(params.passkeyCredential)

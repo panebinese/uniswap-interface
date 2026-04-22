@@ -100,7 +100,6 @@ function TraceInner({
   }, [parentTrace, screen, section, modal, element, page])
 
   // Log impression on mount for elements that are not part of the navigation tree
-  // oxlint-disable-next-line react/exhaustive-deps -- Impressions should only be logged on mount
   useEffect(() => {
     if (!devDoubleLogDisableMap[id] && logImpression && !isPartOfNavigationTree) {
       if (shouldLogScreen(directFromPage, (properties as ITraceContext | undefined)?.screen)) {

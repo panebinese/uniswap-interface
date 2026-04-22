@@ -68,7 +68,6 @@ export function NftsList({
   nextFetchPolicy,
   onRefetchReady,
   onLoadingStateChange,
-  showHeader = false,
   SearchInputComponent,
   searchInputTestId,
   headerTestId,
@@ -116,6 +115,7 @@ export function NftsList({
     hiddenNftsExpanded,
     hasNextPage,
   })
+  const showHeader = shownNfts.length !== 0 || isLoadingState || isErrorState
 
   const keyExtractor = (item: NFTItem | string): string =>
     typeof item === 'string' ? item : getNFTAssetKey(item.contractAddress ?? '', item.tokenId ?? '')

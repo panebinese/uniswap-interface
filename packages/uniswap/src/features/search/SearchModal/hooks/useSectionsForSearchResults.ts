@@ -162,7 +162,6 @@ export function useSectionsForSearchResults({
     return [...tokenAndPoolSections, ...(walletSearchResultsSection ?? [])]
   }, [tokenAndPoolSections, walletSearchResultsSection, shouldPrioritizeWallets, shouldShowWallets])
 
-  // oxlint-disable-next-line complexity
   return useMemo((): GqlResult<OnchainItemSection<SearchModalOption>[]> => {
     switch (activeTab) {
       case SearchTab.All:

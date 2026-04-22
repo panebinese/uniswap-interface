@@ -79,7 +79,6 @@ export function useIncreasePositionDependentAmountFallback({
     isQueryEnabled: isQueryEnabled && hasSimulateTransaction,
   })
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +queryParams
   useEffect(() => {
     setHasErrorResponse(!!calldataError)
   }, [calldataError, queryParams])
@@ -179,7 +178,6 @@ export function useCreatePositionDependentAmountFallback({
     isQueryEnabled: isQueryEnabled && hasSimulateTransaction,
   })
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +queryParams
   useEffect(() => {
     setHasErrorResponse(!!createError)
   }, [createError, queryParams])

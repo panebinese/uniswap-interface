@@ -46,4 +46,6 @@ export type TableProps<T extends RowData = unknown> = {
   hiddenRows?: T[]
   showHiddenRowsLabel?: string
   hideHiddenRowsLabel?: string
+  /** When true, shows native browser scrollbar instead of hiding it */
+  showScrollbar?: boolean
 }

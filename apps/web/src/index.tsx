@@ -32,7 +32,6 @@ import { StrictMode, useEffect, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Helmet, HelmetProvider } from 'react-helmet-async/lib/index'
 import { I18nextProvider } from 'react-i18next'
-// oxlint-disable-next-line no-restricted-imports -- configures Reanimated logger to suppress dev warnings while shared packages still use Reanimated
 import { configureReanimatedLogger } from 'react-native-reanimated'
 import { Provider } from 'react-redux'
 import { BrowserRouter, HashRouter, useLocation } from 'react-router'

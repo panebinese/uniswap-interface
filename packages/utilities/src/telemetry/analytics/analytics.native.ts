@@ -6,7 +6,6 @@ import {
   AnalyticsInitConfig,
   TestnetModeConfig,
   UserPropertyValue,
-  // oxlint-disable-next-line no-restricted-imports -- needed here
 } from 'utilities/src/telemetry/analytics/analytics'
 import {
   AMPLITUDE_NATIVE_TRACKING_OPTIONS,

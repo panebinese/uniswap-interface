@@ -52,25 +52,23 @@ export function useListTokensService(
     ],
   )
   const listTokensQueryKey = useMemo(
-    () => ['topTokens', chainIds, ...optionsKeySegment, backendSorting, multichainTokenUxEnabled] as const,
-    [chainIds, optionsKeySegment, backendSorting, multichainTokenUxEnabled],
+    () => ['topTokens', chainIds, ...optionsKeySegment, backendSorting] as const,
+    [chainIds, optionsKeySegment, backendSorting],
   )
   const legacyQueryKey = useMemo(
-    () => ['topTokens', 'legacy', chainIds, ...optionsKeySegment] as const,
-    [chainIds, optionsKeySegment],
+    () => ['topTokens', 'legacy', { multichain: multichainTokenUxEnabled }, chainIds, ...optionsKeySegment] as const,
+    [chainIds, multichainTokenUxEnabled, optionsKeySegment],
   )
 
   const legacyResult = useTopTokensLegacy({
     enabled: !backendSorting,
     options: effectiveOptions,
+    multichain: multichainTokenUxEnabled,
   })
   const getTokenStats = useEvent(() => legacyResult.topTokens)
 
-  const getSourceType = useEvent(() => {
-    if (!backendSorting) {
-      return 'legacy' as const
-    }
-    return multichainTokenUxEnabled ? ('backend_sorted_multichain' as const) : ('backend_sorted_legacy' as const)
+  const getSourceType = useEvent((): 'legacy' | 'backend_sorted' => {
+    return backendSorting ? 'backend_sorted' : 'legacy'
   })
 
   const listTokens = useEvent((params: ListTokensParams) => dataApiServiceClient.listTokens(params))
@@ -126,11 +124,8 @@ export function useListTokensService(
     const flat = backendSorting
       ? (data?.pages ?? []).flatMap((p) => p.multichainTokens)
       : (legacyData?.multichainTokens ?? [])
-    return processMultichainTokensForDisplay(flat, {
-      ...effectiveOptions,
-      chainId: multichainTokenUxEnabled && chainId !== undefined ? chainId : undefined,
-    })
-  }, [backendSorting, chainId, data?.pages, effectiveOptions, legacyData?.multichainTokens, multichainTokenUxEnabled])
+    return processMultichainTokensForDisplay(flat, effectiveOptions)
+  }, [backendSorting, data?.pages, effectiveOptions, legacyData?.multichainTokens])
 
   const loadMore = useInfiniteLoadMore({
     fetchNextPage,
@@ -139,8 +134,10 @@ export function useListTokensService(
     dataLength: topTokens.length,
   })
 
-  const isLoading = backendSorting ? isBackendLoading : legacyResult.isLoading || isLegacyQueryLoading
-  const isError = backendSorting ? !!backendError : !!legacyResult.isError || isLegacyQueryError
+  const legacyPathLoading = legacyResult.isLoading
+  const legacyPathError = legacyResult.isError
+  const isLoading = backendSorting ? isBackendLoading : legacyPathLoading || isLegacyQueryLoading
+  const isError = backendSorting ? !!backendError : !!legacyPathError || isLegacyQueryError
 
   return {
     topTokens,

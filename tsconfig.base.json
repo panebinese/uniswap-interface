@@ -57,7 +57,8 @@
       "@universe/logger/*": ["./packages/logger/*"],
       "@universe/react-query/*": ["./packages/react-query/*"],
       "@universe/analytics/*": ["./packages/analytics/*"],
-      "@universe/trpc/*": ["./packages/trpc/*"]
+      "@universe/trpc/*": ["./packages/trpc/*"],
+      "@universe/chains/*": ["./packages/chains/*"]
     }
   }
 }

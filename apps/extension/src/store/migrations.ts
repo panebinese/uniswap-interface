@@ -1,6 +1,3 @@
-/* oxlint-disable typescript/no-explicit-any -- Migration functions handle arbitrary state shapes from different versions */
-/* oxlint-disable typescript/explicit-function-return-type */
-
 import {
   migratePendingDappRequestsToRecord,
   migrateUnknownBackupAccountsToMaybeManualBackup,

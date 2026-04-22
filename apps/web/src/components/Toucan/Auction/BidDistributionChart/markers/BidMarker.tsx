@@ -106,9 +106,10 @@ export function BidMarker({ marker, bidTokenInfo, formatPrice, formatTokenAmount
   }
 
   return (
-    <Tooltip placement="left" delay={75} offset={{ mainAxis: 8 }}>
+    <Tooltip placement="right" delay={75} offset={{ mainAxis: 8 }}>
       <Tooltip.Trigger asChild>
         <Flex
+          group
           position="absolute"
           alignItems="center"
           justifyContent="center"
@@ -122,23 +123,21 @@ export function BidMarker({ marker, bidTokenInfo, formatPrice, formatTokenAmount
             zIndex: 1000,
           }}
         >
-          <AccountIcon address={address} size={MARKER_CONFIG.AVATAR_SIZE} />
+          <Flex opacity={0.54} $group-hover={{ opacity: 1 }} style={{ transition: 'opacity 0.15s ease' }}>
+            <AccountIcon address={address} size={MARKER_CONFIG.AVATAR_SIZE} />
+          </Flex>
           {showBadge && (
             <Flex
               position="absolute"
-              bottom={4}
-              right={-4}
-              backgroundColor="$surface1"
-              borderRadius="$roundedFull"
-              minWidth={12}
-              height={12}
-              px="$spacing2"
+              inset={0}
               alignItems="center"
               justifyContent="center"
-              borderWidth="$spacing1"
-              borderColor="$surface3"
+              borderRadius="$roundedFull"
+              backgroundColor="$scrim"
+              $group-hover={{ opacity: 0 }}
+              style={{ transition: 'opacity 0.15s ease' }}
             >
-              <Text variant="body4" fontSize={10} lineHeight={10} color="$neutral1">
+              <Text variant="body4" fontSize={8} lineHeight={8} color="$white" fontWeight="600">
                 {bids.length}
               </Text>
             </Flex>

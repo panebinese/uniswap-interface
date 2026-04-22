@@ -223,13 +223,13 @@ export default function useMultiChainPositions(account: string): UseMultiChainPo
 
   const fetchAllPositions = useCallback(async () => {
     positionsFetching.current = true
+    // oxlint-disable-next-line no-shadow
     const positions = (await Promise.all(chains.map(fetchPositionsForChain))).flat()
     positionsFetching.current = false
     setPositions(positions)
   }, [chains, fetchPositionsForChain, setPositions])
 
   // Fetches positions when existing positions are stale and the document has focus
-  // oxlint-disable-next-line react/exhaustive-deps -- +positionsFetching
   useEffect(() => {
     if (positionsFetching.current || cachedPositions?.stale === false) {
       return undefined
@@ -257,9 +257,7 @@ export default function useMultiChainPositions(account: string): UseMultiChainPo
         const fees = feeMap[key]
           ? [
               // We parse away from SDK/ethers types so fees can be multiplied by primitive number prices
-              // oxlint-disable-next-line typescript/no-unnecessary-condition
               parseFloat(CurrencyAmount.fromRawAmount(position.pool.token0, feeMap[key]?.[0].toString()).toExact()),
-              // oxlint-disable-next-line typescript/no-unnecessary-condition
               parseFloat(CurrencyAmount.fromRawAmount(position.pool.token1, feeMap[key]?.[1].toString()).toExact()),
             ]
           : undefined

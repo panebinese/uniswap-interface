@@ -132,7 +132,7 @@ export const SearchModalList = memo(function SearchModalListInner({
 
   const [focusedRowIndex, setFocusedRowIndex] = useState<number | undefined>()
 
-  // oxlint-disable-next-line consistent-return
+  // oxlint-disable-next-line typescript/consistent-return
   const renderItem = ({ item, section, rowIndex, index }: ItemRowInfo<SearchModalOption>): JSX.Element => {
     switch (item.type) {
       case OnchainItemListOptionType.Pool:
@@ -199,7 +199,7 @@ export const SearchModalList = memo(function SearchModalListInner({
             onPress={() => {
               registerSearchItem(item)
 
-              navigateToTokenDetails(item.currencyInfo.currencyId)
+              navigateToTokenDetails(item.currencyInfo.currencyId, searchFilters.searchChainFilter)
 
               sendSearchOptionItemClickedAnalytics({
                 item,
@@ -222,6 +222,7 @@ export const SearchModalList = memo(function SearchModalListInner({
               quantity: null,
               balanceUSD: undefined,
             }}
+            displayName={item.multichainResult.name}
             networkCount={item.multichainResult.tokens.length}
             contextMenuVariant={TokenContextMenuVariant.Search}
             multichainData={{
@@ -245,7 +246,7 @@ export const SearchModalList = memo(function SearchModalListInner({
             onPress={() => {
               registerSearchItem(item)
 
-              navigateToTokenDetails(item.primaryCurrencyInfo.currencyId)
+              navigateToTokenDetails(item.primaryCurrencyInfo.currencyId, searchFilters.searchChainFilter)
 
               sendSearchOptionItemClickedAnalytics({
                 item,
@@ -346,7 +347,7 @@ export const SearchModalList = memo(function SearchModalListInner({
   )
 })
 
-// oxlint-disable-next-line consistent-return
+// oxlint-disable-next-line typescript/consistent-return
 function key(item: SearchModalOption): string {
   switch (item.type) {
     case OnchainItemListOptionType.Pool:

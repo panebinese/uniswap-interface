@@ -126,7 +126,6 @@ export function AdaptiveDropdown({
   const [flipVertical, setFlipVertical] = useState(false)
   const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number | undefined>(undefined)
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +dropdownNode, +node
   useEffect(() => {
     if (isOpen && !isSheet && node.current) {
       const rect = node.current.getBoundingClientRect()

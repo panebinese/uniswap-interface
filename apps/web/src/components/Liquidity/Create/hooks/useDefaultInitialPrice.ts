@@ -36,7 +36,6 @@ export function useDefaultInitialPrice({
   })
 
   // Reset price when currencyIn or currencyOut changes
-  // oxlint-disable-next-line react/exhaustive-deps -- +currencyIn, +currencyOut
   useEffect(() => {
     setPrice(undefined)
   }, [currencyIn, currencyOut])

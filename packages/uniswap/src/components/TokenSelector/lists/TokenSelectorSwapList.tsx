@@ -20,7 +20,6 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { ClearRecentSearchesButton } from 'uniswap/src/features/search/ClearRecentSearchesButton'
 import { isMobileApp } from 'utilities/src/platform'
 
-// oxlint-disable-next-line complexity
 function useTokenSectionsForSwap({
   addresses,
   chainFilter,

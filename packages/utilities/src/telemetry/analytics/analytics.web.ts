@@ -7,8 +7,11 @@ import {
   AnalyticsInitConfig,
   TestnetModeConfig,
   UserPropertyValue,
-  // oxlint-disable-next-line no-restricted-imports -- needed here
 } from 'utilities/src/telemetry/analytics/analytics'
+import {
+  AnalyticsDebugBridge,
+  captureAnalyticsDebugEvent,
+} from 'utilities/src/telemetry/analytics/analyticsDebugCapture'
 import {
   ALLOW_ANALYTICS_ATOM_KEY,
   AMPLITUDE_SHARED_TRACKING_OPTIONS,
@@ -24,6 +27,7 @@ let testnetMode: boolean = false
 let testnetModeConfig: TestnetModeConfig | undefined
 let commitHash: Maybe<string>
 let userId: Maybe<string>
+let debugBridge: AnalyticsDebugBridge | undefined
 
 async function setAnalyticsAtomDirect(allowed: boolean): Promise<void> {
   try {
@@ -65,9 +69,16 @@ try {
 }
 
 export const analytics: Analytics = {
-  async init({ transportProvider, allowed, initHash, userIdGetter }: AnalyticsInitConfig): Promise<void> {
+  async init({
+    transportProvider,
+    allowed,
+    initHash,
+    userIdGetter,
+    debugBridge: bridge,
+  }: AnalyticsInitConfig): Promise<void> {
     // Set properties
     commitHash = initHash
+    debugBridge = bridge
     await setAnalyticsAtomDirect(allowed)
 
     try {
@@ -129,6 +140,11 @@ export const analytics: Analytics = {
     if (processedTestnetEvent) {
       const { eventName: processedEventName, eventProperties: processedEventProperties } = processedTestnetEvent
       loggers.sendEvent(processedEventName, processedEventProperties)
+      captureAnalyticsDebugEvent({
+        bridge: debugBridge,
+        eventName: processedEventName,
+        properties: processedEventProperties,
+      })
       track(processedEventName, processedEventProperties)
     }
   },

@@ -1,8 +1,14 @@
 import { useDispatch } from 'react-redux'
-import { OnchainItemListOptionType, PoolOption, SearchModalOption } from 'uniswap/src/components/lists/items/types'
+import {
+  MultichainTokenOption,
+  OnchainItemListOptionType,
+  PoolOption,
+  SearchModalOption,
+} from 'uniswap/src/components/lists/items/types'
 import { getNativeAddress } from 'uniswap/src/constants/addresses'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import {
+  MultichainTokenSearchHistoryResult,
   PoolSearchHistoryResult,
   SearchHistoryResultType,
   TokenSearchHistoryResult,
@@ -25,7 +31,7 @@ export function useAddToSearchHistory(): {
         dispatch(addToSearchHistory({ searchResult: currencyInfoToTokenSearchHistoryResult(item.currencyInfo) }))
         break
       case OnchainItemListOptionType.MultichainToken:
-        dispatch(addToSearchHistory({ searchResult: currencyInfoToTokenSearchHistoryResult(item.primaryCurrencyInfo) }))
+        dispatch(addToSearchHistory({ searchResult: multichainTokenOptionToSearchHistoryResult(item) }))
         break
       case OnchainItemListOptionType.WalletByAddress:
       case OnchainItemListOptionType.Unitag:
@@ -58,6 +64,18 @@ function poolOptionToSearchHistoryResult(item: PoolOption): PoolSearchHistoryRes
     token1CurrencyId: token1CurrencyInfo.currencyId,
     protocolVersion,
     feeTier,
+  }
+}
+
+function multichainTokenOptionToSearchHistoryResult(item: MultichainTokenOption): MultichainTokenSearchHistoryResult {
+  const { multichainResult } = item
+  return {
+    type: SearchHistoryResultType.MultichainToken,
+    multichainId: multichainResult.id,
+    name: multichainResult.name,
+    symbol: multichainResult.symbol,
+    logoUrl: multichainResult.logoUrl ?? undefined,
+    tokenCurrencyIds: multichainResult.tokens.map((t) => t.currencyId),
   }
 }
 

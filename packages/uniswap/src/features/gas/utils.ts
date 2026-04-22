@@ -289,3 +289,11 @@ export function hasGasEstimationFailed(isTransactionRequest: boolean, gasFeeResu
     isTransactionRequest && !!gasFeeResult && !gasFeeResult.isLoading && (!!gasFeeResult.error || !gasFeeResult.value)
   )
 }
+
+// 20% gas buffer to avoid out-of-gas failures
+const GAS_BUFFER_NUMERATOR = BigInt(12)
+const GAS_BUFFER_DENOMINATOR = BigInt(10)
+
+export function applyGasBuffer(gas: bigint): bigint {
+  return (gas * GAS_BUFFER_NUMERATOR) / GAS_BUFFER_DENOMINATOR
+}

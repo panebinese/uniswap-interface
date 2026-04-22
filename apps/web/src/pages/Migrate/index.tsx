@@ -187,7 +187,6 @@ function MigrateInner({
     currency1Amount.currency,
   ])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +setIsReviewModalOpen
   const priceRangeProps = useMemo(() => {
     return {
       positionInfo,

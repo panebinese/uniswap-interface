@@ -1,3 +1,4 @@
+import { MARKER_CONFIG } from '~/components/Toucan/Auction/BidDistributionChart/constants'
 import type { MarkerPosition } from '~/components/Toucan/Auction/BidDistributionChart/markers/types'
 import { fromQ96ToDecimalWithTokenDecimals } from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
 import type { UserBid } from '~/components/Toucan/Auction/store/types'
@@ -72,11 +73,12 @@ export function computeMarkerPositions({
   // Convert groups to marker positions, filtering to visible area
   const markers: MarkerPosition[] = []
   for (const group of groups) {
-    if (group.y >= -12 && group.y <= chartAreaHeight + 12) {
+    const halfAvatar = MARKER_CONFIG.AVATAR_SIZE / 2
+    if (group.y >= -MARKER_CONFIG.AVATAR_SIZE && group.y <= chartAreaHeight + MARKER_CONFIG.AVATAR_SIZE) {
       markers.push({
         id: group.bids[0].maxPrice,
-        left: 14,
-        top: group.y - 12,
+        left: halfAvatar,
+        top: group.y - halfAvatar,
         address: address || group.bids[0]?.walletId || '',
         bids: group.bids,
         bidRangeMap: group.bidRangeMap,

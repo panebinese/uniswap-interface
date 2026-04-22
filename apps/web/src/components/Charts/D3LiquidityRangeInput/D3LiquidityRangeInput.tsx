@@ -32,6 +32,7 @@ const MIN_DATA_POINTS = 1
 /**
  * Chart input for selecting the min/max prices for a liquidity position.
  */
+// oxlint-disable-next-line complexity
 export function D3LiquidityRangeInput({
   baseCurrency,
   quoteCurrency,
@@ -212,17 +213,20 @@ export function D3LiquidityRangeInput({
       return rawTicks
     }
     // Negate ticks and liquidityNet, then reverse to restore ascending order.
-    return rawTicks
-      ?.map((t) =>
-        t
-          ? {
-              ...t,
-              tick: t.tick !== undefined ? -t.tick : undefined,
-              liquidityNet: t.liquidityNet ? String(-BigInt(t.liquidityNet)) : t.liquidityNet,
-            }
-          : t,
-      )
-      .reverse()
+    return (
+      rawTicks
+        // oxlint-disable-next-line no-shadow
+        ?.map((t) =>
+          t
+            ? {
+                ...t,
+                tick: t.tick !== undefined ? -t.tick : undefined,
+                liquidityNet: t.liquidityNet ? String(-BigInt(t.liquidityNet)) : t.liquidityNet,
+              }
+            : t,
+        )
+        .reverse()
+    )
   }, [rawTicks, priceInverted])
 
   return (

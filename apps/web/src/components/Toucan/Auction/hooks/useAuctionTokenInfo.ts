@@ -58,26 +58,12 @@ export function useAuctionTokenInfo(
 
   // Construct tokenInfo from either GraphQL or on-chain data
   const tokenInfo = useMemo((): CurrencyInfo | undefined => {
-    // If we have GraphQL data, use it (with potential overrides)
+    // If we have GraphQL data, use it (with potential logo override)
     if (currencyInfo) {
-      const hasLogoOverride = !!metadataOverride?.logoUrl
-      const hasNameOverride = !!metadataOverride?.tokenName || !!metadataOverride?.tokenSymbol
-
-      if (hasLogoOverride || hasNameOverride) {
-        const overriddenCurrency = hasNameOverride
-          ? buildCurrency({
-              chainId: currencyInfo.currency.chainId,
-              address: currencyInfo.currency.isToken ? currencyInfo.currency.address : undefined,
-              decimals: currencyInfo.currency.decimals,
-              symbol: metadataOverride.tokenSymbol ?? currencyInfo.currency.symbol,
-              name: metadataOverride.tokenName ?? currencyInfo.currency.name,
-            })
-          : undefined
-
+      if (metadataOverride?.logoUrl) {
         return {
           ...currencyInfo,
-          ...(overriddenCurrency && { currency: overriddenCurrency }),
-          ...(hasLogoOverride && { logoUrl: metadataOverride.logoUrl }),
+          logoUrl: metadataOverride.logoUrl,
         }
       }
       return currencyInfo
@@ -89,8 +75,8 @@ export function useAuctionTokenInfo(
         chainId,
         address: tokenAddress,
         decimals: tokenMetadata.decimals ?? 18,
-        symbol: metadataOverride?.tokenSymbol ?? tokenMetadata.symbol,
-        name: metadataOverride?.tokenName ?? tokenMetadata.name,
+        symbol: tokenMetadata.symbol,
+        name: tokenMetadata.name,
       })
 
       if (!currency) {

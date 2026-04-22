@@ -60,7 +60,7 @@ export function createLiquidityBarsOverlayRenderer({
         const { tickScale } = context
 
         // Convert Y position to tick using linear scale
-        const hoveredTickValue = tickScale.yToTick(y)
+        const hoveredTickValue = tickScale.axisToTick(y)
 
         // Use rendered buckets from state (computed by LiquidityBarsRenderer)
         const { renderedBuckets } = getState()
@@ -148,8 +148,8 @@ export function createLiquidityBarsOverlayRenderer({
       const { tickScale, tickSpacing } = context
 
       // Convert Y positions directly to ticks
-      const startTick = tickScale.yToTick(startY)
-      const endTick = tickScale.yToTick(endY)
+      const startTick = tickScale.axisToTick(startY)
+      const endTick = tickScale.axisToTick(endY)
 
       // Floor the lower tick to include its bucket, ceil the upper tick to include its bucket
       const lowerTick = Math.min(startTick, endTick)
@@ -224,7 +224,7 @@ export function createLiquidityBarsOverlayRenderer({
         .drag<SVGRectElement, unknown>()
         .on('start', (event) => {
           const { tickScale } = context
-          const tickValue = tickScale.yToTick(event.y)
+          const tickValue = tickScale.axisToTick(event.y)
 
           setChartState({
             dragStartY: event.y,
@@ -236,7 +236,7 @@ export function createLiquidityBarsOverlayRenderer({
         })
         .on('drag', (event) => {
           const { tickScale } = context
-          const tickValue = tickScale.yToTick(event.y)
+          const tickValue = tickScale.axisToTick(event.y)
 
           setChartState({
             dragCurrentTick: createDragTickEntry(tickValue),

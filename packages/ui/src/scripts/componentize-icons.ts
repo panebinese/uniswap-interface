@@ -46,7 +46,9 @@ async function createSVGComponents(dirs: DirectoryPair, skipExisting: boolean): 
   ensureDirSync(dirs.output)
 
   let indexFile = ``
-  const fileNames = readdirSync(dirs.input).filter((name: string) => name.endsWith('.svg'))
+  const fileNames = readdirSync(dirs.input)
+    .filter((name: string) => name.endsWith('.svg'))
+    .sort()
 
   for (const fileName of fileNames) {
     const className = generateClassName(fileName)
@@ -77,6 +79,7 @@ async function createSVGComponents(dirs: DirectoryPair, skipExisting: boolean): 
     .map((name: string) => path.basename(name, '.tsx'))
     .filter((name: string) => !generatedClassNames.has(name))
     .filter((name: string) => name !== 'index' && name !== 'exported')
+    .sort()
 
   for (const className of existingComponents) {
     indexFile += `\nexport * from './${className}'`
@@ -175,7 +178,10 @@ function generateSVGComponentString(svg: string, fileName: string): string {
     .replace(/<\/stop/g, '</Stop')
     .replace(/<clipPath/g, '<ClipPath')
     .replace(/<\/clipPath/g, '</ClipPath')
+    .replace(/<mask/g, '<Mask')
+    .replace(/<\/mask/g, '</Mask')
     .replace(/px/g, '')
+    .replace(/style="mask-type:luminance"/g, "style={{ maskType: 'luminance' }}")
 
   const foundFills = Array.from(parsedSvgToReact.matchAll(/fill="(#[a-z0-9]+)"/gi)).flat()
   const defaultFill = foundFills[1]
@@ -191,6 +197,7 @@ G,
 LinearGradient,
 RadialGradient,
 Line,
+Mask,
 Path,
 Polygon,
 Polyline,

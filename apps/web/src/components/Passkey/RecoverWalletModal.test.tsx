@@ -36,6 +36,12 @@ vi.mock('uniswap/src/features/passkey/embeddedWallet', () => ({
   registerNewPasskey: vi.fn(),
 }))
 
+vi.mock('uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient', () => ({
+  useUnitagsApiClient: () => ({
+    fetchAddress: vi.fn().mockResolvedValue({ username: null }),
+  }),
+}))
+
 vi.mock('uniswap/src/features/telemetry/send', () => ({
   sendAnalyticsEvent: vi.fn(),
 }))

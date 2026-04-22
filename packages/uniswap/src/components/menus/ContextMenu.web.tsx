@@ -112,11 +112,11 @@ export function ContextMenu({
       placement={
         isPlacementAbove
           ? isPlacementRight
-            ? 'top-start' // above & to the right
-            : 'top-end' // above & to the left
+            ? 'top-start'
+            : 'top-end'
           : isPlacementRight
-            ? 'bottom-start' // below & to the right
-            : 'bottom-end' // below & to the left
+            ? 'bottom-start'
+            : 'bottom-end'
       }
       offset={{
         mainAxis: y + (isPlacementAbove ? -offsetY : offsetY),

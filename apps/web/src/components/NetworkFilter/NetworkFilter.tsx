@@ -120,6 +120,7 @@ export function NetworkFilter({
       if (!isSupportedChainCallback(chainId)) {
         return null
       }
+      // oxlint-disable-next-line no-shadow
       const chainInfo = getChainInfo(chainId)
       const supported = isBackendSupportedChainId(chainId)
 
@@ -172,7 +173,7 @@ export function NetworkFilter({
           alignRight={position === 'right'}
         >
           <ScrollView>
-            <Flex p="$spacing8" pr="$none">
+            <Flex p="$spacing8">
               {showMultichainOption && (
                 <TableNetworkItem
                   chainInfo={null}

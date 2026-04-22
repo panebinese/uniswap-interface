@@ -18,8 +18,8 @@ import {
   NUMBER_OF_RESULTS_MEDIUM,
   NUMBER_OF_RESULTS_SHORT,
 } from 'uniswap/src/features/search/SearchModal/constants'
+import { useMultichainTrendingTokenRankings } from 'uniswap/src/features/search/SearchModal/hooks/useMultichainTrendingTokenRankings'
 import { useRecentlySearchedOptions } from 'uniswap/src/features/search/SearchModal/hooks/useRecentlySearchedOptions'
-import { useSearchMultichainListTokens } from 'uniswap/src/features/search/SearchModal/hooks/useSearchMultichainListTokens'
 import { SearchTab } from 'uniswap/src/features/search/SearchModal/types'
 import { isMobileApp, isWebApp, isWebPlatform } from 'utilities/src/platform'
 
@@ -65,7 +65,7 @@ export function useSectionsForNoQuerySearch({
     error: multichainTokensError,
     refetch: refetchMultichainTokens,
     loading: multichainTokensLoading,
-  } = useSearchMultichainListTokens({
+  } = useMultichainTrendingTokenRankings({
     pageSize: numberOfTrendingTokens,
     skip: skipTrendingTokensQuery || !isMultichainPath,
   })
@@ -117,7 +117,6 @@ export function useSectionsForNoQuerySearch({
     options: favoriteWalletsOptions,
   })
 
-  // oxlint-disable-next-line complexity
   return useMemo((): GqlResult<OnchainItemSection<SearchModalOption>[]> => {
     let sections: OnchainItemSection<SearchModalOption>[] = []
 

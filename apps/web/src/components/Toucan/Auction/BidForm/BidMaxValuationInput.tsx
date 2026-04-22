@@ -1,3 +1,4 @@
+// oxlint-disable-next-line no-restricted-imports -- Used outside React component context where useTranslation is not available
 import { t } from 'i18next'
 import { useCallback } from 'react'
 import { Flex, Text } from 'ui/src'
@@ -28,14 +29,12 @@ export function BidMaxValuationInput({ label, field, tokenColor, disabled }: Bid
     currencyInfo,
     usdValue,
     value,
-    tokenValue,
     tokenValueQ96,
     bidTokenSymbol,
     isFiatMode,
     error,
     errorDetails,
     onChange,
-    onTokenValueChange,
     onTokenValueQ96Change,
     onBlur,
     onToggleFiatMode,
@@ -69,8 +68,6 @@ export function BidMaxValuationInput({ label, field, tokenColor, disabled }: Bid
         allowOverflow
         panelAccessory={
           <BidMaxValuationSlider
-            value={tokenValue}
-            onChange={onTokenValueChange}
             valueQ96={tokenValueQ96}
             onChangeQ96={onTokenValueQ96Change}
             bidTokenDecimals={bidTokenDecimals}

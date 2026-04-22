@@ -115,7 +115,6 @@ export const v4Schema = {
   ...v3Schema,
 }
 
-// oxlint-disable-next-line no-unused-vars -- Destructuring for schema migration
 const { balances, ...restV4Schema } = v4Schema
 delete restV4Schema.favorites.followedAddresses
 
@@ -207,7 +206,6 @@ export const v29Schema = { ...v28Schema }
 
 const v30Schema = { ...v29Schema }
 
-// oxlint-disable-next-line no-unused-vars -- Destructuring for schema migration
 const { tokenLists, ...v31SchemaIntermediate } = { ...v30Schema }
 export const v31Schema = v31SchemaIntermediate
 
@@ -267,7 +265,6 @@ delete v38SchemaIntermediate.experiments
 
 export const v39Schema = { ...v38SchemaIntermediate }
 
-// oxlint-disable-next-line no-unused-vars -- walletConnect removed in schema migration
 const { walletConnect, ...v39SchemaIntermediate } = { ...v39Schema }
 
 export const v40Schema = { ...v39SchemaIntermediate }

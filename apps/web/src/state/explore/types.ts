@@ -6,6 +6,14 @@ import { FeeData as CreatePositionFeeData } from '~/components/Liquidity/Create/
 
 type PricePoint = { timestamp: number; value: number }
 
+export type LegacyExploreStatChainToken = {
+  chainId: number
+  address: string
+  decimals?: number
+  isBridged?: boolean
+  volume1d?: number
+}
+
 /** Data-only shape for token stats (display/API). Plain type so plain objects satisfy it without cast. */
 export type TokenStat = Omit<
   PlainMessage<TokenStats>,
@@ -16,6 +24,7 @@ export type TokenStat = Omit<
   feeData?: GraphQLApi.FeeData
   /** Stable key for sparkline/cache/row: multichainId when from multichain, normalized address when single-chain. */
   id?: string
+  chainTokens?: LegacyExploreStatChainToken[]
 }
 
 type PoolStatWithoutMethods = Omit<

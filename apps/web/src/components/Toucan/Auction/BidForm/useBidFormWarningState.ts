@@ -1,11 +1,11 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
 import { getChainInfo, TOUCAN_AUCTION_SUPPORTED_CHAINS } from 'uniswap/src/features/chains/chainInfo'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { isNativeCurrencyAddress } from 'uniswap/src/utils/currencyId'
 import { zeroAddress } from 'viem'
-import { AuctionProgressState, UserBid } from '~/components/Toucan/Auction/store/types'
+import { AuctionProgressState, type UserBid } from '~/components/Toucan/Auction/store/types'
 
 interface UseBidFormWarningStateParams {
   chainId?: UniverseChainId

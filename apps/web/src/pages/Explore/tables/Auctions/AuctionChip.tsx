@@ -33,14 +33,14 @@ export function AuctionChip({
 
   const chainId = auction.auction?.chainId
   const tokenAddress = auction.auction?.tokenAddress
-  const metadataOverride = chainId && tokenAddress ? getAuctionMetadata({ chainId, tokenAddress }) : undefined
-  const tokenName = metadataOverride?.tokenName ?? auction.auction?.tokenName
-  const tokenSymbol = metadataOverride?.tokenSymbol ?? auction.auction?.tokenSymbol
+  const tokenName = auction.auction?.tokenName
+  const tokenSymbol = auction.auction?.tokenSymbol
 
   const projectedFdv = computeProjectedFdvTableValue({ auction, auctionTokenUsdPrice })
 
   const address = auction.auction?.address
-  const logoUrl = metadataOverride?.logoUrl ?? auction.logoUrl
+  const logoOverride = chainId && tokenAddress ? getAuctionMetadata({ chainId, tokenAddress })?.logoUrl : undefined
+  const logoUrl = logoOverride ?? auction.logoUrl
 
   // Color extraction logic
   const { tokenColor, tokenColorLoading } = useSrcColor({
@@ -53,7 +53,6 @@ export function AuctionChip({
   const lockedTokenColorRef = useRef<string | null>(null)
 
   // Reset locked color when logoUrl changes
-  // oxlint-disable-next-line react/exhaustive-deps -- logoUrl is intentionally a dependency to trigger reset on logo change
   useEffect(() => {
     lockedTokenColorRef.current = null
   }, [logoUrl])

@@ -43,7 +43,6 @@ export function UniversalImage({
 
   // Calculate width/height and check for an error in the image retrieval
   // TODO(apps-infra): See if we can remove this when Expo Image is fully enabled
-  // oxlint-disable-next-line react/exhaustive-deps -- +width, height
   useEffect(() => {
     // If we know dimension skip calculating width/height
     if (!uri || sizeKnown || isRequireSource) {

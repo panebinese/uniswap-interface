@@ -9,11 +9,27 @@ import {
 import { AuctionDetails } from '~/components/Toucan/Auction/store/types'
 
 const strings: Record<TimelineEventType, TimelineEventStrings> = {
-  'pre-sale-starts': { label: 'Pre-sale starts', description: 'Pre-sale period begins' },
-  'pre-sale-ends': { label: 'Pre-sale ends', description: 'Pre-sale period ends' },
-  'auction-started': { label: 'Auction started', description: 'Auction begins' },
-  'auction-ends': { label: 'Auction ends', description: 'Auction ends' },
-  'tokens-claimable': { label: 'Tokens claimable', description: 'Tokens become claimable' },
+  'pre-sale-starts': {
+    label: 'Pre-sale starts',
+    description: 'Pre-sale period begins',
+    futureDescription: 'Pre-sale period will begin',
+  },
+  'pre-sale-ends': {
+    label: 'Pre-sale ends',
+    description: 'Pre-sale period ends',
+    futureDescription: 'Pre-sale period will end',
+  },
+  'auction-started': {
+    label: 'Auction started',
+    description: 'Auction begins',
+    futureDescription: 'Auction will begin',
+  },
+  'auction-ends': { label: 'Auction ends', description: 'Auction ends', futureDescription: 'Auction will end' },
+  'tokens-claimable': {
+    label: 'Tokens claimable',
+    description: 'Tokens become claimable',
+    futureDescription: 'Tokens will become claimable',
+  },
 }
 
 function makeStep(mps: number, startBlock: string): AuctionStep {
@@ -34,9 +50,9 @@ function makeAuctionDetails(overrides: Partial<AuctionDetails> = {}): AuctionDet
 
 describe('getActiveEventIndex', () => {
   const events: TimelineEvent[] = [
-    { type: 'auction-started', label: '', description: '', block: 100, time: new Date() },
-    { type: 'auction-ends', label: '', description: '', block: 200, time: new Date() },
-    { type: 'tokens-claimable', label: '', description: '', block: 300, time: new Date() },
+    { type: 'auction-started', label: '', description: '', futureDescription: '', block: 100, time: new Date() },
+    { type: 'auction-ends', label: '', description: '', futureDescription: '', block: 200, time: new Date() },
+    { type: 'tokens-claimable', label: '', description: '', futureDescription: '', block: 300, time: new Date() },
   ]
 
   it('returns -1 when currentBlockNumber is undefined', () => {

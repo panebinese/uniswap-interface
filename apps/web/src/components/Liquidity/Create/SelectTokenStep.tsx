@@ -108,6 +108,7 @@ export const CurrencySelector = ({
 
 const DEFAULT_ADDRESSES: string[] = [] // this has to be a const to prevent a rerender loop
 
+// oxlint-disable-next-line complexity
 export function SelectTokensStep({
   currencyInputs,
   setCurrencyInputs,
@@ -469,8 +470,7 @@ export function SelectTokensStep({
                           </Text>
                         </Flex>
                       </MouseoverTooltip>
-                    ) : // oxlint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                    currentFeeTierKey && !feeTierData[currentFeeTierKey]?.created ? (
+                    ) : currentFeeTierKey && !feeTierData[currentFeeTierKey]?.created ? (
                       <Flex justifyContent="center" borderRadius="$rounded6" backgroundColor="$surface3" px={7}>
                         <Text variant="buttonLabel4">
                           <Trans i18nKey="fee.tier.new" />

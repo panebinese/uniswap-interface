@@ -1,4 +1,4 @@
-import { ChartPeriod } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import type { ChartPeriod } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { isWarmLoadingStatus } from '@universe/api'
 import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,7 +8,7 @@ import AnimatedNumber, {
 } from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
 import { RelativeChange } from 'uniswap/src/components/RelativeChange/RelativeChange'
 import { PollingInterval } from 'uniswap/src/constants/misc'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { usePortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/balancesRest'
 import { FiatCurrency } from 'uniswap/src/features/fiatCurrency/constants'
 import { useAppFiatCurrency, useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
@@ -46,7 +46,7 @@ export const PortfolioBalance = memo(function PortfolioBalanceInner({
   hidePercentChange,
 }: PortfolioBalanceProps): JSX.Element {
   const { t } = useTranslation()
-  const { data, loading, networkStatus, refetch } = usePortfolioTotalValue({
+  const { data, loading, error, networkStatus, refetch } = usePortfolioTotalValue({
     evmAddress: evmOwner,
     svmAddress: svmOwner,
     chainIds,
@@ -62,7 +62,7 @@ export const PortfolioBalance = memo(function PortfolioBalanceInner({
   const currencyComponents = useAppFiatCurrencyInfo()
   const { convertFiatAmount, convertFiatAmountFormatted } = useLocalizationContext()
 
-  const isLoading = loading && !data
+  const isLoading = !data && (loading || !!error)
   const isWarmLoading = !!data && isWarmLoadingStatus(networkStatus)
 
   const { percentChange: backendPercentChange, absoluteChangeUSD: backendAbsoluteChangeUSD, balanceUSD } = data || {}
@@ -107,8 +107,8 @@ export const PortfolioBalance = memo(function PortfolioBalanceInner({
             arrowSize="$icon.16"
             change={percentChange}
             loading={isLoading}
-            negativeChangeColor={isWarmLoading ? '$neutral2' : '$statusCritical'}
-            positiveChangeColor={isWarmLoading ? '$neutral2' : '$statusSuccess'}
+            negativeChangeColor={isWarmLoading || !!error ? '$neutral2' : '$statusCritical'}
+            positiveChangeColor={isWarmLoading || !!error ? '$neutral2' : '$statusSuccess'}
             variant="body3"
           />
         </Shine>

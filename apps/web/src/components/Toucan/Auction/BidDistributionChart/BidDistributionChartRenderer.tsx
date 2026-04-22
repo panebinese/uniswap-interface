@@ -259,7 +259,6 @@ function BidDistributionChartRendererComponent({
     return calculateRangePaddingUnits({ priceScaleFactor })
   }, [priceScaleFactor])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- chartHoverResetKey and isPlacingBid are included to force canvas redraws
   const histogramData = useMemo((): ToucanChartData[] => {
     // lightweight-charts uses `time` as the X axis. We encode ticks as integer "time" values by multiplying
     // by `priceScaleFactor` (to avoid collisions) and rounding. The bar height (`value`) is the Y axis.

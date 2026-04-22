@@ -51,6 +51,7 @@ interface BidReviewModalProps {
 
 const PLACEHOLDER = '—'
 
+// oxlint-disable-next-line complexity
 export function BidReviewModal({
   isOpen,
   onClose,

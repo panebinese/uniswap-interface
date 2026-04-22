@@ -56,7 +56,6 @@ vi.mock('uniswap/src/features/transactions/swap/plan/planSagaUtils', async (impo
     lockPlanForExecution: (...args: unknown[]): unknown => mockLockPlanForExecution(...args),
     unlockPlanExecution: (...args: unknown[]): unknown => mockUnlockPlanExecution(...args),
     getWalletExecutionContext: (): undefined => undefined,
-    // oxlint-disable-next-line typescript/explicit-function-return-type
     // oxlint-disable-next-line eslint-js/object-shorthand
     showPendingOnEarlyModalClose: function* () {
       yield // no-op: avoids the real saga which waits on signalSwapModalClosed

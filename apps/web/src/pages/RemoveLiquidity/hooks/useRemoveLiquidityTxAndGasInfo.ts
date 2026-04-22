@@ -229,6 +229,7 @@ function getDecreaseLPPositionQueryParams({
   })
 }
 
+// oxlint-disable-next-line complexity
 export function useRemoveLiquidityTxAndGasInfo({ account }: { account?: string }): RemoveLiquidityTxInfo {
   const { positionInfo, percent, percentInvalid, currencies, currentTransactionStep, unwrapNativeCurrency } =
     useRemoveLiquidityModalContext()
@@ -350,7 +351,6 @@ export function useRemoveLiquidityTxAndGasInfo({ account }: { account?: string }
     isQueryEnabled: isQueryEnabled && Boolean(decreaseCalldataQueryParams),
   })
 
-  // oxlint-disable-next-line react/exhaustive-deps -- +decreaseCalldataQueryParams
   useEffect(() => {
     setTransactionError(getErrorMessageToDisplay({ approvalError, calldataError }))
   }, [calldataError, decreaseCalldataQueryParams, approvalError])
@@ -372,7 +372,7 @@ export function useRemoveLiquidityTxAndGasInfo({ account }: { account?: string }
     })
   }
 
-  const { value: estimatedGasFee } = useTransactionGasFee({
+  const { displayValue: estimatedGasFee } = useTransactionGasFee({
     tx: decreaseCalldata?.decrease,
     skip: !!decreaseCalldata?.gasFee,
   })

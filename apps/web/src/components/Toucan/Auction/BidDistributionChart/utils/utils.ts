@@ -24,7 +24,6 @@ import { approximateNumberFromRaw } from '~/components/Toucan/Auction/utils/fixe
 /**
  * Represents a single bar in the distribution chart
  */
-// oxlint-disable-next-line import/no-unused-modules
 export interface ChartBarData {
   tick: number // Tick value in smallest unit (decimal, for chart rendering)
   tickQ96: string // Original Q96 string for precise matching and click handling
@@ -36,7 +35,6 @@ export interface ChartBarData {
 /**
  * Processed chart data with calculated axis information
  */
-// oxlint-disable-next-line import/no-unused-modules
 export interface ProcessedChartData {
   bars: ChartBarData[]
   yAxisLevels: number[]

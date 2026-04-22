@@ -46,7 +46,6 @@ export default function ExtensionPasskeyAuthPopUp() {
 
   const [searchParams] = useSearchParams()
 
-  // oxlint-disable-next-line react/exhaustive-deps -- Intentionally only runs once on mount
   useEffect(() => {
     const chromeRuntime = getChromeRuntime()
 

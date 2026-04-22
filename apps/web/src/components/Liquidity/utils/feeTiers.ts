@@ -220,7 +220,6 @@ export function getDefaultFeeTiersWithData({
   // For V2/V3, filter to only include default fee tiers and sort by TVL
   return feeTiers
     .filter(
-      // oxlint-disable-next-line typescript/no-unnecessary-condition
       (feeTier) =>
         feeTier.value !== undefined &&
         Object.keys(feeTierData).includes(

@@ -5,12 +5,13 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex, Separator, SpinningLoader, Text, TouchableArea } from 'ui/src'
 import { BackArrow } from 'ui/src/components/icons/BackArrow'
+import { Envelope } from 'ui/src/components/icons/Envelope'
 import { EnvelopeHeart } from 'ui/src/components/icons/EnvelopeHeart'
-import { EnvelopeLock } from 'ui/src/components/icons/EnvelopeLock'
-import { GoogleLogo } from 'ui/src/components/icons/GoogleLogo'
+import { GoogleLogoGradient } from 'ui/src/components/icons/GoogleLogoGradient'
 import { Passkey } from 'ui/src/components/icons/Passkey'
 import { Person } from 'ui/src/components/icons/Person'
 import { useSporeColors } from 'ui/src/hooks/useSporeColors'
+import { iconSizes } from 'ui/src/theme'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
@@ -135,7 +136,7 @@ export function EmbeddedWalletConnectionsModal(): JSX.Element {
               <Flex row alignSelf="stretch">
                 <Button variant="branded" size="medium" onPress={handlePasskeyLogin} isDisabled={isPasskeyLoading}>
                   {isPasskeyLoading ? (
-                    <SpinningLoader size={20} color="$white" />
+                    <SpinningLoader size={20} color="$neutral2" />
                   ) : (
                     t('account.passkey.login.continueWithPasskey')
                   )}
@@ -163,7 +164,7 @@ export function EmbeddedWalletConnectionsModal(): JSX.Element {
                 disabled={oauthLoading && oauthProvider !== 'apple'}
               />
               <OptionRow
-                icon={<GoogleLogo size="$icon.20" color="$neutral1" />}
+                icon={<GoogleLogoGradient size={iconSizes.icon20} />}
                 label={t('account.passkey.backupLogin.add.google')}
                 onPress={() => handleInitOAuth('google')}
                 element={ElementName.LoginWithGoogle}
@@ -171,7 +172,7 @@ export function EmbeddedWalletConnectionsModal(): JSX.Element {
                 disabled={oauthLoading && oauthProvider !== 'google'}
               />
               <OptionRow
-                icon={<EnvelopeLock size="$icon.20" color="$neutral1" />}
+                icon={<Envelope size="$icon.20" color="$blueBase" />}
                 label={t('account.passkey.backupLogin.add.email')}
                 onPress={handleEmailRecovery}
                 element={ElementName.LoginWithEmail}

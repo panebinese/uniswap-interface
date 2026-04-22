@@ -5,9 +5,9 @@ import { Button, Flex, Text } from 'ui/src'
 import { AuctionAdvancedSettings } from '~/pages/Liquidity/CreateAuction/components/AuctionAdvancedSettings'
 import { AuctionSupplySection } from '~/pages/Liquidity/CreateAuction/components/AuctionSupplySection'
 import { DurationSection } from '~/pages/Liquidity/CreateAuction/components/DurationSection'
-import { FloorPriceSection } from '~/pages/Liquidity/CreateAuction/components/FloorPriceSection'
 import { HookTile } from '~/pages/Liquidity/CreateAuction/components/HookTile'
-import { RaiseCurrencySection } from '~/pages/Liquidity/CreateAuction/components/RaiseCurrencySection'
+import { PostAuctionLiquiditySection } from '~/pages/Liquidity/CreateAuction/components/PostAuctionLiquiditySection'
+import { PriceSettingsSection } from '~/pages/Liquidity/CreateAuction/components/PriceSettingsSection'
 import { TokenSummaryCard, useTokenSummaryCardProps } from '~/pages/Liquidity/CreateAuction/components/TokenSummaryCard'
 import {
   useCreateAuctionStore,
@@ -20,7 +20,7 @@ import {
   FUNDRAISE_POST_LIQUIDITY_PERCENT,
 } from '~/pages/Liquidity/CreateAuction/store/createCreateAuctionStore'
 import { AuctionType, type ConfigureAuctionFormState, CreateAuctionStep } from '~/pages/Liquidity/CreateAuction/types'
-import { percentOfAmount } from '~/pages/Liquidity/CreateAuction/utils'
+import { amountToPercent, percentOfAmount } from '~/pages/Liquidity/CreateAuction/utils'
 
 export function ConfigureAuctionStep() {
   const { t } = useTranslation()
@@ -112,7 +112,6 @@ export function ConfigureAuctionStep() {
       if (!committed) {
         return
       }
-      // Auction supply is fixed — LP is always a percentage of the auction supply amount
       setAuctionConfig({
         auctionSupplyAmount: committed.auctionSupplyAmount,
         postAuctionLiquidityAmount: percentOfAmount(committed.auctionSupplyAmount, percent),
@@ -121,12 +120,18 @@ export function ConfigureAuctionStep() {
     [committed, setAuctionConfig],
   )
 
+  const postAuctionLiquidityPercent = useMemo(() => {
+    if (!committed) {
+      return 0
+    }
+    return amountToPercent(committed.auctionSupplyAmount, committed.postAuctionLiquidityAmount)
+  }, [committed])
+
   if (!committed) {
     return null
   }
 
-  const { totalSupply, auctionSupplyAmount, postAuctionLiquidityAmount } = committed
-  const chainId = totalSupply.currency.chainId
+  const { totalSupply, auctionSupplyAmount } = committed
   const tokenSymbol = totalSupply.currency.symbol ?? ''
 
   return (
@@ -160,11 +165,9 @@ export function ConfigureAuctionStep() {
         p="$spacing24"
         gap="$spacing24"
       >
-        <Flex borderBottomWidth={1} borderBottomColor="$surface3" pb="$spacing12">
-          <Text variant="heading3" color="$neutral1">
-            {t('toucan.createAuction.step.configureAuction.title')}
-          </Text>
-        </Flex>
+        <Text variant="heading3" color="$neutral1" pb="$spacing12">
+          {t('toucan.createAuction.step.configureAuction.title')}
+        </Text>
 
         <Flex gap="$spacing40">
           <DurationSection
@@ -175,26 +178,32 @@ export function ConfigureAuctionStep() {
             onIncrement={handleIncrement}
           />
 
-          <RaiseCurrencySection raiseCurrency={raiseCurrency} onSelect={setRaiseCurrency} />
-
-          <FloorPriceSection
-            chainId={chainId}
-            floorPrice={floorPrice}
-            raiseCurrency={raiseCurrency}
-            tokenTotalSupply={totalSupply}
-            onFloorPriceChange={setFloorPrice}
-          />
-
           <AuctionSupplySection
             auctionSupplyAmount={auctionSupplyAmount}
             tokenTotalSupply={totalSupply}
             tokenSymbol={tokenSymbol}
-            raiseTokenSymbol={raiseCurrency}
-            postAuctionLiquidityAmount={postAuctionLiquidityAmount}
             onSelectAuctionSupplyPercent={handleAuctionSupplyPercentChange}
             onAuctionSupplyAmountChange={handleAuctionSupplyAmountChange}
-            onSelectPostAuctionLiquidityPercent={handlePostAuctionLiquidityPercentChange}
-            color={tokenColor}
+          />
+
+          <PriceSettingsSection
+            chainId={totalSupply.currency.chainId}
+            raiseCurrency={raiseCurrency}
+            onSelect={setRaiseCurrency}
+            floorPrice={floorPrice}
+            tokenTotalSupply={totalSupply}
+            onFloorPriceChange={setFloorPrice}
+          />
+
+          <PostAuctionLiquiditySection
+            postAuctionLiquidityPercent={postAuctionLiquidityPercent}
+            auctionSupplyAmount={auctionSupplyAmount}
+            postAuctionLiquidityAmount={committed.postAuctionLiquidityAmount}
+            floorPrice={floorPrice}
+            raiseCurrency={raiseCurrency}
+            chainId={totalSupply.currency.chainId}
+            tokenSymbol={tokenSymbol}
+            onSelectPercent={handlePostAuctionLiquidityPercentChange}
           />
         </Flex>
         <AuctionAdvancedSettings />

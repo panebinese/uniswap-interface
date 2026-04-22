@@ -4,6 +4,7 @@ ignores: [
     "@typechain/ethers-v5",
     "jest-presets",
     "depcheck",
+    "oxlint",
     "typescript",
     "@typescript/native-preview",
     "typechain",

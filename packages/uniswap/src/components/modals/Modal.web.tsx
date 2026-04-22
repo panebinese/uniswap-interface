@@ -8,7 +8,6 @@ import { isExtensionApp, isWebApp } from 'utilities/src/platform'
 
 const ANIMATION_MS = 200
 
-// oxlint-disable-next-line complexity
 export function Modal({
   children,
   name,

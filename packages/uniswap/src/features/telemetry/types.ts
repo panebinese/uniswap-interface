@@ -942,8 +942,18 @@ export type UniverseEventProperties = {
     // Covering ElementName.DisconnectWalletButton
     connector_id?: string
     svm_connector_id?: string
+    /** NetworkBalanceBreakdown accordion on token details */
+    balanceToggleState?: 'open' | 'close'
+    /** ElementName.NetworkBalanceRow — multichain balance row on token details (web) */
+    chain_id?: UniverseChainId
+    /** Extension portfolio multichain token row expand/collapse */
+    multichainTokenRowState?: 'open' | 'close'
+    chain_name?: string
   }
-  [SharedEventName.PAGE_VIEWED]: ITraceContext
+  [SharedEventName.PAGE_VIEWED]: ITraceContext & {
+    /** Token details */
+    multichain?: boolean
+  }
   [SharedEventName.ANALYTICS_SWITCH_TOGGLED]: {
     enabled: boolean
   }
@@ -1110,6 +1120,21 @@ export type UniverseEventProperties = {
     token_address: string
     chain_id: number
   }
+  [UniswapEventName.MultichainExploreMetrics]: {
+    total_token_row_count: number
+    multichain_row_reduction_count: number
+    multichain_asset_count: number
+  } & Partial<ITraceContext>
+  [UniswapEventName.MultichainSearchMetrics]: {
+    total_token_row_count: number
+    multichain_row_reduction_count: number
+    multichain_asset_count: number
+  } & Partial<ITraceContext>
+  [UniswapEventName.MultichainPortfolioMetrics]: {
+    total_token_row_count: number
+    multichain_row_reduction_count: number
+    multichain_asset_count: number
+  } & Partial<ITraceContext>
   [UniswapEventName.ConversionEventSubmitted]: {
     id: string
     eventId: string
@@ -1119,6 +1144,7 @@ export type UniverseEventProperties = {
   [UniswapEventName.DataReportSubmitted]:
     | (TokenReportProperties & {
         type: 'data'
+        wallet_address?: string
         price?: boolean
         volume?: boolean
         price_chart?: boolean
@@ -1141,6 +1167,7 @@ export type UniverseEventProperties = {
       })
     | {
         type: 'portfolio'
+        wallet_address?: string
         performance: boolean
         performance_text?: string
         something_else: boolean
@@ -1170,6 +1197,7 @@ export type UniverseEventProperties = {
   [UniswapEventName.ContextMenuItemClicked]: ITraceContext & {
     menu_item: string
     menu_item_index: number
+    chain_name?: string
   }
   [UniswapEventName.ContextMenuOpened]: ITraceContext
   [UniswapEventName.LowNetworkTokenInfoModalOpened]: {

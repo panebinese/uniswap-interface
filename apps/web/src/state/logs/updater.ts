@@ -10,6 +10,7 @@ import { isHistoricalLog, keyToFilter } from '~/state/logs/utils'
 
 export default function Updater(): null {
   const dispatch = useAppDispatch()
+  // oxlint-disable-next-line no-shadow
   const state = useAppSelector((state) => state.logs)
   const { chainId } = useAccount()
   const { provider } = useWeb3React()

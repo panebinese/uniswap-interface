@@ -78,6 +78,7 @@ type LimitFormProps = {
   onCurrencyChange?: (selected: CurrencyState) => void
 }
 
+// oxlint-disable-next-line complexity
 function LimitForm({ onCurrencyChange }: LimitFormProps) {
   const account = useAccount()
   const { chainId } = useMultichainContext()
@@ -264,7 +265,6 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
     }
   }, [onSelectCurrency, outputCurrency, isSupportedChain, chainId, inputCurrency])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- Currency state reset only on currency change
   useEffect(() => {
     // If the initial pair is eth <> weth, replace the output currency with a stablecoin
     if (isSupportedChain && inputCurrency && outputCurrency && (inputCurrency.isNative || outputCurrency.isNative)) {

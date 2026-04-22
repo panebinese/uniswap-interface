@@ -1,5 +1,3 @@
-/* oxlint-disable typescript/explicit-function-return-type */
-
 import { TrafficFlows } from '@universe/api/src/clients/base/urls'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

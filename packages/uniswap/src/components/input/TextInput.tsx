@@ -12,7 +12,6 @@ export const TextInput = forwardRef<TextInputBase, TextInputProps>(function Text
 ) {
   const colors = useSporeColors()
 
-  // oxlint-disable-next-line react/exhaustive-deps -- -ref, -ref.current (only run on mount since we only need to set this once)
   useEffect(() => {
     // Ensure virtualkeyboardpolicy is set to "auto" on the DOM element
     // otherwise the virtual keyboard will not show on android mobile

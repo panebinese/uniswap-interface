@@ -82,7 +82,7 @@ export function DetailsTab() {
   const kycLabel = auctionNeedsVerification ? t('toucan.details.yes') : t('toucan.details.no')
   const whitelistLabel = auctionHasPresale ? t('toucan.details.yes') : t('toucan.details.no')
 
-  const formattedPrice = formatImpliedTokenPrice(impliedTokenPrice)
+  const formattedPrice = formatImpliedTokenPrice({ impliedTokenPrice, variant: 'body3' })
   const fdvSuffix =
     currentValuationFiatFormatted && currentValuationFiatFormatted !== EMPTY_DISPLAY
       ? ` (${currentValuationFiatFormatted} ${t('stats.fdv')})`

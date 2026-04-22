@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, useMedia } from 'ui/src'
+import { QuestionInCircleFilled } from 'ui/src/components/icons/QuestionInCircleFilled'
+import { InfoTooltip } from 'uniswap/src/components/tooltip/InfoTooltip'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import { useEvent } from 'utilities/src/react/hooks'
 import { Bid } from '~/components/Toucan/Auction/Bids/Bid'
@@ -10,7 +12,7 @@ import { WithdrawModal } from '~/components/Toucan/Auction/Bids/WithdrawModal/Wi
 import { useBidsListData } from '~/components/Toucan/Auction/hooks/useBidsListData'
 import { useBidTokenInfo } from '~/components/Toucan/Auction/hooks/useBidTokenInfo'
 import { useWithdrawButtonState } from '~/components/Toucan/Auction/hooks/useWithdrawButtonState'
-import { AuctionProgressState, UserBid } from '~/components/Toucan/Auction/store/types'
+import { AuctionProgressState, type UserBid } from '~/components/Toucan/Auction/store/types'
 import { useAuctionStore, useAuctionStoreActions } from '~/components/Toucan/Auction/store/useAuctionStore'
 import { InlineAlertBanner } from '~/components/Toucan/Shared/InlineAlertBanner'
 import { ToucanActionButton } from '~/components/Toucan/Shared/ToucanActionButton'
@@ -94,7 +96,12 @@ export function Bids(): JSX.Element {
       // Use the override if provided, otherwise use the calculated value
       // This allows the BidDetailsModal to pass the correct value based on its own state
       const usePreClaimWindow = isPreClaimWindowOverride ?? (isAuctionEnded && isGraduated && isInPreClaimWindow)
-      setWithdrawModalState({ isOpen: true, bidId, mode, isPreClaimWindow: usePreClaimWindow })
+      setWithdrawModalState({
+        isOpen: true,
+        bidId,
+        mode,
+        isPreClaimWindow: usePreClaimWindow,
+      })
     },
   )
 
@@ -133,6 +140,16 @@ export function Bids(): JSX.Element {
 
   return (
     <Flex width="100%" grow justifyContent="space-between" gap="$spacing12">
+      <Flex row justifyContent="space-between" alignItems="center">
+        <Text color="$neutral2" variant="subheading2">
+          {t('toucan.auction.yourBids')}
+        </Text>
+        <InfoTooltip
+          placement="top"
+          trigger={<QuestionInCircleFilled color="$neutral2" size="$icon.20" />}
+          text={t('toucan.auction.yourBids.tooltip')}
+        />
+      </Flex>
       {hasErrors && (
         <Flex
           px="$spacing12"

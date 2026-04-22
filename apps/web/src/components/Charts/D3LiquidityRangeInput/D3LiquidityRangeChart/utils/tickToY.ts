@@ -1,5 +1,5 @@
+import type { LinearTickScale } from '~/components/Charts/D3LiquidityChartShared/types'
 import type { BucketChartEntry } from '~/components/Charts/D3LiquidityChartShared/utils/liquidityBucketing/liquidityBucketing'
-import type { LinearTickScale } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/types'
 
 type TickAlignment = 'center' | 'top' | 'bottom'
 
@@ -19,7 +19,7 @@ export const tickToY = ({
   tickScale: LinearTickScale
   tickAlignment?: TickAlignment
 }): number => {
-  return tickScale.tickToY(tick)
+  return tickScale.tickToAxis(tick)
 }
 
 /**
@@ -40,6 +40,6 @@ export const getCurrentTickDotY = ({
 }): number => {
   const currentBucket = renderedBuckets?.find((b) => currentTick >= b.startTick && currentTick < b.endTick)
   return currentBucket
-    ? (tickScale.tickToY(currentBucket.startTick) + tickScale.tickToY(currentBucket.endTick)) / 2
-    : tickScale.tickToY(currentTick)
+    ? (tickScale.tickToAxis(currentBucket.startTick) + tickScale.tickToAxis(currentBucket.endTick)) / 2
+    : tickScale.tickToAxis(currentTick)
 }

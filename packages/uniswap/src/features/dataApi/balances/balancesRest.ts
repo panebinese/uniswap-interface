@@ -1,28 +1,29 @@
-import { WatchQueryFetchPolicy } from '@apollo/client'
-import { PartialMessage } from '@bufbuild/protobuf'
+import type { WatchQueryFetchPolicy } from '@apollo/client'
+import type { PartialMessage } from '@bufbuild/protobuf'
 import { useQueryClient } from '@tanstack/react-query'
-import { GetPortfolioResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb.d'
-import { Balance } from '@uniswap/client-data-api/dist/data/v1/types_pb'
-import { PortfolioValueModifier as RestPortfolioValueModifier } from '@uniswap/client-data-api/dist/data/v1/types_pb.d'
-import { Currency } from '@uniswap/sdk-core'
+import type { GetPortfolioResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb.d'
+import type { Balance } from '@uniswap/client-data-api/dist/data/v1/types_pb'
+import type { PortfolioValueModifier as RestPortfolioValueModifier } from '@uniswap/client-data-api/dist/data/v1/types_pb.d'
+import type { Currency } from '@uniswap/sdk-core'
 import { useMemo } from 'react'
-import { PollingInterval } from 'uniswap/src/constants/misc'
+import type { PollingInterval } from 'uniswap/src/constants/misc'
 import { normalizeTokenAddressForCache } from 'uniswap/src/data/cache'
-import { GetPortfolioInput, getPortfolioQuery, useGetPortfolioQuery } from 'uniswap/src/data/rest/getPortfolio'
+import { getPortfolioQuery, useGetPortfolioQuery } from 'uniswap/src/data/rest/getPortfolio'
+import type { GetPortfolioInput } from 'uniswap/src/data/rest/getPortfolio'
 import {
   shouldTransformToMultichain,
   transformPortfolioToMultichain,
 } from 'uniswap/src/data/rest/transformPortfolioToMultichain'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import {
   buildPortfolioBalance,
   PortfolioCacheUpdater,
   PortfolioTotalValueResult,
-} from 'uniswap/src/features/dataApi/balances/balances'
+} from 'uniswap/src/features/dataApi/balances/buildPortfolioBalance'
 import { getPortfolioMultichainBalancesById } from 'uniswap/src/features/dataApi/balances/toPortfolioMultichainBalance'
 import { mapRestStatusToNetworkStatus, matchesCurrency } from 'uniswap/src/features/dataApi/balances/utils'
-import {
+import type {
   BaseResult,
   PortfolioBalance,
   PortfolioMultichainBalance,
@@ -36,7 +37,7 @@ import {
 } from 'uniswap/src/features/dataApi/utils/getCurrencySafetyInfo'
 import { useHideSmallBalancesSetting, useHideSpamTokensSetting } from 'uniswap/src/features/settings/hooks'
 import { useCurrencyIdToVisibility } from 'uniswap/src/features/transactions/selectors'
-import { CurrencyId } from 'uniswap/src/types/currency'
+import type { CurrencyId } from 'uniswap/src/types/currency'
 import { currencyId } from 'uniswap/src/utils/currencyId'
 import { usePlatformBasedFetchPolicy } from 'uniswap/src/utils/usePlatformBasedFetchPolicy'
 import { useEvent } from 'utilities/src/react/hooks'
@@ -167,6 +168,7 @@ function usePortfolioDataQueryWithSelect<T>(
     refetch: restRefetch,
     error: restError,
     status: restStatus,
+    dataUpdatedAt,
   } = useGetPortfolioQuery({
     input: {
       evmAddress,
@@ -186,6 +188,7 @@ function usePortfolioDataQueryWithSelect<T>(
     networkStatus: mapRestStatusToNetworkStatus(restStatus),
     refetch: restRefetch,
     error: restError || undefined,
+    dataUpdatedAt: dataUpdatedAt || undefined,
   }
 }
 
@@ -475,6 +478,7 @@ export function usePortfolioTotalValue({
     refetch,
     error: restError,
     status: restStatus,
+    dataUpdatedAt,
   } = useGetPortfolioQuery({
     input: { evmAddress, svmAddress, chainIds: effectiveChainIds, modifier },
     enabled: !!(evmAddress ?? svmAddress) && enabled,
@@ -488,5 +492,6 @@ export function usePortfolioTotalValue({
     networkStatus: mapRestStatusToNetworkStatus(restStatus),
     refetch,
     error: restError || undefined,
+    dataUpdatedAt: dataUpdatedAt || undefined,
   }
 }

@@ -12,6 +12,7 @@ import {
 } from 'uniswap/src/data/graphql/uniswap-data-api/fragments'
 import { selectHasViewedContractAddressExplainer } from 'uniswap/src/features/behaviorHistory/selectors'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
+import { isMultichainProjectTokens } from 'uniswap/src/features/dataApi/tokenProjects/utils/isMultichainProjectTokens'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 
 export const TokenDetailsHeader = memo(function TokenDetailsHeaderInner(): JSX.Element {
@@ -22,20 +23,20 @@ export const TokenDetailsHeader = memo(function TokenDetailsHeaderInner(): JSX.E
   const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const token = useTokenBasicInfoPartsFragment({ currencyId }).data
   const project = useTokenBasicProjectPartsFragment({ currencyId }).data.project
-  const isMultichainToken = multichainTokenUxEnabled && (project?.tokens?.length ?? 0) > 1
+  const isMultichainToken = multichainTokenUxEnabled && isMultichainProjectTokens(project?.tokens)
 
   const handleCopyAddress = async (): Promise<void> => {
     if (!token.address) {
       return
     }
 
-    if (isMultichainToken) {
-      openMultichainAddressSheet()
+    if (!hasViewedContractAddressExplainer) {
+      openContractAddressExplainerModal()
       return
     }
 
-    if (!hasViewedContractAddressExplainer) {
-      openContractAddressExplainerModal()
+    if (isMultichainToken) {
+      openMultichainAddressSheet()
       return
     }
 

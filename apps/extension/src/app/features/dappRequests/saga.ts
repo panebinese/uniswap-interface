@@ -258,6 +258,7 @@ function* handleRequest(requestParams: DappRequestNoDappInfo) {
         throw new Error('Chain ID on message does not match the chain ID set on the extension.')
       }
 
+      // oxlint-disable-next-line no-shadow
       const parsedCalls = requestParams.dappRequest.calls.map((call): Call | ParsedCall => ({
         ...call,
         ...(call.data ? getCalldataInfoFromTransaction({ data: call.data, to: call.to, chainId }) : {}),

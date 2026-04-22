@@ -2,7 +2,7 @@ import { DEFAULT_NATIVE_ADDRESS } from 'uniswap/src/features/chains/evm/rpc'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { getPrimaryStablecoin, isStablecoinAddress } from 'uniswap/src/features/chains/utils'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
-import { currencyId } from 'uniswap/src/utils/currencyId'
+import { currencyAddress, currencyId } from 'uniswap/src/utils/currencyId'
 import { describe, expect, it } from 'vitest'
 import {
   buildTokenTableRows,
@@ -16,7 +16,14 @@ import {
   createMockTokenTableChainToken,
   createMockTokenTableData,
 } from '~/pages/Portfolio/Tokens/test-utils/mockTokenTableData'
-import { NATIVE_INFO, TEST_TOKEN_1, TEST_TOKEN_1_INFO, TEST_TOKEN_2_INFO, USDC_INFO } from '~/test-utils/constants'
+import {
+  NATIVE_INFO,
+  TEST_TOKEN_1,
+  TEST_TOKEN_1_INFO,
+  TEST_TOKEN_2,
+  TEST_TOKEN_2_INFO,
+  USDC_INFO,
+} from '~/test-utils/constants'
 
 describe('buildTokenTableRows', () => {
   it('returns parent rows without subRows when multichainExpandable is false', () => {
@@ -127,6 +134,7 @@ describe('getTokenDataForRow', () => {
     expect(view.currencyInfo).toBe(chainToken.currencyInfo)
     expect(view.quantity).toBe(2)
     expect(view.symbol).toBe('DEF')
+    expect(view.name).toBe(TEST_TOKEN_2.name)
     expect(view.totalValue).toBe(50)
     expect(view.tokens).toEqual(tokenData.tokens)
   })
@@ -169,10 +177,14 @@ describe('flattenTokenDataToSingleChainRows', () => {
   it('normalizes single-chain rows to tokens length 1', () => {
     const tokenData = createMockTokenTableData({ id: 'single' })
     const only = tokenData.tokens[0]!
+    const rowId = `${only.chainId}-${currencyAddress(only.currencyInfo.currency)}`
     const out = flattenTokenDataToSingleChainRows([tokenData])
     expect(out).toHaveLength(1)
+    const { testId: _tokenDataTestId, ...tokenDataWithoutTestId } = tokenData
     expect(out[0]).toMatchObject({
-      ...tokenData,
+      ...tokenDataWithoutTestId,
+      id: rowId,
+      testId: `${TestID.TokenTableRowPrefix}${rowId}`,
       tokens: [only],
     })
   })
@@ -202,9 +214,10 @@ describe('flattenTokenDataToSingleChainRows', () => {
     expect(out).toHaveLength(2)
 
     const suffix1 = currencyId(TEST_TOKEN_1)!
+    const suffix2 = currencyId(TEST_TOKEN_2)!
     expect(out[0]).toMatchObject({
-      id: `multi-${suffix1}`,
-      testId: `${TestID.TokenTableRowPrefix}multi-${suffix1}`,
+      id: suffix1,
+      testId: `${TestID.TokenTableRowPrefix}${suffix1}`,
       chainId: 1,
       quantity: 2,
       price: 5,
@@ -216,6 +229,8 @@ describe('flattenTokenDataToSingleChainRows', () => {
     })
 
     expect(out[1]).toMatchObject({
+      id: suffix2,
+      testId: `${TestID.TokenTableRowPrefix}${suffix2}`,
       chainId: 42161,
       price: 5,
       tokens: [tokenData.tokens[1]],

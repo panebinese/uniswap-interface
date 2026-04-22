@@ -7,6 +7,7 @@ import { useSelector } from 'react-redux'
 import { auctionQueries } from 'uniswap/src/data/rest/auctions/auctionQueries'
 import { EVMUniverseChainId } from 'uniswap/src/features/chains/types'
 import { isTestnetChain } from 'uniswap/src/features/chains/utils'
+// oxlint-disable-next-line no-restricted-imports -- Direct selector access needed for auction testnet filtering
 import { selectIsTestnetModeEnabled } from 'uniswap/src/features/settings/selectors'
 import { useCurrencyInfos } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
@@ -94,6 +95,7 @@ export function useTopAuctions(): {
   const blocksByChain = useMultiChainBlockInfo(auctionChainIds)
 
   const areBlocksLoaded = useMemo(
+    // oxlint-disable-next-line no-shadow
     () => [...auctionChainIds].every((chainId) => blocksByChain.has(chainId)),
     [auctionChainIds, blocksByChain],
   )
@@ -186,6 +188,7 @@ export function useTopAuctions(): {
       })
       .filter((auctionWithInfo) => {
         // Filter out testnet chains when testnet mode is not enabled
+        // oxlint-disable-next-line no-shadow
         const chainId = auctionWithInfo.auction?.chainId
         return chainId !== undefined && (isTestnetModeEnabled || !isTestnetChain(chainId))
       })

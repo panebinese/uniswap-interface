@@ -15,6 +15,7 @@ import { AnimatePresence, Flex, LinearGradient, Text, useIsDarkMode, useSporeCol
 import { SwirlyArrowDown } from 'ui/src/components/icons'
 import { spacing, zIndexes } from 'ui/src/theme'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
+import { useMultichainExploreMetricsAnalytics } from 'uniswap/src/features/explore/useMultichainExploreMetricsAnalytics'
 import { useAppFiatCurrency } from 'uniswap/src/features/fiatCurrency/hooks'
 import { isContractInputArrayType } from 'uniswap/src/features/gating/typeGuards'
 import { MobileEventName } from 'uniswap/src/features/telemetry/constants'
@@ -53,7 +54,7 @@ export const HomeExploreTab = memo(
 
     const { onContentSizeChange } = useAdaptiveFooter(containerProps?.contentContainerStyle)
 
-    const { data } = GraphQLApi.useHomeScreenTokensQuery({
+    const { data, loading: homeExploreTokensLoading } = GraphQLApi.useHomeScreenTokensQuery({
       variables: { contracts: recommendedTokens, chain: ethChainId },
     })
     const tokenDataList = useMemo(
@@ -64,7 +65,16 @@ export const HomeExploreTab = memo(
       [data],
     )
 
-    // oxlint-disable-next-line react/exhaustive-deps -- fiat currency causes price layout width to change but does not change token data
+    const homeExploreRowChainCounts = useMemo(
+      () => tokenDataList.map((tokenItemData) => tokenItemData.networkCount ?? 1),
+      [tokenDataList],
+    )
+
+    useMultichainExploreMetricsAnalytics({
+      rowChainCounts: homeExploreRowChainCounts,
+      isExploreTokensLoading: homeExploreTokensLoading,
+    })
+
     useEffect(() => {
       setMaxTokenPriceWrapperWidth(0)
     }, [appFiatCurrency])

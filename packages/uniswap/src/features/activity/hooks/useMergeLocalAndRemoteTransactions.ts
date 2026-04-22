@@ -105,7 +105,6 @@ export function useMergeLocalAndRemoteTransactions({
   const { chains } = useEnabledChains()
 
   // Merge local and remote txs into one array and reconcile data discrepancies
-  // oxlint-disable-next-line react/exhaustive-deps -- trackedPlanKey is a signal dep that triggers re-computation when activePlanStore changes so withDisplayStatusForTrackedPlans reads fresh state.
   return useMemo((): TransactionDetails[] | undefined => {
     if (skipLocalTransactions) {
       const planStepHashes = collectPlanStepHashesFromArray(remoteTransactions ?? [])

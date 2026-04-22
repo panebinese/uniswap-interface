@@ -215,6 +215,8 @@ export {
   createDataServiceApiClient,
   type DataServiceApiClient,
   type DataServiceApiClientContext,
+  type DataReportType,
+  type SubmitDataReportParams,
   TokenReportEventType,
   ReportAssetType,
 } from '@universe/api/src/clients/data/createDataServiceApiClient'
@@ -291,6 +293,7 @@ export {
   type EmbeddedWalletApiClient,
   type EmbeddedWalletClientContext,
   type RecoveryMethod,
+  type Sign7702AuthorizationResult,
   type SignAuth,
 } from '@universe/api/src/clients/embeddedWallet/createEmbeddedWalletApiClient'
 

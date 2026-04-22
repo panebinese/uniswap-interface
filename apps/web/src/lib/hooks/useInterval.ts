@@ -21,6 +21,7 @@ export default function useInterval(callback: () => void | Promise<void>, delay:
       clearTimeout(timeout)
     }
 
+    // oxlint-disable-next-line no-shadow
     async function tick(delay: number, skip = false) {
       if (!skip) {
         const promise = callback()

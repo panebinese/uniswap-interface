@@ -124,7 +124,6 @@ export function useBidReviewData({
 
   // Prepare transaction when modal opens or inputs change
   // retryTrigger is intentionally included to trigger re-execution when user clicks retry
-  // oxlint-disable-next-line react/exhaustive-deps -- retryTrigger is intentionally included, submitState properties excluded
   useEffect(() => {
     let cancelled = false
 

@@ -60,11 +60,13 @@ export interface FormattedTransactionDataResult extends PaginationControls {
   hasData: boolean
   isLoading: boolean
   isFetching: boolean
-  isError: Error | undefined
+  error: Error | undefined
   sectionData: ActivityItem[] | undefined
   keyExtractor: (item: ActivityItem) => string
   onRetry: () => Promise<void>
   skip?: boolean
+  /** Epoch ms when transaction data was last successfully fetched. */
+  dataUpdatedAt?: number
 }
 
 /**
@@ -98,6 +100,7 @@ export function useFormattedTransactionDataForActivity({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    dataUpdatedAt,
   } = useListTransactions({
     evmAddress,
     svmAddress,
@@ -194,13 +197,14 @@ export function useFormattedTransactionDataForActivity({
     onRetry,
     sectionData: memoizedSectionData,
     hasData,
-    isError: error ?? undefined,
+    error: error ?? undefined,
     isLoading: showLoading,
     isFetching,
     keyExtractor,
     fetchNextPage,
     hasNextPage: hasNextPage && !hasReachedLimit(transactions),
     isFetchingNextPage,
+    dataUpdatedAt,
   }
 }
 

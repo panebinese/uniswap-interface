@@ -38,6 +38,10 @@ vi.mock('~/state/hooks', () => ({
   useAppSelector: vi.fn(),
 }))
 
+vi.mock('ui/src/components/icons/IcloudPasswordLogo', () => ({
+  IcloudPasswordLogo: () => <span data-testid="icloud-password-logo" />,
+}))
+
 vi.mock('~/components/AccountDrawer/SlideOutMenu', () => ({
   SlideOutMenu: ({ children, title }: PropsWithChildren<{ title: ReactNode }>) => (
     <div>
@@ -101,6 +105,8 @@ describe('PasskeyMenu', () => {
     vi.clearAllMocks()
     // PasskeyMenu logs an error when PRIVY_APP_ID is not set (always in test env)
     vi.spyOn(console, 'error').mockImplementation(() => {})
+    // SVG icon components (IcloudPasswordLogo, Image) emit warnings in jsdom
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
   it('shows 3 skeleton rows while loading', () => {

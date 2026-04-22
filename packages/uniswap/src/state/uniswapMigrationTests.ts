@@ -6,7 +6,6 @@
  *
  * For unit tests of individual migrations, see uniswapMigrations.test.ts.
  */
-/* oxlint-disable typescript/no-explicit-any -- legacy code needs review */
 import { SearchHistoryResultType } from 'uniswap/src/features/search/SearchHistoryResult'
 import { TokenProtectionWarning } from 'uniswap/src/features/tokens/warnings/types'
 import { PreV55SearchResultType } from 'uniswap/src/state/oldTypes'

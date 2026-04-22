@@ -184,7 +184,6 @@ function makeBackground(): void {
   })
 }
 
-// oxlint-disable-next-line import/no-unused-modules
 export default defineBackground({
   type: 'module',
   main() {

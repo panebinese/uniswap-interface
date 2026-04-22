@@ -25,6 +25,7 @@ export function useChartLabels(params: UseChartLabelsParams) {
    * Creates a single label DOM element with proper styling and positioning
    */
   const createLabelElement = useCallback(
+    // oxlint-disable-next-line no-shadow
     (params: { tickValue: number; x: number; plotLeft: number }): HTMLDivElement => {
       const { tickValue, x, plotLeft } = params
       const label = document.createElement('div')
@@ -60,6 +61,7 @@ export function useChartLabels(params: UseChartLabelsParams) {
    * Dynamically calculates label increment based on the visible range
    */
   const renderLabels = useCallback(
+    // oxlint-disable-next-line no-shadow
     (params: {
       labelsLayer: HTMLDivElement
       chart: IChartApi

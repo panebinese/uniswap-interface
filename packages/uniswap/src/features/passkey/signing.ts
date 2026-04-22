@@ -2,7 +2,7 @@ import {
   Action,
   AuthenticationTypes,
 } from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
-import type { SignAuth } from '@universe/api'
+import type { Sign7702AuthorizationResult, SignAuth } from '@universe/api'
 import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
 import { getDeviceSession, signWithDeviceKey } from 'uniswap/src/features/passkey/deviceSession'
 import { authenticateWithPasskey } from 'uniswap/src/features/passkey/embeddedWallet'
@@ -93,6 +93,93 @@ export async function signTypedDataWithPasskey(typedData: string, walletId?: str
   } catch (error) {
     logger.error(error, {
       tags: { file: 'signing.ts', function: 'signTypedDataWithPasskey' },
+    })
+    throw error
+  }
+}
+
+/**
+ * Signs an EIP-7702 authorization via the privy-embedded-wallet backend.
+ * Uses device session (silent) or passkey fallback, same as other signing operations.
+ */
+export async function sign7702AuthorizationWithPasskey(params: {
+  contractAddress: string
+  chainId: number
+  nonce: number
+  walletId?: string
+}): Promise<Sign7702AuthorizationResult> {
+  const { contractAddress, chainId, nonce, walletId } = params
+
+  try {
+    return await signWithDeviceSessionOrPasskey({
+      action: Action.SIGN_7702_AUTHORIZATION,
+      walletId,
+      challengeParams: {
+        authorizationContractAddress: contractAddress,
+        authorizationChainId: String(chainId),
+        authorizationNonce: String(nonce),
+      },
+      signRequest: (auth) =>
+        EmbeddedWalletApiClient.fetchSign7702AuthorizationRequest({
+          contractAddress,
+          chainId,
+          nonce,
+          auth,
+        }),
+    })
+  } catch (error) {
+    logger.error(error, {
+      tags: { file: 'signing.ts', function: 'sign7702AuthorizationWithPasskey' },
+    })
+    throw error
+  }
+}
+
+/**
+ * Signs a full EIP-7702 transaction via the privy-embedded-wallet backend.
+ * The backend handles type-4 transaction signing and serialization.
+ */
+export async function sign7702TransactionWithPasskey(params: {
+  to: string
+  data: string
+  value: string
+  chainId: number
+  gas: string
+  maxFeePerGas: string
+  maxPriorityFeePerGas: string
+  nonce: number
+  authorization: Sign7702AuthorizationResult
+  walletId?: string
+}): Promise<string> {
+  const { to, data, value, chainId, gas, maxFeePerGas, maxPriorityFeePerGas, nonce, authorization, walletId } = params
+
+  try {
+    const txParams = { to, data, value, chainId, gas, maxFeePerGas, maxPriorityFeePerGas, nonce }
+    const authorizationParams = {
+      authorizationContractAddress: authorization.contractAddress,
+      authorizationChainId: authorization.chainId,
+      authorizationNonce: authorization.nonce,
+      authorizationR: authorization.r,
+      authorizationS: authorization.s,
+      authorizationYParity: authorization.yParity,
+    }
+    const transactionForChallenge = JSON.stringify({ ...txParams, ...authorizationParams })
+
+    const result = await signWithDeviceSessionOrPasskey({
+      action: Action.SIGN_7702_TRANSACTION,
+      walletId,
+      challengeParams: { transaction: transactionForChallenge },
+      signRequest: (auth) =>
+        EmbeddedWalletApiClient.fetchSign7702TransactionRequest({
+          ...txParams,
+          ...authorizationParams,
+          auth,
+        }),
+    })
+    return result.signedTransaction
+  } catch (error) {
+    logger.error(error, {
+      tags: { file: 'signing.ts', function: 'sign7702TransactionWithPasskey' },
     })
     throw error
   }

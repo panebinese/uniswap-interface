@@ -86,6 +86,62 @@ describe('tokenStatsToMultichainTokens', () => {
     expect(mc.stats?.volume1d).toBe(1_000_000)
   })
 
+  it('should map stat.chainTokens to MultichainToken.chainTokens when present', () => {
+    const polygonUsdc = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'
+    const stat = createTokenStat({
+      chain: 'ethereum',
+      address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+      volume: { value: 1_000_000 },
+      chainTokens: [
+        { chainId: 1, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', decimals: 6 },
+        { chainId: 137, address: polygonUsdc, decimals: 6, isBridged: true },
+      ],
+    })
+
+    const result = tokenStatsToMultichainTokens([stat])
+
+    expect(result).toHaveLength(1)
+    const mc = result[0]!
+    expect(mc.chainTokens).toHaveLength(2)
+    expect(mc.chainTokens[0]).toMatchObject({
+      chainId: 1,
+      address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+      decimals: 6,
+      isBridged: false,
+    })
+    expect(mc.chainTokens[0]?.stats?.volume1d).toBe(1_000_000)
+    expect(mc.chainTokens[1]).toMatchObject({
+      chainId: 137,
+      address: polygonUsdc,
+      decimals: 6,
+      isBridged: true,
+    })
+    expect(mc.chainTokens[1]?.stats?.volume1d).toBe(1_000_000)
+  })
+
+  it('should use per-chain volume1d on chainTokens when present', () => {
+    const stat = createTokenStat({
+      volume: { value: 1_000_000 },
+      chainTokens: [
+        { chainId: 1, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', decimals: 6, volume1d: 900_000 },
+        { chainId: 137, address: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', decimals: 6, volume1d: 100_000 },
+      ],
+    })
+
+    const mc = tokenStatsToMultichainTokens([stat])[0]!
+    expect(mc.chainTokens[0]?.stats?.volume1d).toBe(900_000)
+    expect(mc.chainTokens[1]?.stats?.volume1d).toBe(100_000)
+  })
+
+  it('should fall back to single ChainToken when chainTokens is empty', () => {
+    const stat = createTokenStat({ chainTokens: [] })
+
+    const result = tokenStatsToMultichainTokens([stat])
+
+    expect(result[0]?.chainTokens).toHaveLength(1)
+    expect(result[0]?.chainTokens[0]?.chainId).toBe(1)
+  })
+
   it('should transform multiple TokenStats into multiple MultichainTokens', () => {
     mockGetChainIdFromChainUrlParam.mockImplementation((param) => (param === 'ethereum' ? 1 : 8453))
     const stat1 = createTokenStat({ address: '0xToken1', symbol: 'TK1', chain: 'ethereum' })

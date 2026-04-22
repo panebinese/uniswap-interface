@@ -222,7 +222,6 @@ export function RecentlyConnectedModal() {
     }
   }, [walletAddress, account, isEmbeddedWalletEnabled, openModal, recentConnectorId])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- account.isConnecting dependency is sufficient for this effect
   useEffect(() => {
     if (account.isConnected && isOpen) {
       closeModal()

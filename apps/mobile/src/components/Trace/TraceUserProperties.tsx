@@ -65,7 +65,6 @@ export function TraceUserProperties(): null {
 
   useGatingUserPropertyUsernames()
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.AppVersion, getFullAppVersion())
     if (isAndroid) {
@@ -78,7 +77,6 @@ export function TraceUserProperties(): null {
     }
   }, [allowAnalytics])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this when finishedOnboarding changes
   useEffect(() => {
     const fetchKeyringData = async (): Promise<void> => {
       const mnemonicIds = await Keyring.getMnemonicIds()
@@ -101,12 +99,10 @@ export function TraceUserProperties(): null {
 
   // Set user properties for amplitude
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.WalletSwapProtectionSetting, swapProtectionSetting)
   }, [allowAnalytics, swapProtectionSetting])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.DarkMode, isDarkMode)
   }, [allowAnalytics, isDarkMode])
@@ -116,18 +112,15 @@ export function TraceUserProperties(): null {
     setUserProperty(MobileUserPropertyName.WindowWidth, windowWidth)
   }, [windowWidth, windowHeight])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.WalletSignerCount, signerAccountAddresses.length)
     setUserProperty(MobileUserPropertyName.WalletSignerAccounts, signerAccountAddresses)
   }, [allowAnalytics, signerAccountAddresses])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.WalletViewOnlyCount, viewOnlyAccounts.length)
   }, [allowAnalytics, viewOnlyAccounts])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this also when allowAnalytics changes
   useEffect(() => {
     if (!activeAccount) {
       return
@@ -143,7 +136,6 @@ export function TraceUserProperties(): null {
     setUserProperty(MobileUserPropertyName.IsHideSpamTokensEnabled, hideSpamTokens)
   }, [allowAnalytics, activeAccount, hideSmallBalances, hideSpamTokens])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(
       MobileUserPropertyName.AppOpenAuthMethod,
@@ -163,17 +155,14 @@ export function TraceUserProperties(): null {
     )
   }, [allowAnalytics, biometricsAppSettingsState, touchId, faceId])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.Language, currentLanguage)
   }, [allowAnalytics, currentLanguage])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.Currency, currentFiatCurrency)
   }, [allowAnalytics, currentFiatCurrency])
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.TestnetModeEnabled, isTestnetModeEnabled)
   }, [allowAnalytics, isTestnetModeEnabled])

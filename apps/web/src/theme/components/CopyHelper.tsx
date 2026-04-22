@@ -78,6 +78,7 @@ interface CopyHelperProps {
   disabled?: boolean
   children: ReactNode
   externalHover?: boolean
+  onCopy?: () => void
 }
 
 type CopyHelperRefType = { forceCopy: () => void }
@@ -97,6 +98,7 @@ export const CopyHelper = forwardRef<CopyHelperRefType, CopyHelperProps>(
       disabled = false,
       children,
       externalHover = false,
+      onCopy,
     }: CopyHelperProps,
     ref,
   ) => {
@@ -106,8 +108,9 @@ export const CopyHelper = forwardRef<CopyHelperRefType, CopyHelperProps>(
       (e?: { preventDefault: () => void }) => {
         e?.preventDefault()
         setCopied(toCopy)
+        onCopy?.()
       },
-      [toCopy, setCopied],
+      [onCopy, toCopy, setCopied],
     )
 
     useImperativeHandle(ref, () => ({

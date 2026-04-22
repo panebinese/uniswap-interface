@@ -27,6 +27,7 @@ import {
   useTokenBasicInfoPartsFragment,
   useTokenBasicProjectPartsFragment,
 } from 'uniswap/src/data/graphql/uniswap-data-api/fragments'
+import { isMultichainProjectTokens } from 'uniswap/src/features/dataApi/tokenProjects/utils/isMultichainProjectTokens'
 import { currencyIdToContractInput } from 'uniswap/src/features/dataApi/utils/currencyIdToContractInput'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TokenWarningCard } from 'uniswap/src/features/tokens/warnings/TokenWarningCard'
@@ -52,14 +53,18 @@ export function TokenDetailsScreen({ route, navigation }: AppStackScreenProp<Mob
 function TokenDetailsWrapper(): JSX.Element {
   const { chainId, address, currencyId } = useTokenDetailsContext()
   const { data: token } = useTokenBasicInfoPartsFragment({ currencyId })
+  const { data: projectParts } = useTokenBasicProjectPartsFragment({ currencyId })
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const isMultichainAsset = isMultichainProjectTokens(projectParts.project?.tokens)
 
   const traceProperties = useMemo(
     () => ({
       chain: chainId,
       address,
       currencyName: token.name,
+      ...(multichainTokenUxEnabled ? { multichain: isMultichainAsset } : {}),
     }),
-    [address, chainId, token.name],
+    [address, chainId, isMultichainAsset, multichainTokenUxEnabled, token.name],
   )
 
   return (
@@ -181,14 +186,24 @@ const TokenBalancesWrapper = memo(function TokenBalancesWrapperInner(): JSX.Elem
     })
   }
 
-  const { currentChainBalance, otherChainBalances } = useCrossChainBalances({
+  const {
+    currentChainBalance,
+    otherChainBalances,
+    error: balanceError,
+    dataUpdatedAt,
+  } = useCrossChainBalances({
     evmAddress: activeAddress,
     currencyId,
     crossChainTokens,
   })
 
   return isChainEnabled ? (
-    <TokenBalances currentChainBalance={currentChainBalance} otherChainBalances={otherChainBalances} />
+    <TokenBalances
+      currentChainBalance={currentChainBalance}
+      otherChainBalances={otherChainBalances}
+      isOutage={!!balanceError}
+      dataUpdatedAt={dataUpdatedAt}
+    />
   ) : null
 })
 

@@ -13,12 +13,14 @@ export type TimelineEventType =
 export interface TimelineEventStrings {
   label: string
   description: string
+  futureDescription: string
 }
 
 export interface TimelineEvent {
   type: TimelineEventType
   label: string
   description: string
+  futureDescription: string
   block: number
   time: Date
 }
@@ -71,6 +73,7 @@ export function deriveTimelineEvents(
       type: 'pre-sale-starts',
       label: strings['pre-sale-starts'].label,
       description: strings['pre-sale-starts'].description,
+      futureDescription: strings['pre-sale-starts'].futureDescription,
       block: preSaleStartBlock,
       time: toTimestamp(preSaleStartBlock),
     })
@@ -79,6 +82,7 @@ export function deriveTimelineEvents(
       type: 'pre-sale-ends',
       label: strings['pre-sale-ends'].label,
       description: strings['pre-sale-ends'].description,
+      futureDescription: strings['pre-sale-ends'].futureDescription,
       block: preSaleEndBlock,
       time: toTimestamp(preSaleEndBlock),
     })
@@ -90,6 +94,7 @@ export function deriveTimelineEvents(
     type: 'auction-started',
     label: strings['auction-started'].label,
     description: strings['auction-started'].description,
+    futureDescription: strings['auction-started'].futureDescription,
     block: auctionStartBlock,
     time: toTimestamp(auctionStartBlock),
   })
@@ -99,6 +104,7 @@ export function deriveTimelineEvents(
     type: 'auction-ends',
     label: strings['auction-ends'].label,
     description: strings['auction-ends'].description,
+    futureDescription: strings['auction-ends'].futureDescription,
     block: endBlock,
     time: toTimestamp(endBlock),
   })
@@ -108,6 +114,7 @@ export function deriveTimelineEvents(
     type: 'tokens-claimable',
     label: strings['tokens-claimable'].label,
     description: strings['tokens-claimable'].description,
+    futureDescription: strings['tokens-claimable'].futureDescription,
     block: claimBlock,
     time: toTimestamp(claimBlock),
   })

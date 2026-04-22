@@ -7,6 +7,7 @@ import { useOnchainDisplayName } from 'uniswap/src/features/accounts/useOnchainD
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { useNavigateToNftExplorerLink } from 'uniswap/src/features/nfts/hooks/useNavigateToNftExplorerLink'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { useSetActiveChainId } from 'uniswap/src/features/smartWallet/delegation/hooks/useSetActiveChainId'
@@ -17,9 +18,10 @@ import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useGetCanSignPermits } from 'uniswap/src/features/transactions/hooks/useGetCanSignPermits'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { currencyIdToAddress, currencyIdToChain } from 'uniswap/src/utils/currencyId'
-import { getFiatOnRampURL, getPoolDetailsURL, getTokenDetailsURL } from 'uniswap/src/utils/linking'
+import { getFiatOnRampURL, getPoolDetailsURL } from 'uniswap/src/utils/linking'
 import { useEvent, usePrevious } from 'utilities/src/react/hooks'
 import { noop } from 'utilities/src/react/noop'
+import { getTokenDetailsURL } from '~/appGraphql/data/util'
 import { MenuStateVariant, useMenuState } from '~/components/AccountDrawer/menuState'
 import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { SwitchNetworkAction } from '~/components/Popups/types'
@@ -27,6 +29,7 @@ import { ReceiveModalState } from '~/components/ReceiveCryptoModal/types'
 import { useOpenReceiveCryptoModal } from '~/components/ReceiveCryptoModal/useOpenReceiveCryptoModal'
 import { useConnectionStatus } from '~/features/accounts/store/hooks'
 import { useAccountsStoreContext } from '~/features/accounts/store/provider'
+import { getChainUrlParam } from '~/features/params/chainParams'
 import { useAccount } from '~/hooks/useAccount'
 import { useEthersProvider } from '~/hooks/useEthersProvider'
 import { useEthersSigner } from '~/hooks/useEthersSigner'
@@ -93,6 +96,7 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
   )
 
   const navigateToPoolDetails = useCallback(
+    // oxlint-disable-next-line no-shadow
     ({ poolId, chainId }: { poolId: Address; chainId: UniverseChainId }) => {
       const url = getPoolDetailsURL(poolId, chainId)
       navigate(url)
@@ -111,6 +115,7 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
 
   const navigateToSendFlow = useCallback(
     ({
+      // oxlint-disable-next-line no-shadow
       chainId,
       currencyAddress,
       recipient,
@@ -150,10 +155,12 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
   }, [])
 
   const navigateToTokenDetails = useCallback(
-    async (currencyId: string) => {
+    (currencyId: string, chainFilter?: UniverseChainId | null) => {
+      const tokenChainId = currencyIdToChain(currencyId)
       const url = getTokenDetailsURL({
         address: currencyIdToAddress(currencyId),
-        chain: currencyIdToChain(currencyId) ?? undefined,
+        chain: tokenChainId ? toGraphQLChain(tokenChainId) : undefined,
+        chainQueryParam: chainFilter ? getChainUrlParam(chainFilter) : undefined,
       })
       navigate(url)
       closeSearchModal()
@@ -190,7 +197,7 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
   const isAtomicBatchingSupportedByChain = useIsAtomicBatchingSupportedByChainIdCallback()
 
   const { enabled: isOneClickSwapSettingEnabled } = useOneClickSwapSetting()
-  // oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
+  // oxlint-disable-next-line typescript/no-duplicate-type-constituents no-shadow -- biome-parity: oxlint is stricter here
   const getCanBatchTransactions = useEvent((chainId?: UniverseChainId | undefined) => {
     return Boolean(
       isBatchedSwapsFlagEnabled && isOneClickSwapSettingEnabled && chainId && isAtomicBatchingSupportedByChain(chainId),
@@ -201,6 +208,7 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
 
   const onSwapChainsChanged = useEvent(
     ({
+      // oxlint-disable-next-line no-shadow
       chainId,
       prevChainId,
       outputChainId,

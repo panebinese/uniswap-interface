@@ -74,7 +74,6 @@ export function WalletConnectModal({
   }, [hasPendingSessionError])
 
   const onScanCode = useCallback(
-    // oxlint-disable-next-line complexity -- biome-parity: oxlint is stricter here
     async (uri: string) => {
       // don't scan any QR codes if there is an error popup open or camera is frozen
       if (!activeAccount || hasPendingSessionError || shouldFreezeCamera) {

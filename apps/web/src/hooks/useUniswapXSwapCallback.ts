@@ -110,7 +110,9 @@ export function useUniswapXSwapCallback({
   const portfolioBalanceUsd = useTotalBalancesUsdForAnalytics()
 
   return useCallback(async () => {
+    // oxlint-disable-next-line no-shadow
     const account = accountRef.current
+    // oxlint-disable-next-line no-shadow
     const provider = providerRef.current
     if (account.status !== 'connected') {
       throw new Error('wallet not connected')
@@ -200,10 +202,12 @@ export function useUniswapXSwapCallback({
 
       const signature = await (async () => {
         try {
+          // oxlint-disable-next-line no-shadow
           const provider = providerRef.current
           if (!provider) {
             throw new Error('missing provider')
           }
+          // oxlint-disable-next-line no-shadow
           const account = accountRef.current
           // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
           return await signTypedData({ signer: provider.getSigner(account.address), domain, types, value: values })

@@ -32,7 +32,6 @@ export const getExternalConversionLeadsCookie = (): { key: PlatformIdType; value
   const cookieValue = document.cookie
     .split('; ')
     .find((cookie) => cookie.startsWith(CONVERSION_LEADS_EXTERNAL_COOKIE_NAME))
-    // oxlint-disable-next-line typescript/no-unnecessary-condition
     ?.split('=')?.[1]
 
   let parsedCookie

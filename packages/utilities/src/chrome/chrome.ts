@@ -1,5 +1,4 @@
 // Disabling this because we need access to `chrome` in the global scope.
-/* oxlint-disable no-restricted-globals -- we need access to `chrome` in the global scope */
 
 import { PlatformSplitStubError } from 'utilities/src/errors'
 

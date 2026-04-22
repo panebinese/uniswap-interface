@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { SharedEventName } from '@uniswap/analytics-events'
+import { useCallback, useMemo } from 'react'
 import { Flex, HeightAnimator, Separator, Text, TouchableArea } from 'ui/src'
 import { ChevronsIn } from 'ui/src/components/icons/ChevronsIn'
 import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
@@ -7,7 +8,10 @@ import { NetworkBalanceRow } from 'uniswap/src/components/tokenDetails/NetworkBa
 import { sortBalancesByValue } from 'uniswap/src/components/tokenDetails/utils'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
+import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { isMobileApp } from 'utilities/src/platform'
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 
 interface NetworkBalanceBreakdownProps {
   balances: PortfolioBalance[]
@@ -28,10 +32,24 @@ export function NetworkBalanceBreakdown({
   onSelectBalance,
   renderNetworkLogo,
 }: NetworkBalanceBreakdownProps): JSX.Element | null {
+  const trace = useTrace()
   const sortedBalances = useMemo(() => sortBalancesByValue(balances), [balances])
   const chainIds = useMemo(() => sortedBalances.map((b) => b.currencyInfo.currency.chainId), [sortedBalances])
   const isExpanded = collapsible ? expanded : true
   const chevronSize = isMobileApp ? '$icon.20' : '$icon.16'
+
+  const onHeaderPress = useCallback(() => {
+    if (!collapsible || !onExpandedChange) {
+      return
+    }
+    const nextExpanded = !expanded
+    onExpandedChange(nextExpanded)
+    sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
+      ...trace,
+      element: ElementName.BreakdownExpanded,
+      balanceToggleState: nextExpanded ? 'open' : 'close',
+    })
+  }, [collapsible, expanded, onExpandedChange, trace])
 
   if (!sortedBalances.length) {
     return null
@@ -42,12 +60,7 @@ export function NetworkBalanceBreakdown({
       {collapsible && <Separator mb="$spacing12" />}
       {collapsible ? (
         <Flex pb="$spacing8">
-          <TouchableArea
-            row
-            justifyContent="space-between"
-            alignItems="center"
-            onPress={() => onExpandedChange?.(!expanded)}
-          >
+          <TouchableArea row justifyContent="space-between" alignItems="center" onPress={onHeaderPress}>
             <Text variant={isMobileApp ? 'body2' : 'body3'} color="$neutral2">
               {label}
             </Text>

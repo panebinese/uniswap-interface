@@ -88,7 +88,6 @@ export async function invalidateAndRefetchWalletDelegationQueries(): Promise<voi
 /**
  * Send analytics events for finalized transactions
  */
-// oxlint-disable-next-line complexity
 export function logTransactionEvent(actionData: ReturnType<typeof transactionActions.finalizeTransaction>): void {
   const { payload } = actionData
   const { chainId, addedTime, from, typeInfo, receipt, transactionOriginType } = payload

@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-var-requires
 export const ALL_NETWORKS_LOGO = require('./logos/png/all-networks-icon.png')
 export const ETHEREUM_LOGO = require('./logos/png/ethereum-logo.png')
 export const OPTIMISM_LOGO = require('./logos/png/optimism-logo.png')

@@ -1,4 +1,3 @@
-/* oxlint-disable complexity */
 import { buildAuthObject, getSdkError } from '@walletconnect/utils'
 import { providers } from 'ethers'
 import { wcWeb3Wallet } from 'src/features/walletConnect/walletConnectClient'

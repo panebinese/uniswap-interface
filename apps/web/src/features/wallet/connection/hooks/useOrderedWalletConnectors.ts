@@ -146,6 +146,7 @@ function shouldShowOnlyInjectedConnector(injectedWallets: ExternalWallet[]): boo
 }
 
 function buildSecondaryConnectorsList({
+  // oxlint-disable-next-line no-shadow
   isMobileWeb,
   walletConnectWallet,
   coinbaseSdkWallet,

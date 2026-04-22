@@ -27,7 +27,6 @@ interface TokenLogoProps {
   size?: number
   hideNetworkLogo?: boolean
   alwaysShowNetworkLogo?: boolean
-  showMainnetNetworkLogo?: boolean
   networkCount?: number
   networkLogoBorderWidth?: number
   loading?: boolean
@@ -132,7 +131,6 @@ export const TokenLogo = memo(function TokenLogoInner({
   size = iconSizes.icon40,
   hideNetworkLogo,
   alwaysShowNetworkLogo,
-  showMainnetNetworkLogo = false,
   networkCount,
   networkLogoBorderWidth = isMobileApp ? 2 : 1.5,
   loading,
@@ -156,7 +154,7 @@ export const TokenLogo = memo(function TokenLogoInner({
     alwaysShowNetworkLogo,
     hideNetworkLogo,
     chainId,
-    showMainnetNetworkLogo,
+    showMainnetNetworkLogo: multichainTokenUxEnabled,
   })
   const networkLogoSize = Math.round(size * STATUS_RATIO)
 

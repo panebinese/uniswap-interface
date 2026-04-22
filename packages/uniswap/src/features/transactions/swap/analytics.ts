@@ -312,7 +312,6 @@ export function useSwapAnalytics(derivedSwapInfo: DerivedSwapInfo): void {
 
   const { data: portfolioData } = usePortfolioTotalValue({ ...activeAddresses, fetchPolicy: 'cache-first' })
 
-  // oxlint-disable-next-line react/exhaustive-deps -- we only want to re-run this when we get a new `quoteId`
   useEffect(() => {
     if (!trade) {
       return

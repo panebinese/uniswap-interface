@@ -1,9 +1,10 @@
 //! tamagui-ignore
 // tamagui-ignore
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
-import { Flex, useMedia } from 'ui/src'
+import { Flex } from 'ui/src'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
 import {
@@ -16,9 +17,10 @@ import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants/trace/page'
 import { Trace } from 'uniswap/src/features/telemetry/Trace'
 import { ActivitySection } from '~/components/Toucan/Auction/ActivityTimeline/ActivitySection'
+import { AuctionDetailsModal } from '~/components/Toucan/Auction/ActivityTimeline/AuctionDetailsModal'
 import { BidDistributionChartTab } from '~/components/Toucan/Auction/AuctionChartShared'
 import { AuctionHeader } from '~/components/Toucan/Auction/AuctionHeader'
-import { AuctionStats } from '~/components/Toucan/Auction/AuctionStats/AuctionStats'
+import { AuctionInfo, AuctionStatsGrid } from '~/components/Toucan/Auction/AuctionStats/AuctionStats'
 import { AuctionIntroBanner } from '~/components/Toucan/Auction/Banners/AuctionIntro/AuctionIntroBanner'
 import { AuctionStatsBanner } from '~/components/Toucan/Auction/Banners/AuctionStatsBanner/AuctionStatsBanner'
 import { TokenLaunchedBanner } from '~/components/Toucan/Auction/Banners/TokenLaunched/TokenLaunchedBanner'
@@ -41,26 +43,9 @@ import { InterfaceState } from '~/state/webReducer'
 
 const TOUCAN_INTRO_MODAL_SESSION_KEY = 'toucan-intro-modal-seen-session'
 
-export enum MobileScreen {
-  CHART = 'chart',
-  BID_FORM = 'bidForm',
-}
-
-export interface MobileScreenConfig {
-  screen: MobileScreen
-  showBidFormModal?: boolean
-}
-
-function ToucanTokenContent({
-  isModalOpen,
-  onOpenModal,
-  onCloseModal,
-}: {
-  isModalOpen: boolean
-  onOpenModal: () => void
-  onCloseModal: () => void
-}) {
+function ToucanTokenContent({ isModalOpen, onCloseModal }: { isModalOpen: boolean; onCloseModal: () => void }) {
   const { t } = useTranslation()
+  const isV2 = useFeatureFlag(FeatureFlags.AuctionDetailsV2)
   const { chainName, auctionAddress } = useParams<{ chainName: string; auctionAddress: string }>()
   const { auctionState, auctionDetails, tokenColor, isGraduated, currentBlockNumber } = useAuctionStore((state) => ({
     auctionState: state.progress.state,
@@ -69,7 +54,6 @@ function ToucanTokenContent({
     isGraduated: state.progress.isGraduated,
     currentBlockNumber: state.currentBlockNumber,
   }))
-  const media = useMedia()
   const { canPlaceBid, showMobileWithdrawButton, hasUserBids } = useBidFormState()
 
   // Withdraw button state for mobile fixed button
@@ -84,37 +68,30 @@ function ToucanTokenContent({
     chainId: auctionDetails?.chainId,
   })
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const handleDetailsModal = useCallback(() => setIsDetailsModalOpen(true), [])
+  const handleCloseDetailsModal = useCallback(() => setIsDetailsModalOpen(false), [])
   const isAuctionEnded = auctionState === AuctionProgressState.ENDED
   const showAuctionGraduated = isAuctionEnded && isGraduated && hasUserBids
   const shouldShowTokenLaunchedBanner = isAuctionEnded && auctionDetails !== null
 
   const [chartActiveTab, setChartActiveTab] = useState<BidDistributionChartTab>(BidDistributionChartTab.ClearingPrice)
-  const [mobileScreenConfig, setMobileScreenConfig] = useState<MobileScreenConfig>({ screen: MobileScreen.CHART })
+  const [showBidFormModal, setShowBidFormModal] = useState(false)
 
-  // This is tab that will be auto-switched to when user is setting their bid
-  const AUTO_SWITCH_TARGET_TAB = BidDistributionChartTab.Distribution
-
+  // In V2 combined mode, ClearingPrice tab already includes distribution data,
+  // so no auto-switch is needed. In V1, switch to the separate Distribution tab.
   const handleBidFormInputChange = useCallback(() => {
     const isAuctionInProgress = auctionState === AuctionProgressState.IN_PROGRESS
-    if (isAuctionInProgress && chartActiveTab === BidDistributionChartTab.ClearingPrice) {
-      setChartActiveTab(AUTO_SWITCH_TARGET_TAB)
+    if (!isV2 && isAuctionInProgress && chartActiveTab === BidDistributionChartTab.ClearingPrice) {
+      setChartActiveTab(BidDistributionChartTab.Distribution)
     }
-  }, [auctionState, chartActiveTab, AUTO_SWITCH_TARGET_TAB])
+  }, [auctionState, chartActiveTab, isV2])
 
   // Sync activeBidFormTab to store so chart knows whether to render bid line
   const { setActiveBidFormTab } = useAuctionStoreActions()
   useEffect(() => {
     setActiveBidFormTab(showAuctionGraduated ? BidInfoTab.AUCTION_GRADUATED : BidInfoTab.PLACE_A_BID)
   }, [showAuctionGraduated, setActiveBidFormTab])
-
-  // Default mobile screen to bid form view when auction has graduated and user has bids
-  useEffect(() => {
-    if (showAuctionGraduated && media.lg) {
-      setMobileScreenConfig({
-        screen: MobileScreen.BID_FORM,
-      })
-    }
-  }, [showAuctionGraduated, media.lg])
 
   return (
     <Trace
@@ -128,8 +105,9 @@ function ToucanTokenContent({
       }}
     >
       <ToucanIntroModal isOpen={isModalOpen} onClose={onCloseModal} />
-      <AuctionIntroBanner onLearnMorePress={onOpenModal} />
+      <AuctionDetailsModal isOpen={isDetailsModalOpen} onClose={handleCloseDetailsModal} />
       <ToucanContainer mb="$spacing48">
+        <AuctionIntroBanner onLearnMorePress={handleDetailsModal} />
         {shouldShowTokenLaunchedBanner && (
           <TokenLaunchedBanner
             tokenName={auctionDetails.token?.currency.name ?? ''}
@@ -140,7 +118,7 @@ function ToucanTokenContent({
         )}
         <AuctionHeader />
         <AuctionStatsBanner />
-        <TokenDetailsLayout justifyContent="flex-start" px="$none" gap={46}>
+        <TokenDetailsLayout justifyContent="flex-start" px="$none" $lg={{ px: '$none' }} gap={46}>
           <LeftPanel
             maxWidth={744}
             gap="$spacing40"
@@ -148,16 +126,24 @@ function ToucanTokenContent({
             $lg={{
               gap: '$gap32',
               maxWidth: '100%',
-              display: mobileScreenConfig.screen === MobileScreen.CHART ? 'flex' : 'none',
             }}
           >
             <AuctionChartContainer
               activeTab={chartActiveTab}
               onTabChange={setChartActiveTab}
-              onMobileScreenChange={setMobileScreenConfig}
+              onLearnMorePress={handleDetailsModal}
+              onShowBidFormModal={() => setShowBidFormModal(true)}
             />
+            {/* On mobile/tablet ($xl), show graduated state and bids below the chart */}
+            {(showAuctionGraduated || hasUserBids) && (
+              <Flex display="none" $xl={{ display: 'flex', flexDirection: 'column', gap: '$spacing24' }}>
+                {showAuctionGraduated && <AuctionGraduated />}
+                <Bids />
+              </Flex>
+            )}
+            <AuctionStatsGrid onViewAllStats={handleDetailsModal} />
             <ActivitySection />
-            <AuctionStats />
+            <AuctionInfo />
           </LeftPanel>
 
           <RightPanel
@@ -165,8 +151,8 @@ function ToucanTokenContent({
             display="flex"
             gap="$spacing24"
             alignSelf="flex-start"
-            $lg={{
-              display: mobileScreenConfig.screen === MobileScreen.BID_FORM ? 'flex' : 'none',
+            $xl={{
+              display: 'none',
             }}
           >
             {showAuctionGraduated ? <AuctionGraduated /> : <BidForm onInputChange={handleBidFormInputChange} />}
@@ -193,10 +179,7 @@ function ToucanTokenContent({
           }}
         >
           {canPlaceBid ? (
-            <ToucanActionButton
-              label={t('toucan.bidForm.placeABid')}
-              onPress={() => setMobileScreenConfig((prev) => ({ ...prev, showBidFormModal: true }))}
-            />
+            <ToucanActionButton label={t('toucan.bidForm.placeABid')} onPress={() => setShowBidFormModal(true)} />
           ) : (
             <ToucanActionButton
               elementName={ElementName.AuctionWithdrawTokensButton}
@@ -208,15 +191,15 @@ function ToucanTokenContent({
           )}
         </Flex>
       )}
-      {/* BidForm modal - $sm only */}
+      {/* BidForm modal - mobile */}
       <Modal
         name={ModalName.BidForm}
-        isModalOpen={mobileScreenConfig.showBidFormModal ?? false}
-        onClose={() => setMobileScreenConfig((prev) => ({ ...prev, showBidFormModal: false }))}
+        isModalOpen={showBidFormModal}
+        onClose={() => setShowBidFormModal(false)}
         maxWidth={420}
         padding="$spacing16"
       >
-        <BidForm onInputChange={handleBidFormInputChange} setMobileScreenConfig={setMobileScreenConfig} />
+        <BidForm onInputChange={handleBidFormInputChange} onBidSubmitted={() => setShowBidFormModal(false)} />
       </Modal>
       {/* Withdraw modal - $sm only */}
       <WithdrawModal isOpen={isWithdrawModalOpen} onClose={() => setIsWithdrawModalOpen(false)} />
@@ -263,10 +246,6 @@ export default function ToucanToken() {
     setIsModalOpen(true)
   }, [walletAddress, hasSeenDisconnected, hasWalletSeen])
 
-  const handleOpenModal = () => {
-    setIsModalOpen(true)
-  }
-
   const handleCloseModal = () => {
     setIsModalOpen(false)
 
@@ -287,7 +266,7 @@ export default function ToucanToken() {
 
   return (
     <AuctionStoreProvider>
-      <ToucanTokenContent isModalOpen={isModalOpen} onOpenModal={handleOpenModal} onCloseModal={handleCloseModal} />
+      <ToucanTokenContent isModalOpen={isModalOpen} onCloseModal={handleCloseModal} />
     </AuctionStoreProvider>
   )
 }

@@ -199,7 +199,6 @@ export function ClearingPriceChartRenderer({
   })()
 
   // X-axis chart lifecycle (only for in-progress auctions)
-  // oxlint-disable-next-line react/exhaustive-deps -- Using specific properties from normalizedData in deps is intentional
   useEffect(() => {
     if (!normalizedData.isAuctionInProgress || !xAxisChartContainerRef.current) {
       return undefined
@@ -287,7 +286,6 @@ export function ClearingPriceChartRenderer({
   ])
 
   // Data chart controller lifecycle
-  // oxlint-disable-next-line react/exhaustive-deps -- intentionally exclude most props from deps to prevent recreation. Updates flow through controller.update() instead.
   useEffect(() => {
     if (!chartContainerRef.current) {
       return undefined

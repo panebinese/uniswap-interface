@@ -2,9 +2,8 @@ import { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, TouchableArea } from 'ui/src'
 import { BackArrow } from 'ui/src/components/icons/BackArrow'
-import { CheckCircleFilled } from 'ui/src/components/icons/CheckCircleFilled'
-import { EnvelopeLock } from 'ui/src/components/icons/EnvelopeLock'
-import { GoogleLogo } from 'ui/src/components/icons/GoogleLogo'
+import { Envelope } from 'ui/src/components/icons/Envelope'
+import { GoogleLogoGradient } from 'ui/src/components/icons/GoogleLogoGradient'
 import { X } from 'ui/src/components/icons/X'
 import { useSporeColors } from 'ui/src/hooks/useSporeColors'
 import { SpinningLoader } from 'ui/src/loading/SpinningLoader'
@@ -181,12 +180,12 @@ export function StepHeader({ onBack, onClose }: { onBack: () => void; onClose: (
 function ProviderIcon({ provider, size }: { provider: 'google' | 'apple' | null; size: number }) {
   const colors = useSporeColors()
   if (provider === 'google') {
-    return <GoogleLogo size={size} color="$neutral1" />
+    return <GoogleLogoGradient size={size} />
   }
   if (provider === 'apple') {
     return <AppleLogo height={size} width={size} fill={colors.neutral1.val} />
   }
-  return <EnvelopeLock size={size} color="$neutral1" />
+  return <Envelope size={size} color="$neutral1" />
 }
 
 function getProviderLabel(provider: 'google' | 'apple' | null, t: ReturnType<typeof useTranslation>['t']): string {
@@ -207,7 +206,6 @@ const SIZE_CONFIG = {
     gap: '$spacing2',
     variant: 'body3',
     color: '$neutral2',
-    check: '$icon.20',
   },
   lg: {
     box: 40,
@@ -216,7 +214,6 @@ const SIZE_CONFIG = {
     gap: '$gap4',
     variant: 'body2',
     color: '$neutral1',
-    check: '$icon.24',
   },
 } as const
 
@@ -251,7 +248,6 @@ export function BackupMethodSummary({
           {email}
         </Text>
       </Flex>
-      <CheckCircleFilled size={config.check} color="$statusSuccess" />
     </Flex>
   )
 }

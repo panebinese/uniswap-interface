@@ -1,12 +1,13 @@
 import { useEffect, useMemo } from 'react'
-import { useExtractedTokenColor, useSporeColors } from 'ui/src'
+import { useSporeColors } from 'ui/src'
+import { useSrcColor } from '~/hooks/useColor'
 import {
   useCreateAuctionStore,
   useCreateAuctionStoreActions,
 } from '~/pages/Liquidity/CreateAuction/CreateAuctionContext'
 import { TokenMode } from '~/pages/Liquidity/CreateAuction/types'
 
-/** Passed to color extraction as `defaultColor` so failures (no palette) stay distinguishable from real accent/extracted colors. */
+/** Passed as `defaultColor` so extraction failures stay distinguishable from real colors. */
 const TOKEN_COLOR_EXTRACTION_SENTINEL = '#feedface'
 
 export function useUpdateCreateAuctionTokenColor(): void {
@@ -28,9 +29,9 @@ export function useUpdateCreateAuctionTokenColor(): void {
     return tokenForm.existingTokenCurrencyInfo?.currency.name ?? undefined
   }, [tokenForm])
 
-  const { tokenColor, tokenColorLoading } = useExtractedTokenColor({
-    imageUrl,
-    tokenName: currencyName,
+  const { tokenColor, tokenColorLoading } = useSrcColor({
+    src: imageUrl,
+    currencyName,
     backgroundColor: colors.surface3.val,
     defaultColor: TOKEN_COLOR_EXTRACTION_SENTINEL,
   })

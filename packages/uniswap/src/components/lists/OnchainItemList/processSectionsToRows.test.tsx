@@ -37,7 +37,6 @@ describe('processSectionsToRows', () => {
     sectionKey: OnchainItemSectionName,
     data: OnchainItemSection<TokenOption>['data'] = [mockTokenOption],
     name?: string,
-    // oxlint-disable-next-line max-params
   ): OnchainItemSection<TokenOption> => ({
     sectionKey,
     data,

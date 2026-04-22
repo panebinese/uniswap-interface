@@ -81,7 +81,7 @@ export function PortfolioNfts(): JSX.Element {
 
   // Handler to clear chain filter and show all networks
   const handleShowAllNetworks = useCallback(() => {
-    navigate('/portfolio/nfts')
+    void navigate('/portfolio/nfts')
   }, [navigate])
 
   // Custom empty state for chain filtering
@@ -142,7 +142,6 @@ export function PortfolioNfts(): JSX.Element {
                 selectedChainId || isSolanaOnlyWallet ? chainFilterEmptyState : externalWalletEmptyState
               }
               nextFetchPolicy="cache-first"
-              showHeader
               SearchInputComponent={SearchInput}
               searchInputTestId={TestID.PortfolioNftsSearchInput}
               headerTestId={TestID.PortfolioNftsHeader}

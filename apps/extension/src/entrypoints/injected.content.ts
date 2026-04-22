@@ -306,7 +306,6 @@ function makeInjected(): void {
   })
 }
 
-// oxlint-disable-next-line import/no-unused-modules
 export default defineContentScript({
   matches:
     __DEV__ || process.env.BUILD_ENV === 'dev'

@@ -1,5 +1,3 @@
-/* oxlint-disable no-restricted-syntax */
-
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { shortenAddress } from 'utilities/src/addresses'
 import { expect, getTest } from '~/playwright/fixtures'

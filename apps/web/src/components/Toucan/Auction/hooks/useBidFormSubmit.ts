@@ -280,6 +280,7 @@ export function useBidFormSubmit({
 
       preparedBidRef.current = { signature, data: preparedBid }
       return preparedBid
+      // oxlint-disable-next-line no-shadow
     } catch (error) {
       handleBidSubmitFailure(error instanceof Error ? error : new Error('Failed to submit bid'))
       return undefined

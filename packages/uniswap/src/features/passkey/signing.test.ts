@@ -3,6 +3,8 @@ import { clearDeviceSession, generateDeviceKeyPair, setDeviceSession } from 'uni
 import { authenticateWithPasskey } from 'uniswap/src/features/passkey/embeddedWallet'
 import {
   exportEncryptedSeedPhrase,
+  sign7702AuthorizationWithPasskey,
+  sign7702TransactionWithPasskey,
   signMessageWithPasskey,
   signTransactionWithPasskey,
   signTypedDataWithPasskey,
@@ -16,6 +18,8 @@ vi.mock('uniswap/src/data/rest/embeddedWallet/requests', () => ({
     fetchSignTransactionsRequest: vi.fn(),
     fetchSignTypedDataRequest: vi.fn(),
     fetchExportSeedPhraseRequest: vi.fn(),
+    fetchSign7702AuthorizationRequest: vi.fn(),
+    fetchSign7702TransactionRequest: vi.fn(),
   },
 }))
 
@@ -29,6 +33,8 @@ vi.mock('@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-walle
     SIGN_TRANSACTION: 2,
     SIGN_TYPED_DATA: 3,
     EXPORT_SEED_PHRASE: 4,
+    SIGN_7702_AUTHORIZATION: 14,
+    SIGN_7702_TRANSACTION: 15,
   },
   AuthenticationTypes: {
     PASSKEY_AUTHENTICATION: 1,
@@ -225,6 +231,135 @@ describe('signing', () => {
 
       expect(result).toBeUndefined()
       expect(mockFetchExportSeedPhraseRequest).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('sign7702AuthorizationWithPasskey', () => {
+    const mockFetchSign7702Auth = EmbeddedWalletApiClient.fetchSign7702AuthorizationRequest as MockedFunction<
+      typeof EmbeddedWalletApiClient.fetchSign7702AuthorizationRequest
+    >
+
+    it('uses passkey fallback and returns correct shape', async () => {
+      mockAuthenticateWithPasskey.mockResolvedValue('auth-cred')
+      mockFetchSign7702Auth.mockResolvedValue({
+        contractAddress: '0xcontract',
+        chainId: 130,
+        nonce: 5,
+        r: '0xr',
+        s: '0xs',
+        yParity: 1,
+      })
+
+      const result = await sign7702AuthorizationWithPasskey({
+        contractAddress: '0xcontract',
+        chainId: 130,
+        nonce: 5,
+        walletId: 'wallet-1',
+      })
+
+      expect(result).toEqual({
+        contractAddress: '0xcontract',
+        chainId: 130,
+        nonce: 5,
+        r: '0xr',
+        s: '0xs',
+        yParity: 1,
+      })
+      expect(mockAuthenticateWithPasskey).toHaveBeenCalledWith(
+        14,
+        expect.objectContaining({
+          walletId: 'wallet-1',
+          authorizationContractAddress: '0xcontract',
+          authorizationChainId: '130',
+          authorizationNonce: '5',
+        }),
+      )
+    })
+
+    it('uses device session path when available', async () => {
+      const { privateKey } = await generateDeviceKeyPair()
+      setDeviceSession({ privateKey, policyId: 'policy-1', policyExpiresAt: Date.now() + 60_000, walletId: 'wallet-1' })
+
+      mockFetchChallengeRequest.mockResolvedValue({
+        signingPayload: btoa('test-payload').replace(/\+/g, '-').replace(/\//g, '_').replace(/[=]+$/, ''),
+      } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
+
+      mockFetchSign7702Auth.mockResolvedValue({
+        contractAddress: '0xcontract',
+        chainId: 130,
+        nonce: 5,
+        r: '0xr',
+        s: '0xs',
+        yParity: 0,
+      })
+
+      const result = await sign7702AuthorizationWithPasskey({ contractAddress: '0xcontract', chainId: 130, nonce: 5 })
+
+      expect(result.yParity).toBe(0)
+      expect(mockFetchSign7702Auth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          auth: expect.objectContaining({ case: 'deviceAuth' }),
+        }),
+      )
+      expect(mockAuthenticateWithPasskey).not.toHaveBeenCalled()
+    })
+
+    it('throws when no walletId available', async () => {
+      mockAuthenticateWithPasskey.mockResolvedValue(undefined)
+      await expect(
+        sign7702AuthorizationWithPasskey({ contractAddress: '0xcontract', chainId: 130, nonce: 5 }),
+      ).rejects.toThrow()
+    })
+  })
+
+  describe('sign7702TransactionWithPasskey', () => {
+    const mockFetchSign7702Tx = EmbeddedWalletApiClient.fetchSign7702TransactionRequest as MockedFunction<
+      typeof EmbeddedWalletApiClient.fetchSign7702TransactionRequest
+    >
+    const txParams = {
+      to: '0xrecipient',
+      data: '0xcalldata',
+      value: '0',
+      chainId: 130,
+      gas: '100000',
+      maxFeePerGas: '1000',
+      maxPriorityFeePerGas: '100',
+      nonce: 5,
+      authorization: { contractAddress: '0xcontract', chainId: 130, nonce: 6, r: '0xr', s: '0xs', yParity: 0 },
+      walletId: 'wallet-1',
+    }
+
+    it('returns signed transaction hex via passkey fallback', async () => {
+      mockAuthenticateWithPasskey.mockResolvedValue('tx-cred')
+      mockFetchSign7702Tx.mockResolvedValue({ signedTransaction: '0xsignedtype4' })
+
+      const result = await sign7702TransactionWithPasskey(txParams)
+
+      expect(result).toBe('0xsignedtype4')
+      expect(mockFetchSign7702Tx).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: '0xrecipient',
+          chainId: 130,
+          authorizationContractAddress: '0xcontract',
+          auth: { case: 'credential', value: 'tx-cred' },
+        }),
+      )
+    })
+
+    it('returns signed transaction hex via device session', async () => {
+      const { privateKey } = await generateDeviceKeyPair()
+      setDeviceSession({ privateKey, policyId: 'policy-1', policyExpiresAt: Date.now() + 60_000, walletId: 'wallet-1' })
+
+      mockFetchChallengeRequest.mockResolvedValue({
+        signingPayload: btoa('test-payload').replace(/\+/g, '-').replace(/\//g, '_').replace(/[=]+$/, ''),
+      } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
+
+      mockFetchSign7702Tx.mockResolvedValue({ signedTransaction: '0xsignedtype4device' })
+
+      const result = await sign7702TransactionWithPasskey(txParams)
+
+      expect(result).toBe('0xsignedtype4device')
+      expect(mockAuthenticateWithPasskey).not.toHaveBeenCalled()
     })
   })
 })

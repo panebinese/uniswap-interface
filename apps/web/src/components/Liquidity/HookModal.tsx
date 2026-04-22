@@ -104,6 +104,7 @@ export function HookModal({
       }
     }
 
+    // oxlint-disable-next-line no-shadow
     let hasDangerous = false
     const flagInfos: Record<string, FlagWarning> = {}
     getFlagsFromContractAddress(address).forEach((flag) => {

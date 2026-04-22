@@ -121,7 +121,9 @@ export function ConfirmSwapModal({
   // Determine which view to show based on confirm modal state and other conditions
   const { showPreview, showDetails, showProgressIndicator, showAcceptChanges, showConfirming, showSuccess, showError } =
     useMemo(() => {
+      // oxlint-disable-next-line no-shadow
       const showAcceptChanges = confirmModalState !== ConfirmModalState.PENDING_CONFIRMATION && doesTradeDiffer
+      // oxlint-disable-next-line no-shadow
       let showPreview, showDetails, showProgressIndicator, showConfirming, showSuccess, showError
       if (errorType) {
         // When any type of error is encountered (except for SignatureExpiredError, which has special retry logic)

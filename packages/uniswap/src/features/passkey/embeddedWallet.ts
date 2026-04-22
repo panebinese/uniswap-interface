@@ -123,7 +123,6 @@ export async function createNewEmbeddedWallet(
   }
 }
 
-// oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
 export async function isSessionAuthenticatedForAction(action: Action): Promise<boolean> {
   const SESSION_ACTIONS: Action[] = [
     Action.SIGN_MESSAGE,
@@ -159,6 +158,9 @@ export async function authenticateWithPasskey(
     typedData?: string
     encryptionKey?: string
     authenticatorId?: string
+    authorizationContractAddress?: string
+    authorizationChainId?: string
+    authorizationNonce?: string
   },
 ): Promise<string | undefined> {
   try {
@@ -170,6 +172,9 @@ export async function authenticateWithPasskey(
       transaction: options?.transaction,
       typedData: options?.typedData,
       authenticatorId: options?.authenticatorId,
+      authorizationContractAddress: options?.authorizationContractAddress,
+      authorizationChainId: options?.authorizationChainId,
+      authorizationNonce: options?.authorizationNonce,
     })
 
     // TODO[INFRA-1212]: if challengeOptions is defined but the action is a session action, it means the session has expired and we need to reauthenticate

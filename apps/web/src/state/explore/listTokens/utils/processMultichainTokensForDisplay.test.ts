@@ -1,4 +1,3 @@
-import { ChainToken, MultichainToken, TokenType } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { createDataApiMultichainToken } from 'uniswap/src/test/fixtures/dataApi/multichainToken'
 import { describe, expect, it, vi } from 'vitest'
 import { TimePeriod } from '~/appGraphql/data/util'
@@ -123,16 +122,11 @@ describe('processMultichainTokensForDisplay', () => {
 
   it('should treat missing stats.price as 0 for sort', () => {
     const withPrice = createDataApiMultichainToken({ symbol: 'With', price: 1 })
-    const noStats = new MultichainToken({
+    const noStats = createDataApiMultichainToken({
       multichainId: 'mc:1_0xNone',
       symbol: 'None',
       name: 'No Stats',
-      type: TokenType.ERC20,
-      projectName: '',
-      logoUrl: '',
-      safetyLevel: 0,
-      spamCode: 0,
-      chainTokens: [new ChainToken({ chainId: 1, address: '0xNone', decimals: 18, isBridged: false })],
+      price: undefined,
     })
     const { topTokens } = processMultichainTokensForDisplay([withPrice, noStats], {
       ...defaultOptions,

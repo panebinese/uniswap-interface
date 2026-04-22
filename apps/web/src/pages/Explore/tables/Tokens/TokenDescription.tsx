@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { Flex, styled, Text, View } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
+import { GroupHoverTransition } from 'uniswap/src/components/GroupHoverTransition'
 import { NetworkIconList } from 'uniswap/src/components/network/NetworkIconList/NetworkIconList'
 import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { shortenAddress } from 'utilities/src/addresses'
-import { GroupHoverTransition } from '~/components/GroupHoverTransition'
 import { EllipsisText, TableText } from '~/components/Table/shared/TableText'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 import { getChainIdFromChainUrlParam } from '~/features/params/chainParams'
@@ -64,7 +64,6 @@ export function TokenDescription({ token, chainIdsByVolume = [], chainFilter }: 
           symbol={token.symbol}
           url={token.logo}
           alwaysShowNetworkLogo={multichainTokenUxEnabled && !!chainFilter}
-          showMainnetNetworkLogo={multichainTokenUxEnabled}
         />
       </View>
       <TokenDetailsContainer multichainUx={multichainTokenUxEnabled}>

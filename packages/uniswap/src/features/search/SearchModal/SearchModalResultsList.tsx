@@ -6,6 +6,7 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useSectionsForSearchResults } from 'uniswap/src/features/search/SearchModal/hooks/useSectionsForSearchResults'
 import { SearchModalList, SearchModalListProps } from 'uniswap/src/features/search/SearchModal/SearchModalList'
 import { SearchTab } from 'uniswap/src/features/search/SearchModal/types'
+import { useMultichainSearchModalMetricsAnalytics } from 'uniswap/src/features/search/SearchModal/useMultichainSearchModalMetricsAnalytics'
 import { useIsOffline } from 'utilities/src/connection/useIsOffline'
 import { usePreviousWithLayoutEffect } from 'utilities/src/react/usePreviousWithLayoutEffect'
 
@@ -60,6 +61,14 @@ function SearchModalResultsListInner({
   const hasData = Boolean(sections?.length)
   const isOfflineWithNoData = isOffline && !hasData
   const hasActiveFilters = chainFilter !== null || activeTab !== SearchTab.All
+
+  const sectionsForMetrics = useMemo(() => (isOfflineWithNoData ? [] : sections), [isOfflineWithNoData, sections])
+
+  useMultichainSearchModalMetricsAnalytics({
+    sections: sectionsForMetrics,
+    isSearchResultsLoading: loading,
+    isSearchQueryPending: userIsTyping,
+  })
 
   const prevIsOffline = usePreviousWithLayoutEffect(isOffline)
   const hasReconnected = prevIsOffline && !isOffline

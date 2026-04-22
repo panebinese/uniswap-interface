@@ -250,7 +250,6 @@ type ModalProps = GetProps<typeof View> &
  * On larger screens, it renders as a dialog modal.
  * On smaller screens (mobile devices), it adapts into a bottom sheet.
  */
-// oxlint-disable-next-line complexity
 export function AdaptiveWebModal({
   isOpen,
   onClose,

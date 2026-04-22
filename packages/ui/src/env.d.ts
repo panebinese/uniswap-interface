@@ -1,8 +1,6 @@
 // oxlint-disable-next-line typescript/triple-slash-reference
 /// <reference path="../../../index.d.ts" />
 
-/* oxlint-disable typescript/no-namespace -- required to define process.env type */
-
 declare global {
   namespace NodeJS {
     // All process.env values used by this package should be listed here

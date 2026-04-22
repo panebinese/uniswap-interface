@@ -114,7 +114,6 @@ function InitiatePasskeyAuthContent(): JSX.Element {
 
   const popupWindow = useRef<chrome.windows.Window | undefined>(undefined)
 
-  // oxlint-disable-next-line react/exhaustive-deps -- Only run once on mount to initiate auth flow, all handlers are created fresh each render
   useEffect(() => {
     let handleMessagePasskeySignInFlowOpened: Parameters<typeof chrome.runtime.onMessageExternal.addListener>[0]
     let handleMessagePasskeyCredentialRetrieved: Parameters<typeof chrome.runtime.onMessageExternal.addListener>[0]

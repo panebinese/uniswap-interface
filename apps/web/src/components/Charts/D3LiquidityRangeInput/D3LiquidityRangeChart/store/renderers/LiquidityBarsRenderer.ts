@@ -74,8 +74,11 @@ export function createLiquidityBarsRenderer({
       // yToTick(0) = highest visible tick (top of viewport)
       // yToTick(height) = lowest visible tick (bottom of viewport)
       const chartHeight = contextDimensions.height || CHART_DIMENSIONS.LIQUIDITY_CHART_HEIGHT
-      const visibleMaxTick = Math.min(tickScale.yToTick(0), nearestUsableTick(TickMath.MAX_TICK, tickSpacing)) // Top of viewport = highest visible tick
-      const visibleMinTick = Math.max(tickScale.yToTick(chartHeight), nearestUsableTick(TickMath.MIN_TICK, tickSpacing)) // Bottom of viewport = lowest visible tick
+      const visibleMaxTick = Math.min(tickScale.axisToTick(0), nearestUsableTick(TickMath.MAX_TICK, tickSpacing)) // Top of viewport = highest visible tick
+      const visibleMinTick = Math.max(
+        tickScale.axisToTick(chartHeight),
+        nearestUsableTick(TickMath.MIN_TICK, tickSpacing),
+      ) // Bottom of viewport = lowest visible tick
 
       // Build buckets for VISIBLE range
       const buckets = buildBuckets({
@@ -118,8 +121,8 @@ export function createLiquidityBarsRenderer({
       // Each bucket spans [startTick, endTick], convert to Y using the linear scale
       // Subtract divider height to create 1px gap between bars
       const calculateBucketHeight = (bucket: BucketChartEntry): number => {
-        const topY = tickScale.tickToY(bucket.endTick) // Higher tick -> lower Y
-        const bottomY = tickScale.tickToY(bucket.startTick) // Lower tick -> higher Y
+        const topY = tickScale.tickToAxis(bucket.endTick) // Higher tick -> lower Y
+        const bottomY = tickScale.tickToAxis(bucket.startTick) // Lower tick -> higher Y
         return Math.max(2, bottomY - topY - CHART_DIMENSIONS.LIQUIDITY_BAR_SPACING)
       }
 
@@ -189,7 +192,7 @@ export function createLiquidityBarsRenderer({
         .attr('class', 'liquidity-bar liquidity-bar-above')
         .attr('opacity', getBarOpacity)
         .attr('x', getBarX)
-        .attr('y', (d) => tickScale.tickToY(d.endTick))
+        .attr('y', (d) => tickScale.tickToAxis(d.endTick))
         .attr('width', getBarWidth)
         .attr('height', (d) => calculateBucketHeight(d))
         .attr('fill', token0Color)
@@ -204,7 +207,7 @@ export function createLiquidityBarsRenderer({
         .attr('class', 'liquidity-bar liquidity-bar-below')
         .attr('opacity', getBarOpacity)
         .attr('x', getBarX)
-        .attr('y', (d) => tickScale.tickToY(d.endTick))
+        .attr('y', (d) => tickScale.tickToAxis(d.endTick))
         .attr('width', getBarWidth)
         .attr('height', (d) => calculateBucketHeight(d))
         .attr('fill', token1Color)

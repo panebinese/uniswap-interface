@@ -72,6 +72,7 @@ export function submitTokenDataReport({
   tokenAddress,
   tokenName,
   isMarkedSpam,
+  walletAddress,
   reportOptions,
   reportTexts,
 }: {
@@ -79,6 +80,7 @@ export function submitTokenDataReport({
   tokenAddress?: string
   tokenName?: string
   isMarkedSpam?: Maybe<boolean>
+  walletAddress?: string
   reportOptions: TokenDataReportOption[]
   reportTexts: Map<TokenDataReportOption, string>
 }): void {
@@ -88,6 +90,7 @@ export function submitTokenDataReport({
     token_contract_address: tokenAddress ?? NATIVE_ANALYTICS_ADDRESS_VALUE,
     chain_id: chainId,
     is_marked_spam: isMarkedSpam,
+    wallet_address: walletAddress,
     price: reportOptions.includes(TokenDataReportOption.Price),
     volume: reportOptions.includes(TokenDataReportOption.Volume),
     price_chart: reportOptions.includes(TokenDataReportOption.PriceChart),
@@ -204,14 +207,17 @@ export function submitPoolDataReport({
 }
 
 export function submitPortfolioDataReport({
+  walletAddress,
   reportOptions,
   reportTexts,
 }: {
+  walletAddress?: string
   reportOptions: PortfolioDataReportOption[]
   reportTexts: Map<PortfolioDataReportOption, string>
 }): void {
   sendAnalyticsEvent(UniswapEventName.DataReportSubmitted, {
     type: 'portfolio',
+    wallet_address: walletAddress,
     performance: reportOptions.includes(PortfolioDataReportOption.Performance),
     performance_text: reportTexts.get(PortfolioDataReportOption.Performance),
     something_else: reportOptions.includes(PortfolioDataReportOption.Other),

@@ -419,6 +419,7 @@ export function useSwapCallback(): SwapCallback {
             handleSwapTransactionBatchedStep,
             handleSignatureStep,
             handleUniswapXPlanSignatureStep,
+            // oxlint-disable-next-line no-shadow
             getDisplayableError: (args) => getDisplayableError({ ...args, isPlanStep: true }),
             getOnPressRetry,
             sendToast,

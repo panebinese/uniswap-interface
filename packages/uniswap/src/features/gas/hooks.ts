@@ -11,7 +11,6 @@ import {
   WarningSeverity,
 } from 'uniswap/src/components/modals/WarningModal/types'
 import { type PollingInterval } from 'uniswap/src/constants/misc'
-import { nativeOnChain } from 'uniswap/src/constants/tokens'
 import { useGasFeeQuery } from 'uniswap/src/data/apiClients/uniswapApi/useGasFeeQuery'
 import { useIsSmartContractAddress } from 'uniswap/src/features/address/useIsSmartContractAddress'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
@@ -112,11 +111,7 @@ export function useUSDValueOfGasFee(
   chainId?: UniverseChainId,
   feeValueInWei?: string,
 ): { isLoading: boolean; value: string | undefined } {
-  const currencyAmount = getCurrencyAmount({
-    value: feeValueInWei,
-    valueType: ValueType.Raw,
-    currency: chainId ? nativeOnChain(chainId) : undefined,
-  })
+  const currencyAmount = getGasFeeCurrencyAmount({ chainId, feeValueInWei })
   const { value, isLoading } = useUSDCValueWithStatus(currencyAmount)
   return { isLoading, value: value?.toExact() }
 }
@@ -126,13 +121,38 @@ export function useUSDCurrencyAmountOfGasFee(
   chainId?: UniverseChainId,
   feeValueInWei?: string,
 ): CurrencyAmount<Currency> | null {
-  const currencyAmount = getCurrencyAmount({
-    value: feeValueInWei,
-    valueType: ValueType.Raw,
-    currency: chainId ? nativeOnChain(chainId) : undefined,
-  })
+  const currencyAmount = getGasFeeCurrencyAmount({ chainId, feeValueInWei })
   const { value } = useUSDCValueWithStatus(currencyAmount)
   return value
+}
+
+/**
+ * Converts a raw gas fee value into a CurrencyAmount using the correct gas token for the chain.
+ *
+ * On Tempo, gas is paid in pathUSD (6 decimals) but fees are reported as 18-decimal attodollars,
+ * so the value is converted to 6-decimal pathUSD units before wrapping.
+ */
+function getGasFeeCurrencyAmount({
+  chainId,
+  feeValueInWei,
+}: {
+  chainId?: UniverseChainId
+  feeValueInWei?: string
+}): CurrencyAmount<Currency> | undefined {
+  if (!chainId) {
+    return undefined
+  }
+  const gasToken = getChainGasToken(chainId)
+  const isTempoChain = chainId === UniverseChainId.Tempo
+  const adjustedFee = isTempoChain && feeValueInWei ? convertTempoGasFeeForDisplay(feeValueInWei) : feeValueInWei
+
+  return (
+    getCurrencyAmount({
+      value: adjustedFee,
+      valueType: ValueType.Raw,
+      currency: gasToken,
+    }) ?? undefined
+  )
 }
 
 export function useFormattedUniswapXGasFeeInfo(
@@ -262,9 +282,6 @@ export function useGasFeeFormattedDisplayAmounts<T extends string | undefined>({
 }): GasFeeFormattedAmounts<T> {
   const { convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
 
-  // Note: useUSDValueOfGasFee uses nativeOnChain(chainId) internally. On Tempo, this creates
-  // a CurrencyAmount with the virtual 18-decimal USD token, which the backend prices at $1.
-  // This coincidentally produces correct fiat values since attodollar/10^18 = USD.
   const { value: gasFeeUSD, isLoading: gasFeeUSDIsLoading } = useUSDValueOfGasFee(chainId, gasFee?.displayValue)
 
   // In testnet mode, use native currency values as USD pricing may be unreliable

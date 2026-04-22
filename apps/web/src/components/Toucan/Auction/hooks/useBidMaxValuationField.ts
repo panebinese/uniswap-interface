@@ -1,30 +1,14 @@
-/* oxlint-disable max-lines */
 import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getPrimaryStablecoin } from 'uniswap/src/features/chains/utils'
-import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { getCurrencyAmount, ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
-import { useUSDCPrice, useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
 import { useEvent } from 'utilities/src/react/hooks'
 import { priceToQ96WithDecimals, q96ToPriceString } from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
+import { useFiatTokenConversion } from '~/components/Toucan/Auction/hooks/useFiatTokenConversion'
+import { evaluateMaxPrice, type MinValuationErrorDetails } from '~/components/Toucan/Auction/utils/evaluateMaxPrice'
 import { snapToNearestTick } from '~/components/Toucan/Auction/utils/ticks'
 import tryParseCurrencyAmount from '~/lib/utils/tryParseCurrencyAmount'
-
-const MAX_FIAT_PRECISION = 12
-
-function formatFiatWithPrecision(value: number): string {
-  if (!value || !Number.isFinite(value)) {
-    return ''
-  }
-  return parseFloat(value.toFixed(MAX_FIAT_PRECISION)).toString()
-}
-
-interface MinValuationErrorDetails {
-  inputValueDecimal: number
-  minValueDecimal: number
-}
 
 export interface MaxValuationFieldState {
   currencyAmount: CurrencyAmount<Currency> | undefined
@@ -87,6 +71,7 @@ export function useBidMaxValuationField({
   const [isMaxValuationFiatMode, setIsMaxValuationFiatMode] = useState(false)
   const [maxPriceError, setMaxPriceError] = useState<string | undefined>()
   const [maxPriceErrorDetails, setMaxPriceErrorDetails] = useState<MinValuationErrorDetails | undefined>()
+  // Q96 stored directly from slider to avoid precision loss in Q96→string→Q96 roundtrips
   const [tokenPriceQ96, setTokenPriceQ96] = useState<bigint | undefined>(undefined)
 
   const [hasInitializedDefault, setHasInitializedDefault] = useState(false)
@@ -99,44 +84,32 @@ export function useBidMaxValuationField({
     skipBlurSnapRef.current = skip
   })
 
-  const { convertFiatAmount } = useLocalizationContext()
-  const conversionRate = convertFiatAmount(1).amount
-  const chainId = bidCurrency?.chainId
+  const { usdPriceOfCurrency, fiatToBidToken, bidTokenToFiat } = useFiatTokenConversion({
+    bidCurrency,
+  })
 
   const maxValuationCurrencyAmount = tryParseCurrencyAmount(exactMaxValuationAmountToken, bidCurrency)
   const maxValuationUsdValue = useUSDCValue(maxValuationCurrencyAmount)
-  const { price: usdPriceOfCurrency } = useUSDCPrice(bidCurrency)
 
   useEffect(() => {
-    if (!bidCurrency || !usdPriceOfCurrency || !chainId) {
+    if (!bidCurrency || !usdPriceOfCurrency) {
       return
     }
 
     if (isMaxValuationFiatMode) {
-      const fiatAmount =
-        exactMaxValuationAmountFiat && !isNaN(parseFloat(exactMaxValuationAmountFiat))
-          ? parseFloat(exactMaxValuationAmountFiat)
-          : 0
-      const stablecoin = getPrimaryStablecoin(chainId)
-      const stablecoinDecimals = stablecoin.decimals
-      const usdAmount = (fiatAmount / conversionRate).toFixed(stablecoinDecimals)
-      const stablecoinAmount = getCurrencyAmount({
-        value: usdAmount,
-        valueType: ValueType.Exact,
-        currency: stablecoin,
-      })
-      const tokenAmount = stablecoinAmount ? usdPriceOfCurrency.invert().quote(stablecoinAmount) : undefined
+      const converted = exactMaxValuationAmountFiat ? fiatToBidToken(exactMaxValuationAmountFiat) : null
 
-      let snappedTokenValue = tokenAmount?.toExact() ?? ''
+      let snappedTokenValue = converted ?? ''
       if (
-        tokenAmount &&
+        converted &&
         clearingPriceQ96 &&
         floorPriceQ96 &&
         tickSizeQ96 &&
         bidTokenDecimals !== undefined &&
         auctionTokenDecimals !== undefined
       ) {
-        const rawAmount = BigInt(tokenAmount.quotient.toString())
+        const tokenAmount = tryParseCurrencyAmount(converted, bidCurrency)
+        const rawAmount = tokenAmount ? BigInt(tokenAmount.quotient.toString()) : 0n
         if (rawAmount > 0n) {
           const tokenQ96 = priceToQ96WithDecimals({ priceRaw: rawAmount, auctionTokenDecimals })
           const snappedQ96 = snapToNearestTick({
@@ -155,25 +128,20 @@ export function useBidMaxValuationField({
 
     // When we have new token amount (after user hit preset or changed mode)
     if (!isMaxValuationFiatMode || (!exactMaxValuationAmountFiat && exactMaxValuationAmountToken)) {
-      const tokenAmount = getCurrencyAmount({
-        value: exactMaxValuationAmountToken,
-        valueType: ValueType.Exact,
-        currency: bidCurrency,
-      })
-      const usdAmount = tokenAmount ? usdPriceOfCurrency.quote(tokenAmount) : undefined
-      const fiatAmount = usdAmount ? parseFloat(usdAmount.toExact()) * conversionRate : 0
-      const fiatAmountFormatted = formatFiatWithPrecision(fiatAmount)
-      if (fiatAmountFormatted !== exactMaxValuationAmountFiat) {
+      const fiatAmountFormatted = bidTokenToFiat(exactMaxValuationAmountToken)
+      if (fiatAmountFormatted && fiatAmountFormatted !== exactMaxValuationAmountFiat) {
         setExactMaxValuationAmountFiat(fiatAmountFormatted)
+      } else if (!fiatAmountFormatted && exactMaxValuationAmountFiat) {
+        setExactMaxValuationAmountFiat('')
       }
     }
   }, [
     exactMaxValuationAmountFiat,
     exactMaxValuationAmountToken,
     bidCurrency,
-    conversionRate,
-    chainId,
     usdPriceOfCurrency,
+    fiatToBidToken,
+    bidTokenToFiat,
     isMaxValuationFiatMode,
     clearingPriceQ96,
     floorPriceQ96,
@@ -181,6 +149,21 @@ export function useBidMaxValuationField({
     bidTokenDecimals,
     auctionTokenDecimals,
   ])
+
+  // Use slider's stored Q96 when available (full precision), otherwise derive from string
+  const effectiveTokenPriceQ96 = useMemo(() => {
+    if (tokenPriceQ96 !== undefined) {
+      return tokenPriceQ96
+    }
+    if (!maxValuationCurrencyAmount || bidTokenDecimals === undefined || auctionTokenDecimals === undefined) {
+      return undefined
+    }
+    const rawAmount = BigInt(maxValuationCurrencyAmount.quotient.toString())
+    if (rawAmount === 0n) {
+      return undefined
+    }
+    return priceToQ96WithDecimals({ priceRaw: rawAmount, auctionTokenDecimals })
+  }, [tokenPriceQ96, maxValuationCurrencyAmount, bidTokenDecimals, auctionTokenDecimals])
 
   const maxPriceAmountIsZero = maxValuationCurrencyAmount?.equalTo(0) ?? true
 
@@ -254,7 +237,7 @@ export function useBidMaxValuationField({
   ])
 
   const snappedFiatValue = useMemo(() => {
-    if (!snappedTokenValue || !bidCurrency || !usdPriceOfCurrency) {
+    if (!snappedTokenValue) {
       return exactMaxValuationAmountFiat
     }
 
@@ -263,34 +246,8 @@ export function useBidMaxValuationField({
       return exactMaxValuationAmountFiat
     }
 
-    const tokenAmount = getCurrencyAmount({
-      value: snappedTokenValue,
-      valueType: ValueType.Exact,
-      currency: bidCurrency,
-    })
-    if (!tokenAmount) {
-      return exactMaxValuationAmountFiat
-    }
-
-    const usdAmount = usdPriceOfCurrency.quote(tokenAmount)
-    const fiatAmount = parseFloat(usdAmount.toExact()) * conversionRate
-    return fiatAmount ? fiatAmount.toFixed(MAX_FIAT_PRECISION) : exactMaxValuationAmountFiat
-  }, [snappedTokenValue, bidCurrency, usdPriceOfCurrency, conversionRate, exactMaxValuationAmountFiat])
-
-  // Use slider's stored Q96 when available (full precision), otherwise derive from string
-  const effectiveTokenPriceQ96 = useMemo(() => {
-    if (tokenPriceQ96 !== undefined) {
-      return tokenPriceQ96
-    }
-    if (!maxValuationCurrencyAmount || bidTokenDecimals === undefined || auctionTokenDecimals === undefined) {
-      return undefined
-    }
-    const rawAmount = BigInt(maxValuationCurrencyAmount.quotient.toString())
-    if (rawAmount === 0n) {
-      return undefined
-    }
-    return priceToQ96WithDecimals({ priceRaw: rawAmount, auctionTokenDecimals })
-  }, [tokenPriceQ96, maxValuationCurrencyAmount, bidTokenDecimals, auctionTokenDecimals])
+    return bidTokenToFiat(snappedTokenValue) ?? exactMaxValuationAmountFiat
+  }, [snappedTokenValue, bidTokenToFiat, exactMaxValuationAmountFiat])
 
   const handleMaxValuationChange = useEvent((amount: string) => {
     setDisplayValueOverride(amount)
@@ -321,27 +278,20 @@ export function useBidMaxValuationField({
   })
 
   // Handler that always sets the token value directly, bypassing fiat mode
-  // Used by the slider and chart clicks which always work in token units
+  // Used by chart clicks which always work in token units
   const handleTokenValueChange = useEvent((amount: string) => {
     setDisplayValueOverride(null)
-    setTokenPriceQ96(undefined)
     setExactMaxValuationAmountToken(amount)
+    setTokenPriceQ96(undefined)
 
-    // Skip the next blur snap since slider/chart values are already correctly snapped
+    // Skip the next blur snap since chart values are already correctly snapped
     // This prevents precision drift from redundant round-trip conversions when focus
     // moves from the input to the slider (which triggers onBlur on web)
     skipBlurSnapRef.current = true
 
-    if (isMaxValuationFiatMode && bidCurrency && usdPriceOfCurrency) {
-      const tokenAmount = getCurrencyAmount({
-        value: amount,
-        valueType: ValueType.Exact,
-        currency: bidCurrency,
-      })
-      const usdAmount = tokenAmount ? usdPriceOfCurrency.quote(tokenAmount) : undefined
-      const fiatAmount = usdAmount ? parseFloat(usdAmount.toExact()) * conversionRate : 0
-      const fiatAmountFormatted = fiatAmount ? fiatAmount.toFixed(MAX_FIAT_PRECISION) : ''
-      setExactMaxValuationAmountFiat(fiatAmountFormatted)
+    if (isMaxValuationFiatMode) {
+      const fiatAmountFormatted = bidTokenToFiat(amount)
+      setExactMaxValuationAmountFiat(fiatAmountFormatted ?? '')
     }
 
     setMaxPriceError(undefined)
@@ -349,29 +299,21 @@ export function useBidMaxValuationField({
     onInputChange?.()
   })
 
-  // Q96-precision handler: stores the exact Q96 value from the slider to avoid
-  // precision loss from Q96 → string → Q96 round-trips on sub-wei ticks
+  // Handler for slider Q96 changes — stores Q96 directly to avoid precision loss
   const handleTokenValueQ96Change = useEvent((q96: bigint) => {
+    if (bidTokenDecimals === undefined || auctionTokenDecimals === undefined) {
+      return
+    }
+
     setTokenPriceQ96(q96)
+    const displayValue = q96ToPriceString({ q96Value: q96, bidTokenDecimals, auctionTokenDecimals })
+    setDisplayValueOverride(null)
+    setExactMaxValuationAmountToken(displayValue)
     skipBlurSnapRef.current = true
 
-    // Also update the string representation for display/fiat sync
-    if (bidTokenDecimals !== undefined && auctionTokenDecimals !== undefined) {
-      const displayValue = q96ToPriceString({ q96Value: q96, bidTokenDecimals, auctionTokenDecimals })
-      setDisplayValueOverride(null)
-      setExactMaxValuationAmountToken(displayValue)
-
-      if (isMaxValuationFiatMode && bidCurrency && usdPriceOfCurrency) {
-        const tokenAmount = getCurrencyAmount({
-          value: displayValue,
-          valueType: ValueType.Exact,
-          currency: bidCurrency,
-        })
-        const usdAmount = tokenAmount ? usdPriceOfCurrency.quote(tokenAmount) : undefined
-        const fiatAmount = usdAmount ? parseFloat(usdAmount.toExact()) * conversionRate : 0
-        const fiatAmountFormatted = fiatAmount ? fiatAmount.toFixed(MAX_FIAT_PRECISION) : ''
-        setExactMaxValuationAmountFiat(fiatAmountFormatted)
-      }
+    if (isMaxValuationFiatMode) {
+      const fiatAmountFormatted = bidTokenToFiat(displayValue)
+      setExactMaxValuationAmountFiat(fiatAmountFormatted ?? '')
     }
 
     setMaxPriceError(undefined)
@@ -416,69 +358,21 @@ export function useBidMaxValuationField({
     setIsMaxValuationFiatMode((prev) => !prev)
   })
 
-  const evaluateMaxPrice = useEvent(
-    (options?: {
-      shouldAutoCorrectMin?: boolean
-    }): {
-      sanitizedQ96?: bigint
-      sanitizedDisplayValue?: string
-      error?: string
-      errorDetails?: MinValuationErrorDetails
-    } => {
-      if (
-        bidTokenDecimals === undefined ||
-        auctionTokenDecimals === undefined ||
-        !maxValuationCurrencyAmount ||
-        !tickSizeQ96 ||
-        !clearingPriceQ96 ||
-        !floorPriceQ96 ||
-        !minMaxPriceQ96
-      ) {
-        return {}
-      }
-
-      const rawAmount = BigInt(maxValuationCurrencyAmount.quotient.toString())
-      if (rawAmount === 0n) {
-        return {}
-      }
-
-      const inputQ96 = priceToQ96WithDecimals({ priceRaw: rawAmount, auctionTokenDecimals })
-
-      // Use the correctly calculated minimum from useMinValidBid hook
-      // instead of the simplified (and incorrect) clearingPriceQ96 + tickSizeQ96
-      if (inputQ96 < minMaxPriceQ96) {
-        if (options?.shouldAutoCorrectMin) {
-          const sanitizedDisplayValue = q96ToPriceString({
-            q96Value: minMaxPriceQ96,
-            bidTokenDecimals,
-            auctionTokenDecimals,
-          })
-          return { sanitizedQ96: minMaxPriceQ96, sanitizedDisplayValue }
-        }
-        const inputDisplay = q96ToPriceString({ q96Value: inputQ96, bidTokenDecimals, auctionTokenDecimals })
-        const minDisplay = minValidPriceDisplay ?? ''
-        return {
-          error: t('toucan.bidForm.minValuationError', {
-            value: minValidPriceDisplayFormatted ?? minDisplay,
-            symbol: bidTokenSymbol ? ` ${bidTokenSymbol}` : '',
-          }),
-          errorDetails: {
-            inputValueDecimal: Number(inputDisplay),
-            minValueDecimal: Number(minDisplay),
-          },
-        }
-      }
-
-      const snappedQ96 = snapToNearestTick({
-        value: inputQ96,
-        floorPrice: floorPriceQ96,
-        clearingPrice: clearingPriceQ96,
-        tickSize: tickSizeQ96,
-      })
-      const sanitizedDisplayValue = q96ToPriceString({ q96Value: snappedQ96, bidTokenDecimals, auctionTokenDecimals })
-
-      return { sanitizedQ96: snappedQ96, sanitizedDisplayValue }
-    },
+  const evaluateMaxPriceFn = useEvent((options?: { shouldAutoCorrectMin?: boolean }) =>
+    evaluateMaxPrice({
+      bidTokenDecimals,
+      auctionTokenDecimals,
+      maxValuationCurrencyAmount,
+      tickSizeQ96,
+      clearingPriceQ96,
+      floorPriceQ96,
+      minMaxPriceQ96,
+      minValidPriceDisplay,
+      minValidPriceDisplayFormatted,
+      bidTokenSymbol,
+      shouldAutoCorrectMin: options?.shouldAutoCorrectMin,
+      formatError: ({ value, symbol }) => t('toucan.bidForm.minValuationError', { value, symbol }),
+    }),
   )
 
   const handleMaxPriceBlur = useEvent(() => {
@@ -491,7 +385,7 @@ export function useBidMaxValuationField({
       return
     }
 
-    const { sanitizedDisplayValue, error, errorDetails } = evaluateMaxPrice()
+    const { sanitizedDisplayValue, error, errorDetails } = evaluateMaxPriceFn()
 
     if (error) {
       setMaxPriceError(error)
@@ -503,31 +397,24 @@ export function useBidMaxValuationField({
     setMaxPriceErrorDetails(undefined)
 
     if (sanitizedDisplayValue && sanitizedDisplayValue !== exactMaxValuationAmountToken) {
-      setTokenPriceQ96(undefined)
       setExactMaxValuationAmountToken(sanitizedDisplayValue)
+      setTokenPriceQ96(undefined)
 
-      if (isMaxValuationFiatMode && bidCurrency && usdPriceOfCurrency) {
-        const tokenAmount = getCurrencyAmount({
-          value: sanitizedDisplayValue,
-          valueType: ValueType.Exact,
-          currency: bidCurrency,
-        })
-        const usdAmount = tokenAmount ? usdPriceOfCurrency.quote(tokenAmount) : undefined
-        const fiatAmount = usdAmount ? parseFloat(usdAmount.toExact()) * conversionRate : 0
-        const fiatAmountFormatted = fiatAmount ? fiatAmount.toFixed(MAX_FIAT_PRECISION) : ''
-        setExactMaxValuationAmountFiat(fiatAmountFormatted)
+      if (isMaxValuationFiatMode) {
+        const fiatAmountFormatted = bidTokenToFiat(sanitizedDisplayValue)
+        setExactMaxValuationAmountFiat(fiatAmountFormatted ?? '')
       }
     }
   })
 
   const resetMaxValuationField = useEvent(() => {
     setDisplayValueOverride(null)
-    setTokenPriceQ96(undefined)
     setMaxPriceError(undefined)
     setMaxPriceErrorDetails(undefined)
     setExactMaxValuationAmountToken(defaultMaxValuationDisplay)
     setExactMaxValuationAmountFiat('')
     setIsMaxValuationFiatMode(false)
+    setTokenPriceQ96(undefined)
   })
 
   useEffect(() => {
@@ -576,7 +463,7 @@ export function useBidMaxValuationField({
     maxPriceQ96,
     isMaxPriceBelowMinimum,
     setMaxPriceError,
-    evaluateMaxPrice,
+    evaluateMaxPrice: evaluateMaxPriceFn,
     resetMaxValuationField,
   }
 }

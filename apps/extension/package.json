@@ -72,7 +72,7 @@
     "@types/chrome": "0.0.304",
     "@types/jest": "29.5.14",
     "@types/ms": "0.7.31",
-    "@types/node": "22.13.1",
+    "@types/node": "22.19.17",
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.6",
     "@types/redux-logger": "3.0.9",

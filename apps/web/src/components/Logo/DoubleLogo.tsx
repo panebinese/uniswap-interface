@@ -62,13 +62,11 @@ export const DoubleCurrencyLogo = memo(function DoubleCurrencyLogo({
   size = 32,
   customIcon,
   includeNetwork = true,
-  showMainnetNetworkLogo = false,
 }: {
   currencies: Array<Currency | undefined>
   size?: number
   customIcon?: React.ReactNode
   includeNetwork?: boolean
-  showMainnetNetworkLogo?: boolean
 }) {
   const currencyId0 = currencies[0] ? buildCurrencyId(currencies[0].chainId, currencyAddress(currencies[0])) : undefined
   const currencyId1 = currencies[1] ? buildCurrencyId(currencies[1].chainId, currencyAddress(currencies[1])) : undefined
@@ -82,24 +80,10 @@ export const DoubleCurrencyLogo = memo(function DoubleCurrencyLogo({
     return <LogolessPlaceholder currency={currencies[0]} size={size} includeNetwork={Boolean(chainId)} />
   }
   if (invalidCurrencyLogo0 && currencyInfos[1]?.logoUrl) {
-    return (
-      <TokenLogo
-        url={currencyInfos[1].logoUrl}
-        size={size}
-        chainId={chainId}
-        showMainnetNetworkLogo={showMainnetNetworkLogo}
-      />
-    )
+    return <TokenLogo url={currencyInfos[1].logoUrl} size={size} chainId={chainId} />
   }
   if (invalidCurrencyLogo1 && currencyInfos[0]?.logoUrl) {
-    return (
-      <TokenLogo
-        url={currencyInfos[0]?.logoUrl}
-        size={size}
-        chainId={chainId}
-        showMainnetNetworkLogo={showMainnetNetworkLogo}
-      />
-    )
+    return <TokenLogo url={currencyInfos[0]?.logoUrl} size={size} chainId={chainId} />
   }
   return (
     <SplitLogo
@@ -108,7 +92,6 @@ export const DoubleCurrencyLogo = memo(function DoubleCurrencyLogo({
       outputCurrencyInfo={currencyInfos[1]}
       customIcon={customIcon}
       size={size}
-      showMainnetNetworkLogo={showMainnetNetworkLogo}
     />
   )
 })

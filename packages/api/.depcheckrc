@@ -4,6 +4,7 @@ ignores: [
     "typescript",
     "@typescript/native-preview",
     "depcheck",
+    "oxlint",
     "graphql",
     "@graphql-codegen/*",
     "@vitest/coverage-v8",

@@ -236,6 +236,7 @@ function BidDetailsModalContent({
                 maxFdvDisplay={maxFdvDisplay}
                 fdvFraction={fdvFraction}
                 displayState={displayState}
+                isAuctionEnded={auctionProgressState === AuctionProgressState.ENDED && isGraduated}
               />
             </Flex>
           )}

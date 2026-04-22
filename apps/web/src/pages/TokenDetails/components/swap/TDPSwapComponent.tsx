@@ -77,7 +77,6 @@ export function TDPSwapComponent() {
 
   const handleCurrencyChange = useCallback(
     (tokens: CurrencyState, isBridgePair?: boolean) => {
-      markInteracted()
       const inputCurrencyURLAddress = getCurrencyURLAddress(tokens.inputCurrency)
       const outputCurrencyURLAddress = getCurrencyURLAddress(tokens.outputCurrency)
 
@@ -127,7 +126,7 @@ export function TDPSwapComponent() {
       })
       navigate(url, { state: { preloadedLogoSrc } })
     },
-    [address, currencyChainId, markInteracted, navigate, prevTokens],
+    [address, currencyChainId, navigate, prevTokens],
   )
 
   const [showWarningModal, setShowWarningModal] = useState(false)
@@ -143,15 +142,19 @@ export function TDPSwapComponent() {
 
   return (
     <Flex gap="$gap12">
-      <Swap
-        syncTabToUrl={false}
-        initialInputChainId={swapCurrency.chainId}
-        initialInputCurrency={initialInputCurrency}
-        initialOutputCurrency={initialOutputCurrency}
-        onCurrencyChange={handleCurrencyChange}
-        tokenColor={tokenColor}
-        tdpCurrency={swapCurrency}
-      />
+      {/* TODO(SWAP-2334): Update interaction detection after swap flow refactor */}
+      {/* oxlint-disable-next-line react/forbid-elements -- raw div needed for onPointerDownCapture */}
+      <div onPointerDownCapture={markInteracted}>
+        <Swap
+          syncTabToUrl={false}
+          initialInputChainId={swapCurrency.chainId}
+          initialInputCurrency={initialInputCurrency}
+          initialOutputCurrency={initialOutputCurrency}
+          onCurrencyChange={handleCurrencyChange}
+          tokenColor={tokenColor}
+          tdpCurrency={swapCurrency}
+        />
+      </div>
       <TokenWarningCard currencyInfo={currencyInfo} onPress={() => setShowWarningModal(true)} />
       {currencyInfo && (
         // Intentionally duplicative with the TokenWarningModal in the swap component; this one only displays when user clicks "i" Info button on the TokenWarningCard

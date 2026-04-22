@@ -101,7 +101,7 @@ function usePDPChartState({
   const volumeQuery = usePDPVolumeChartData({ variables })
 
   return useMemo(() => {
-    // oxlint-disable-next-line consistent-return
+    // oxlint-disable-next-line typescript/consistent-return
     const activeQuery = (() => {
       switch (chartType) {
         case ChartType.PRICE:
@@ -149,7 +149,7 @@ export default function ChartSection(props: ChartSectionProps) {
   // TODO(WEB-3740): Integrate BE tick query, remove special casing for liquidity chart
   const loading = props.loading || (activeQuery.chartType !== ChartType.LIQUIDITY ? activeQuery.loading : false)
 
-  // oxlint-disable-next-line consistent-return
+  // oxlint-disable-next-line typescript/consistent-return
   const ChartBody = (() => {
     if (!currencyA || !currencyB || !props.poolData || !props.chain) {
       return <ChartSkeleton type={activeQuery.chartType} height={PDP_CHART_HEIGHT_PX} />

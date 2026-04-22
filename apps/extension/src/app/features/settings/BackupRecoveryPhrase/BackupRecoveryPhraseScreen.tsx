@@ -192,6 +192,7 @@ function RecoveryPhraseVerificationStep({
               mnemonic={mnemonicArray}
               onComplete={onComplete}
               numberOfTests={NUMBER_OF_TESTS_FOR_RECOVERY_PHRASE_VERIFICATION}
+              // oxlint-disable-next-line no-shadow
               onWordVerified={(numberOfWordsVerified) => setNumberOfWordsVerified(numberOfWordsVerified)}
               setSubtitle={setSubtitle}
               setHasError={setHasError}

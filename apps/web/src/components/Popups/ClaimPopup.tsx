@@ -36,7 +36,6 @@ export default function ClaimPopup() {
   const unclaimedAmount: CurrencyAmount<Token> | undefined = useUserUnclaimedAmount(account.address)
 
   // listen for available claim and show popup if needed
-  // oxlint-disable-next-line react/exhaustive-deps -- toggleClaimPopup function changes every time the popup changes, so this will cause an infinite loop
   useEffect(() => {
     if (userHasAvailableclaim) {
       toggleClaimPopup()

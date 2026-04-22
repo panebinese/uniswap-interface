@@ -172,7 +172,6 @@ export const wagmiConfig = createWagmiConfig({ connectors: defaultConnectors })
 
 declare module 'wagmi' {
   interface Register {
-    // oxlint-disable-next-line typescript/consistent-type-imports
     config: typeof wagmiConfig
   }
 }

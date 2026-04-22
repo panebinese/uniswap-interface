@@ -9,7 +9,7 @@ import {
   TokenType,
 } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { getChainIdFromChainUrlParam } from '~/features/params/chainParams'
-import { TokenStat } from '~/state/explore/types'
+import type { LegacyExploreStatChainToken, TokenStat } from '~/state/explore/types'
 
 const STANDARD_TO_TOKEN_TYPE: Partial<Record<string, TokenType>> = {
   UNKNOWN: TokenType.UNKNOWN,
@@ -40,9 +40,10 @@ function toSafetyLevel(value: unknown): SafetyLevel {
  * Converts legacy Explore TokenStat[] to MultichainToken[] so the legacy path
  * can produce the same canonical shape as the backend paths.
  *
- * Each TokenStat is a single-chain token, so each becomes one MultichainToken
- * with exactly one ChainToken. Token type is derived from stat.standard when
- * present; otherwise type is TokenType.UNKNOWN.
+ * Each TokenStat becomes one MultichainToken. When `chainTokens` is set (multichain
+ * ExploreStats row), all deployments are copied into `MultichainToken.chainTokens`;
+ * otherwise a single ChainToken is built from `chain`, `address`, and `decimals`.
+ * Token type is derived from stat.standard when present; otherwise type is TokenType.UNKNOWN.
  *
  * @param tokenStats - Legacy explore token stats, or undefined/empty for no tokens.
  * @returns MultichainToken[] in the same shape as backend list-tokens responses.
@@ -55,23 +56,41 @@ export function tokenStatsToMultichainTokens(tokenStats: TokenStat[] | undefined
 }
 
 function tokenStatToMultichainToken(stat: TokenStat): MultichainToken {
-  const chainId = getChainIdFromChainUrlParam(stat.chain.toLowerCase()) ?? 1
-  const multichainId = `mc:${chainId}_${stat.address}`
+  const primaryChainId = getChainIdFromChainUrlParam(stat.chain.toLowerCase()) ?? 1
+  const multichainId = `mc:${primaryChainId}_${stat.address}`
 
-  const chainTokenStats =
+  const volumeStats =
     stat.volume?.value !== undefined
       ? new ChainTokenStats({
           volume1d: stat.volume.value,
         })
       : undefined
 
-  const chainToken = new ChainToken({
-    chainId,
-    address: stat.address,
-    decimals: stat.decimals ?? 18,
-    isBridged: false,
-    stats: chainTokenStats,
-  })
+  const chainTokenVolumeStats = (ct: LegacyExploreStatChainToken): ChainTokenStats | undefined =>
+    ct.volume1d !== undefined ? new ChainTokenStats({ volume1d: ct.volume1d }) : volumeStats
+
+  const chainTokens =
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
+    (stat.chainTokens?.length ?? 0) > 0
+      ? stat.chainTokens.map(
+          (ct) =>
+            new ChainToken({
+              chainId: ct.chainId,
+              address: ct.address,
+              decimals: ct.decimals ?? stat.decimals ?? 18,
+              isBridged: ct.isBridged ?? false,
+              stats: chainTokenVolumeStats(ct),
+            }),
+        )
+      : [
+          new ChainToken({
+            chainId: primaryChainId,
+            address: stat.address,
+            decimals: stat.decimals ?? 18,
+            isBridged: false,
+            stats: volumeStats,
+          }),
+        ]
 
   const safetyLevel = stat.project?.safetyLevel ? toSafetyLevel(stat.project.safetyLevel) : SafetyLevel.UNKNOWN
   const spamCode = stat.project?.isSpam ? SpamCode.SPAM : SpamCode.NOT_SPAM
@@ -97,6 +116,6 @@ function tokenStatToMultichainToken(stat: TokenStat): MultichainToken {
     safetyLevel,
     spamCode,
     stats,
-    chainTokens: [chainToken],
+    chainTokens,
   })
 }

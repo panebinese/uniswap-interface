@@ -161,7 +161,7 @@ const TokenDetailsMarketData = memo(function TokenDetailsMarketDataInner(): JSX.
   )
 })
 
-// oxlint-disable-next-line complexity -- biome-parity: oxlint is stricter here
+// oxlint-disable-next-line complexity
 export const TokenDetailsStats = memo(function TokenDetailsStatsInner(): JSX.Element {
   const { t } = useTranslation()
   const colors = useSporeColors()

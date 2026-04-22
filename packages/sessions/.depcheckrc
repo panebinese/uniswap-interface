@@ -4,6 +4,7 @@ ignores: [
     "typescript",
     "@typescript/native-preview",
     "depcheck",
+    "oxlint",
     "@vitest/coverage-v8",
     "@types/react",
 

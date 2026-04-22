@@ -38,7 +38,6 @@ export function useConversionTracking(accountAddress?: HexString): UseConversion
   ]
   const conversionProxy = useConversionProxy()
 
-  // oxlint-disable-next-line react/exhaustive-deps -- -conversionProxy.mutateAsync
   const trackConversion = useCallback(
     async ({ platformIdType, eventId, eventName }: TrackConversionArgs) => {
       const lead = conversionLeads.find(({ type }) => type === platformIdType)

@@ -153,7 +153,7 @@ function TimelineItem({
           </Flex>
           <HeightAnimator open={isExpanded} animation="fast">
             <Text variant="body4" color="$neutral1" mt="$spacing4" pb="$spacing2">
-              {event.description}
+              {isPast || isActive ? event.description : event.futureDescription}
             </Text>
           </HeightAnimator>
         </TimelineCard>
@@ -178,22 +178,27 @@ export function ActivityTimeline() {
       'pre-sale-starts': {
         label: t('toucan.timeline.preSaleStarts'),
         description: t('toucan.timeline.preSaleStarts.description'),
+        futureDescription: t('toucan.timeline.preSaleStarts.description.future'),
       },
       'pre-sale-ends': {
         label: t('toucan.timeline.preSaleEnds'),
         description: t('toucan.timeline.preSaleEnds.description'),
+        futureDescription: t('toucan.timeline.preSaleEnds.description.future'),
       },
       'auction-started': {
         label: t('toucan.timeline.auctionStarted'),
         description: t('toucan.timeline.auctionStarted.description'),
+        futureDescription: t('toucan.timeline.auctionStarted.description.future'),
       },
       'auction-ends': {
         label: t('toucan.timeline.auctionEnds'),
         description: t('toucan.timeline.auctionEnds.description'),
+        futureDescription: t('toucan.timeline.auctionEnds.description.future'),
       },
       'tokens-claimable': {
         label: t('toucan.timeline.tokensClaimable'),
         description: t('toucan.timeline.tokensClaimable.description'),
+        futureDescription: t('toucan.timeline.tokensClaimable.description.future'),
       },
     }),
     [t],

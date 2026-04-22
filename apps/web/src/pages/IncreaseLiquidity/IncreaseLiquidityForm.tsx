@@ -98,6 +98,7 @@ export function IncreaseLiquidityForm() {
         <Switch
           id="add-as-weth"
           checked={unwrapNativeCurrency}
+          // oxlint-disable-next-line no-shadow
           onCheckedChange={() => setUnwrapNativeCurrency((unwrapNativeCurrency) => !unwrapNativeCurrency)}
           variant="branded"
         />

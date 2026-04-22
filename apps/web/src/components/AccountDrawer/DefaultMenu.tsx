@@ -48,9 +48,7 @@ export function DefaultMenu() {
       return 'forward'
     }
 
-    // oxlint-disable-next-line typescript/no-unnecessary-condition
     const newIndex = menuIndices[menuState.variant] ?? 2
-    // oxlint-disable-next-line typescript/no-unnecessary-condition
     const oldIndex = menuIndices[prevMenuVariant] ?? 2
     return newIndex > oldIndex ? 'forward' : 'backward'
   }, [menuState.variant, prevMenuVariant])
@@ -79,7 +77,6 @@ export function DefaultMenu() {
     )
   }, [menuState])
 
-  // oxlint-disable-next-line consistent-return
   const SubMenu = useMemo(() => {
     switch (menuState.variant) {
       case MenuStateVariant.MAIN:

@@ -456,6 +456,7 @@ export const findRouteByPath = (pathname: string) => {
     }
     const subPaths = route.nestedPaths.map((nestedPath) => `${route.path}/${nestedPath}`)
     for (const subPath of subPaths) {
+      // oxlint-disable-next-line no-shadow
       const match = matchPath(subPath, pathname)
       if (match) {
         return route

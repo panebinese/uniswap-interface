@@ -181,6 +181,7 @@ function UnwrapUnderCard({
       <Switch
         id="collect-as-weth"
         checked={unwrapNativeCurrency}
+        // oxlint-disable-next-line no-shadow
         onCheckedChange={() => setUnwrapNativeCurrency((unwrapNativeCurrency) => !unwrapNativeCurrency)}
         variant="default"
       />
@@ -188,6 +189,7 @@ function UnwrapUnderCard({
   )
 }
 
+// oxlint-disable-next-line complexity
 export function ClaimFeeModal() {
   const { t } = useTranslation()
   const trace = useTrace()

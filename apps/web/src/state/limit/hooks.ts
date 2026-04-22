@@ -185,6 +185,7 @@ function useLimitOrderTrade({
           trade && isClassic(trade) && trade.quote.quote.gasFeeUSD ? parseFloat(trade.quote.quote.gasFeeUSD) : undefined
         const usdCostPerGas = getUSDCostPerGas(gasUseEstimateUSD, gasUseEstimate)
 
+        // oxlint-disable-next-line no-shadow
         const wrapInfo = await getWrapInfo({
           needsWrap,
           account: account.address,

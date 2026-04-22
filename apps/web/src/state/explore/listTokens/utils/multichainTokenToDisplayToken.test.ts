@@ -106,6 +106,34 @@ describe('multichainTokenToDisplayToken', () => {
     expect(result.address).toBe('0xBaseAddr')
   })
 
+  it('should return undefined when exploreChainId has no matching chainToken', () => {
+    const mc = new MultichainToken({
+      multichainId: 'mc:multi',
+      symbol: 'ONLY_ETH',
+      name: 'Eth Only',
+      type: TokenType.ERC20,
+      projectName: '',
+      logoUrl: '',
+      safetyLevel: 0,
+      spamCode: 0,
+      chainTokens: [
+        new ChainToken({
+          chainId: 1,
+          address: '0xEthOnly',
+          decimals: 18,
+          isBridged: false,
+        }),
+      ],
+    })
+
+    expect(
+      multichainTokenToDisplayToken({
+        mcToken: mc,
+        exploreChainId: UniverseChainId.Base,
+      }),
+    ).toBeUndefined()
+  })
+
   it('should map name, symbol, logo from multichain token', () => {
     const mc = createDataApiMultichainToken({
       name: 'Wrapped Ether',

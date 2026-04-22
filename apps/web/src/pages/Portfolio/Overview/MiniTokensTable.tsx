@@ -78,6 +78,7 @@ export const MiniTokensTable = memo(function MiniTokensTable({ maxTokens = 8, ch
       >
         <TokensTableInner
           tokenData={tableData}
+          columnSortEnabled={false}
           loading={tableLoading}
           error={error}
           hiddenColumns={hiddenColumns}

@@ -8,7 +8,6 @@ export function useKeyboardLayout(): KeyboardLayout {
   const window = useWindowDimensions()
 
   const [keyboardPosition, setKeyboardPosition] = useState(window.height)
-  // oxlint-disable-next-line react/exhaustive-deps -- +window.height
   useEffect(() => {
     const keyboardListeners: EmitterSubscription[] = []
 

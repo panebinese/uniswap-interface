@@ -58,7 +58,6 @@ const VALID_REQUEST_TYPES = [
   EthMethod.WalletSendCalls,
 ]
 
-// oxlint-disable-next-line complexity -- biome-parity: oxlint is stricter here
 export function WalletConnectRequestModal({ onClose, request }: Props): JSX.Element | null {
   const { t } = useTranslation()
   const netInfo = useNetInfo()

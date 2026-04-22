@@ -25,6 +25,8 @@ interface SubscriptZeroPriceProps {
   lineHeight?: number
   /** Color for the main number */
   color?: TextProps['color']
+  /** When true, skip the MouseoverTooltip wrapper (use when already inside a tooltip) */
+  disableTooltip?: boolean
 }
 
 interface ParsedSubscriptNumber {
@@ -139,6 +141,7 @@ export function SubscriptZeroPrice({
   fontSize,
   lineHeight,
   color = '$neutral1',
+  disableTooltip,
 }: SubscriptZeroPriceProps): JSX.Element {
   const parsed = useMemo(
     () =>
@@ -178,25 +181,33 @@ export function SubscriptZeroPrice({
     fontSize !== undefined ? Math.round(fontSize * 0.7) : isHeading ? 12 : variant === 'body3' ? 9 : 10
   const subscriptTopOffset = isHeading ? 5 : 3
 
+  const subscriptContent = (
+    <Flex row alignItems="baseline" gap="$none" cursor="default">
+      <Text variant={variant} color={color} {...sizeProps}>
+        {prefix ?? ''}0.0
+      </Text>
+      <Text
+        variant={variant}
+        color={color}
+        fontSize={subscriptFontSize}
+        style={{ position: 'relative', top: subscriptTopOffset, lineHeight: 1 }}
+      >
+        {parsed.leadingZeros}
+      </Text>
+      <Text variant={variant} color={color} {...sizeProps}>
+        {parsed.significantPart}
+        {symbol ? ` ${symbol}` : ''}
+      </Text>
+    </Flex>
+  )
+
+  if (disableTooltip) {
+    return subscriptContent
+  }
+
   return (
     <MouseoverTooltip text={fullNumberTooltip} size={TooltipSize.Max} placement="top">
-      <Flex row alignItems="baseline" gap="$none" cursor="default">
-        <Text variant={variant} color={color} {...sizeProps}>
-          {prefix ?? ''}0.0
-        </Text>
-        <Text
-          variant={variant}
-          color={color}
-          fontSize={subscriptFontSize}
-          style={{ position: 'relative', top: subscriptTopOffset, lineHeight: 1 }}
-        >
-          {parsed.leadingZeros}
-        </Text>
-        <Text variant={variant} color={color} {...sizeProps}>
-          {parsed.significantPart}
-          {symbol ? ` ${symbol}` : ''}
-        </Text>
-      </Flex>
+      {subscriptContent}
     </MouseoverTooltip>
   )
 }

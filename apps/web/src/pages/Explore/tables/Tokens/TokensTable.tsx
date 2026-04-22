@@ -152,6 +152,7 @@ export function TokenTable({
               address: unwrappedToken.address,
               chain: toGraphQLChain(chainId ?? defaultChainId),
               chainUrlParam: chainFilter,
+              chainQueryParam: chainFilter,
             }),
             analytics: {
               elementName: ElementName.TokensTableRow,

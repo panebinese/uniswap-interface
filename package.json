@@ -18,9 +18,8 @@
     "@swc-node/register": "1.9.1",
     "@swc/core": "1.5.7",
     "@swc/helpers": "0.5.11",
-    "@types/bun": "1.3.11",
     "@types/inquirer": "9.0.8",
-    "@types/node": "22.13.1",
+    "@types/node": "22.19.17",
     "@typescript/native-preview": "7.0.0-dev.20260311.1",
     "clipboardy": "4.0.0",
     "danger": "11.2.6",
@@ -32,9 +31,8 @@
     "i18next-parser": "8.6.0",
     "inquirer": "8.2.6",
     "js-yaml": "4.1.0",
-    "knip": "5.50.5",
+    "knip": "6.1.0",
     "lefthook": "1.12.2",
-    "moti": "0.29.0",
     "nx": "22.5.4",
     "oxfmt": "0.41.0",
     "oxlint": "1.56.0",
@@ -42,12 +40,11 @@
     "oxlint-tsgolint": "0.17.1",
     "playwright-slack-report": "1.1.109",
     "syncpack": "8.5.14",
-    "tslib": "2.3.0",
-    "typescript": "5.8.3",
-    "wrangler": "4.65.0"
+    "typescript": "5.8.3"
   },
+  "type": "module",
   "engines": {
-    "node": "=22.13.1",
+    "node": "=22.22.2",
     "bun": ">=1.3.11",
     "npm": "please-use-bun"
   },
@@ -193,7 +190,6 @@
     "g:snapshots": "nx run-many -t snapshots",
     "// ── Cleanup & Troubleshooting ──": "Remove artifacts to resolve common issues",
     "clean": "bash ./scripts/clean.sh",
-    "clean:docs": "git submodule update --init apps/dev-portal/content/docs",
     "clean:local-packages": "bash ./scripts/remove-local-packages.sh",
     "clean:nodemodules": "find . -name 'node_modules' -type d -prune -print -exec rm -rf '{}' +",
     "// ── Tooling Maintenance ──": "Package generation, dependency upgrades, cleanup",
@@ -208,8 +204,8 @@
     "i18n:download": "dotenv -e .env.defaults -c -- bun run i18n:_download",
     "tradingapi:schema": "nx run-many -t tradingapi:schema",
     "tradingapi:generate": "nx run-many -t tradingapi:generate",
-    "wallet:release:setup-cherry-pick-branches": "bunx tsx ./scripts/wallet-releases/generate-cherry-pick-branches-for-release.ts",
-    "wallet:release:generate-cherry-pick-commit-command": "bunx tsx ./scripts/wallet-releases/generate-cherry-pick-commit-command.ts",
+    "wallet:release:setup-cherry-pick-branches": "bun run ./scripts/wallet-releases/generate-cherry-pick-branches-for-release.ts",
+    "wallet:release:generate-cherry-pick-commit-command": "bun run ./scripts/wallet-releases/generate-cherry-pick-commit-command.ts",
     "// ── Package Shortcuts ──": "bun <name> <script> aliases for each workspace package",
     "analytics": "bun run --cwd packages/analytics",
     "api": "bun run --cwd packages/api",
@@ -236,7 +232,8 @@
     "utilities": "bun run --cwd packages/utilities",
     "wallet": "bun run --cwd packages/wallet",
     "web": "bun run --cwd apps/web",
-    "websocket": "bun run --cwd packages/websocket"
+    "websocket": "bun run --cwd packages/websocket",
+    "chains": "bun run --cwd packages/chains"
   },
   "workspaces": [
     "apps/*",

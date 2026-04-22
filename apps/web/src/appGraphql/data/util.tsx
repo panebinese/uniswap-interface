@@ -31,7 +31,7 @@ export enum TimePeriod {
   MAX = 'MAX',
 }
 
-// oxlint-disable-next-line consistent-return
+// oxlint-disable-next-line typescript/consistent-return
 export function toHistoryDuration(timePeriod: TimePeriod): GraphQLApi.HistoryDuration {
   switch (timePeriod) {
     case TimePeriod.HOUR:

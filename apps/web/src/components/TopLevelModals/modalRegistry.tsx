@@ -92,6 +92,16 @@ const ReportTokenModal = createLazy(() =>
   })),
 )
 
+const ReportTokenDataModal = createLazy(() =>
+  import('uniswap/src/components/reporting/ReportTokenDataModal').then((module) => ({
+    default: module.ReportTokenDataModal,
+  })),
+)
+
+const DataApiOutageModal = createLazy(() =>
+  import('~/components/DataApiOutageModal').then((module) => ({ default: module.DataApiOutageModal })),
+)
+
 const AddBackupLoginModal = createLazy(() =>
   import('~/components/Passkey/AddBackupLoginModal').then((module) => ({ default: module.AddBackupLoginModal })),
 )
@@ -244,6 +254,14 @@ export const modalRegistry: ModalRegistry = {
     component: ReportTokenModal,
     shouldMount: (state) => state.application.openModal?.name === ModalName.ReportTokenIssue,
   },
+  [ModalName.ReportTokenData]: {
+    component: ReportTokenDataModal,
+    shouldMount: (state) => state.application.openModal?.name === ModalName.ReportTokenData,
+  },
+  [ModalName.DataApiOutage]: {
+    component: DataApiOutageModal,
+    shouldMount: (state) => state.application.openModal?.name === ModalName.DataApiOutage,
+  },
   [ModalName.AddBackupLogin]: {
     component: AddBackupLoginModal,
     shouldMount: (state) => state.application.openModal?.name === ModalName.AddBackupLogin,
@@ -273,6 +291,7 @@ export const ModalRenderer = ({
   modalName: ModalNameType
   componentProps?: Record<string, any>
 }) => {
+  // oxlint-disable-next-line no-shadow
   const state = useAppSelector((state) => state)
   const modalState = useModalState(modalName)
 

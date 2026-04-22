@@ -479,7 +479,12 @@ export default defineConfig(({ mode }) => {
         '@visx/responsive',
       ],
       // Libraries that shouldn't be pre-bundled
-      exclude: ['expo-clipboard', '@connectrpc/connect', '@uniswap/client-liquidity'],
+      exclude: [
+        'expo-clipboard',
+        '@connectrpc/connect',
+        '@uniswap/client-liquidity',
+        '@uniswap/client-privy-embedded-wallet',
+      ],
       esbuildOptions: {
         resolveExtensions: [
           '.web-app.js',

@@ -1,9 +1,7 @@
 import type { MultichainToken } from '@uniswap/client-data-api/dist/data/v1/types_pb'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { TokenSortMethod } from '~/components/Tokens/constants'
 import type { UseListTokensOptions } from '~/state/explore/listTokens/types'
 import { buildTokenSortRankFromMultichain } from '~/state/explore/listTokens/utils/buildTokenSortRankFromMultichain'
-import { filterMultichainTokensByChainId } from '~/state/explore/listTokens/utils/filterMultichainTokensByChainId'
 import { filterMultichainTokensBySearchString } from '~/state/explore/listTokens/utils/filterMultichainTokensBySearchString'
 
 function sortMultichainTokensByPrice(tokens: MultichainToken[], sortAscending: boolean): MultichainToken[] {
@@ -29,28 +27,20 @@ type ProcessMultichainTokensForDisplayResult = {
   tokenSortRank: Record<string, number>
 }
 
-type ProcessMultichainTokensForDisplayOptions = Required<UseListTokensOptions> & {
-  /** When set, only tokens with a chainToken on this chain are returned, each narrowed to that chain. */
-  chainId?: UniverseChainId
-}
-
 /**
  * 1) Sort — client PRICE sort when `sortMethod === PRICE`, else incoming order.
  * 2) Rank — `tokenSortRank` from that sorted list.
- * 3) Filter — search on the sorted list, then optional chain filter when options.chainId is provided.
+ * 3) Filter — search on the sorted list (`filterString`).
  *
  * - Legacy path: hook does non-PRICE sort only; PRICE sort + filter are done here, then caller slices.
  * - Backend path: BE sorts except for PRICE; we apply client-side price sort here when sortMethod is PRICE.
  */
 export function processMultichainTokensForDisplay(
   tokens: MultichainToken[],
-  options: ProcessMultichainTokensForDisplayOptions,
+  options: Required<UseListTokensOptions>,
 ): ProcessMultichainTokensForDisplayResult {
   const sorted = sortTokensForDisplay(tokens, options)
   const tokenSortRank = buildTokenSortRankFromMultichain(sorted)
-  let topTokens = filterMultichainTokensBySearchString(sorted, options.filterString)
-  if (options.chainId !== undefined) {
-    topTokens = filterMultichainTokensByChainId(topTokens, options.chainId)
-  }
+  const topTokens = filterMultichainTokensBySearchString(sorted, options.filterString)
   return { topTokens, tokenSortRank }
 }

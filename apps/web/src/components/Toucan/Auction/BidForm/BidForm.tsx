@@ -1,6 +1,7 @@
 //! tamagui-ignore
 // tamagui-ignore
 import { KycVerificationStatus } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, styled, useColorsFromTokenColor } from 'ui/src'
@@ -20,6 +21,7 @@ import { AuctionAccessIndicators } from '~/components/Toucan/Auction/BidForm/Auc
 import { BidBudgetInput } from '~/components/Toucan/Auction/BidForm/BidBudgetInput'
 import { BidFormWarningBanner } from '~/components/Toucan/Auction/BidForm/BidFormWarningBanner'
 import { BidMaxValuationInput } from '~/components/Toucan/Auction/BidForm/BidMaxValuationInput'
+import { BidMaxValuationInputV2 } from '~/components/Toucan/Auction/BidForm/BidMaxValuationInputV2'
 import { BidReceiveOutput } from '~/components/Toucan/Auction/BidForm/BidReceiveOutput'
 import { BidReviewModal } from '~/components/Toucan/Auction/BidForm/BidReviewModal/BidReviewModal'
 import { KycFailedModal } from '~/components/Toucan/Auction/BidForm/KycFailedModal/KycFailedModal'
@@ -35,12 +37,10 @@ import { InlineAlertBanner } from '~/components/Toucan/Shared/InlineAlertBanner'
 import { KycActionButton } from '~/components/Toucan/Shared/KycActionButton'
 import { ToucanActionButton } from '~/components/Toucan/Shared/ToucanActionButton'
 import { useActiveAddress } from '~/features/accounts/store/hooks'
-import { MobileScreen, MobileScreenConfig } from '~/pages/Explore/ToucanToken'
 
 const VerticalLineContainer = styled(Flex, {
   width: '100%',
-  paddingLeft: '$spacing32',
-  justifyContent: 'flex-start',
+  alignItems: 'center',
   paddingVertical: '$spacing2',
 })
 
@@ -53,11 +53,12 @@ const VerticalLine = styled(Flex, {
 
 interface BidFormProps {
   onInputChange?: () => void
-  setMobileScreenConfig?: (config: MobileScreenConfig) => void
+  onBidSubmitted?: () => void
 }
 
-export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps): JSX.Element {
+export function BidForm({ onInputChange, onBidSubmitted }: BidFormProps): JSX.Element {
   const { t } = useTranslation()
+  const isV2 = useFeatureFlag(FeatureFlags.AuctionDetailsV2)
   const trace = useTrace()
   const chainId = useAuctionStore((state) => state.auctionDetails?.chainId)
   const auctionContractAddress = useAuctionStore((state) => state.auctionAddress)
@@ -91,6 +92,8 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
     minExpectedReceiveAmount,
     auctionTokenSymbol,
     maxReceivableAmount,
+    maxPriceQ96,
+    bidTokenDecimals,
     hasBidToken,
     bidCurrencyAddress,
     bidTokenSymbol,
@@ -99,7 +102,7 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
     tokenColor: validTokenColor,
     onTransactionSubmitted: () => {
       setIsReviewModalOpen(false)
-      setMobileScreenConfig?.({ screen: MobileScreen.BID_FORM, showBidFormModal: false })
+      onBidSubmitted?.()
     },
     onInputChange,
   })
@@ -204,7 +207,8 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
   return (
     <Flex flexDirection="column" gap="$spacing8">
       <AuctionAccessIndicators />
-      <Flex flexGrow={1} justifyContent="space-between" gap="$spacing24">
+      <BidFormWarningBanner isVisible={shouldShowWarningBanner} />
+      <Flex flexGrow={1} justifyContent="space-between" gap="$spacing16">
         <Flex gap="$spacing12">
           {showDisabledState && (
             <InlineAlertBanner
@@ -212,11 +216,7 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
               description={t('toucan.auction.bidForm.auctionConcluded.description')}
             />
           )}
-          <Flex
-            gap="$spacing16"
-            opacity={shouldDisableBidForm ? 0.54 : 1}
-            pointerEvents={shouldDisableBidForm ? 'none' : 'auto'}
-          >
+          <Flex opacity={shouldDisableBidForm ? 0.54 : 1} pointerEvents={shouldDisableBidForm ? 'none' : 'auto'}>
             <Flex flexDirection="column">
               <BidBudgetInput
                 label={t('toucan.bidForm.maxBudget')}
@@ -226,14 +226,24 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
               <VerticalLineContainer>
                 <VerticalLine />
               </VerticalLineContainer>
-              <BidMaxValuationInput
-                label={t('toucan.bidForm.maxTokenPrice')}
-                field={maxValuationField}
-                totalSupply={totalSupply}
-                auctionTokenDecimals={auctionTokenDecimals}
-                tokenColor={validTokenColor ?? effectiveTokenColor}
-                disabled={!isAuctionInProgress}
-              />
+              {isV2 ? (
+                <BidMaxValuationInputV2
+                  label={t('toucan.bidDetails.label.maxFdv')}
+                  field={maxValuationField}
+                  auctionTokenDecimals={auctionTokenDecimals}
+                  tokenColor={validTokenColor ?? effectiveTokenColor}
+                  disabled={!isAuctionInProgress}
+                />
+              ) : (
+                <BidMaxValuationInput
+                  label={t('toucan.bidForm.maxTokenPrice')}
+                  field={maxValuationField}
+                  totalSupply={totalSupply}
+                  auctionTokenDecimals={auctionTokenDecimals}
+                  tokenColor={validTokenColor ?? effectiveTokenColor}
+                  disabled={!isAuctionInProgress}
+                />
+              )}
               {!isAuctionEnded && (
                 <>
                   <VerticalLineContainer>
@@ -244,6 +254,12 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
                     minExpectedAmount={minExpectedReceiveAmount}
                     maxAvailableAmount={maxReceivableAmount}
                     tokenSymbol={auctionTokenSymbol}
+                    maxPriceQ96={maxPriceQ96}
+                    bidTokenDecimals={bidTokenDecimals}
+                    budgetAmount={
+                      budgetField.currencyAmount ? parseFloat(budgetField.currencyAmount.toExact()) : undefined
+                    }
+                    bidTokenSymbol={bidTokenSymbol}
                   />
                 </>
               )}
@@ -251,7 +267,6 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
           </Flex>
         </Flex>
         <Flex flexDirection="column" gap="$spacing8">
-          <BidFormWarningBanner isVisible={shouldShowWarningBanner} />
           {shouldShowSwapBanner && (
             <NoBidTokenBanner
               chainId={chainId}

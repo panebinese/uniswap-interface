@@ -3,9 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { Flex, useIsTouchDevice, useMedia } from 'ui/src'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { fromGraphQLChain, getChainLabel } from 'uniswap/src/features/chains/utils'
+import { isMultichainProjectTokens } from 'uniswap/src/features/dataApi/tokenProjects/utils/isMultichainProjectTokens'
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { DetailsHeaderContainer } from '~/components/Explore/stickyHeader/DetailsHeaderContainer'
 import { MobileBottomBar, TDPActionTabs } from '~/components/NavBar/MobileBottomBar'
@@ -37,6 +39,8 @@ export function TokenDetailsContent({ isCompact }: { isCompact: boolean }) {
     currency: s.currency!,
   }))
   const tokenQueryData = tokenQuery.data?.token
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const isMultichainAsset = isMultichainProjectTokens(tokenQueryData?.project?.tokens)
   const pageChainBalance = multiChainMap[currencyChain]?.balance
 
   const { direction: scrollDirection } = useScroll()
@@ -62,6 +66,7 @@ export function TokenDetailsContent({ isCompact }: { isCompact: boolean }) {
         tokenSymbol: currency.symbol,
         tokenName: currency.name,
         chainId: currency.chainId,
+        ...(multichainTokenUxEnabled ? { multichain: isMultichainAsset } : {}),
       }}
     >
       <TDPBreadcrumb />
@@ -98,7 +103,7 @@ export function TokenDetailsContent({ isCompact }: { isCompact: boolean }) {
         </LeftPanel>
         <RightPanel>
           {/* Swap always visible on desktop (uses display to preserve state) */}
-          <Flex display={isDesktop ? 'flex' : 'none'}>
+          <Flex display={isDesktop ? 'flex' : 'none'} data-testid={TestID.TokenDetailsSwap}>
             <TDPSwapComponent />
           </Flex>
 
@@ -116,7 +121,7 @@ export function TokenDetailsContent({ isCompact }: { isCompact: boolean }) {
         </RightPanel>
 
         <MobileBottomBar hide={isTouchDevice && scrollDirection === ScrollDirection.DOWN}>
-          <Flex data-testid="tdp-mobile-bottom-bar">
+          <Flex data-testid={TestID.TokenDetailsMobileBottomBar}>
             <TDPActionTabs />
           </Flex>
         </MobileBottomBar>

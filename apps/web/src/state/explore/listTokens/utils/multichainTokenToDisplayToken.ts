@@ -47,13 +47,14 @@ function pickPrimaryChainToken(
   if (exploreChainId === undefined) {
     return chainTokens[0]
   }
-  return chainTokens.find((ct) => ct.chainId === exploreChainId) ?? chainTokens[0]
+  return chainTokens.find((ct) => ct.chainId === exploreChainId)
 }
 
 /**
  * Converts a MultichainToken to a TokenStat-like object for display in tables/carousels.
  * Uses the first chainToken as the primary chain for links and price lookup, or the deployment
  * matching `exploreChainId` when set (e.g. explore page network filter) so TDP opens on that network.
+ * When `exploreChainId` is set and no deployment matches, returns undefined (exclude from chain-scoped lists).
  * Returns undefined when chainTokens is empty.
  *
  * When filterTimePeriod is provided, the volume shown matches the selected period (backend returns multiple volume fields).
@@ -73,7 +74,6 @@ export function multichainTokenToDisplayToken({
   const primary = pickPrimaryChainToken(mcToken.chainTokens, exploreChainId)
   // Guard empty chainTokens, should never happen but protobuf default can be empty array
 
-  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   if (!primary) {
     return undefined
   }
@@ -93,6 +93,7 @@ export function multichainTokenToDisplayToken({
     symbol: mcToken.symbol,
     decimals: primary.decimals,
     logo: mcToken.logoUrl,
+    chainTokens: [],
     price: mcToken.stats?.price !== undefined ? new Amount({ value: mcToken.stats.price }) : undefined,
     fullyDilutedValuation: mcToken.stats?.fdv !== undefined ? new Amount({ value: mcToken.stats.fdv }) : undefined,
     pricePercentChange1Hour:

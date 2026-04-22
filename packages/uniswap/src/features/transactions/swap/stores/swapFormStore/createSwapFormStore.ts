@@ -66,8 +66,8 @@ export const createSwapFormStore = ({
         const exactAmountTokenRef = createRef<string>() as MutableRefObject<string>
 
         amountUpdatedTimeRef.current = 0
-        exactAmountFiatRef.current = ''
-        exactAmountTokenRef.current = ''
+        exactAmountFiatRef.current = initialState?.exactAmountFiat ?? ''
+        exactAmountTokenRef.current = initialState?.exactAmountToken ?? ''
 
         return {
           exactAmountFiat: undefined,

@@ -2,6 +2,7 @@ import { type Currency, type CurrencyAmount } from '@uniswap/sdk-core'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Input, Text } from 'ui/src'
+import { QuestionInCircleFilled } from 'ui/src/components/icons/QuestionInCircleFilled'
 import { fonts } from 'ui/src/theme'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
@@ -169,42 +170,62 @@ export function AuctionSupplySelector({
   )
 
   return (
-    <Flex row alignItems="flex-start" gap="$spacing4">
-      {/* Left: label + editable amount */}
-      <Flex flex={1} flexBasis={0} minWidth={0} gap="$spacing4">
-        <Text variant="body3" color="$neutral2">
-          {t('toucan.createAuction.step.configureAuction.auctionSupply')}
+    <Flex
+      backgroundColor="$surface2"
+      borderWidth="$spacing1"
+      borderColor="$surface3"
+      borderRadius="$rounded16"
+      p="$spacing16"
+      gap="$spacing8"
+    >
+      {/* Header: "Deposit amount" + help icon */}
+      <Flex row alignItems="center" gap="$spacing4">
+        <Text variant="buttonLabel3" color="$neutral2">
+          {t('toucan.createAuction.step.configureAuction.depositAmount')}
         </Text>
-        {isFocused ? (
-          <Input
-            autoFocus
-            height={fonts.heading3.lineHeight}
-            width="100%"
-            value={rawInput}
-            onChangeText={handleChange}
-            onBlur={handleBlur}
-            placeholder="0"
-            placeholderTextColor="$neutral3"
-            fontSize={fonts.heading3.fontSize}
-            lineHeight={fonts.heading3.lineHeight}
-            fontWeight={fonts.heading3.fontWeight}
-            color={exceedsTotalSupply ? '$statusCritical' : '$neutral1'}
-            px="$none"
-            backgroundColor="$transparent"
-          />
-        ) : (
-          <Text variant="heading3" color="$neutral1" cursor="text" onPress={handleFocus}>
-            {displayValue}
-          </Text>
-        )}
+        <QuestionInCircleFilled size="$icon.16" color="$neutral3" />
       </Flex>
 
-      {/* Right: total supply label + quick select pills */}
-      <Flex flex={2} flexBasis={0} minWidth={0} gap="$spacing8" alignItems="flex-end">
-        <Text variant="body3" color="$neutral2">
-          {t('toucan.auction.totalSupply')}: {totalSupplyFormatted} {tokenSymbol}
-        </Text>
-        <Flex row width="100%" gap="$spacing2">
+      {/* Input row: amount + symbol on left, quick selects on right */}
+      <Flex row alignItems="center">
+        <Flex flex={1} flexBasis={0} minWidth={0} gap="$spacing4">
+          <Flex row alignItems="center" gap="$spacing4">
+            {isFocused ? (
+              <Input
+                autoFocus
+                height={fonts.heading3.lineHeight}
+                $platform-web={{
+                  fieldSizing: 'content',
+                  minWidth: '1ch',
+                  maxWidth: '100%',
+                }}
+                value={rawInput}
+                onChangeText={handleChange}
+                onBlur={handleBlur}
+                placeholder="0"
+                placeholderTextColor="$neutral3"
+                fontSize={fonts.heading3.fontSize}
+                lineHeight={fonts.heading3.lineHeight}
+                fontWeight={fonts.heading3.fontWeight}
+                color={exceedsTotalSupply ? '$statusCritical' : '$neutral1'}
+                px="$none"
+                backgroundColor="$transparent"
+              />
+            ) : (
+              <Text variant="heading3" color="$neutral1" cursor="text" onPress={handleFocus}>
+                {displayValue}
+              </Text>
+            )}
+            <Text variant="heading3" color="$neutral3">
+              {tokenSymbol}
+            </Text>
+          </Flex>
+          <Text variant="body4" color="$neutral2">
+            {t('toucan.auction.totalSupply')}: {totalSupplyFormatted} {tokenSymbol}
+          </Text>
+        </Flex>
+
+        <Flex row flex={1} flexBasis={0} minWidth={0} gap="$spacing2">
           {QUICK_SELECT_PERCENTS.map((pillPercent) => (
             <PercentButton
               key={pillPercent}

@@ -22,7 +22,7 @@ export const LiquidityPositionDropdownMenu = memo(function LiquidityPositionDrop
   isVisible = true,
 }: LiquidityPositionDropdownMenuProps) {
   const isTouchDevice = useIsTouchDevice()
-  const { value: isOpen, setTrue: openMenu, setFalse: closeMenu } = useBooleanState(false)
+  const { value: isOpen, setTrue: openMenu, setFalse: closeMenu, toggle } = useBooleanState(false)
   const dropdownOptions = useLiquidityPositionDropdownOptions({
     liquidityPosition,
     showVisibilityOption,
@@ -41,14 +41,14 @@ export const LiquidityPositionDropdownMenu = memo(function LiquidityPositionDrop
       sectionName={SectionName.PortfolioPoolsTab}
     >
       {/* oxlint-disable-next-line react/forbid-elements -- raw div needed for onContextMenu */}
-      <div style={{ cursor: 'pointer' }} onContextMenu={openMenu}>
+      <div style={{ cursor: 'pointer' }} onContextMenu={toggle}>
         <TouchableArea
           onPressIn={(e) => e.stopPropagation()}
           onPressOut={(e) => e.stopPropagation()}
           onPress={(e) => {
             e.stopPropagation()
             e.preventDefault()
-            openMenu()
+            toggle()
           }}
         >
           <Flex

@@ -173,7 +173,6 @@ export function CancelOrdersDialog(props: CancelOrdersDialogProps) {
         displayHelpCTA
         iconBackgroundColor="$surface3"
       >
-        {/* oxlint-disable-next-line typescript/no-unnecessary-condition */}
         <GasEstimateDisplay chainId={orders[0].chainId} gasEstimateValue={cancellationGasFeeInfo?.gasFeeDisplayValue} />
       </Dialog>
     )

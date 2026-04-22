@@ -134,7 +134,6 @@ export function PoolDetailsLink({ address, chainId, tokens, loading }: PoolDetai
   }, [navigate, tokens, isPool, chainUrlParam])
 
   const [truncateAddress, setTruncateAddress] = useState<false | 'start' | 'both'>(false)
-  // oxlint-disable-next-line react/exhaustive-deps -- +truncateAddress
   const onTextRender = useCallback(
     (textRef: HTMLElement | null) => {
       if (textRef) {

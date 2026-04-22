@@ -306,7 +306,6 @@ export class ExtensionEthMethodHandler extends BaseMethodHandler<WindowEthereumR
     )
   }
 
-  // oxlint-disable-next-line complexity
   async handleRequest(request: WindowEthereumRequest, source: MessageEventSource | null): Promise<void> {
     switch (request.method) {
       case EthMethod.EthChainId: {

@@ -19,4 +19,6 @@ ignores: [
     'dd-trace',
     # depcheck flags itself as unused
     'depcheck',
+    # oxlint is a root-level dependency used via oxlint.config.ts
+    'oxlint',
   ]

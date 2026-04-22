@@ -1,3 +1,4 @@
+import { CHART_CONSTRAINTS } from '~/components/Toucan/Auction/BidDistributionChart/constants'
 import { computeTickWindow } from '~/components/Toucan/Auction/BidDistributionChart/utils/utils'
 
 describe('computeTickWindow', () => {
@@ -23,15 +24,40 @@ describe('computeTickWindow', () => {
     expect(result.windowMaxIndex).toBe(65)
   })
 
-  it('returns full range for wide tick ranges (bar consolidation handles display)', () => {
+  it('includes full range even when very wide', () => {
+    const minRequiredMaxIndex = 5_000_000 + CHART_CONSTRAINTS.MIN_TICKS_ABOVE_CLEARING_PRICE
+    const result = computeTickWindow({
+      minTickIndexAvailable: 0,
+      maxTickIndexAvailable: 100,
+      minRequiredMaxIndex,
+    })
+
+    expect(result.windowMinIndex).toBe(0)
+    expect(result.windowMaxIndex).toBe(minRequiredMaxIndex)
+  })
+
+  it('includes full range when bid data spans wide range', () => {
     const result = computeTickWindow({
       minTickIndexAvailable: 0,
       maxTickIndexAvailable: 100_000,
-      minRequiredMaxIndex: 50_015,
+      minRequiredMaxIndex: 50_000 + CHART_CONSTRAINTS.MIN_TICKS_ABOVE_CLEARING_PRICE,
     })
 
     expect(result.windowMinIndex).toBe(0)
     expect(result.windowMaxIndex).toBe(100_000)
+  })
+
+  it('ensures minRequiredMaxIndex is respected', () => {
+    const minRequiredMaxIndex = 99_990 + CHART_CONSTRAINTS.MIN_TICKS_ABOVE_CLEARING_PRICE
+
+    const result = computeTickWindow({
+      minTickIndexAvailable: 0,
+      maxTickIndexAvailable: 100_000,
+      minRequiredMaxIndex,
+    })
+
+    expect(result.windowMinIndex).toBe(0)
+    expect(result.windowMaxIndex).toBe(minRequiredMaxIndex)
   })
 
   it('handles case where clearing price is below all bids', () => {
@@ -46,13 +72,14 @@ describe('computeTickWindow', () => {
   })
 
   it('handles single bid at floor with distant clearing price', () => {
+    const minRequiredMaxIndex = 1_000_000 + CHART_CONSTRAINTS.MIN_TICKS_ABOVE_CLEARING_PRICE
     const result = computeTickWindow({
       minTickIndexAvailable: 0,
       maxTickIndexAvailable: 0,
-      minRequiredMaxIndex: 1_000_015,
+      minRequiredMaxIndex,
     })
 
     expect(result.windowMinIndex).toBe(0)
-    expect(result.windowMaxIndex).toBe(1_000_015)
+    expect(result.windowMaxIndex).toBe(minRequiredMaxIndex)
   })
 })

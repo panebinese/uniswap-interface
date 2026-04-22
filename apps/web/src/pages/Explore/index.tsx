@@ -129,7 +129,6 @@ const Explore = ({ initialTab }: { initialTab?: ExploreTab }) => {
   }, [initialTab, Pages])
 
   // scroll to tab navbar on initial page mount only
-  // oxlint-disable-next-line react/exhaustive-deps -- Intentionally only runs once on mount
   useEffect(() => {
     if (tabNavRef.current && initialTab) {
       const offsetTop = tabNavRef.current.getBoundingClientRect().top + window.scrollY
