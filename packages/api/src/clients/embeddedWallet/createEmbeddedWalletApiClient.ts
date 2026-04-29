@@ -151,10 +151,12 @@ export interface EmbeddedWalletApiClient {
     auth: SignAuth
   }) => Promise<{ signatures: string[] }>
   fetchSignTypedDataRequest: (params: { typedDataBatch: string[]; auth: SignAuth }) => Promise<{ signatures: string[] }>
-  fetchDisconnectRequest: () => Promise<DisconnectResponse>
+  fetchDisconnectRequest: (params?: {
+    deviceAuth?: { deviceSignature: string; walletId: string; signingPayload?: string }
+  }) => Promise<DisconnectResponse>
   fetchListAuthenticatorsRequest: (params: {
     credential?: string
-    walletId?: string
+    deviceAuth?: { deviceSignature: string; walletId: string; signingPayload?: string }
   }) => Promise<ListAuthenticatorsResponse>
   fetchSecuredChallengeRequest: (params: {
     type: OldAuthenticationTypes
@@ -296,25 +298,30 @@ export function createEmbeddedWalletApiClient({
     return { signatures: [result.signature] }
   }
 
-  async function fetchDisconnectRequest(): Promise<DisconnectResponse> {
-    return await rpcClient.disconnect({})
+  async function fetchDisconnectRequest(params?: {
+    deviceAuth?: { deviceSignature: string; walletId: string; signingPayload?: string }
+  }): Promise<DisconnectResponse> {
+    // DisconnectRequest has `device_auth` as a top-level optional field (not a oneof).
+    return await rpcClient.disconnect(params?.deviceAuth ? { deviceAuth: params.deviceAuth } : {})
   }
 
   async function fetchListAuthenticatorsRequest({
     credential,
-    walletId,
+    deviceAuth,
   }: {
     credential?: string
-    walletId?: string
+    deviceAuth?: { deviceSignature: string; walletId: string; signingPayload?: string }
   }): Promise<ListAuthenticatorsResponse> {
-    const cacheKey = `listAuthenticators:${credential ?? walletId ?? 'no-key'}`
+    const cacheKey = `listAuthenticators:${credential ?? deviceAuth?.walletId ?? 'no-key'}`
 
     const existingRequest = inflightRequests.get(cacheKey) as Promise<ListAuthenticatorsResponse> | undefined
     if (existingRequest) {
       return existingRequest
     }
 
-    const request = rpcClient.listAuthenticators({ credential, walletId }).finally(() => {
+    // ListAuthenticatorsRequest has `credential` and `device_auth` as separate top-level
+    // optional fields (not a oneof) — send whichever is present directly.
+    const request = rpcClient.listAuthenticators({ credential, deviceAuth }).finally(() => {
       inflightRequests.delete(cacheKey)
     })
 

@@ -18,6 +18,8 @@ export const useChartHoverState = () => {
     useShallow((s) => ({
       hoveredTick: s.hoveredTick,
       hoveredY: s.hoveredY,
+      hoverPriceX: s.hoverPriceX,
+      hoverPriceY: s.hoverPriceY,
       isChartHovered: s.isChartHovered,
     })),
   )

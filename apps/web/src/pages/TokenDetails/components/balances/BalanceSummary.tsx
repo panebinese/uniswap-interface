@@ -9,14 +9,12 @@ import { NetworkBalanceBreakdown } from 'uniswap/src/components/tokenDetails/Net
 import { computeAggregateBalance } from 'uniswap/src/components/tokenDetails/utils'
 import { useConnectionStatus } from 'uniswap/src/features/accounts/store/hooks'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
-import type { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { getChainLabel, toGraphQLChain } from 'uniswap/src/features/chains/utils'
+import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import type { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { getTokenDetailsURL } from '~/appGraphql/data/util'
-import { ChainLogo } from '~/components/Logo/ChainLogo'
 import { MouseoverTooltip, TooltipSize } from '~/components/Tooltip'
 import { Balance } from '~/pages/TokenDetails/components/balances/Balance'
 import { BridgedAssetWithdrawButton } from '~/pages/TokenDetails/components/balances/BridgedAssetWithdrawButton'
@@ -162,20 +160,6 @@ function BreakdownSection({
     [defaultChainId, multichainTokenUxEnabled, navigate, setSelectedMultichainChainId, trace],
   )
 
-  const renderNetworkLogo = useCallback((chainId: UniverseChainId) => {
-    const chainName = getChainLabel(chainId)
-    return (
-      <MouseoverTooltip
-        placement="left"
-        size={TooltipSize.Max}
-        text={<Text variant="body3">{chainName}</Text>}
-        offsetX={0}
-      >
-        <ChainLogo chainId={chainId} size={24} borderRadius={6} />
-      </MouseoverTooltip>
-    )
-  }, [])
-
   const collapseLabel = multichainTokenUxEnabled
     ? t('tdp.balanceSummary.breakdown')
     : t('tdp.balanceSummary.otherNetworks')
@@ -193,7 +177,6 @@ function BreakdownSection({
       expanded={hasPageChainBalance ? isBreakdownExpanded : true}
       onExpandedChange={hasPageChainBalance ? setIsBreakdownExpanded : undefined}
       collapsible={hasPageChainBalance}
-      renderNetworkLogo={renderNetworkLogo}
       onSelectBalance={handleSelectBalance}
     />
   )

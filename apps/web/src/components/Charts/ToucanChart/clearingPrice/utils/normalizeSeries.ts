@@ -141,6 +141,12 @@ export function normalizeClearingSeries({
       ? Number(auctionEndBlockTimestamp) * ONE_SECOND_MS
       : auctionStartTimeMs + (auctionEndBlock - auctionStartBlock) * avgMs
 
+  const preBidEndBlockNum = safeParseInt(auctionDetails.preBidEndBlock)
+  const preBidEndTimeMs =
+    preBidEndBlockNum !== undefined && preBidEndBlockNum > auctionStartBlock
+      ? auctionStartTimeMs + (preBidEndBlockNum - auctionStartBlock) * avgMs
+      : undefined
+
   if (currentBlock === undefined) {
     return null
   }
@@ -247,21 +253,7 @@ export function normalizeClearingSeries({
     endTimeSeconds: chartEndTimeSeconds,
   })
 
-  // Calculate nice Y-axis range from actual data values
-  const values = deduped.map((p) => p.value)
-  const minValue = Math.min(...values)
-  const maxValue = Math.max(...values)
-
-  // Calculate scale factor for small values
-  const scaleFactor = calculateScaleFactor(maxValue)
-  // Use tight range with minimal buffer — y-axis labels are rendered as a custom overlay
-  const range = maxValue - minValue
-  // When price is flat (range ≈ 0), add symmetric buffer so the line is centered
-  const buffer = range > 0 ? range * 0.05 : minValue * 0.2
-  const yMin = minValue > 0 ? minValue - buffer : 0
-  const yMax = maxValue + buffer
-  const scaledYMin = yMin * scaleFactor
-  const scaledYMax = yMax * scaleFactor
+  const { yMin, yMax, scaleFactor, scaledYMin, scaledYMax } = computeYAxisRange(deduped)
 
   // Scale the data points for lightweight-charts (use time-uniform data for rendering)
   const scaledData = timeUniformData.map((p) => ({
@@ -272,23 +264,14 @@ export function normalizeClearingSeries({
   // Calculate visible range for the chart
   const visibleRangeStart = toUtcTimestampSeconds(auctionStartTimeMs)
 
-  // For in-progress auctions, extend visible range to position data at ~75% from left
-  // This creates blank space on the right to indicate the auction is ongoing
-  // Formula: if elapsed time takes 75% of visible range, then visibleRange = elapsed / 0.75
   const isAuctionInProgress = !auctionEnded
-  let visibleRangeEndMs: number
-  if (isAuctionInProgress) {
-    const elapsedMs = currentTimeMs - auctionStartTimeMs
-    // Extend the visible range so current time is at 75% position
-    // totalVisibleMs = elapsedMs / 0.75 = elapsedMs * 1.333...
-    const totalVisibleMs = elapsedMs / 0.75
-    visibleRangeEndMs = auctionStartTimeMs + totalVisibleMs
-    // Cap at auction end time + small buffer to not extend too far past auction end
-    const maxEndMs = auctionEndTimeMs + (auctionEndTimeMs - auctionStartTimeMs) * 0.1
-    visibleRangeEndMs = Math.min(visibleRangeEndMs, maxEndMs)
-  } else {
-    visibleRangeEndMs = chartDataEndTimeMs
-  }
+  const visibleRangeEndMs = computeVisibleRangeEndMs({
+    isAuctionInProgress,
+    currentTimeMs,
+    auctionStartTimeMs,
+    auctionEndTimeMs,
+    chartDataEndTimeMs,
+  })
   const visibleRangeEnd = toUtcTimestampSeconds(visibleRangeEndMs)
 
   // Calculate time span in days for determining x-axis format (use visible range, not data range)
@@ -309,5 +292,61 @@ export function normalizeClearingSeries({
     visibleRangeEnd,
     isAuctionInProgress,
     auctionEndTime: toUtcTimestampSeconds(auctionEndTimeMs),
+    preBidEndTime: preBidEndTimeMs !== undefined ? toUtcTimestampSeconds(preBidEndTimeMs) : undefined,
   }
+}
+
+function computeYAxisRange(points: ClearingPriceChartPoint[]): {
+  yMin: number
+  yMax: number
+  scaleFactor: number
+  scaledYMin: number
+  scaledYMax: number
+} {
+  // Calculate nice Y-axis range from actual data values
+  const values = points.map((p) => p.value)
+  const minValue = Math.min(...values)
+  const maxValue = Math.max(...values)
+
+  // Calculate scale factor for small values
+  const scaleFactor = calculateScaleFactor(maxValue)
+  // Use tight range with minimal buffer — y-axis labels are rendered as a custom overlay
+  const range = maxValue - minValue
+  // When price is flat (range ≈ 0), add symmetric buffer so the line is centered
+  const buffer = range > 0 ? range * 0.05 : minValue * 0.2
+  const yMin = Math.max(0, minValue - buffer)
+  const yMax = maxValue + buffer
+  const scaledYMin = yMin * scaleFactor
+  const scaledYMax = yMax * scaleFactor
+  return {
+    yMin,
+    yMax,
+    scaleFactor,
+    scaledYMin,
+    scaledYMax,
+  }
+}
+
+function computeVisibleRangeEndMs({
+  isAuctionInProgress,
+  currentTimeMs,
+  auctionStartTimeMs,
+  auctionEndTimeMs,
+  chartDataEndTimeMs,
+}: {
+  isAuctionInProgress: boolean
+  currentTimeMs: number
+  auctionStartTimeMs: number
+  auctionEndTimeMs: number
+  chartDataEndTimeMs: number
+}): number {
+  if (!isAuctionInProgress) {
+    return chartDataEndTimeMs
+  }
+  // Extend the visible range so current time is at 75% position: totalVisibleMs = elapsedMs / 0.75
+  const elapsedMs = currentTimeMs - auctionStartTimeMs
+  const extended = auctionStartTimeMs + elapsedMs / 0.75
+  // Cap at auction end time + small buffer to avoid extending too far past auction end
+  const maxEndMs = auctionEndTimeMs + (auctionEndTimeMs - auctionStartTimeMs) * 0.1
+  return Math.min(extended, maxEndMs)
 }

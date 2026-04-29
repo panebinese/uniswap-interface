@@ -34,6 +34,7 @@ export const NumericalInputMimic = deprecatedStyled.span<{ $fontSize?: number }>
   visibility: hidden;
   bottom: 0px;
   right: 0px;
+  font-size: ${({ $fontSize }) => `${$fontSize ?? 70}px`};
   ${NumericalInputFontStyle}
 `
 

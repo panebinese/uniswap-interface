@@ -106,6 +106,7 @@ export async function waitForReceipt(
   return txReceipt
 }
 
+// oxlint-disable-next-line typescript/explicit-function-return-type
 function* waitForTransactionInStore(
   transaction: RequireNonNullable<TransactionDetails, 'hash'>,
   polling: {

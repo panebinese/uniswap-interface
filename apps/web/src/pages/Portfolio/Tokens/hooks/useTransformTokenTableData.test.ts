@@ -1,5 +1,7 @@
 import { NetworkStatus } from '@apollo/client'
+import { GetWalletTokensProfitLossResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { Token } from '@uniswap/sdk-core'
+import { USDC_ARBITRUM, USDC_MAINNET } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import type {
   CurrencyInfo,
@@ -16,7 +18,13 @@ import { currencyId } from 'uniswap/src/utils/currencyId'
 import { describe, expect, it, vi } from 'vitest'
 import { usePortfolioAddresses } from '~/pages/Portfolio/hooks/usePortfolioAddresses'
 import { useTransformTokenTableData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
-import { TEST_TOKEN_1_INFO, TEST_TOKEN_2_INFO } from '~/test-utils/constants'
+import {
+  TEST_TOKEN_1,
+  TEST_TOKEN_1_INFO,
+  TEST_TOKEN_2_INFO,
+  USDC_ARBITRUM_INFO,
+  USDC_INFO,
+} from '~/test-utils/constants'
 import { renderHook } from '~/test-utils/render'
 import { assume0xAddress } from '~/utils/wagmi'
 
@@ -181,6 +189,7 @@ describe('useTransformTokenTableData', () => {
     expect(result.current.hidden).toHaveLength(1)
     expect(result.current.hidden![0].id).toBe('hidden-with-tokens')
     expect(result.current.hidden![0].tokens).toHaveLength(1)
+    expect(result.current.hidden![0].isMultichainAsset).toBe(false)
   })
 
   it('flattens fully hidden multichain balances to one TokenData row per chain before table mapping', () => {
@@ -228,6 +237,7 @@ describe('useTransformTokenTableData', () => {
       quantity: 2,
       price: 5,
       totalValue: 10,
+      isMultichainAsset: true,
     })
     expect(result.current.hidden![0]!.tokens[0]).toMatchObject({
       chainId: UniverseChainId.Mainnet,
@@ -238,11 +248,213 @@ describe('useTransformTokenTableData', () => {
     expect(result.current.hidden![1]).toMatchObject({
       chainId: UniverseChainId.ArbitrumOne,
       price: 5,
+      isMultichainAsset: true,
     })
     expect(result.current.hidden![1]!.tokens[0]).toMatchObject({
       chainId: UniverseChainId.ArbitrumOne,
       currencyInfo: TEST_TOKEN_2_INFO,
     })
+  })
+
+  it('omits unrealized P/L on per-chain token entries when the asset is a stablecoin', () => {
+    const mainnetUsdc = createPortfolioTableChainBalance(USDC_INFO, {
+      chainId: UniverseChainId.Mainnet,
+      quantity: 100,
+      valueUsd: 2000,
+    })
+    const arbitrumUsdc = createPortfolioTableChainBalance(USDC_ARBITRUM_INFO, {
+      chainId: UniverseChainId.ArbitrumOne,
+      quantity: 50,
+      valueUsd: 1000,
+    })
+    const usdcMultichain = createMultichainBalance({
+      id: 'usdc-multi',
+      name: 'USD Coin',
+      symbol: 'USDC',
+      tokens: [mainnetUsdc, arbitrumUsdc],
+    })
+
+    const tokenProfitLossData = {
+      tokenProfitLosses: [
+        {
+          token: {
+            address: USDC_MAINNET.address,
+            chainId: UniverseChainId.Mainnet,
+          },
+          averageCostUsd: 1,
+          unrealizedReturnUsd: 12.34,
+          unrealizedReturnPercent: 0.05,
+        },
+        {
+          token: {
+            address: USDC_ARBITRUM.address,
+            chainId: UniverseChainId.ArbitrumOne,
+          },
+          averageCostUsd: 1,
+          unrealizedReturnUsd: 56.78,
+          unrealizedReturnPercent: 0.06,
+        },
+      ],
+      multichainTokenProfitLoss: [],
+    } as unknown as GetWalletTokensProfitLossResponse
+
+    mockUseSortedPortfolioBalancesMultichain.mockReturnValue({
+      data: {
+        balances: [usdcMultichain],
+        hiddenBalances: [],
+      },
+      balancesById: undefined,
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+      networkStatus: NetworkStatus.ready,
+    } as ReturnType<typeof useSortedPortfolioBalancesMultichain>)
+
+    const { result } = renderHook(() =>
+      useTransformTokenTableData({
+        tokenProfitLossData,
+      }),
+    )
+
+    expect(result.current.visible).not.toBeNull()
+    expect(result.current.visible).toHaveLength(1)
+    const row = result.current.visible![0]
+    expect(row.isMultichainAsset).toBe(true)
+    expect(row.tokens).toHaveLength(2)
+    for (const chainToken of row.tokens) {
+      expect(chainToken.avgCost).toBe(1)
+      expect(chainToken.unrealizedPnl).toBeUndefined()
+      expect(chainToken.unrealizedPnlPercent).toBeUndefined()
+    }
+  })
+
+  it('uses multichain aggregated PnL on the parent row when multichainTokenProfitLoss includes aggregated', () => {
+    const mainT = createPortfolioTableChainBalance(TEST_TOKEN_1_INFO, {
+      chainId: UniverseChainId.Mainnet,
+      valueUsd: 3000,
+    })
+    const arbT = createPortfolioTableChainBalance(TEST_TOKEN_1_INFO, {
+      chainId: UniverseChainId.ArbitrumOne,
+      valueUsd: 1000,
+    })
+    const multi = createMultichainBalance({
+      id: 'mc-agg-pnl',
+      tokens: [mainT, arbT],
+    })
+
+    const tokenProfitLossData = {
+      tokenProfitLosses: [],
+      multichainTokenProfitLoss: [
+        {
+          aggregated: {
+            averageCostUsd: 7.43,
+            unrealizedReturnUsd: -41785.75,
+            unrealizedReturnPercent: -56.14,
+            token: { address: TEST_TOKEN_1.address, chainId: UniverseChainId.Mainnet },
+          },
+          chainBreakdown: [
+            {
+              tokenAddress: TEST_TOKEN_1.address,
+              chainId: UniverseChainId.Mainnet,
+              averageCostUsd: 10,
+              unrealizedReturnUsd: -100,
+              unrealizedReturnPercent: -10,
+            },
+            {
+              tokenAddress: TEST_TOKEN_1.address,
+              chainId: UniverseChainId.ArbitrumOne,
+              averageCostUsd: 20,
+              unrealizedReturnUsd: -200,
+              unrealizedReturnPercent: -20,
+            },
+          ],
+        },
+      ],
+    } as unknown as GetWalletTokensProfitLossResponse
+
+    mockUseSortedPortfolioBalancesMultichain.mockReturnValue({
+      data: {
+        balances: [multi],
+        hiddenBalances: [],
+      },
+      balancesById: undefined,
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+      networkStatus: NetworkStatus.ready,
+    } as ReturnType<typeof useSortedPortfolioBalancesMultichain>)
+
+    const { result } = renderHook(() =>
+      useTransformTokenTableData({
+        tokenProfitLossData,
+      }),
+    )
+
+    expect(result.current.visible).not.toBeNull()
+    expect(result.current.visible).toHaveLength(1)
+    const row = result.current.visible![0]
+    expect(row.isMultichainAsset).toBe(true)
+    expect(row.avgCost).toBe(7.43)
+    expect(row.unrealizedPnl).toBe(-41785.75)
+    expect(row.unrealizedPnlPercent).toBe(-56.14)
+
+    const mainChainToken = row.tokens.find((t) => t.chainId === UniverseChainId.Mainnet)
+    const arbChainToken = row.tokens.find((t) => t.chainId === UniverseChainId.ArbitrumOne)
+    expect(mainChainToken?.avgCost).toBe(10)
+    expect(mainChainToken?.unrealizedPnl).toBe(-100)
+    expect(mainChainToken?.unrealizedPnlPercent).toBe(-10)
+    expect(arbChainToken?.avgCost).toBe(20)
+    expect(arbChainToken?.unrealizedPnl).toBe(-200)
+    expect(arbChainToken?.unrealizedPnlPercent).toBe(-20)
+  })
+
+  it('uses aggregated PnL when chainBreakdown is empty but aggregated.token matches the row leg', () => {
+    const mainT = createPortfolioTableChainBalance(TEST_TOKEN_1_INFO, {
+      chainId: UniverseChainId.Mainnet,
+    })
+    const single = createMultichainBalance({ id: 'single-agg-no-breakdown', tokens: [mainT] })
+
+    const tokenProfitLossData = {
+      tokenProfitLosses: [],
+      multichainTokenProfitLoss: [
+        {
+          aggregated: {
+            averageCostUsd: 5,
+            unrealizedReturnUsd: 99,
+            unrealizedReturnPercent: 0.25,
+            token: { address: TEST_TOKEN_1.address, chainId: UniverseChainId.Mainnet },
+          },
+          chainBreakdown: [],
+        },
+      ],
+    } as unknown as GetWalletTokensProfitLossResponse
+
+    mockUseSortedPortfolioBalancesMultichain.mockReturnValue({
+      data: {
+        balances: [single],
+        hiddenBalances: [],
+      },
+      balancesById: undefined,
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+      networkStatus: NetworkStatus.ready,
+    } as ReturnType<typeof useSortedPortfolioBalancesMultichain>)
+
+    const { result } = renderHook(() =>
+      useTransformTokenTableData({
+        tokenProfitLossData,
+      }),
+    )
+
+    expect(result.current.visible).not.toBeNull()
+    const row = result.current.visible![0]
+    expect(row.avgCost).toBe(5)
+    expect(row.unrealizedPnl).toBe(99)
+    expect(row.unrealizedPnlPercent).toBe(0.25)
+    expect(row.tokens).toHaveLength(1)
+    expect(row.tokens[0].avgCost).toBeUndefined()
+    expect(row.tokens[0].unrealizedPnl).toBeUndefined()
   })
 
   it('every visible and hidden entry has tokens.length >= 1', () => {

@@ -1,4 +1,3 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useTranslation } from 'react-i18next'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { isLowSlippage } from 'uniswap/src/features/transactions/components/settings/settingsConfigurations/slippage/SlippageLPWarning'
@@ -11,7 +10,6 @@ import { ErrorCallout } from '~/components/ErrorCallout'
 export function LowLPSlippageWarning({ isNativePool }: { isNativePool: boolean }) {
   const { t } = useTranslation()
   const { formatPercent } = useLocalizationContext()
-  const isLpDynamicNativeSlippageEnabled = useFeatureFlag(FeatureFlags.LpDynamicNativeSlippage)
   const { customSlippageTolerance, isSlippageDirty } = useTransactionSettingsStore((s) => ({
     customSlippageTolerance: s.customSlippageTolerance,
     isSlippageDirty: s.isSlippageDirty,
@@ -22,7 +20,6 @@ export function LowLPSlippageWarning({ isNativePool }: { isNativePool: boolean }
   const isLowSlippageWarning = isLowSlippage({
     isNativePool,
     isSlippageDirty,
-    isLpDynamicNativeSlippageEnabled,
     effectiveSlippage,
   })
 

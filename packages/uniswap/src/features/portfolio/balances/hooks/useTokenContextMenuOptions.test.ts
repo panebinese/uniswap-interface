@@ -65,7 +65,6 @@ vi.mock('utilities/src/platform', () => ({
   isSafari: false,
   isMobileWebSafari: false,
   isMobileWebAndroid: false,
-  isBrowser: false,
 }))
 
 const ERC20_CURRENCY_ID = `${UniverseChainId.Mainnet}-0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`
@@ -106,7 +105,7 @@ describe(useTokenContextMenuOptions, () => {
     const copyAction = findCopyAction(result.current)
 
     await act(async () => {
-      await copyAction?.onPress()
+      copyAction?.onPress()
     })
 
     expect(onPressCopyAddressOverride).toHaveBeenCalledTimes(1)
@@ -121,7 +120,7 @@ describe(useTokenContextMenuOptions, () => {
     const copyAction = findCopyAction(result.current)
 
     await act(async () => {
-      await copyAction?.onPress()
+      copyAction?.onPress()
     })
 
     expect(copyAddressToClipboard).toHaveBeenCalledTimes(1)
@@ -146,7 +145,7 @@ describe(useTokenContextMenuOptions, () => {
     const copyAction = findCopyAction(result.current)
 
     await act(async () => {
-      await copyAction?.onPress()
+      copyAction?.onPress()
     })
 
     expect(openContractAddressExplainerModal).toHaveBeenCalledTimes(1)
@@ -168,7 +167,7 @@ describe(useTokenContextMenuOptions, () => {
     const copyAction = findCopyAction(result.current)
 
     await act(async () => {
-      await copyAction?.onPress()
+      copyAction?.onPress()
     })
 
     expect(openContractAddressExplainerModal).not.toHaveBeenCalled()

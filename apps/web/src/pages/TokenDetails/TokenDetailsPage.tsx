@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { NumberType } from 'utilities/src/format/types'
-import { useScroll } from '~/hooks/useScroll'
 import { useScrollCompact } from '~/hooks/useScrollCompact'
 import { ExploreTab } from '~/pages/Explore/constants'
 import { useDynamicMetatags } from '~/pages/metatags'
@@ -30,8 +29,7 @@ function TDPPageContent() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { convertFiatAmountFormatted } = useLocalizationContext()
-  const { height: scrollY } = useScroll()
-  const isCompact = useScrollCompact({ scrollY, thresholdCompact: 100, thresholdExpanded: 60 })
+  const isCompact = useScrollCompact({ thresholdCompact: 100, thresholdExpanded: 60 })
 
   const { address, currency, currencyChain, currencyChainId, tokenQuery } = useTDPStore((s) => ({
     address: s.address,

@@ -19,6 +19,7 @@ import {
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { NumberType } from 'utilities/src/format/types'
 import { AddressDisplay } from '~/components/AccountDetails/AddressDisplay'
 import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
@@ -88,7 +89,7 @@ export function RemovePasskeyModal() {
     {
       onSuccess: async (success) => {
         if (success && initialState?.isLastAuthenticator) {
-          await disconnectWallet()
+          await disconnectWallet(walletId)
           disconnect()
           accountDrawer.close()
         }
@@ -236,7 +237,12 @@ export function RemovePasskeyModal() {
               p="$padding12"
             >
               <Trace logPress element={ElementName.DeletePasskeyAcknowledge}>
-                <Checkbox size="$icon.16" checked={acknowledged} onPress={() => setAcknowledged((prev) => !prev)} />
+                <Checkbox
+                  size="$icon.16"
+                  checked={acknowledged}
+                  onPress={() => setAcknowledged((prev) => !prev)}
+                  testID={TestID.DeletePasskeyAcknowledge}
+                />
               </Trace>
               <Text variant="body4" color="$neutral1">
                 {t('account.passkey.delete.acknowledge')}

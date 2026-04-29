@@ -5,23 +5,36 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { FeeData } from '~/components/Liquidity/Create/types'
 import {
+  buildAuctionAmountsFromLiquidityPreview,
+  getPostAuctionLiquidityAmountFromAllocation,
+  normalizePostAuctionLiquidityAllocation,
+  updateCommittedPostAuctionLiquidity,
+} from '~/pages/Liquidity/CreateAuction/store/postAuctionLiquidityAllocationState'
+import {
   type AuctionTokenAmounts,
-  AuctionType,
   CreateAuctionStep,
   type CreateAuctionStoreState,
   DEFAULT_CREATE_AUCTION_STATE,
   DEFAULT_EXISTING_TOKEN_FORM,
+  MAX_POST_AUCTION_LIQUIDITY_TIERS,
   NEW_TOKEN_DECIMALS,
+  PostAuctionLiquidityAllocationType,
   type PriceRangeStrategy,
   type TokenFormState,
   TokenMode,
 } from '~/pages/Liquidity/CreateAuction/types'
-import { getRecommendedStrategy } from '~/pages/Liquidity/CreateAuction/utils'
-
-const DEFAULT_AUCTION_SUPPLY_PERCENT = new Percent(25, 100)
-// 100% means all auctioned tokens go to LP (50% token-side kept, 50% sold for raise-side)
+import {
+  createNextBoundedTier,
+  createSinglePostAuctionLiquidityAllocation,
+  createTieredPostAuctionLiquidityAllocation,
+  getDefaultPostAuctionLiquidityPercent,
+  getPostAuctionLiquidityPreviewPercent,
+  getRecommendedStrategy,
+  isUnboundedTier,
+} from '~/pages/Liquidity/CreateAuction/utils'
+// 100% of sold tokens seed LP (sale-side leg); an equal amount is reserved from the deposit. Deposit splits ½ sold / ½ reserve.
 export const BOOTSTRAP_POST_LIQUIDITY_PERCENT = new Percent(100, 100)
-// 50% means half go to LP (25% token-side kept, 25% sold); the other 50% are the fundraise
+// 50% of sold tokens seed LP; the other ½ of sold is fundraise; reserved leg = ⅓ of deposit (e.g. 100M deposit → ~33.33M each bucket at 50%).
 export const FUNDRAISE_POST_LIQUIDITY_PERCENT = new Percent(50, 100)
 
 /**
@@ -33,19 +46,6 @@ function rebaseAmounts(committed: AuctionTokenAmounts, newToken: Currency): Auct
     totalSupply: CurrencyAmount.fromRawAmount(newToken, committed.totalSupply.quotient),
     auctionSupplyAmount: CurrencyAmount.fromRawAmount(newToken, committed.auctionSupplyAmount.quotient),
     postAuctionLiquidityAmount: CurrencyAmount.fromRawAmount(newToken, committed.postAuctionLiquidityAmount.quotient),
-  }
-}
-
-function buildDefaultAmounts(totalSupply: CurrencyAmount<Currency>, auctionType: AuctionType): AuctionTokenAmounts {
-  const auctionSupplyAmount = totalSupply.multiply(DEFAULT_AUCTION_SUPPLY_PERCENT)
-  const lpPercent =
-    auctionType === AuctionType.BOOTSTRAP_LIQUIDITY
-      ? BOOTSTRAP_POST_LIQUIDITY_PERCENT
-      : FUNDRAISE_POST_LIQUIDITY_PERCENT
-  return {
-    totalSupply,
-    auctionSupplyAmount,
-    postAuctionLiquidityAmount: auctionSupplyAmount.multiply(lpPercent),
   }
 }
 
@@ -108,22 +108,18 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
           },
           setAuctionType: (activeAuctionType) => {
             set((state) => {
-              const { committed } = state.configureAuction
-              if (!committed) {
-                return {}
-              }
-              const lpPercent =
-                activeAuctionType === AuctionType.BOOTSTRAP_LIQUIDITY
-                  ? BOOTSTRAP_POST_LIQUIDITY_PERCENT
-                  : FUNDRAISE_POST_LIQUIDITY_PERCENT
+              const { committed, postAuctionLiquidityAllocation } = state.configureAuction
+              const nextAllocation =
+                postAuctionLiquidityAllocation.type === PostAuctionLiquidityAllocationType.SINGLE
+                  ? createSinglePostAuctionLiquidityAllocation(getDefaultPostAuctionLiquidityPercent(activeAuctionType))
+                  : postAuctionLiquidityAllocation
+
               return {
                 configureAuction: {
                   ...state.configureAuction,
                   activeAuctionType,
-                  committed: {
-                    ...committed,
-                    postAuctionLiquidityAmount: committed.auctionSupplyAmount.multiply(lpPercent),
-                  },
+                  postAuctionLiquidityAllocation: nextAllocation,
+                  committed: updateCommittedPostAuctionLiquidity(committed, nextAllocation),
                 },
                 customizePool: {
                   ...state.customizePool,
@@ -132,28 +128,158 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
               }
             })
           },
-          setAuctionConfig: (config) => {
+          setPostAuctionLiquidityAllocationType: (type) => {
             set((state) => {
-              const { committed } = state.configureAuction
-              if (!committed) {
-                return {}
-              }
+              const { committed, postAuctionLiquidityAllocation } = state.configureAuction
+              const previewPercent = getPostAuctionLiquidityPreviewPercent(postAuctionLiquidityAllocation)
+              const nextAllocation =
+                type === PostAuctionLiquidityAllocationType.SINGLE
+                  ? createSinglePostAuctionLiquidityAllocation(previewPercent)
+                  : postAuctionLiquidityAllocation.type === PostAuctionLiquidityAllocationType.TIERED
+                    ? postAuctionLiquidityAllocation
+                    : createTieredPostAuctionLiquidityAllocation(previewPercent)
+
               return {
                 configureAuction: {
                   ...state.configureAuction,
-                  committed: { ...committed, ...config },
+                  postAuctionLiquidityAllocation: nextAllocation,
+                  committed: updateCommittedPostAuctionLiquidity(committed, nextAllocation),
+                },
+              }
+            })
+          },
+          setSinglePostAuctionLiquidityPercent: (percent) => {
+            set((state) => {
+              const nextAllocation = createSinglePostAuctionLiquidityAllocation(percent)
+              return {
+                configureAuction: {
+                  ...state.configureAuction,
+                  postAuctionLiquidityAllocation: nextAllocation,
+                  committed: updateCommittedPostAuctionLiquidity(state.configureAuction.committed, nextAllocation),
+                },
+              }
+            })
+          },
+          addPostAuctionLiquidityTier: () => {
+            set((state) => {
+              const { committed, postAuctionLiquidityAllocation } = state.configureAuction
+              if (postAuctionLiquidityAllocation.type !== PostAuctionLiquidityAllocationType.TIERED) {
+                return {}
+              }
+              if (postAuctionLiquidityAllocation.tiers.length >= MAX_POST_AUCTION_LIQUIDITY_TIERS) {
+                return {}
+              }
+
+              const { tiers } = postAuctionLiquidityAllocation
+              const newBoundedTier = createNextBoundedTier(tiers)
+              const unboundedTier = tiers.find(isUnboundedTier)
+              const boundedTiers = tiers.filter((t) => !isUnboundedTier(t))
+
+              const nextAllocation = {
+                ...postAuctionLiquidityAllocation,
+                tiers: [...boundedTiers, newBoundedTier, ...(unboundedTier ? [unboundedTier] : [])],
+              }
+
+              return {
+                configureAuction: {
+                  ...state.configureAuction,
+                  postAuctionLiquidityAllocation: nextAllocation,
+                  committed: updateCommittedPostAuctionLiquidity(committed, nextAllocation),
+                },
+              }
+            })
+          },
+          updatePostAuctionLiquidityTier: (tierId, config) => {
+            set((state) => {
+              const { committed, postAuctionLiquidityAllocation } = state.configureAuction
+              if (postAuctionLiquidityAllocation.type !== PostAuctionLiquidityAllocationType.TIERED) {
+                return {}
+              }
+
+              const nextAllocation = normalizePostAuctionLiquidityAllocation({
+                ...postAuctionLiquidityAllocation,
+                tiers: postAuctionLiquidityAllocation.tiers.map((tier) =>
+                  tier.id !== tierId
+                    ? tier
+                    : {
+                        ...tier,
+                        raiseMilestone: config.raiseMilestone ?? tier.raiseMilestone,
+                        percent: config.percent !== undefined ? config.percent : tier.percent,
+                      },
+                ),
+              })
+
+              return {
+                configureAuction: {
+                  ...state.configureAuction,
+                  postAuctionLiquidityAllocation: nextAllocation,
+                  committed: updateCommittedPostAuctionLiquidity(committed, nextAllocation),
+                },
+              }
+            })
+          },
+          removePostAuctionLiquidityTier: (tierId) => {
+            set((state) => {
+              const { committed, postAuctionLiquidityAllocation } = state.configureAuction
+              if (postAuctionLiquidityAllocation.type !== PostAuctionLiquidityAllocationType.TIERED) {
+                return {}
+              }
+
+              const tier = postAuctionLiquidityAllocation.tiers.find((t) => t.id === tierId)
+              if (!tier || isUnboundedTier(tier)) {
+                return {}
+              }
+
+              const nextAllocation = {
+                ...postAuctionLiquidityAllocation,
+                tiers: postAuctionLiquidityAllocation.tiers.filter((t) => t.id !== tierId),
+              }
+
+              return {
+                configureAuction: {
+                  ...state.configureAuction,
+                  postAuctionLiquidityAllocation: nextAllocation,
+                  committed: updateCommittedPostAuctionLiquidity(committed, nextAllocation),
+                },
+              }
+            })
+          },
+          setAuctionConfig: (config) => {
+            set((state) => {
+              const { committed, postAuctionLiquidityAllocation } = state.configureAuction
+              if (!committed) {
+                return {}
+              }
+
+              const nextAuctionSupply = config.auctionSupplyAmount
+              return {
+                configureAuction: {
+                  ...state.configureAuction,
+                  committed: {
+                    ...committed,
+                    auctionSupplyAmount: nextAuctionSupply,
+                    postAuctionLiquidityAmount: getPostAuctionLiquidityAmountFromAllocation(
+                      nextAuctionSupply,
+                      postAuctionLiquidityAllocation,
+                    ),
+                  },
                 },
               }
             })
           },
           setStartTime: (startTime) => {
-            set((state) => ({ configureAuction: { ...state.configureAuction, startTime } }))
+            set((state) => ({
+              configureAuction: { ...state.configureAuction, startTime },
+            }))
           },
           setMaxDurationDays: (maxDurationDays) => {
-            set((state) => ({ configureAuction: { ...state.configureAuction, maxDurationDays } }))
+            set((state) => ({
+              configureAuction: { ...state.configureAuction, maxDurationDays },
+            }))
           },
           setRaiseCurrency: (raiseCurrency) => {
             set((state) => {
+              const { committed, postAuctionLiquidityAllocation } = state.configureAuction
               if (state.configureAuction.raiseCurrency === raiseCurrency) {
                 return {}
               }
@@ -162,36 +288,65 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
                   ...state.configureAuction,
                   raiseCurrency,
                   floorPrice: '',
+                  committed: updateCommittedPostAuctionLiquidity(committed, postAuctionLiquidityAllocation),
                 },
               }
             })
           },
           setFloorPrice: (floorPrice) => {
-            set((state) => ({ configureAuction: { ...state.configureAuction, floorPrice } }))
+            set((state) => {
+              const { committed, postAuctionLiquidityAllocation } = state.configureAuction
+              return {
+                configureAuction: {
+                  ...state.configureAuction,
+                  floorPrice,
+                  committed: updateCommittedPostAuctionLiquidity(committed, postAuctionLiquidityAllocation),
+                },
+              }
+            })
+          },
+          setKycValidationHookAddress: (kycValidationHookAddress) => {
+            set((state) => ({ configureAuction: { ...state.configureAuction, kycValidationHookAddress } }))
           },
           setFee: (fee: FeeData) => {
-            set((state) => ({ customizePool: { ...state.customizePool, fee } }))
+            set((state) => ({
+              customizePool: { ...state.customizePool, fee },
+            }))
           },
           setPriceRangeStrategy: (priceRangeStrategy: PriceRangeStrategy) => {
-            set((state) => ({ customizePool: { ...state.customizePool, priceRangeStrategy } }))
+            set((state) => ({
+              customizePool: { ...state.customizePool, priceRangeStrategy },
+            }))
           },
           setPoolOwner: (poolOwner: string) => {
-            set((state) => ({ customizePool: { ...state.customizePool, poolOwner } }))
+            set((state) => ({
+              customizePool: { ...state.customizePool, poolOwner },
+            }))
           },
           setTimeLockEnabled: (timeLockEnabled: boolean) => {
-            set((state) => ({ customizePool: { ...state.customizePool, timeLockEnabled } }))
+            set((state) => ({
+              customizePool: { ...state.customizePool, timeLockEnabled },
+            }))
           },
           setTimeLockDurationDays: (timeLockDurationDays: number) => {
-            set((state) => ({ customizePool: { ...state.customizePool, timeLockDurationDays } }))
+            set((state) => ({
+              customizePool: { ...state.customizePool, timeLockDurationDays },
+            }))
           },
           setSendFeesEnabled: (sendFeesEnabled: boolean) => {
-            set((state) => ({ customizePool: { ...state.customizePool, sendFeesEnabled } }))
+            set((state) => ({
+              customizePool: { ...state.customizePool, sendFeesEnabled },
+            }))
           },
           setFeesRecipientAddress: (feesRecipientAddress: string) => {
-            set((state) => ({ customizePool: { ...state.customizePool, feesRecipientAddress } }))
+            set((state) => ({
+              customizePool: { ...state.customizePool, feesRecipientAddress },
+            }))
           },
           setBuybackAndBurnEnabled: (buybackAndBurnEnabled: boolean) => {
-            set((state) => ({ customizePool: { ...state.customizePool, buybackAndBurnEnabled } }))
+            set((state) => ({
+              customizePool: { ...state.customizePool, buybackAndBurnEnabled },
+            }))
           },
           commitTokenFormAndAdvance: () => {
             set((state) => {
@@ -210,22 +365,31 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
                 return {}
               }
 
-              const { activeAuctionType, committed: existingCommitted } = state.configureAuction
+              const {
+                activeAuctionType,
+                committed: existingCommitted,
+                postAuctionLiquidityAllocation,
+              } = state.configureAuction
               const isSameSupply =
                 existingCommitted !== undefined &&
                 existingCommitted.totalSupply.currency.equals(totalSupply.currency) &&
                 existingCommitted.totalSupply.equalTo(totalSupply)
-              // When supply changes, slider percentages derived from the old supply become stale,
-              // so we intentionally reset amounts to defaults rather than carry them forward.
-              // When supply is unchanged, rebase with the new token to pick up name/symbol edits
-              const committed = isSameSupply
+              const previewPercent = existingCommitted
+                ? getPostAuctionLiquidityPreviewPercent(postAuctionLiquidityAllocation)
+                : getDefaultPostAuctionLiquidityPercent(activeAuctionType)
+              const nextAllocation = existingCommitted
+                ? postAuctionLiquidityAllocation
+                : createSinglePostAuctionLiquidityAllocation(previewPercent)
+              const committedBase = isSameSupply
                 ? rebaseAmounts(existingCommitted, totalSupply.currency)
-                : buildDefaultAmounts(totalSupply, activeAuctionType)
+                : buildAuctionAmountsFromLiquidityPreview(totalSupply, previewPercent)
+              const committed = updateCommittedPostAuctionLiquidity(committedBase, nextAllocation)
 
               return {
                 configureAuction: {
                   ...state.configureAuction,
                   committed,
+                  postAuctionLiquidityAllocation: nextAllocation,
                 },
                 step: Math.min(state.step + 1, CreateAuctionStep.REVIEW_LAUNCH) as CreateAuctionStep,
               }

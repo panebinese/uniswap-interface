@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
-import { AnimateTransition, Flex, Text, TouchableArea } from 'ui/src'
+import { AnimateTransition, Flex } from 'ui/src'
 import { CheckCircleFilled } from 'ui/src/components/icons/CheckCircleFilled'
 import { CopyAlt } from 'ui/src/components/icons/CopyAlt'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
@@ -15,7 +15,7 @@ import type { MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
 import { MenuContent } from 'uniswap/src/components/menus/ContextMenuContent'
 import { ContextMenuTriggerButton } from 'uniswap/src/components/menus/ContextMenuTriggerButton'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
-import { MultichainAddressList } from 'uniswap/src/components/MultichainTokenDetails/MultichainAddressList'
+import { MultichainContextMenuAddressSubview } from 'uniswap/src/components/MultichainTokenDetails/MultichainContextMenuAddressSubview'
 import { useOrderedMultichainEntries } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import type { MultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
@@ -36,8 +36,6 @@ import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 
 type ViewState = 'actions' | 'addresses'
-const ADDRESSES_POPOVER_WIDTH = 304
-const ADDRESSES_POPOVER_MAX_HEIGHT = 256
 
 const MULTICHAIN_ACTIONS: TokenContextMenuAction[] = [
   TokenContextMenuAction.Swap,
@@ -220,41 +218,12 @@ function MultichainTokenContextMenuButtonInner({
           elementName={ElementName.SearchTokenContextMenu}
           sectionName={SectionName.NavbarSearch}
         />
-        {/* oxlint-disable-next-line react/forbid-elements -- needed to stop event propagation to parent row */}
-        <div
-          onContextMenu={(e): void => {
-            e.preventDefault()
-            e.stopPropagation()
-          }}
-          onClick={(e): void => {
-            e.stopPropagation()
-          }}
-          onMouseDown={(e): void => {
-            e.stopPropagation()
-          }}
-        >
-          <Flex
-            backgroundColor="$surface1"
-            borderRadius="$rounded20"
-            borderWidth={1}
-            borderColor="$surface3"
-            alignItems="stretch"
-            pt="$spacing8"
-            px="$spacing8"
-            width={ADDRESSES_POPOVER_WIDTH}
-            maxHeight={ADDRESSES_POPOVER_MAX_HEIGHT}
-          >
-            <TouchableArea row alignItems="center" gap="$spacing8" p="$spacing8" onPress={handleBack}>
-              <RotatableChevron direction="left" color="$neutral2" size="$icon.16" />
-              <Text variant="buttonLabel3" color="$neutral1" flex={1} textAlign="center">
-                {t('common.copy.address')}
-              </Text>
-            </TouchableArea>
-            <Flex flex={1} minHeight={0}>
-              <MultichainAddressList chains={orderedEntries} onCopyAddress={onCopyMultichainAddress} />
-            </Flex>
-          </Flex>
-        </div>
+        <MultichainContextMenuAddressSubview
+          orderedEntries={orderedEntries}
+          title={t('common.copy.address')}
+          onCopyAddress={onCopyMultichainAddress}
+          onBack={handleBack}
+        />
       </AnimateTransition>
     ),
     [

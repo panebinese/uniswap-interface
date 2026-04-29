@@ -13,7 +13,6 @@ export enum MenuStateVariant {
   LOCAL_CURRENCY_SETTINGS = 'local_currency_settings',
   PASSKEYS = 'passkeys',
   OTHER_WALLETS = 'other_wallets',
-  ADVANCED_SETTINGS = 'advanced_settings',
   STORAGE_SETTINGS = 'storage_settings',
 }
 

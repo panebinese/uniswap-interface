@@ -9,6 +9,7 @@ export const FLASHBOTS_DEFAULT_REFUND_PERCENT = 50 // Default for fast mode
 export const FLASHBOTS_SIGNATURE_HEADER = 'X-Flashbots-Signature'
 export const DEFAULT_FLASHBOTS_ENABLED = true
 export const DEFAULT_FLASHBOTS_BLOCK_RANGE = 10
+export const DEFAULT_CALLDATA_HINTS_ENABLED = false
 
 // Polling constants
 export const POLL_INTERVAL_MS = 4000
@@ -50,14 +51,17 @@ export function buildFlashbotsUrl({
   baseUrl = FLASHBOTS_RPC_URL,
   address,
   refundPercent,
+  calldataHintsEnabled,
 }: {
   baseUrl?: string
   address?: HexString | string | undefined
   refundPercent?: number
+  calldataHintsEnabled?: boolean
 }): string {
+  const hintParams = calldataHintsEnabled ? '&hint=calldata&hint=logs' : ''
   const refundParam = getRefundString(address, refundPercent)
   const blockRangeParam = `&blockRange=${DEFAULT_FLASHBOTS_BLOCK_RANGE}`
-  return `${baseUrl}${refundParam}${blockRangeParam}`
+  return `${baseUrl}${hintParams}${refundParam}${blockRangeParam}`
 }
 
 /**

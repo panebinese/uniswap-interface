@@ -351,6 +351,7 @@ export default function FeatureFlagModal(): JSX.Element {
             return (
               <>
                 {groups}
+                {/* oxlint-disable-next-line typescript/no-unnecessary-condition */}
                 {isSearching && !hasResults && (
                   <Text variant="body2" color="$neutral3" py="$gap16" textAlign="center">
                     No flags found

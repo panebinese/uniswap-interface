@@ -1,3 +1,11 @@
+// Load .env files into process.env so transform-inline-environment-variables can inline them.
+// This makes process.env.X work in local dev (not just CI where shell env vars are set).
+// Must run before Babel plugins are evaluated.
+const dotenv = require('dotenv')
+const path = require('path')
+dotenv.config({ path: path.resolve(__dirname, '../../.env.defaults') })
+dotenv.config({ path: path.resolve(__dirname, '../../.env.defaults.local'), override: true })
+
 const { NODE_ENV } = process.env
 
 const inProduction = NODE_ENV === 'production'

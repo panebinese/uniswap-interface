@@ -27,7 +27,6 @@ vi.mock('utilities/src/platform', () => ({
   isSafari: false,
   isMobileWebSafari: false,
   isMobileWebAndroid: false,
-  isBrowser: true,
   isExtensionApp: false,
   isMobileApp: false,
   isWebApp: true,

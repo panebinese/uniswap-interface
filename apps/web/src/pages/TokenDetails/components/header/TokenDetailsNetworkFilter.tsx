@@ -5,6 +5,7 @@ import { iconSizes } from 'ui/src/theme'
 import { NetworkLogo } from 'uniswap/src/components/CurrencyLogo/NetworkLogo'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { InterfacePageName } from 'uniswap/src/features/telemetry/constants'
 import { HEADER_TRANSITION } from '~/components/Explore/stickyHeader/constants'
 import { NetworkFilter } from '~/components/NetworkFilter/NetworkFilter'
 
@@ -39,6 +40,7 @@ export function TokenDetailsNetworkFilter({
           networks={chainIds}
           currentChainId={selectedChainId}
           size="xsmall"
+          tracePage={InterfacePageName.TokenDetailsPage}
           transition={HEADER_TRANSITION}
           isTriggerStyled={false}
           customTrigger={

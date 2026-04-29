@@ -1,6 +1,6 @@
 /* oxlint-disable max-lines */
 import { SCREEN_WIDTH } from '@gorhom/bottom-sheet'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Platform } from 'react-native'
 import type { LayoutChangeEvent, TextStyle, ViewStyle } from 'react-native'
 import Animated, {
@@ -354,30 +354,48 @@ const ReanimatedNumber = ({
   const [commonPrefixLength, setCommonPrefixLength] = useState<number>(0)
   const [nextColor, setNextColor] = useState<string>()
   const scale = useSharedValue(1)
-  const offset = useSharedValue(0)
+
+  // Measure actual container width so scaling works when the component
+  // doesn't have full screen width (e.g. next to the portfolio chart).
+  const [containerWidth, setContainerWidth] = useState(SCREEN_WIDTH - SCREEN_WIDTH_BUFFER)
+  const [textWidth, setTextWidth] = useState(0)
+
+  const onContainerLayout = useCallback((e: LayoutChangeEvent) => {
+    const measuredContainerWidth = e.nativeEvent.layout.width
+    if (measuredContainerWidth > 0) {
+      setContainerWidth(measuredContainerWidth)
+    }
+  }, [])
+
+  const onTextLayout = useCallback((e: LayoutChangeEvent) => {
+    const measuredTextWidth = e.nativeEvent.layout.width
+    if (measuredTextWidth > 0) {
+      setTextWidth(measuredTextWidth)
+    }
+  }, [])
 
   const colors = useSporeColors()
 
   const scaleWrapper = useAnimatedStyle(() => {
     return {
-      transform: [{ translateX: -SCREEN_WIDTH / 2 }, { scale: scale.value }, { translateX: SCREEN_WIDTH / 2 }],
+      transform: [{ translateX: -containerWidth / 2 }, { scale: scale.value }, { translateX: containerWidth / 2 }],
       display: 'flex',
       flexDirection: 'row',
     }
-  }, [scale])
+  }, [scale, containerWidth])
 
-  const fitBalanceOnLayout = (e: LayoutChangeEvent): void => {
-    const newScale = (SCREEN_WIDTH - SCREEN_WIDTH_BUFFER) / e.nativeEvent.layout.width
+  useEffect(() => {
+    if (textWidth <= 0 || containerWidth <= 0) {
+      return
+    }
 
+    const newScale = containerWidth / textWidth
     if (newScale < 1) {
-      const newOffset = (e.nativeEvent.layout.width - e.nativeEvent.layout.width * newScale) / 2
       scale.value = withTiming(newScale)
-      offset.value = withTiming(-newOffset)
     } else if (scale.value < 1) {
       scale.value = withTiming(1)
-      offset.value = withTiming(0)
     }
-  }
+  }, [containerWidth, scale, textWidth])
 
   useEffect(() => {
     if (balance && value && value !== prevValue) {
@@ -443,61 +461,63 @@ const ReanimatedNumber = ({
   }
 
   return (
-    <Animated.View style={scaleWrapper} testID={TestID.PortfolioBalance}>
-      <Flex
-        group
-        row
-        alignItems="flex-start"
-        backgroundColor="$surface1"
-        borderRadius="$rounded4"
-        width={MAX_DEVICE_WIDTH}
-      >
-        <TopAndBottomGradient />
-        <Shine disabled={!warmLoading}>
-          <Flex row animation="fast" width={MAX_DEVICE_WIDTH}>
-            {chars.map((_, index) => (
-              <Char
-                key={index === 0 ? `$_sign_${colors.neutral1.val}` : `$_number_${chars.length - index}`}
-                chars={chars}
-                charsSizes={charsSizes}
-                commonPrefixLength={commonPrefixLength}
-                currency={currency}
-                index={index}
-                isRightToLeft={isRightToLeft}
-                nextColor={nextColor}
-                shouldFadeDecimals={shouldFadeDecimals}
-              />
-            ))}
-          </Flex>
-        </Shine>
-        <Animated.Text
-          allowFontScaling={false}
-          style={[AnimatedFontStyles.invisible, AnimatedFontStyles.fontStyle]}
-          onLayout={fitBalanceOnLayout}
+    <Flex overflow="hidden" onLayout={onContainerLayout}>
+      <Animated.View style={scaleWrapper} testID={TestID.PortfolioBalance}>
+        <Flex
+          group
+          row
+          alignItems="flex-start"
+          backgroundColor="$surface1"
+          borderRadius="$rounded4"
+          width={MAX_DEVICE_WIDTH}
         >
-          {value}
-        </Animated.Text>
-        {EndElement && (
-          <Animated.View key="refresh-icon" style={{ height: DIGIT_HEIGHT }}>
-            <Animated.View
-              style={[
-                {
-                  height: DIGIT_HEIGHT,
-                  width: DIGIT_MAX_WIDTH,
-                  position: 'absolute',
-                  marginVertical: 'auto',
-                  justifyContent: 'center',
-                },
-                AnimatedCharStyles.wrapperStyle,
-                iconAnimatedLeft,
-              ]}
-            >
-              {EndElement}
+          <TopAndBottomGradient />
+          <Shine disabled={!warmLoading}>
+            <Flex row animation="fast" width={MAX_DEVICE_WIDTH}>
+              {chars.map((_, index) => (
+                <Char
+                  key={index === 0 ? `$_sign_${colors.neutral1.val}` : `$_number_${chars.length - index}`}
+                  chars={chars}
+                  charsSizes={charsSizes}
+                  commonPrefixLength={commonPrefixLength}
+                  currency={currency}
+                  index={index}
+                  isRightToLeft={isRightToLeft}
+                  nextColor={nextColor}
+                  shouldFadeDecimals={shouldFadeDecimals}
+                />
+              ))}
+            </Flex>
+          </Shine>
+          <Animated.Text
+            allowFontScaling={false}
+            style={[AnimatedFontStyles.invisible, AnimatedFontStyles.fontStyle]}
+            onLayout={onTextLayout}
+          >
+            {value}
+          </Animated.Text>
+          {EndElement && (
+            <Animated.View key="refresh-icon" style={{ height: DIGIT_HEIGHT }}>
+              <Animated.View
+                style={[
+                  {
+                    height: DIGIT_HEIGHT,
+                    width: DIGIT_MAX_WIDTH,
+                    position: 'absolute',
+                    marginVertical: 'auto',
+                    justifyContent: 'center',
+                  },
+                  AnimatedCharStyles.wrapperStyle,
+                  iconAnimatedLeft,
+                ]}
+              >
+                {EndElement}
+              </Animated.View>
             </Animated.View>
-          </Animated.View>
-        )}
-      </Flex>
-    </Animated.View>
+          )}
+        </Flex>
+      </Animated.View>
+    </Flex>
   )
 }
 

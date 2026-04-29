@@ -85,7 +85,12 @@ export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
   const { openModal } = useModalState(ModalName.ReportTokenIssue)
   const [, setModalProps] = useAtom(ReportTokenIssueModalPropsAtom)
   const openReportTokenModal = useEvent(() => {
-    void setModalProps({ source: 'token-details', currency, isMarkedSpam: tokenQuery.data?.token?.project?.isSpam })
+    void setModalProps({
+      source: 'token-details',
+      currency,
+      isMarkedSpam: tokenQuery.data?.token?.project?.isSpam,
+      isMultichainAsset: multichainTokenUxEnabled && isMultiChainAsset,
+    })
     openModal()
   })
 
@@ -111,7 +116,8 @@ export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
     isMobileScreen,
   })
 
-  const tokenSymbolName = effectiveCurrency.symbol ?? t('tdp.symbolNotFound')
+  const tokenSymbol = tokenQuery.data?.token?.symbol ?? effectiveCurrency.symbol ?? t('tdp.symbolNotFound')
+  const tokenName = tokenQuery.data?.token?.name ?? effectiveCurrency.name ?? t('tdp.nameNotFound')
   const showAddressCopy = getShowAddressCopy({ multichainTokenUxEnabled, isNative, isMultiChainAsset, selectedChainId })
 
   const onBreadcrumbAddressCopied = useEvent(() => {
@@ -147,7 +153,7 @@ export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
               transition={HEADER_TRANSITION}
               {...EllipsisTamaguiStyle}
             >
-              {effectiveCurrency.name ?? t('tdp.nameNotFound')}
+              {tokenName}
             </Text>
             {!isCompact && !media.md && (
               <Text
@@ -158,7 +164,7 @@ export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
                 $sm={{ display: 'none' }}
                 transition={HEADER_TRANSITION}
               >
-                {tokenSymbolName}
+                {tokenSymbol}
               </Text>
             )}
           </Flex>

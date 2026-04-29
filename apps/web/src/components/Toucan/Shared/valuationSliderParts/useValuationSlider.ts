@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useEvent } from 'utilities/src/react/hooks'
 import { snapToNearestTick } from '~/components/Toucan/Auction/utils/ticks'
-import { MAX_PERCENTAGE } from '~/components/Toucan/Shared/valuationSliderParts/constants'
+import { MAX_PERCENTAGE, SLIDER_RESOLUTION } from '~/components/Toucan/Shared/valuationSliderParts/constants'
+import { positionToTickOffset, tickOffsetToPosition } from '~/components/Toucan/Shared/valuationSliderParts/curve'
 import type { ClampParams, ValuationSliderProps } from '~/components/Toucan/Shared/valuationSliderParts/types'
 
 export const clamp = ({ value, min, max }: ClampParams): number => Math.min(Math.max(value, min), max)
@@ -37,7 +38,10 @@ export function useValuationSlider({
     return clearingPriceQ96 + tickSizeQ96
   }, [clearingPriceQ96, tickSizeQ96])
 
-  const totalTicks = useMemo(() => {
+  // Number of ticks between minPrice and the max slider price. This is the
+  // real price-space range; the slider UI only uses SLIDER_RESOLUTION
+  // positions on top of it, mapped exponentially.
+  const maxTickOffset = useMemo(() => {
     if (!minPriceQ96 || !tickSizeQ96) {
       return 0
     }
@@ -47,11 +51,20 @@ export function useValuationSlider({
       return Number((range + tickSizeQ96 - 1n) / tickSizeQ96)
     }
 
-    // Default: 4900% (~50x) of the clearing price
+    // Default: MAX_PERCENTAGE (500x) of the clearing price
     const numerator = minPriceQ96 * BigInt(MAX_PERCENTAGE)
     const denominator = 100n * tickSizeQ96
     return Number((numerator + denominator - 1n) / denominator)
   }, [minPriceQ96, tickSizeQ96, maxSliderPriceQ96])
+
+  // Slider's step count. Cap at SLIDER_RESOLUTION for smoothness; when the
+  // underlying tick range is smaller, match it 1:1 so every tick is reachable.
+  const totalTicks = useMemo(() => {
+    if (maxTickOffset <= 0) {
+      return 0
+    }
+    return Math.min(maxTickOffset, SLIDER_RESOLUTION)
+  }, [maxTickOffset])
 
   const sanitizedValueQ96 = useMemo(() => {
     if (!valueQ96 || !clearingPriceQ96 || !floorPriceQ96 || !tickSizeQ96) {
@@ -79,16 +92,16 @@ export function useValuationSlider({
   }, [clearingPriceQ96, floorPriceQ96, groupTicksEnabled, minPriceQ96, tickGrouping, tickSizeQ96, valueQ96])
 
   const sliderIndex = useMemo(() => {
-    if (!sanitizedValueQ96 || !minPriceQ96 || !tickSizeQ96) {
+    if (!sanitizedValueQ96 || !minPriceQ96 || !tickSizeQ96 || totalTicks === 0) {
       return 0
     }
     const delta = sanitizedValueQ96 - minPriceQ96
     if (delta <= 0n) {
       return 0
     }
-    const ticksAway = delta / tickSizeQ96
-    return Number(ticksAway)
-  }, [minPriceQ96, sanitizedValueQ96, tickSizeQ96])
+    const tickOffset = Number(delta / tickSizeQ96)
+    return tickOffsetToPosition({ tickOffset, maxTickOffset, resolution: totalTicks })
+  }, [minPriceQ96, sanitizedValueQ96, tickSizeQ96, maxTickOffset, totalTicks])
 
   const clampedSliderIndex = clamp({ value: sliderIndex, min: 0, max: totalTicks })
 
@@ -139,6 +152,8 @@ export function useValuationSlider({
     }
   }, [])
 
+  // Linear in slider space — correct for thumb position (the curve is already
+  // baked into the position→tick-offset mapping).
   const progress = totalTicks > 0 ? clampedSliderIndex / totalTicks : 0
 
   const handleTickValueChange = useEvent((next: number[]) => {
@@ -147,22 +162,28 @@ export function useValuationSlider({
       return
     }
 
-    if (!minPriceQ96 || !tickSizeQ96) {
+    if (!minPriceQ96 || !tickSizeQ96 || totalTicks === 0) {
       return
     }
-    let nextIndex = clamp({
+    const nextPosition = clamp({
       value: next[0] ?? 0,
       min: 0,
       max: totalTicks,
     })
 
+    let tickOffset = positionToTickOffset({
+      position: nextPosition,
+      maxTickOffset,
+      resolution: totalTicks,
+    })
+
     if (groupTicksEnabled && tickGrouping) {
       const groupSize = Math.max(1, tickGrouping.groupSizeTicks)
-      nextIndex = Math.round(nextIndex / groupSize) * groupSize
-      nextIndex = clamp({ value: nextIndex, min: 0, max: totalTicks })
+      tickOffset = Math.round(tickOffset / groupSize) * groupSize
+      tickOffset = clamp({ value: tickOffset, min: 0, max: maxTickOffset })
     }
 
-    const nextQ96 = minPriceQ96 + tickSizeQ96 * BigInt(nextIndex)
+    const nextQ96 = minPriceQ96 + tickSizeQ96 * BigInt(tickOffset)
     onChangeQ96(nextQ96)
   })
 

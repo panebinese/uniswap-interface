@@ -1,5 +1,5 @@
 import { isAddress } from '@ethersproject/address'
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex, Text, TouchableArea } from 'ui/src'
 import { Edit } from 'ui/src/components/icons/Edit'
@@ -25,8 +25,18 @@ import {
   useCreateAuctionStoreActions,
 } from '~/pages/Liquidity/CreateAuction/CreateAuctionContext'
 import { useCreateAuctionTokenColor } from '~/pages/Liquidity/CreateAuction/hooks/useCreateAuctionTokenColor'
-import { CreateAuctionStep, PriceRangeStrategy, RaiseCurrency, TokenMode } from '~/pages/Liquidity/CreateAuction/types'
-import { amountToPercent } from '~/pages/Liquidity/CreateAuction/utils'
+import {
+  CreateAuctionStep,
+  PostAuctionLiquidityAllocationType,
+  PriceRangeStrategy,
+  RaiseCurrency,
+  TokenMode,
+} from '~/pages/Liquidity/CreateAuction/types'
+import {
+  formatCompactNumberLabel,
+  isUnboundedTier,
+  percentOfSoldToLiquidityFromDepositAndLiquidityAmount,
+} from '~/pages/Liquidity/CreateAuction/utils'
 
 const TOKEN_LOGO_SIZE = 60
 const CURRENCY_LOGO_SIZE = iconSizes.icon20
@@ -70,7 +80,7 @@ function SectionHeader({ title, onEdit }: { title: string; onEdit?: () => void }
   )
 }
 
-function ReviewRow({ label, children }: { label: string; children: React.ReactNode }) {
+function ReviewRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <Flex row justifyContent="space-between" alignItems="center">
       <Text variant="body1" color="$neutral2">
@@ -175,7 +185,10 @@ export function ReviewLaunchStep() {
   }
 
   const postAuctionLiquidityPercentDisplay = Math.round(
-    amountToPercent(committed.auctionSupplyAmount, committed.postAuctionLiquidityAmount),
+    percentOfSoldToLiquidityFromDepositAndLiquidityAmount(
+      committed.auctionSupplyAmount,
+      committed.postAuctionLiquidityAmount,
+    ),
   )
 
   return (
@@ -287,22 +300,43 @@ export function ReviewLaunchStep() {
           </ReviewRow>
 
           <ReviewRow label={t('toucan.createAuction.step.configureAuction.postAuctionLiquidity')}>
-            <Text variant="body1" color="$neutral1">
-              {formatPercent(postAuctionLiquidityPercentDisplay)}
-            </Text>
+            {configureAuction.postAuctionLiquidityAllocation.type === PostAuctionLiquidityAllocationType.SINGLE ? (
+              <Text variant="body1" color="$neutral1">
+                {formatPercent(postAuctionLiquidityPercentDisplay)}
+              </Text>
+            ) : (
+              <Flex gap="$spacing4" alignItems="flex-end">
+                <Text variant="body1" color="$neutral1">
+                  {t('toucan.createAuction.step.configureAuction.postAuctionLiquidity.tieredAllocation')}
+                </Text>
+                {configureAuction.postAuctionLiquidityAllocation.tiers.map((tier) => (
+                  <Text key={tier.id} variant="body4" color="$neutral2">
+                    {isUnboundedTier(tier)
+                      ? t('toucan.createAuction.step.configureAuction.postAuctionLiquidity.noLimit')
+                      : formatCompactNumberLabel(tier.raiseMilestone)}{' '}
+                    {configureAuction.raiseCurrency} • {formatPercent(tier.percent)}
+                  </Text>
+                ))}
+              </Flex>
+            )}
           </ReviewRow>
 
-          <TokenDistributionBar
-            auctionSupplyAmount={committed.auctionSupplyAmount}
-            postAuctionLiquidityAmount={committed.postAuctionLiquidityAmount}
-            tokenSymbol={tokenSymbol}
-            raiseTokenSymbol={configureAuction.raiseCurrency}
-            color={tokenColor}
-          />
+          {configureAuction.postAuctionLiquidityAllocation.type === PostAuctionLiquidityAllocationType.SINGLE && (
+            <TokenDistributionBar
+              auctionSupplyAmount={committed.auctionSupplyAmount}
+              postAuctionLiquidityAmount={committed.postAuctionLiquidityAmount}
+              tokenSymbol={tokenSymbol}
+              chainId={chainId}
+              raiseCurrency={configureAuction.raiseCurrency}
+              tokenColor={tokenColor}
+            />
+          )}
 
-          <ReviewRow label={t('toucan.createAuction.step.configureAuction.kyc.title')}>
+          <ReviewRow label={t('toucan.details.kyc')}>
             <Text variant="body1" color="$neutral1">
-              {t('toucan.createAuction.step.reviewLaunch.kycDisabled')}
+              {configureAuction.kycValidationHookAddress
+                ? shortenAddress({ address: configureAuction.kycValidationHookAddress, chars: 6 })
+                : t('toucan.createAuction.step.reviewLaunch.kycDisabled')}
             </Text>
           </ReviewRow>
         </Flex>

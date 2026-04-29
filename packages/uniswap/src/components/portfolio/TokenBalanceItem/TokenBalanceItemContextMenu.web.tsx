@@ -12,6 +12,7 @@ import { useBooleanState } from 'utilities/src/react/useBooleanState'
 export const TokenBalanceItemContextMenu = memo(function TokenBalanceItemContextMenu({
   children,
   portfolioBalance,
+  isMultichainAsset,
   excludedActions,
   openContractAddressExplainerModal,
   openReportTokenModal,
@@ -38,6 +39,7 @@ export const TokenBalanceItemContextMenu = memo(function TokenBalanceItemContext
     isBlocked: portfolioBalance.currencyInfo.safetyInfo?.tokenList === TokenList.Blocked,
     tokenSymbolForNotification: portfolioBalance.currencyInfo.currency.symbol,
     portfolioBalance,
+    isMultichainAsset,
     openContractAddressExplainerModal,
     openReportTokenModal,
     openReportDataIssueModal,

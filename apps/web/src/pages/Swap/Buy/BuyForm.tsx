@@ -125,10 +125,11 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
     })
   }, [inputAmount, derivedBuyFormInfo.amountOut, inputInFiat, convertFiatAmount])
 
-  const { fontSize, onLayout, onSetFontSize } = useDynamicFontSizing({
+  const { fontSize, onLayout, onSetFontSize, onExtraElementLayout } = useDynamicFontSizing({
     maxCharWidthAtMaxFontSize: CHAR_WIDTH,
     maxFontSize: MAX_FONT_SIZE,
     minFontSize: MIN_FONT_SIZE,
+    maxWidth: PAGE_WRAPPER_MAX_WIDTH * 0.85,
   })
 
   const handleUserInput = useCallback(
@@ -161,6 +162,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
 
   const { useParsedQueryString } = useUrlContext()
   const parsedQs = useParsedQueryString()
+
   useEffect(() => {
     let supportedToken: Maybe<FiatOnRampCurrency>
     const currencyCode = parsedQs.currencyCode as string | undefined
@@ -248,10 +250,9 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
     return currentCurrencyId ? balancesById?.[normalizeCurrencyIdForMapLookup(currentCurrencyId)] : undefined
   }, [balancesById, quoteCurrency?.currencyInfo?.currency])
 
-  const maxContainerWidth = PAGE_WRAPPER_MAX_WIDTH * 0.8
   const scaledInputWidth = useMemo(
-    () => (inputAmount && hiddenObserver.width ? Math.min(hiddenObserver.width + 1, maxContainerWidth) : undefined),
-    [inputAmount, hiddenObserver.width, maxContainerWidth],
+    () => (inputAmount && hiddenObserver.width ? hiddenObserver.width + 1 : undefined),
+    [inputAmount, hiddenObserver.width],
   )
 
   const offRampRequest = useOffRampTransferDetailsRequest()
@@ -273,7 +274,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
 
   return (
     <Trace page={InterfacePageName.Buy} logImpression>
-      <Flex gap="$spacing4" onLayout={onLayout}>
+      <Flex gap="$spacing4">
         <InputWrapper>
           <HeaderRow>
             <Text variant="body3" userSelect="none" color="$neutral2">
@@ -294,6 +295,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
             width="100%"
             cursor="text"
             onPress={() => inputRef.current?.focus()}
+            onLayout={onLayout}
           >
             {error && (
               <Text variant="body3" userSelect="none" color="$statusCritical">
@@ -301,11 +303,13 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
               </Text>
             )}
             <NumericalInputWrapper>
-              {inputInFiat && (
-                <NumericalInputSymbolContainer showPlaceholder={!inputAmount} $fontSize={fontSize}>
-                  {fiatSymbol}
-                </NumericalInputSymbolContainer>
-              )}
+              <Flex onLayout={onExtraElementLayout}>
+                {inputInFiat && (
+                  <NumericalInputSymbolContainer showPlaceholder={!inputAmount} $fontSize={fontSize}>
+                    {fiatSymbol}
+                  </NumericalInputSymbolContainer>
+                )}
+              </Flex>
               <StyledNumericalInput
                 value={inputAmount}
                 disabled={disabled}
@@ -321,7 +325,9 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
                 testId={TestID.BuyFormAmountInput}
                 ref={inputRef}
               />
-              <NumericalInputMimic ref={hiddenObserver.ref}>{inputAmount}</NumericalInputMimic>
+              <NumericalInputMimic ref={hiddenObserver.ref} $fontSize={fontSize}>
+                {inputAmount}
+              </NumericalInputMimic>
             </NumericalInputWrapper>
             {quoteCurrency?.currencyInfo?.currency && inputAmount && (
               <Flex height={36} justifyContent="center">
@@ -437,7 +443,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
             chain: getChainUrlParam(currencyInfo.currency.chainId),
             outputCurrency: NATIVE_CHAIN_ID,
           })
-          navigate(`/swap?${params.toString()}`)
+          void navigate(`/swap?${params.toString()}`)
         }}
         onClose={() => {
           setBuyFormState((state) => ({ ...state, selectedUnsupportedCurrency: undefined }))

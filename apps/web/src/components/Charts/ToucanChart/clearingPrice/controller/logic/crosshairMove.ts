@@ -1,4 +1,4 @@
-import type { IChartApi, ISeriesApi, MouseEventParams, Time } from 'lightweight-charts'
+import type { IChartApi, ISeriesApi, MouseEventParams, Time, UTCTimestamp } from 'lightweight-charts'
 import type {
   ClearingPriceChartPoint,
   ClearingPriceTooltipState,
@@ -9,6 +9,8 @@ interface HandleCrosshairMoveParams {
   param: MouseEventParams<Time>
   chart: IChartApi
   series: ISeriesApi<'Area'>
+  preBidSeries?: ISeriesApi<'Area'> | null
+  preBidEndTime?: UTCTimestamp
   onTooltipStateChange: (state: ClearingPriceTooltipState | null) => void
 }
 
@@ -17,7 +19,7 @@ interface HandleCrosshairMoveParams {
  * to the left side when near the right edge of the chart.
  */
 export function handleClearingPriceCrosshairMove(params: HandleCrosshairMoveParams): void {
-  const { param, chart, series, onTooltipStateChange } = params
+  const { param, chart, series, preBidSeries, preBidEndTime, onTooltipStateChange } = params
 
   // No hover data - hide tooltip
   if (!param.point || !param.time) {
@@ -25,11 +27,20 @@ export function handleClearingPriceCrosshairMove(params: HandleCrosshairMovePara
     return
   }
 
-  const data = param.seriesData.get(series) as ClearingPriceChartPoint | undefined
+  // Prefer the clearing (main) series; fall back to the pre-bid series when hovering the dashed portion
+  const mainData = param.seriesData.get(series) as ClearingPriceChartPoint | undefined
+  const preBidData = preBidSeries
+    ? (param.seriesData.get(preBidSeries) as ClearingPriceChartPoint | undefined)
+    : undefined
+  const data = mainData ?? preBidData
   if (!data) {
     onTooltipStateChange(null)
     return
   }
+
+  // The dashed pre-bid segment and the solid clearing segment share exactly one boundary point.
+  // That's the only time both series return data for the same crosshair position.
+  const isPreBidEnd = preBidEndTime !== undefined && mainData !== undefined && preBidData !== undefined
 
   const chartWidth = chart.paneSize().width
   // Offset by Y_AXIS_LABEL_WIDTH since the tooltip is positioned inside ChartWrapper
@@ -48,6 +59,7 @@ export function handleClearingPriceCrosshairMove(params: HandleCrosshairMovePara
     y,
     flipLeft,
     data,
+    isPreBidEnd,
   })
 }
 

@@ -13,6 +13,7 @@ import { NftsListProps } from 'uniswap/src/components/nfts/NftsList'
 import { NftsListEmptyState } from 'uniswap/src/components/nfts/NftsListEmptyState'
 import { NftListHeader } from 'uniswap/src/components/nfts/NftsListHeader'
 import { ShowNFTModal } from 'uniswap/src/components/nfts/ShowNFTModal'
+import { useActiveAddresses } from 'uniswap/src/features/accounts/store/hooks'
 import {
   NFT_GRID_DEFAULT_COLUMNS,
   NFT_GRID_MIN_COLUMN_WIDTH,
@@ -76,6 +77,8 @@ export function NftsList({
   pollInterval,
 }: NftsListProps): JSX.Element {
   const { t } = useTranslation()
+  const { evmAddress, svmAddress } = useActiveAddresses()
+  const isExternalWallet = evmAddress !== owner && svmAddress !== owner
 
   const {
     numHidden: internalNumHidden,
@@ -295,7 +298,7 @@ export function NftsList({
     <Flex ref={containerRef} gap="$spacing24">
       {showHeader && (
         <NftListHeader
-          count={filteredShownCount}
+          isExternalWallet={isExternalWallet}
           SearchInputComponent={SearchInputComponent}
           searchInputTestId={searchInputTestId}
           headerTestId={headerTestId}

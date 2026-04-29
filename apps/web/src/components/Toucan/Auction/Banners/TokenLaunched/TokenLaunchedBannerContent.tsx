@@ -33,9 +33,6 @@ export function TokenLaunchedBannerContent({
   const navigate = useNavigate()
   const auctionDetails = useAuctionStore((state) => state.auctionDetails)
 
-  // Calculate FDV display value
-  // currentTickValue is already in USD (from GraphQL market price or fallback clearing price conversion)
-  // Just multiply by total supply to get FDV
   const displayValue = useMemo(() => {
     if (currentTickValue === undefined) {
       return '--'
@@ -43,14 +40,20 @@ export function TokenLaunchedBannerContent({
     if (!totalSupply || totalSupply === '0') {
       return convertFiatAmountFormatted(currentTickValue, NumberType.FiatTokenStats)
     }
+
     const totalTokens = approximateNumberFromRaw({
       raw: BigInt(totalSupply),
       decimals: auctionTokenDecimals,
       significantDigits: 15,
     })
-    const fdvUSD = currentTickValue * totalTokens
-    return convertFiatAmountFormatted(fdvUSD, NumberType.FiatTokenStats)
-  }, [currentTickValue, totalSupply, auctionTokenDecimals, convertFiatAmountFormatted])
+
+    const currentFdvUsd = currentTickValue * totalTokens
+    if (!Number.isFinite(currentFdvUsd)) {
+      return '--'
+    }
+
+    return convertFiatAmountFormatted(currentFdvUsd, NumberType.FiatTokenStats)
+  }, [auctionTokenDecimals, convertFiatAmountFormatted, currentTickValue, totalSupply])
 
   const onPress = useCallback(() => {
     if (!auctionDetails) {

@@ -238,7 +238,7 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
 
   const navigateToAdvancedSettings = useCallback(() => {
     accountDrawer.open()
-    accountDrawerMenu.setMenuState({ variant: MenuStateVariant.ADVANCED_SETTINGS })
+    accountDrawerMenu.setMenuState({ variant: MenuStateVariant.SETTINGS })
   }, [accountDrawer, accountDrawerMenu])
 
   const navigateToNftDetails = useNavigateToNftExplorerLink()

@@ -17,6 +17,11 @@ import { useCurrencyIdToVisibility } from 'uniswap/src/features/transactions/sel
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { currencyAddress } from 'uniswap/src/utils/currencyId'
 import { usePortfolioAddresses } from '~/pages/Portfolio/hooks/usePortfolioAddresses'
+import {
+  buildPnlLookupsFromProfitLoss,
+  pnlLookupKeyFromPortfolioChainBalance,
+  resolveAggregatedPnlForChainTokens,
+} from '~/pages/Portfolio/Tokens/hooks/portfolioTokenTablePnl'
 
 /** Per-chain token instance (use TokenData['tokens'][number] in other modules) */
 interface TokenDataToken {
@@ -26,6 +31,9 @@ interface TokenDataToken {
   valueUsd: number
   symbol: string | undefined
   isHidden: boolean | null | undefined
+  avgCost?: number
+  unrealizedPnl?: number
+  unrealizedPnlPercent?: number
 }
 
 export interface TokenData {
@@ -39,6 +47,7 @@ export interface TokenData {
   price: number | undefined
   change1d: number | undefined
   tokens: TokenDataToken[]
+  isMultichainAsset: boolean
   totalValue: number
   allocation: number
   avgCost?: number
@@ -142,41 +151,41 @@ export function useTransformTokenTableData({
         currencyIdToTokenVisibility,
       })
 
-    const pnlLookup = new Map<string, { avgCost: number; unrealizedPnl: number; unrealizedPnlPercent: number }>()
-    if (tokenProfitLossData?.tokenProfitLosses) {
-      for (const entry of tokenProfitLossData.tokenProfitLosses) {
-        if (entry.token) {
-          const key = `${entry.token.address.toLowerCase()}-${entry.token.chainId}`
-          pnlLookup.set(key, {
-            avgCost: entry.averageCostUsd,
-            unrealizedPnl: entry.unrealizedReturnUsd,
-            unrealizedPnlPercent: entry.unrealizedReturnPercent,
-          })
-        }
-      }
-    }
+    const { perChainPnlLookup, aggregatedJoinByLegKey } = buildPnlLookupsFromProfitLoss(tokenProfitLossData)
 
     const mapBalanceToTokenData = ({
       balance,
       chainTokensForRow,
       allocationFromTotal,
+      /** Fully hidden multichain rows are flattened to one synthetic balance per leg (`tokens.length === 1`); set from the parent when that still represents a multichain asset. */
+      isMultichainAssetOverride,
     }: {
       balance: PortfolioMultichainBalance
       chainTokensForRow: PortfolioChainBalance[]
       allocationFromTotal?: number
+      isMultichainAssetOverride?: boolean
     }): TokenData | null => {
       if (chainTokensForRow.length === 0) {
         return null
       }
       const tokens: TokenData['tokens'] = chainTokensForRow
-        .map((t) => ({
-          chainId: t.chainId,
-          currencyInfo: t.currencyInfo,
-          quantity: t.quantity,
-          valueUsd: t.valueUsd ?? 0,
-          symbol: t.currencyInfo.currency.symbol,
-          isHidden: t.isHidden,
-        }))
+        .map((t) => {
+          const rawAddr = currencyAddress(t.currencyInfo.currency).toLowerCase()
+          const addr = t.currencyInfo.currency.isNative ? DEFAULT_NATIVE_ADDRESS : rawAddr
+          const pnl = perChainPnlLookup.get(pnlLookupKeyFromPortfolioChainBalance(t))
+          const isStableOnChain = isStablecoinAddress(t.chainId as UniverseChainId, addr)
+          return {
+            chainId: t.chainId,
+            currencyInfo: t.currencyInfo,
+            quantity: t.quantity,
+            valueUsd: t.valueUsd ?? 0,
+            symbol: t.currencyInfo.currency.symbol,
+            isHidden: t.isHidden,
+            avgCost: pnl?.avgCost,
+            unrealizedPnl: isStableOnChain ? undefined : pnl?.unrealizedPnl,
+            unrealizedPnlPercent: isStableOnChain ? undefined : pnl?.unrealizedPnlPercent,
+          }
+        })
         .sort((a, b) => b.valueUsd - a.valueUsd)
       const first = tokens[0]
       // useTransformTokenTableData already ensures that there is at least one token, but adding check for safety
@@ -188,12 +197,17 @@ export function useTransformTokenTableData({
       const quantity = tokens.reduce((sum, t) => sum + t.quantity, 0)
       const price = quantity > 0 && totalValue > 0 ? totalValue / quantity : (balance.priceUsd ?? undefined)
 
-      // currencyAddress() returns the legacy native address (0xeeee...) for native tokens,
-      // but the backend returns the canonical zero address (0x0000...). Normalize for lookup.
-      const rawAddr = currencyAddress(first.currencyInfo.currency).toLowerCase()
-      const addr = first.currencyInfo.currency.isNative ? DEFAULT_NATIVE_ADDRESS : rawAddr
-      const pnl = pnlLookup.get(`${addr}-${first.chainId}`)
-      const isStablecoin = isStablecoinAddress(first.chainId as UniverseChainId, addr)
+      const rawAddrFirst = currencyAddress(first.currencyInfo.currency).toLowerCase()
+      const addrFirst = first.currencyInfo.currency.isNative ? DEFAULT_NATIVE_ADDRESS : rawAddrFirst
+      const isStablecoin = isStablecoinAddress(first.chainId as UniverseChainId, addrFirst)
+
+      const aggregatedPnl = resolveAggregatedPnlForChainTokens(chainTokensForRow, aggregatedJoinByLegKey)
+
+      const parentAvgCost = aggregatedPnl?.avgCost ?? first.avgCost
+      const parentUnrealizedPnl = isStablecoin ? undefined : (aggregatedPnl?.unrealizedPnl ?? first.unrealizedPnl)
+      const parentUnrealizedPnlPercent = isStablecoin
+        ? undefined
+        : (aggregatedPnl?.unrealizedPnlPercent ?? first.unrealizedPnlPercent)
 
       return {
         id: balance.id,
@@ -205,12 +219,13 @@ export function useTransformTokenTableData({
         quantity,
         price,
         tokens,
+        isMultichainAsset: isMultichainAssetOverride ?? balance.tokens.length > 1,
         totalValue,
         allocation: allocationFromTotal ?? 0,
         change1d: balance.pricePercentChange1d ?? undefined,
-        avgCost: pnl?.avgCost,
-        unrealizedPnl: pnl?.unrealizedPnl,
-        unrealizedPnlPercent: pnl?.unrealizedPnlPercent,
+        avgCost: parentAvgCost,
+        unrealizedPnl: parentUnrealizedPnl,
+        unrealizedPnlPercent: parentUnrealizedPnlPercent,
         isStablecoin,
       }
     }
@@ -230,17 +245,19 @@ export function useTransformTokenTableData({
       })
       .filter((d): d is TokenData => d !== null)
 
-    const hiddenFromFullyHidden = hiddenBalancesFiltered.flatMap((b) =>
-      flattenPortfolioMultichainBalanceToSingleChainRows(b)
+    const hiddenFromFullyHidden = hiddenBalancesFiltered.flatMap((b) => {
+      const parentWasMultichain = b.tokens.length > 1
+      return flattenPortfolioMultichainBalanceToSingleChainRows(b)
         .map((flatBalance) =>
           mapBalanceToTokenData({
             balance: flatBalance,
             chainTokensForRow: flatBalance.tokens,
             allocationFromTotal: 0,
+            isMultichainAssetOverride: parentWasMultichain,
           }),
         )
-        .filter((d): d is TokenData => d !== null),
-    )
+        .filter((d): d is TokenData => d !== null)
+    })
 
     const hiddenFromPartialVisible = visibleBalancePartitions.flatMap(({ balance, hiddenChainTokens }) =>
       hiddenChainTokens

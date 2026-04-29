@@ -20,9 +20,6 @@ export const isSafari: boolean = false
 export const isMobileWebSafari: boolean = false
 export const isMobileWebAndroid: boolean = false
 
-// Environment
-export const isBrowser: boolean = false
-
 // App
 export const isExtensionApp: boolean = false
 export const isMobileApp: boolean = false

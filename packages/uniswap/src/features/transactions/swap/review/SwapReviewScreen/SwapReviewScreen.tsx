@@ -36,7 +36,9 @@ import { useSwapDependenciesStore } from 'uniswap/src/features/transactions/swap
 import { useSwapTxStore } from 'uniswap/src/features/transactions/swap/stores/swapTxStore/useSwapTxStore'
 import { isChained } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { TransactionWarning } from 'uniswap/src/features/transactions/TransactionDetails/TransactionWarning'
+import { DDRumManualTiming } from 'utilities/src/logger/datadog/datadogEvents'
 import { logger } from 'utilities/src/logger/logger'
+import { usePerformanceLogger } from 'utilities/src/logger/usePerformanceLogger'
 import { isWebPlatform } from 'utilities/src/platform'
 
 interface SwapReviewScreenProps {
@@ -81,6 +83,7 @@ export function SwapReviewScreenProviders({
 }
 
 export function SwapReviewScreen(): JSX.Element | null {
+  usePerformanceLogger(DDRumManualTiming.SwapReviewScreenRender, [])
   const { acceptedDerivedSwapInfo, isWrap, newTradeRequiresAcceptance } = useSwapReviewTransactionStore((s) => ({
     acceptedDerivedSwapInfo: s.acceptedDerivedSwapInfo,
     isWrap: s.isWrap,

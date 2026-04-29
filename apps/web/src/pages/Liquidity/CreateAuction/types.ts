@@ -52,8 +52,12 @@ type ExistingTokenFields = {
   totalSupply: CurrencyAmount<Currency> | undefined
 }
 
-export type CreateNewTokenFormState = { mode: TokenMode.CREATE_NEW } & CreateNewTokenFields
-export type ExistingTokenFormState = { mode: TokenMode.EXISTING } & ExistingTokenFields
+export type CreateNewTokenFormState = {
+  mode: TokenMode.CREATE_NEW
+} & CreateNewTokenFields
+export type ExistingTokenFormState = {
+  mode: TokenMode.EXISTING
+} & ExistingTokenFields
 export type TokenFormState = CreateNewTokenFormState | ExistingTokenFormState
 
 export enum AuctionType {
@@ -66,13 +70,48 @@ export enum RaiseCurrency {
   USDC = 'USDC',
 }
 
+export enum PostAuctionLiquidityAllocationType {
+  SINGLE = 'single',
+  TIERED = 'tiered',
+}
+
+export const MIN_POST_AUCTION_LIQUIDITY_PERCENT = 25
+export const MAX_POST_AUCTION_LIQUIDITY_PERCENT = 100
+export const MAX_POST_AUCTION_LIQUIDITY_TIERS = 10
+export const DEFAULT_POST_AUCTION_LIQUIDITY_TIER_INITIAL_MILESTONE = 100_000
+export const UNBOUNDED_TIER_ID = 'tier-unbounded'
+export const DEFAULT_POST_AUCTION_LIQUIDITY_PERCENT_BY_AUCTION_TYPE = {
+  [AuctionType.BOOTSTRAP_LIQUIDITY]: 100,
+  [AuctionType.FUNDRAISE]: 50,
+} as const
+
+export type PostAuctionLiquidityTier = {
+  id: string
+  raiseMilestone: string
+  percent: number
+}
+
+export type SinglePostAuctionLiquidityAllocation = {
+  type: PostAuctionLiquidityAllocationType.SINGLE
+  percent: number
+}
+
+export type TieredPostAuctionLiquidityAllocation = {
+  type: PostAuctionLiquidityAllocationType.TIERED
+  tiers: PostAuctionLiquidityTier[]
+}
+
+export type PostAuctionLiquidityAllocation = SinglePostAuctionLiquidityAllocation | TieredPostAuctionLiquidityAllocation
+
 /**
  * Token amounts committed after confirming the token info step.
  * Holds the total supply alongside the auction allocation amounts.
  */
 export type AuctionTokenAmounts = {
   totalSupply: CurrencyAmount<Currency>
+  /** Tokens deposited into the auction (sold S + LP reserve R = r·S). */
   auctionSupplyAmount: CurrencyAmount<Currency>
+  /** Each LP token leg: r·S = R = deposit × r/(1+r). */
   postAuctionLiquidityAmount: CurrencyAmount<Currency>
 }
 
@@ -81,8 +120,10 @@ export type ConfigureAuctionFormState = {
   maxDurationDays: number
   activeAuctionType: AuctionType
   committed: AuctionTokenAmounts | undefined
+  postAuctionLiquidityAllocation: PostAuctionLiquidityAllocation
   raiseCurrency: RaiseCurrency
   floorPrice: string
+  kycValidationHookAddress: string | undefined
 }
 
 type XVerification = {
@@ -158,8 +199,13 @@ export const DEFAULT_CREATE_AUCTION_STATE: CreateAuctionState = {
     maxDurationDays: 5,
     activeAuctionType: AuctionType.BOOTSTRAP_LIQUIDITY,
     committed: undefined,
+    postAuctionLiquidityAllocation: {
+      type: PostAuctionLiquidityAllocationType.SINGLE,
+      percent: DEFAULT_POST_AUCTION_LIQUIDITY_PERCENT_BY_AUCTION_TYPE[AuctionType.BOOTSTRAP_LIQUIDITY],
+    },
     raiseCurrency: RaiseCurrency.ETH,
     floorPrice: '',
+    kycValidationHookAddress: undefined,
   },
 }
 
@@ -174,14 +220,20 @@ interface CreateAuctionStoreActions {
   commitTokenFormAndAdvance: () => void
   setXVerification: (value: XVerification | undefined) => void
   setAuctionType: (type: AuctionType) => void
-  setAuctionConfig: (config: {
-    auctionSupplyAmount: CurrencyAmount<Currency>
-    postAuctionLiquidityAmount: CurrencyAmount<Currency>
-  }) => void
+  setPostAuctionLiquidityAllocationType: (type: PostAuctionLiquidityAllocationType) => void
+  setSinglePostAuctionLiquidityPercent: (percent: number) => void
+  addPostAuctionLiquidityTier: () => void
+  updatePostAuctionLiquidityTier: (
+    tierId: string,
+    config: Partial<Pick<PostAuctionLiquidityTier, 'raiseMilestone' | 'percent'>>,
+  ) => void
+  removePostAuctionLiquidityTier: (tierId: string) => void
+  setAuctionConfig: (config: { auctionSupplyAmount: CurrencyAmount<Currency> }) => void
   setStartTime: (startTime: Date | undefined) => void
   setMaxDurationDays: (days: number) => void
   setRaiseCurrency: (currency: RaiseCurrency) => void
   setFloorPrice: (price: string) => void
+  setKycValidationHookAddress: (address: string | undefined) => void
   setFee: (fee: FeeData) => void
   setPriceRangeStrategy: (strategy: PriceRangeStrategy) => void
   setPoolOwner: (owner: string) => void

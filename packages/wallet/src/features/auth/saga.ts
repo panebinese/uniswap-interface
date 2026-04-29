@@ -6,6 +6,7 @@ import { logger } from 'utilities/src/logger/logger'
 import { AuthActionType, AuthSagaError, LockParams, UnlockParams } from 'wallet/src/features/auth/types'
 import { Keyring } from 'wallet/src/features/wallet/Keyring/Keyring'
 
+// oxlint-disable-next-line typescript/explicit-function-return-type
 function* auth(params: UnlockParams | LockParams) {
   logger.debug('authSaga', 'auth', `Using monitored auth saga`)
 

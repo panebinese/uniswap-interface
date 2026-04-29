@@ -48,12 +48,11 @@ export default function SettingsMenu({
   const activeLocalCurrency = useAppFiatCurrency()
   const languageInfo = useLanguageInfo(activeLanguage)
   const connectedWithEmbeddedWallet =
-    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     useAccount().connector?.id === CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID
   const onLogOut = useOnDisconnect()
 
   return (
-    <SlideOutMenu title={t('common.settings')} onClose={onClose} height="100%">
+    <SlideOutMenu title={t('common.settings')} onClose={onClose}>
       <Flex gap="$gap24" px="$padding12">
         <Flex gap="$gap8">
           <SectionHeader title={t('settings.section.preferences')} />

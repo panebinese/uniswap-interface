@@ -843,7 +843,7 @@ describe('getV4PriceRangeInfo', () => {
     })
   })
 
-  describe('migration with initialPosition tick alignment', () => {
+  describe('migration with migratingPosition tick alignment', () => {
     // Simulates migrating a V3 full-range position (0.3% fee, tick spacing 60, ticks -887220/887220)
     // to a V4 pool with 1% fee (tick spacing 200). The V3 ticks are NOT aligned to tick spacing 200
     // (-887220 % 200 = 20), so getV4PriceRangeInfo must call nearestUsableTick to align them.
@@ -868,7 +868,7 @@ describe('getV4PriceRangeInfo', () => {
         tickSpacing: targetTickSpacing,
         isDynamic: false,
       },
-      initialPosition: {
+      migratingPosition: {
         tickLower: -887220,
         tickUpper: 887220,
         isOutOfRange: false,
@@ -897,7 +897,7 @@ describe('getV4PriceRangeInfo', () => {
       refetchPoolData: () => undefined,
     }
 
-    it('aligns initialPosition ticks to target pool tick spacing via nearestUsableTick', () => {
+    it('aligns migratingPosition ticks to target pool tick spacing via nearestUsableTick', () => {
       const state: PriceRangeState = {
         priceInverted: false,
         fullRange: true,
@@ -915,10 +915,10 @@ describe('getV4PriceRangeInfo', () => {
       expect(result?.ticks).toEqual([-887200, 887200])
     })
 
-    it('uses initialPosition ticks for out-of-range positions', () => {
+    it('uses migratingPosition ticks for out-of-range positions', () => {
       const outOfRangePositionState: PositionState = {
         ...positionState,
-        initialPosition: {
+        migratingPosition: {
           tickLower: -887220,
           tickUpper: -800000,
           isOutOfRange: true,
@@ -940,7 +940,7 @@ describe('getV4PriceRangeInfo', () => {
 
       const result = getV4PriceRangeInfo({ state, positionState: outOfRangePositionState, derivedPositionInfo })
 
-      // For out-of-range positions, ticks should come from tickSpaceLimits (initialPosition ticks aligned to tick spacing)
+      // For out-of-range positions, ticks should come from tickSpaceLimits (migratingPosition ticks aligned to tick spacing)
       expect(result?.ticks).toEqual([
         nearestUsableTick(-887220, targetTickSpacing),
         nearestUsableTick(-800000, targetTickSpacing),

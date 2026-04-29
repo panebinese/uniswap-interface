@@ -112,6 +112,57 @@ export default defineConfig({
         }
       }
     },
+    // Post-process generated manifest to add content_script `id` fields and ensure parity
+    // with the legacy webpack-generated manifest. WXT's `defineContentScript()` doesn't
+    // expose an `id` option (as of 0.20.x), so we inject it here based on the js filename.
+    // See https://developer.chrome.com/docs/extensions/reference/manifest/content-scripts#id
+    'build:manifestGenerated': (_wxt, manifest) => {
+      if (!manifest.content_scripts) {
+        return
+      }
+      for (const cs of manifest.content_scripts) {
+        if (cs.id) {
+          continue
+        }
+        const jsFile = cs.js?.[0]
+        if (!jsFile) {
+          continue
+        }
+        // Examples: 'content-scripts/injected.js' -> 'injected'
+        const base = path.basename(jsFile, '.js')
+        cs.id = base
+      }
+    },
+    // (previously a manualChunks hook was here to route background-reachable modules into
+    // a single chunk; it broke UI entries by forcing cross-chunk imports from sidepanel/
+    // onboarding/popup into background.js. Removed once jsbi/env-loading/hashcash fixes
+    // eliminated the top-level SW throws that originally motivated the hack.)
+    //
+    // Rename the IIFE var for main-world content scripts so it doesn't collide with a
+    // page global. WXT defaults `build.lib.name` to `safeVarName(entrypoint.name)`, so
+    // the ethereum entrypoint (`ethereum.content.ts`) emits `var ethereum = (IIFE)()`
+    // at the top level of the MAIN-world content script. In the page's global scope
+    // that assignment becomes `window.ethereum = <IIFE return>` AFTER the IIFE body
+    // has set `window.ethereum = new WindowEthereumProxy()` — clobbering our proxy
+    // with the IIFE's return value (a Promise from WXT's async entry wrapper). Prefix
+    // the var name with `__wxt_` to break the collision without changing the entry
+    // filename or output path.
+    'vite:build:extendConfig': (entrypoints, viteConfig) => {
+      const isContentScriptGroup = entrypoints.length === 1 && entrypoints[0]?.type === 'content-script'
+      if (!isContentScriptGroup) {
+        return
+      }
+      const entry = entrypoints[0]
+      if (!entry) {
+        return
+      }
+      // Only override when Vite is building the content script as a classic IIFE
+      // (this is the `build.lib` path WXT takes for content scripts).
+      const lib = viteConfig.build?.lib
+      if (lib && typeof lib === 'object' && 'name' in lib && typeof lib.name === 'string') {
+        lib.name = `__wxt_cs_${lib.name}`
+      }
+    },
     // Validate build output after dev builds complete
     'build:done': async (wxt) => {
       // Only validate in development mode (dev server)
@@ -175,30 +226,14 @@ export default defineConfig({
         default_icon: icons,
       },
 
-      content_scripts: [
-        {
-          id: 'injected',
-          run_at: 'document_start',
-          matches:
-            isDevelopment || BUILD_ENV === 'dev'
-              ? ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*']
-              : ['https://*/*'],
-          js: ['content-scripts/injected.js'],
-        },
-        {
-          id: 'ethereum',
-          run_at: 'document_start',
-          matches:
-            isDevelopment || BUILD_ENV === 'dev'
-              ? ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*']
-              : ['https://*/*'],
-          js: ['content-scripts/ethereum.js'],
-          world: 'MAIN',
-        },
-      ],
+      // Content scripts are auto-registered from `src/entrypoints/*.content.ts` via WXT's
+      // `defineContentScript()` export. We used to duplicate them here, which produced four
+      // entries in the manifest (two manual + two auto). The `id` field is added by the
+      // `build:manifestGenerated` hook above since `defineContentScript()` doesn't accept it.
 
       // Permissions
       permissions: ['alarms', 'notifications', 'sidePanel', 'storage', 'tabs'],
+      host_permissions: ['https://*.uniswap.org/*'],
 
       commands: {
         _execute_action: {
@@ -223,8 +258,32 @@ export default defineConfig({
 
   // Vite configuration copied from web project
   vite: (env) => {
-    // Load ALL env variables (including those without VITE_ prefix)
-    const envVars = loadEnv(env.mode, process.cwd(), '')
+    // Load ALL env variables (including those without VITE_ prefix). Matches webpack's
+    // DotenvPlugin behavior: read the monorepo-root `.env` (user-provided) AND the
+    // monorepo-root `.env.defaults` (checked-in defaults), with `.env` taking precedence.
+    // Vite only reads from one directory per call and doesn't know about `.env.defaults`,
+    // so we do both loads and merge.
+    const monorepoRoot = path.resolve(import.meta.dirname, '../..')
+    const envDefaults = loadEnv(env.mode, monorepoRoot, '')
+    // Re-read with a custom-named prefix file: loadEnv only looks at `.env`, `.env.local`,
+    // `.env.<mode>`, `.env.<mode>.local`. Manually parse `.env.defaults` since Vite won't.
+    const defaultsPath = path.join(monorepoRoot, '.env.defaults')
+    const parsedDefaults: Record<string, string> = {}
+    if (fs.existsSync(defaultsPath)) {
+      for (const rawLine of fs.readFileSync(defaultsPath, 'utf-8').split('\n')) {
+        const line = rawLine.trim()
+        if (!line || line.startsWith('#')) continue
+        const eq = line.indexOf('=')
+        if (eq === -1) continue
+        const key = line.slice(0, eq).trim()
+        const value = line
+          .slice(eq + 1)
+          .trim()
+          .replace(/^['"]|['"]$/g, '')
+        parsedDefaults[key] = value
+      }
+    }
+    const envVars = { ...parsedDefaults, ...envDefaults }
 
     const __dirname = path.dirname(new URL(import.meta.url).pathname)
     const isProduction = process.env.NODE_ENV === 'production'
@@ -262,7 +321,20 @@ export default defineConfig({
       // Skip expo-crypto alias during prepare phase since it imports react-native-web
       crypto: isPreparePhase ? 'crypto' : 'expo-crypto',
       'expo-clipboard': path.resolve(__dirname, '../web/src/lib/expo-clipboard.jsx'),
-      jsbi: path.resolve(__dirname, '../../node_modules/jsbi/dist/jsbi.mjs'), // force consistent ESM build
+      // Shim jsbi through a local file that re-exports every static method as a named
+      // export. jsbi.mjs itself only has `export default JSBI`, and JSBI's static methods
+      // are non-enumerable class members, so Rollup's ESM interop wrapper (__toESM) only
+      // surfaces `default`. Code like `import JSBI from 'jsbi'; JSBI.BigInt(0)` bundles
+      // to `i.BigInt(0)` where `i` is the namespace without the static methods — runtime
+      // TypeError in the service worker at module evaluation time.
+      jsbi: path.resolve(__dirname, 'src/shims/jsbi.mjs'),
+      // Vite-only override: route the hashcash worker helper to a `?worker`-based
+      // variant. Vite's `new Worker(new URL(...))` detection doesn't fire when the URL
+      // escapes the Vite root (apps/extension → packages/sessions), so we use the
+      // `?worker` query instead. Webpack doesn't read this alias and falls through
+      // to `src/workers/hashcashWorker.ts` (which uses `new URL()` — webpack handles
+      // it correctly regardless of cross-package path).
+      'src/workers/hashcashWorker': path.resolve(__dirname, 'src/workers/hashcashWorker.vite'),
       // Dynamically load all monorepo package aliases from tsconfig.base.json
       ...getTsconfigAliases(),
     }

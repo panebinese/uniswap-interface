@@ -5,7 +5,6 @@ import type {
   MigrateV3ToV4LPPositionRequest,
 } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
 import { type Currency, CurrencyAmount } from '@uniswap/sdk-core'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { liquidityQueries } from 'uniswap/src/data/apiClients/liquidityService/liquidityQueries'
@@ -64,8 +63,6 @@ export function useMigrateLPPositionTxInfo({
     positionInfo?.chainId ? state.delegation.delegations[String(positionInfo.chainId)] : null,
   )
   const [transactionError, setTransactionError] = useState<string | boolean>(false)
-  const isCheckApprovalV2 = useFeatureFlag(FeatureFlags.CheckApprovalV2)
-
   const { creatingPoolOrPair, protocolVersion, positionState, currentTransactionStep, poolOrPair, ticks, price, step } =
     useCreateLiquidityContext()
 
@@ -81,9 +78,8 @@ export function useMigrateLPPositionTxInfo({
     return buildCheckLPApprovalRequestParams({
       positionInfo,
       address,
-      isCheckApprovalV2,
     })
-  }, [positionInfo, address, isCheckApprovalV2])
+  }, [positionInfo, address])
 
   const {
     approvalData: migrateTokenApprovals,

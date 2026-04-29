@@ -68,6 +68,7 @@ export const createGroups = (activities: Array<Activity> = [], hideSpam = false)
     } else {
       const year = getYear(addedTime)
 
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (!yearMap[year]) {
         yearMap[year] = [activity]
       } else {

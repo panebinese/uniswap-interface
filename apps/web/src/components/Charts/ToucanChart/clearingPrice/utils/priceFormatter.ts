@@ -21,14 +21,15 @@ interface FormatPriceValueParams {
 function formatPriceValue({ price, scaleFactor, locale }: FormatPriceValueParams): string {
   const originalPrice = price / scaleFactor
 
-  if (originalPrice === 0) {
+  // Prices are non-negative by domain — guard against any upstream rounding/buffer
+  // that pushes a tick value below zero, since Math.abs() below would silently
+  // strip the sign and render a negative tick as a positive subscript value.
+  if (originalPrice <= 0) {
     return '0'
   }
 
-  const absValue = Math.abs(originalPrice)
-
   // For numbers >= 1, use standard formatting
-  if (absValue >= 1) {
+  if (originalPrice >= 1) {
     return new Intl.NumberFormat(locale, {
       minimumSignificantDigits: 2,
       maximumSignificantDigits: 4,
@@ -36,7 +37,7 @@ function formatPriceValue({ price, scaleFactor, locale }: FormatPriceValueParams
   }
 
   const subscriptParts = getSubscriptNotationParts({
-    value: absValue,
+    value: originalPrice,
     subscriptThreshold: SUBSCRIPT_THRESHOLD,
     maxSigDigits: 4,
     minSigDigits: 2,

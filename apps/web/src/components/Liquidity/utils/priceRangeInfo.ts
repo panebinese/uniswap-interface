@@ -38,10 +38,11 @@ export function getTicksAtLimit({
 }: {
   lowerTick?: Maybe<number>
   upperTick?: Maybe<number>
-  tickSpacing: number
+  tickSpacing?: number
   fullRange: boolean
 }): [boolean, boolean] {
-  if (fullRange) {
+  // V2 will not have tick spacing and it is always full range
+  if (fullRange || !tickSpacing) {
     return [true, true]
   }
 
@@ -380,7 +381,7 @@ export function getV4PriceRangeInfo({
   positionState: PositionState
   derivedPositionInfo: CreateV4PositionInfo
 }): V4PriceRangeInfo | undefined {
-  const { fee, hook, initialPosition } = positionState
+  const { fee, hook, migratingPosition } = positionState
 
   if (!fee) {
     return undefined
@@ -419,14 +420,14 @@ export function getV4PriceRangeInfo({
 
   const poolForPosition = pool ?? mockPool
   // When migrating from an out of range V3 position to a V4 position the tick space limits are constrained by the tick lower and tick upper of the V3 position. These need to be adjusted to the nearest usable tick for the tick spacing of the V4 pool.
-  const tickSpaceLimits: [Maybe<number>, Maybe<number>] = initialPosition
+  const tickSpaceLimits: [Maybe<number>, Maybe<number>] = migratingPosition
     ? [
         poolForPosition
-          ? nearestUsableTick(initialPosition.tickLower, poolForPosition.tickSpacing)
-          : initialPosition.tickLower,
+          ? nearestUsableTick(migratingPosition.tickLower, poolForPosition.tickSpacing)
+          : migratingPosition.tickLower,
         poolForPosition
-          ? nearestUsableTick(initialPosition.tickUpper, poolForPosition.tickSpacing)
-          : initialPosition.tickUpper,
+          ? nearestUsableTick(migratingPosition.tickUpper, poolForPosition.tickSpacing)
+          : migratingPosition.tickUpper,
       ]
     : [
         poolForPosition ? nearestUsableTick(TickMath.MIN_TICK, poolForPosition.tickSpacing) : undefined,
@@ -438,13 +439,13 @@ export function getV4PriceRangeInfo({
     : [state.minTick, state.maxTick]
 
   const lowerTick =
-    baseRangeInput === undefined || initialPosition?.isOutOfRange || state.fullRange
+    baseRangeInput === undefined || migratingPosition?.isOutOfRange || state.fullRange
       ? tickSpaceLimits[0]
       : state.priceInverted
         ? -baseRangeInput
         : baseRangeInput
   const upperTick =
-    quoteRangeInput === undefined || initialPosition?.isOutOfRange || state.fullRange
+    quoteRangeInput === undefined || migratingPosition?.isOutOfRange || state.fullRange
       ? tickSpaceLimits[1]
       : state.priceInverted
         ? -quoteRangeInput

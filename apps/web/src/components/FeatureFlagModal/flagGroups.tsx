@@ -101,13 +101,7 @@ export function buildFlagGroups(extras: {
       flags: [
         { flag: FeatureFlags.LpPdpD3RangeChart, label: 'Enable LP PDP D3 Range Chart' },
         { flag: FeatureFlags.LiquidityBatchedTransactions, label: 'Enable Batched Transactions for LP flow' },
-        { flag: FeatureFlags.LpDynamicNativeSlippage, label: 'Enable Dynamic Native Slippage' },
         { flag: FeatureFlags.LpIncentives, label: 'Enable LP Incentives' },
-        { flag: FeatureFlags.ClaimFeesV2, label: 'Enable Claim Fees V2' },
-        { flag: FeatureFlags.CreatePositionV2, label: 'Enable Create Position V2' },
-        { flag: FeatureFlags.DecreasePositionV2, label: 'Enable Decrease Position V2' },
-        { flag: FeatureFlags.IncreasePositionV2, label: 'Enable Increase Position V2' },
-        { flag: FeatureFlags.CheckApprovalV2, label: 'Enable Check Approval V2' },
       ],
     },
     {
@@ -165,6 +159,10 @@ export function buildFlagGroups(extras: {
     {
       name: 'Token Details Page',
       flags: [{ flag: FeatureFlags.TDPTokenCarousel, label: 'Enable TDP Token Carousel' }],
+    },
+    {
+      name: 'Earn',
+      flags: [{ flag: FeatureFlags.Earn, label: 'Enable Earn' }],
     },
     {
       name: 'Misc',

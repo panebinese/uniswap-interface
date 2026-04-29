@@ -28,8 +28,10 @@ export function searchResultId(searchResult: SearchHistoryResult): string {
       const normalizedAddress = normalizeTokenAddressForCache(searchResult.poolId)
       return `pool-${searchResult.chainId}-${normalizedAddress}-${searchResult.feeTier}`
     }
-    case SearchHistoryResultType.MultichainToken:
-      return `multichain-token-${searchResult.multichainId}`
+    case SearchHistoryResultType.MultichainToken: {
+      const suffix = searchResult.tdpChainFilter != null ? String(searchResult.tdpChainFilter) : 'all'
+      return `multichain-token-${searchResult.multichainId}-${suffix}`
+    }
     default: {
       const _unexpected: never = searchResult
       throw new Error(`Unexpected search history type: ${String(_unexpected)}`)

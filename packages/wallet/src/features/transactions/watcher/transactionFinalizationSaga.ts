@@ -10,6 +10,7 @@ import { findLocalGasStrategy, getGasPrice } from 'uniswap/src/features/gas/util
 import { setNotificationStatus } from 'uniswap/src/features/notifications/slice/slice'
 import { refetchQueries } from 'uniswap/src/features/portfolio/portfolioUpdates/refetchQueriesSaga'
 import {
+  DEFAULT_CALLDATA_HINTS_ENABLED,
   DEFAULT_FLASHBOTS_ENABLED,
   FLASHBOTS_DEFAULT_REFUND_PERCENT,
 } from 'uniswap/src/features/providers/FlashbotsCommon'
@@ -256,9 +257,16 @@ export function logTransactionTimeout(transaction: TransactionDetails): void {
     defaultValue: FLASHBOTS_DEFAULT_REFUND_PERCENT,
   })
 
+  const calldataHintsEnabled = getExperimentValue({
+    experiment: Experiments.PrivateRpc,
+    param: PrivateRpcProperties.CalldataHintsEnabled,
+    defaultValue: DEFAULT_CALLDATA_HINTS_ENABLED,
+  })
+
   sendAnalyticsEvent(WalletEventName.PendingTransactionTimeout, {
     use_flashbots: flashbotsEnabled,
     flashbots_refund_percent: flashbotsRefundPercent,
+    calldata_hints_enabled: calldataHintsEnabled,
     chain_id: transaction.chainId,
     tx_hash: transaction.hash,
     address: transaction.from,
@@ -269,6 +277,7 @@ export function logTransactionTimeout(transaction: TransactionDetails): void {
     chain_id: transaction.chainId,
     flashbots_enabled: flashbotsEnabled,
     flashbots_refund_percent: flashbotsRefundPercent,
+    calldata_hints_enabled: calldataHintsEnabled,
     transaction,
     address: transaction.from,
   })

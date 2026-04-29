@@ -17,7 +17,6 @@ import { DetailsHeaderContainer } from '~/components/Explore/stickyHeader/Detail
 import { LpIncentivesPoolDetailsRewardsDistribution } from '~/components/LpIncentives/LpIncentivesPoolDetailsRewardsDistribution'
 import { useChainIdFromUrlParam } from '~/features/params/chainParams'
 import { useColor } from '~/hooks/useColor'
-import { useScroll } from '~/hooks/useScroll'
 import { useScrollCompact } from '~/hooks/useScrollCompact'
 import { ExploreTab } from '~/pages/Explore/constants'
 import { useDynamicMetatags } from '~/pages/metatags'
@@ -171,8 +170,7 @@ export default function PoolDetailsPage() {
     )
   }, [isLPIncentivesEnabled, poolData])
 
-  const { height: scrollY } = useScroll()
-  const isCompact = useScrollCompact({ scrollY, thresholdCompact: 100, thresholdExpanded: 60 })
+  const isCompact = useScrollCompact({ thresholdCompact: 100, thresholdExpanded: 60 })
 
   useEffect(() => {
     if (poolNotFound) {

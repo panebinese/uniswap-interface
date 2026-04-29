@@ -197,7 +197,7 @@ export function EmbeddedWalletConnectionsModal(): JSX.Element {
         }
       >
         <WalletOptionsGrid showMobileConnector={true} showOtherWallets={true} />
-        <Flex row alignItems="center" justifyContent="center" width="100%" gap="$gap16" py="$spacing4">
+        <Flex row alignItems="center" justifyContent="center" width="100%" gap="$gap16" py="$spacing4" px="$spacing12">
           <Separator />
           <Text variant="body4" color="$neutral3">
             {t('common.or')}
@@ -213,16 +213,22 @@ export function EmbeddedWalletConnectionsModal(): JSX.Element {
             </Flex>
           </Trace>
           <Trace logPress element={ElementName.SignIn}>
-            <Flex row alignSelf="stretch">
-              <Button variant="branded" emphasis="secondary" size="medium" onPress={handleLogIn}>
-                <Flex row gap="$gap4">
-                  <Passkey size="$icon.20" color="$accent1" />
-                  <Text variant="buttonLabel2" color="$accent1">
-                    {t('nav.logIn.button')}
-                  </Text>
-                </Flex>
-              </Button>
-            </Flex>
+            <TouchableArea
+              group
+              animation={null}
+              alignSelf="center"
+              variant="unstyled"
+              hoverable={false}
+              testID={TestID.LogIn}
+              onPress={handleLogIn}
+            >
+              <Flex row gap="$gap4" alignItems="center">
+                <Passkey size="$icon.20" color="$accent1" $group-hover={{ color: '$accent1Hovered' }} />
+                <Text variant="buttonLabel2" color="$accent1" $group-hover={{ color: '$accent1Hovered' }}>
+                  {t('nav.logIn.button')}
+                </Text>
+              </Flex>
+            </TouchableArea>
           </Trace>
         </Flex>
       </WalletModalLayout>

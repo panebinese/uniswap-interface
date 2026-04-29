@@ -49,6 +49,7 @@ interface TokenMenuParams {
   isBlocked: boolean
   tokenSymbolForNotification?: Nullable<string>
   portfolioBalance?: Nullable<PortfolioBalance>
+  isMultichainAsset?: boolean
   excludedActions?: TokenMenuActionType[]
   openContractAddressExplainerModal?: () => void
   openReportTokenModal: () => void
@@ -58,6 +59,13 @@ interface TokenMenuParams {
   closeMenu: () => void
   disableNotifications?: boolean
   recipient?: Address // Pre-filled recipient address for send action
+  /**
+   * Multichain aggregate row: allow "Copy address" when the primary deployment is native, as long as
+   * at least one deployment is not native (`allNativeMultichain` false). Omitted entirely when all native.
+   */
+  multichainWithCopyAddressList?: boolean
+  /** When `multichainWithCopyAddressList`, omit copy when every deployment is native. */
+  allNativeMultichain?: boolean
 }
 
 const CLOSE_MENU_DELAY = ONE_SECOND_MS / 4
@@ -67,6 +75,7 @@ export function useTokenContextMenuOptions({
   isBlocked,
   tokenSymbolForNotification,
   portfolioBalance,
+  isMultichainAsset = false,
   excludedActions,
   openContractAddressExplainerModal,
   openReportTokenModal,
@@ -76,6 +85,8 @@ export function useTokenContextMenuOptions({
   closeMenu,
   disableNotifications,
   recipient,
+  multichainWithCopyAddressList,
+  allNativeMultichain,
 }: TokenMenuParams): MenuOptionItemWithId[] {
   const { t } = useTranslation()
   const dispatch = useDispatch()
@@ -169,6 +180,7 @@ export function useTokenContextMenuOptions({
       currencyId,
       // we log the state to which it's transitioning
       visible: !isVisible,
+      is_multichain_asset: isMultichainAsset,
     })
     dispatch(setTokenVisibility({ currencyId: normalizeCurrencyIdForMapLookup(currencyId), isVisible: !isVisible }))
 
@@ -191,18 +203,33 @@ export function useTokenContextMenuOptions({
     tokenSymbolForNotification,
     t,
     disableNotifications,
+    isMultichainAsset,
   ])
 
   const menuActions: MenuOptionItemWithId[] = useMemo(() => {
-    const actions: MenuOptionItemWithId[] = [
-      {
-        id: TokenMenuActionType.Swap,
-        label: t('common.button.swap'),
-        disabled: isBlocked,
-        onPress: () => onPressSwap(CurrencyField.INPUT),
-        Icon: CoinConvert,
-      },
-    ]
+    const actions: MenuOptionItemWithId[] = []
+
+    const includeCopyAddress =
+      !isTestnetModeEnabled &&
+      copyAddressToClipboard &&
+      (multichainWithCopyAddressList ? !allNativeMultichain : !isNative)
+
+    if (includeCopyAddress) {
+      actions.push({
+        id: TokenMenuActionType.CopyAddress,
+        label: t('common.copy.address'),
+        onPress: onPressCopyAddress,
+        Icon: CopySheets,
+      })
+    }
+
+    actions.push({
+      id: TokenMenuActionType.Swap,
+      label: t('common.button.swap'),
+      disabled: isBlocked,
+      onPress: () => onPressSwap(CurrencyField.INPUT),
+      Icon: CoinConvert,
+    })
 
     const isSolanaToken = currencyIdToChain(currencyId) === UniverseChainId.Solana
 
@@ -222,15 +249,6 @@ export function useTokenContextMenuOptions({
       onPress: navigateToReceive,
       Icon: ReceiveAlt,
     })
-
-    if (!isTestnetModeEnabled && copyAddressToClipboard && !isNative) {
-      actions.push({
-        id: TokenMenuActionType.CopyAddress,
-        label: t('common.copy.address'),
-        onPress: onPressCopyAddress,
-        Icon: CopySheets,
-      })
-    }
 
     if (!isWebPlatform) {
       actions.push({
@@ -306,6 +324,8 @@ export function useTokenContextMenuOptions({
     copyAddressToClipboard,
     openReportTokenModal,
     openReportDataIssueModal,
+    multichainWithCopyAddressList,
+    allNativeMultichain,
   ])
 
   return menuActions

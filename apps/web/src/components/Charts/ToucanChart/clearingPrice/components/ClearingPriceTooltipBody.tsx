@@ -16,6 +16,7 @@ interface ClearingPriceTooltipBodyProps {
   scaleFactor: number
   totalSupply?: string
   auctionTokenDecimals?: number
+  isPreBidEnd?: boolean
 }
 
 /**
@@ -29,6 +30,7 @@ export function ClearingPriceTooltipBody({
   scaleFactor,
   totalSupply,
   auctionTokenDecimals,
+  isPreBidEnd,
 }: ClearingPriceTooltipBodyProps): JSX.Element {
   const { t } = useTranslation()
   const { convertFiatAmountFormatted } = useLocalizationContext()
@@ -73,6 +75,13 @@ export function ClearingPriceTooltipBody({
       <Text variant="body4" color="$neutral1">
         {dateStr}
       </Text>
+
+      {/* Pre-bidding ended label — shown at the boundary between pre-bid and clearing */}
+      {isPreBidEnd && (
+        <Text variant="body4" color="$neutral2">
+          {t('toucan.auction.chart.preBiddingEnded')}
+        </Text>
+      )}
 
       {/* Divider */}
       <Flex width="100%" height={1} backgroundColor="$surface3" />

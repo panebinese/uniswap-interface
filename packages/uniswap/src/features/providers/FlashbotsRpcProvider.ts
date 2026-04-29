@@ -40,15 +40,18 @@ export class FlashbotsRpcProvider extends AuthenticatedJsonRpcProvider {
   constructor({
     signerInfo,
     refundPercent,
+    calldataHintsEnabled,
     network,
   }: {
     signerInfo?: SignerInfo
     refundPercent?: number
+    calldataHintsEnabled?: boolean
     network?: Networkish
   }) {
     const url = buildFlashbotsUrl({
       address: signerInfo?.address,
       refundPercent,
+      calldataHintsEnabled,
     })
     super({ url, signer: signerInfo?.signer, network })
   }

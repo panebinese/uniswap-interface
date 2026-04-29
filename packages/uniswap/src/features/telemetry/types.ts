@@ -7,9 +7,9 @@ import { type FetchBaseQueryError } from '@reduxjs/toolkit/dist/query'
 import { type SharedEventName } from '@uniswap/analytics-events'
 import { type ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import {
-  type CreateLPPositionRequest,
-  type IncreaseLPPositionRequest,
-} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+  type CreatePositionRequest,
+  type IncreasePositionRequest,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
 import { type Currency, type TradeType } from '@uniswap/sdk-core'
 import { type TradingApi } from '@universe/api'
 import { type Experiments } from '@universe/gating'
@@ -51,6 +51,9 @@ import { type ShareableEntity } from 'uniswap/src/types/sharing'
 import { type UwULinkMethod, type WCEventType, type WCRequestOutcome } from 'uniswap/src/types/walletConnect'
 import { type WidgetEvent, type WidgetType } from 'uniswap/src/types/widgets'
 import { type ITraceContext } from 'utilities/src/telemetry/trace/TraceContext'
+
+/** Sent as `chain` on network filter analytics when no chain is selected. */
+export const ALL_NETWORKS_LABEL = 'All' as const
 
 export enum ExtensionUninstallFeedbackOptions {
   SwitchingWallet = 'switching-wallet',
@@ -105,6 +108,7 @@ type KeyringMissingMnemonicProperties = {
 export type PendingTransactionTimeoutProperties = {
   use_flashbots: boolean
   flashbots_refund_percent: number
+  calldata_hints_enabled: boolean
   private_rpc: boolean
   chain_id: number
   address: string
@@ -142,6 +146,7 @@ export type SwapRouting =
   | 'uniswap_x_v3'
   | 'priority_order'
   | 'bridge'
+  | 'chained'
   | 'limit_order'
   | 'none'
 
@@ -747,10 +752,10 @@ export type UniverseEventProperties = {
   [InterfaceEventName.UniswapXOrderSubmitted]: Record<string, unknown> // TODO specific type
   [InterfaceEventName.CreatePositionFailed]: {
     message: string
-  } & PartialMessage<CreateLPPositionRequest>
+  } & PartialMessage<CreatePositionRequest>
   [InterfaceEventName.IncreaseLiquidityFailed]: {
     message: string
-  } & PartialMessage<IncreaseLPPositionRequest>
+  } & PartialMessage<IncreasePositionRequest>
   [InterfaceEventName.DecreaseLiquidityFailed]: {
     message: string
   }
@@ -762,7 +767,7 @@ export type UniverseEventProperties = {
   }
   [InterfaceEventName.OnChainAddLiquidityFailed]: {
     message: string
-  } & (PartialMessage<CreateLPPositionRequest> | PartialMessage<IncreaseLPPositionRequest>)
+  } & (PartialMessage<CreatePositionRequest> | PartialMessage<IncreasePositionRequest>)
   [InterfaceEventName.EmbeddedWalletCreated]: undefined
   [InterfaceEventName.ExtensionUninstallFeedback]: {
     reason: ExtensionUninstallFeedbackOptions
@@ -946,7 +951,6 @@ export type UniverseEventProperties = {
     balanceToggleState?: 'open' | 'close'
     /** ElementName.NetworkBalanceRow — multichain balance row on token details (web) */
     chain_id?: UniverseChainId
-    /** Extension portfolio multichain token row expand/collapse */
     multichainTokenRowState?: 'open' | 'close'
     chain_name?: string
   }
@@ -1212,7 +1216,8 @@ export type UniverseEventProperties = {
     filter: 'all' | 'verified' | 'unverified' | 'active' | 'complete'
   }
   [UniswapEventName.NetworkFilterSelected]: ITraceContext & {
-    chain: UniverseChainId | 'All'
+    chain: UniverseChainId | typeof ALL_NETWORKS_LABEL
+    chain_name: string | typeof ALL_NETWORKS_LABEL
   }
   [UniswapEventName.SmartWalletMismatchDetected]: {
     chainId: string
@@ -1226,6 +1231,7 @@ export type UniverseEventProperties = {
         imposter_token: boolean
         hidden_fees: boolean
         something_else: boolean
+        is_multichain_asset: boolean
       })
     | {
         type: 'nft'
@@ -1285,7 +1291,7 @@ export type UniverseEventProperties = {
   [WalletEventName.KeyringMissingMnemonic]: KeyringMissingMnemonicProperties
   [WalletEventName.MismatchAccountSignatureRequestBlocked]: undefined
   [WalletEventName.PendingTransactionTimeout]: PendingTransactionTimeoutProperties
-  [WalletEventName.TokenVisibilityChanged]: { currencyId: string; visible: boolean }
+  [WalletEventName.TokenVisibilityChanged]: { currencyId: string; visible: boolean; is_multichain_asset: boolean }
   [WalletEventName.TransferSubmitted]: TransferProperties
   [WalletEventName.WalletAdded]: OnboardingCompletedProps & ITraceContext
   [WalletEventName.WalletRemoved]: { wallets_removed: Address[] } & ITraceContext

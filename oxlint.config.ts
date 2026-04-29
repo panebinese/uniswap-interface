@@ -301,7 +301,6 @@ export default defineConfig({
     'no-useless-escape': 'warn',
     'no-lone-blocks': 'warn',
     'typescript/no-unnecessary-type-constraint': 'error',
-    'no-undef-init': 'warn',
     'no-void': 'warn',
 
     // ── correctness ────────────────────────────────────────────────────
@@ -335,7 +334,7 @@ export default defineConfig({
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_',
         fix: {
-          imports: 'fix',
+          imports: 'safe-fix',
         },
       },
     ],
@@ -351,6 +350,7 @@ export default defineConfig({
     'jest/no-disabled-tests': 'error',
     'jest/expect-expect': 'error',
     'jest/no-conditional-expect': 'off',
+    'vitest/require-mock-type-parameters': 'off',
 
     // ── security ───────────────────────────────────────────────────────
     'react/no-danger': 'error',
@@ -486,7 +486,6 @@ export default defineConfig({
     'no-label-var': 'warn',
     'no-misleading-character-class': 'error',
     'typescript/no-misused-new': 'error',
-    'no-octal-escape': 'warn',
     'no-prototype-builtins': 'error',
     'no-self-compare': 'warn',
     'no-shadow': 'error',
@@ -519,6 +518,9 @@ export default defineConfig({
       // TODO: Replace with native object-shorthand after next oxlint update
       // (https://github.com/oxc-project/oxc/pull/17688)
       'eslint-js/object-shorthand': ['error', 'always'],
+      // Not implemented natively by oxlint; provided via oxlint-plugin-eslint.
+      'eslint-js/no-octal-escape': 'warn',
+      'eslint-js/no-undef-init': 'warn',
       // custom rules (from universe-custom plugin)
       'universe-custom/no-unwrapped-t': [
         'error',
@@ -652,36 +654,38 @@ export default defineConfig({
             patterns: [...sharedRestrictedImportPatterns],
           },
         ],
-        'no-restricted-syntax': [
-          'error',
-          {
-            selector:
-              "CallExpression[callee.property.name='sendMessage'][callee.object.property.name='tabs'][callee.object.object.name='chrome']",
-            message:
-              'Use a message channel from apps/extension/src/background/messagePassing/messageChannels.ts instead of chrome.tabs.sendMessage.',
-          },
-          {
-            selector:
-              "CallExpression[callee.property.name='sendMessage'][callee.object.property.name='runtime'][callee.object.object.name='chrome']",
-            message:
-              'Use a message channel from apps/extension/src/background/messagePassing/messageChannels.ts instead of chrome.runtime.sendMessage.',
-          },
-          {
-            selector:
-              "CallExpression[callee.property.name='addListener'][callee.object.property.name='onMessage'][callee.object.object.property.name='runtime'][callee.object.object.object.name='chrome']",
-            message: 'Use a message channel instead of chrome.runtime.onMessage.addListener.',
-          },
-          {
-            selector:
-              "CallExpression[callee.property.name='removeListener'][callee.object.property.name='onMessage'][callee.object.object.property.name='runtime'][callee.object.object.object.name='chrome']",
-            message: 'Use a message channel instead of chrome.runtime.onMessage.removeListener.',
-          },
-          {
-            selector: "CallExpression[callee.object.name='z'][callee.property.name='any']",
-            message: 'Avoid using z.any() in favor of more precise custom types.',
-          },
-        ],
         'no-restricted-globals': 'off',
+        ...(!isFastLint && {
+          'eslint-js/no-restricted-syntax': [
+            'error',
+            {
+              selector:
+                "CallExpression[callee.property.name='sendMessage'][callee.object.property.name='tabs'][callee.object.object.name='chrome']",
+              message:
+                'Use a message channel from apps/extension/src/background/messagePassing/messageChannels.ts instead of chrome.tabs.sendMessage.',
+            },
+            {
+              selector:
+                "CallExpression[callee.property.name='sendMessage'][callee.object.property.name='runtime'][callee.object.object.name='chrome']",
+              message:
+                'Use a message channel from apps/extension/src/background/messagePassing/messageChannels.ts instead of chrome.runtime.sendMessage.',
+            },
+            {
+              selector:
+                "CallExpression[callee.property.name='addListener'][callee.object.property.name='onMessage'][callee.object.object.property.name='runtime'][callee.object.object.object.name='chrome']",
+              message: 'Use a message channel instead of chrome.runtime.onMessage.addListener.',
+            },
+            {
+              selector:
+                "CallExpression[callee.property.name='removeListener'][callee.object.property.name='onMessage'][callee.object.object.property.name='runtime'][callee.object.object.object.name='chrome']",
+              message: 'Use a message channel instead of chrome.runtime.onMessage.removeListener.',
+            },
+            {
+              selector: "CallExpression[callee.object.name='z'][callee.property.name='any']",
+              message: 'Avoid using z.any() in favor of more precise custom types.',
+            },
+          ],
+        }),
       },
     },
     ...(!isFastLint
@@ -803,14 +807,14 @@ export default defineConfig({
             ],
           },
         ],
-        'no-restricted-syntax': [
-          'error',
-          {
-            selector: "CallExpression[callee.object.name='z'][callee.property.name='any']",
-            message: 'Avoid using z.any() in favor of more precise custom types.',
-          },
-        ],
         ...(!isFastLint && {
+          'eslint-js/no-restricted-syntax': [
+            'error',
+            {
+              selector: "CallExpression[callee.object.name='z'][callee.property.name='any']",
+              message: 'Avoid using z.any() in favor of more precise custom types.',
+            },
+          ],
           'universe-custom/enum-member-naming': 'error',
           'universe-custom/no-transform-percentage-strings': 'error',
         }),
@@ -874,91 +878,96 @@ export default defineConfig({
           },
         ]
       : []),
-    {
-      files: ['apps/web/src/pages/Portfolio/**'],
-      rules: {
-        'no-restricted-syntax': [
-          'error',
+    ...(!isFastLint
+      ? [
           {
-            selector: "CallExpression[callee.name='useAccount']",
-            message:
-              "Do not call 'useAccount' in portfolio pages. Use 'pages/Portfolio/hooks/usePortfolioAddress' instead.",
-          },
-        ],
-      },
-    },
-    {
-      files: ['apps/web/src/**/*.ts', 'apps/web/src/**/*.tsx'],
-      rules: {
-        'no-restricted-syntax': [
-          'error',
-          {
-            selector: ':matches(ExportAllDeclaration)',
-            message: 'Barrel exports bloat the bundle size by preventing tree-shaking.',
+            files: ['apps/web/src/pages/Portfolio/**'],
+            rules: {
+              'eslint-js/no-restricted-syntax': [
+                'error' as const,
+                {
+                  selector: "CallExpression[callee.name='useAccount']",
+                  message:
+                    "Do not call 'useAccount' in portfolio pages. Use 'pages/Portfolio/hooks/usePortfolioAddress' instead.",
+                },
+              ],
+            },
           },
           {
-            selector: ":matches(Literal[value='NATIVE'])",
-            message:
-              "Don't use the string 'NATIVE' directly. Use the NATIVE_CHAIN_ID variable from constants/tokens instead.",
+            files: ['apps/web/src/**/*.ts', 'apps/web/src/**/*.tsx'],
+            rules: {
+              'eslint-js/no-restricted-syntax': [
+                'error' as const,
+                {
+                  selector: ':matches(ExportAllDeclaration)',
+                  message: 'Barrel exports bloat the bundle size by preventing tree-shaking.',
+                },
+                {
+                  selector: ":matches(Literal[value='NATIVE'])",
+                  message:
+                    "Don't use the string 'NATIVE' directly. Use the NATIVE_CHAIN_ID variable from constants/tokens instead.",
+                },
+                {
+                  selector:
+                    "ImportDeclaration[source.value='src/nft/components/icons'], ImportDeclaration[source.value='nft/components/icons']",
+                  message: 'Please import icons from nft/components/iconExports instead of directly from icons.tsx',
+                },
+                {
+                  selector:
+                    "VariableDeclarator[id.type='ObjectPattern'][init.callee.name='useWeb3React'] > ObjectPattern > Property[key.name='account']",
+                  message:
+                    "Do not use account directly from useWeb3React. Use the useAccount hook from 'hooks/useAccount' instead.",
+                },
+                {
+                  selector:
+                    "VariableDeclarator[id.type='ObjectPattern'][init.callee.name='useWeb3React'] > ObjectPattern > Property[key.name='chainId']",
+                  message: 'Do not use chainId directly from useWeb3React. Use the useAccount hook instead.',
+                },
+                {
+                  selector:
+                    "VariableDeclarator[id.type='ObjectPattern'][init.callee.name='useAccount'] > ObjectPattern > Property[key.name='address']",
+                  message: 'Do not use address directly from useAccount. Access account.address instead.',
+                },
+                {
+                  selector:
+                    "TSTypeAssertion[typeAnnotation.typeName.name='Address'], TSAsExpression[typeAnnotation.typeName.name='Address']",
+                  message:
+                    'Do not use type assertions with Address. Use assumeOxAddress or isAddress/getAddress from viem.',
+                },
+              ],
+            },
           },
           {
-            selector:
-              "ImportDeclaration[source.value='src/nft/components/icons'], ImportDeclaration[source.value='nft/components/icons']",
-            message: 'Please import icons from nft/components/iconExports instead of directly from icons.tsx',
+            files: ['apps/web/**/*.e2e.test.ts'],
+            rules: {
+              'eslint-js/no-restricted-syntax': [
+                'error' as const,
+                {
+                  selector: "CallExpression[callee.property.name='getByTestId'] > Literal",
+                  message: 'Use TestID enum instead of string literals with getByTestId.',
+                },
+              ],
+            },
           },
           {
-            selector:
-              "VariableDeclarator[id.type='ObjectPattern'][init.callee.name='useWeb3React'] > ObjectPattern > Property[key.name='account']",
-            message:
-              "Do not use account directly from useWeb3React. Use the useAccount hook from 'hooks/useAccount' instead.",
+            files: ['apps/web/**/*.e2e.test.ts'],
+            rules: {
+              'eslint-js/no-restricted-syntax': [
+                'error' as const,
+                {
+                  selector:
+                    "CallExpression[callee.name='getTest'] > ObjectExpression > Property[key.name='withAnvil'][value.value=true]",
+                  message: 'Anvil tests must be in *.anvil.e2e.test.ts files.',
+                },
+                {
+                  selector: "MemberExpression[object.name='anvil']",
+                  message: 'Anvil fixture usage must be in *.anvil.e2e.test.ts files.',
+                },
+              ],
+            },
           },
-          {
-            selector:
-              "VariableDeclarator[id.type='ObjectPattern'][init.callee.name='useWeb3React'] > ObjectPattern > Property[key.name='chainId']",
-            message: 'Do not use chainId directly from useWeb3React. Use the useAccount hook instead.',
-          },
-          {
-            selector:
-              "VariableDeclarator[id.type='ObjectPattern'][init.callee.name='useAccount'] > ObjectPattern > Property[key.name='address']",
-            message: 'Do not use address directly from useAccount. Access account.address instead.',
-          },
-          {
-            selector:
-              "TSTypeAssertion[typeAnnotation.typeName.name='Address'], TSAsExpression[typeAnnotation.typeName.name='Address']",
-            message: 'Do not use type assertions with Address. Use assumeOxAddress or isAddress/getAddress from viem.',
-          },
-        ],
-      },
-    },
-    {
-      files: ['apps/web/**/*.e2e.test.ts'],
-      rules: {
-        'no-restricted-syntax': [
-          'error',
-          {
-            selector: "CallExpression[callee.property.name='getByTestId'] > Literal",
-            message: 'Use TestID enum instead of string literals with getByTestId.',
-          },
-        ],
-      },
-    },
-    {
-      files: ['apps/web/**/*.e2e.test.ts'],
-      rules: {
-        'no-restricted-syntax': [
-          'error',
-          {
-            selector:
-              "CallExpression[callee.name='getTest'] > ObjectExpression > Property[key.name='withAnvil'][value.value=true]",
-            message: 'Anvil tests must be in *.anvil.e2e.test.ts files.',
-          },
-          {
-            selector: "MemberExpression[object.name='anvil']",
-            message: 'Anvil fixture usage must be in *.anvil.e2e.test.ts files.',
-          },
-        ],
-      },
-    },
+        ]
+      : []),
     {
       files: [
         'apps/web/vite.config.*',
@@ -1267,7 +1276,6 @@ export default defineConfig({
         'no-console': 'off',
         'no-lone-blocks': 'off',
         'no-unsafe-optional-chaining': 'off',
-        'no-restricted-syntax': 'off',
         'typescript/triple-slash-reference': 'off',
         'typescript/await-thenable': 'off',
         'typescript/no-unsafe-return': 'off',
@@ -1276,6 +1284,7 @@ export default defineConfig({
         'prefer-const': 'off',
         'vitest/hoisted-apis-on-top': 'error',
         ...(!isFastLint && {
+          'eslint-js/no-restricted-syntax': 'off',
           'universe-custom/jsx-prop-order': 'off',
           'universe-custom/no-nested-component-definitions': 'off',
           'universe-custom/no-relative-import-paths': 'off',

@@ -12,6 +12,7 @@ interface ToucanActionButtonProps {
   isDisabled?: boolean
   loading?: boolean
   shouldUseBranded?: boolean
+  shouldUseSoftBranded?: boolean
   disabledTooltip?: ReactNode
   disabledEmphasis?: ButtonEmphasis
   emphasis?: ButtonEmphasis
@@ -24,6 +25,7 @@ export function ToucanActionButton({
   isDisabled = false,
   loading = false,
   shouldUseBranded = false,
+  shouldUseSoftBranded = false,
   disabledTooltip,
   disabledEmphasis = 'secondary',
   emphasis,
@@ -33,13 +35,13 @@ export function ToucanActionButton({
   ...props
 }: ToucanActionButtonProps & ButtonProps): JSX.Element {
   const tokenColor = useAuctionStore((state) => state.tokenColor)
-  const { validTokenColor } = useColorsFromTokenColor(tokenColor)
+  const { validTokenColor, lightTokenColor } = useColorsFromTokenColor(tokenColor)
 
   const textColor = useMemo(() => (tokenColor ? getContrastPassingTextColor(tokenColor) : '$white'), [tokenColor])
 
   const showDisabledStyle = isDisabled
 
-  const useCustomEmphasis = !showDisabledStyle && !shouldUseBranded && emphasis
+  const useCustomEmphasis = !showDisabledStyle && !shouldUseBranded && !shouldUseSoftBranded && emphasis
 
   const button = (
     <Trace logPress={!!elementName} element={elementName}>
@@ -47,18 +49,28 @@ export function ToucanActionButton({
         fill={false}
         {...(showDisabledStyle
           ? { backgroundColor: '$surface3', emphasis: disabledEmphasis }
-          : shouldUseBranded
-            ? { variant: 'branded' }
-            : useCustomEmphasis
-              ? { emphasis }
-              : { backgroundColor: validTokenColor, emphasis: 'primary' })}
+          : shouldUseSoftBranded
+            ? { backgroundColor: lightTokenColor, variant: 'branded', emphasis: 'secondary' }
+            : shouldUseBranded
+              ? { variant: 'branded' }
+              : useCustomEmphasis
+                ? { emphasis }
+                : { backgroundColor: validTokenColor, emphasis: 'primary' })}
         isDisabled={isDisabled}
         loading={loading}
         onPress={onPress}
         dd-action-name={datadogActionName}
       >
         <Button.Text
-          color={showDisabledStyle ? '$neutral2' : shouldUseBranded || useCustomEmphasis ? undefined : textColor}
+          color={
+            showDisabledStyle
+              ? '$neutral2'
+              : shouldUseSoftBranded
+                ? validTokenColor
+                : shouldUseBranded || useCustomEmphasis
+                  ? undefined
+                  : textColor
+          }
         >
           {label}
         </Button.Text>

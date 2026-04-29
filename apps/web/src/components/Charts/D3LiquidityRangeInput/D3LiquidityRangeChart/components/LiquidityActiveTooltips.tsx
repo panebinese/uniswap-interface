@@ -3,6 +3,7 @@ import { Currency } from '@uniswap/sdk-core'
 import { TickTooltip } from '~/components/Charts/ActiveLiquidityChart/TickTooltip'
 import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
 import { PriceDifferenceTooltips } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/components/PriceDifferenceTooltips'
+import { PriceTooltip } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/components/PriceTooltip'
 import { useChartDragState } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/selectors/dragSelectors'
 import { useChartHoverState } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/selectors/hoverSelectors'
 import { getDisplayPriceFromTick } from '~/utils/getTickToPrice'
@@ -44,6 +45,14 @@ export function LiquidityActiveTooltips({
     <>
       {/* Price difference tooltips - show on hover only */}
       <PriceDifferenceTooltips />
+
+      {/* Price tooltip - shows hovered price on the right edge of the price chart */}
+      <PriceTooltip
+        quoteCurrency={quoteCurrency}
+        baseCurrency={baseCurrency}
+        priceInverted={priceInverted}
+        protocolVersion={protocolVersion}
+      />
 
       {/* Hover tooltip (only show when not dragging) */}
       {hoveredY && hoveredTick && dragStartY === null ? (

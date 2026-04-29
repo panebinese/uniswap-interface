@@ -45,6 +45,8 @@ export interface NormalizedClearingPriceSeries {
   isAuctionInProgress: boolean
   /** Auction end time (for x-axis extension in in-progress auctions) */
   auctionEndTime: UTCTimestamp | undefined
+  /** Pre-bid end time — price line before this timestamp is rendered dashed to distinguish from the clearing phase */
+  preBidEndTime: UTCTimestamp | undefined
 }
 
 export interface ClearingPriceZoomState {
@@ -119,6 +121,8 @@ export interface ClearingPriceChartControllerUpdateParams {
   isZoomEnabled?: boolean
   /** When true, disables mouse wheel scroll/scale so an external handler can manage Y-axis pan/zoom */
   disableMouseWheelInteractions?: boolean
+  /** Pre-bid end time. Data points with time < this are rendered as a dashed line (no area fill). */
+  preBidEndTime?: UTCTimestamp
 }
 
 export interface YAxisLabel {
@@ -135,4 +139,6 @@ export interface ClearingPriceTooltipState {
   flipLeft: boolean
   /** The hovered data point */
   data: ClearingPriceChartPoint
+  /** When true, the hovered point is the pre-bid / clearing boundary — show a "Pre-bidding ended" label */
+  isPreBidEnd?: boolean
 }

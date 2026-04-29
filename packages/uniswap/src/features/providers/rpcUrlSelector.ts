@@ -2,6 +2,7 @@ import { Experiments, getExperimentValue, PrivateRpcProperties } from '@universe
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { RPCType, UniverseChainId } from 'uniswap/src/features/chains/types'
 import {
+  DEFAULT_CALLDATA_HINTS_ENABLED,
   DEFAULT_FLASHBOTS_ENABLED,
   FLASHBOTS_DEFAULT_REFUND_PERCENT,
   FLASHBOTS_RPC_URL,
@@ -17,6 +18,7 @@ export interface RpcConfig {
 
 export interface FlashbotsConfig {
   refundPercent: number
+  calldataHintsEnabled: boolean
 }
 
 /**
@@ -44,11 +46,17 @@ export function selectRpcUrl(chainId: UniverseChainId, rpcType: RPCType = RPCTyp
           param: PrivateRpcProperties.RefundPercent,
           defaultValue: FLASHBOTS_DEFAULT_REFUND_PERCENT,
         })
+        const calldataHintsEnabled = getExperimentValue({
+          experiment: Experiments.PrivateRpc,
+          param: PrivateRpcProperties.CalldataHintsEnabled,
+          defaultValue: DEFAULT_CALLDATA_HINTS_ENABLED,
+        })
         return {
           rpcUrl: FLASHBOTS_RPC_URL,
           shouldUseFlashbots: true,
           flashbotsConfig: {
             refundPercent: flashbotsRefundPercent,
+            calldataHintsEnabled,
           },
         }
       }

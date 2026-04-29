@@ -41,6 +41,7 @@ export function submitTokenIssueReport({
   tokenAddress,
   tokenName,
   isMarkedSpam,
+  isMultichainAsset = false,
   reportOptions,
   reportTexts,
 }: {
@@ -49,6 +50,7 @@ export function submitTokenIssueReport({
   tokenAddress?: string
   tokenName?: string
   isMarkedSpam?: Maybe<boolean>
+  isMultichainAsset?: boolean
   reportOptions: TokenReportOption[]
   reportTexts: Map<TokenReportOption, string>
 }): void {
@@ -59,6 +61,7 @@ export function submitTokenIssueReport({
     token_contract_address: tokenAddress ?? NATIVE_ANALYTICS_ADDRESS_VALUE,
     chain_id: chainId,
     is_marked_spam: isMarkedSpam,
+    is_multichain_asset: isMultichainAsset,
     spam_token: reportOptions.includes(TokenReportOption.Spam),
     imposter_token: reportOptions.includes(TokenReportOption.Imposter),
     hidden_fees: reportOptions.includes(TokenReportOption.HiddenFees),

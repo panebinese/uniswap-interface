@@ -190,12 +190,11 @@ test.describe(
       })
 
       test('displays bottom bar on token details page', async ({ page }) => {
-        // Verify bottom bar on token details page
         await page.goto('/explore/tokens/ethereum/NATIVE')
         const bottomBar = page.getByTestId(TestID.TokenDetailsMobileBottomBar)
         await expect(bottomBar).toBeVisible()
         await expect(bottomBar.getByText('Buy')).toBeVisible()
-        await expect(bottomBar.getByText('Sell')).toBeVisible()
+        // "Sell" only appears when the connected wallet has a token balance
       })
     })
   },

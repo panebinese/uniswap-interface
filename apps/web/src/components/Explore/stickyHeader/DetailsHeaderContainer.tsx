@@ -1,14 +1,19 @@
+import { ComponentProps } from 'react'
 import { Flex, useMedia } from 'ui/src'
 import { HEADER_TRANSITION } from '~/components/Explore/stickyHeader/constants'
 import { useAppHeaderHeight } from '~/hooks/useAppHeaderHeight'
 
-interface DetailsHeaderContainerProps {
+type DetailsHeaderContainerProps = ComponentProps<typeof Flex> & {
   children: React.ReactNode
   /** When true, reduces vertical padding for a compact sticky header. Pass from page scroll state. */
   isCompact?: boolean
 }
 
-export function DetailsHeaderContainer({ children, isCompact = false }: DetailsHeaderContainerProps): JSX.Element {
+export function DetailsHeaderContainer({
+  children,
+  isCompact = false,
+  ...flexProps
+}: DetailsHeaderContainerProps): JSX.Element {
   const appHeaderHeight = useAppHeaderHeight()
   const media = useMedia()
 
@@ -25,6 +30,7 @@ export function DetailsHeaderContainer({ children, isCompact = false }: DetailsH
         position: 'sticky',
         top: appHeaderHeight,
       }}
+      {...flexProps}
     >
       <Flex
         width="100%"

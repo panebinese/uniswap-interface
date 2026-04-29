@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { opacifyRaw } from 'ui/src/theme/color/utils'
 
+const BANNER_ACCENT_OPACITY = 15
+
 interface UseTokenLaunchedBannerDataProps {
   tokenColor?: string
   tokenColorLoading?: boolean
@@ -25,7 +27,7 @@ export function useTokenLaunchedBannerColorData({
 
   const bannerGradient = useMemo(() => {
     const surface2 = colors.surface2.val
-    const accentSoft = opacifyRaw(60, accentColor)
+    const accentSoft = opacifyRaw(BANNER_ACCENT_OPACITY, accentColor)
     const dots = opacifyRaw(10, accentSoft)
 
     let backgroundImage = `radial-gradient(circle at 1px 1px, ${dots} 1px, transparent 0)`

@@ -142,7 +142,7 @@ const OverflowMenu = ({ onRemove, testID }: { onRemove: () => void; testID?: str
         offsetY={4}
         adaptToSheet={false}
       >
-        <TouchableArea testID={testID}>
+        <TouchableArea testID={testID} shouldStopPropagation={false}>
           <MoreHorizontal size={20} color="$neutral2" />
         </TouchableArea>
       </ContextMenu>
@@ -192,7 +192,7 @@ const AuthenticatorRow = ({
 
 function LoadingPasskeyRow() {
   return (
-    <Flex row gap="$gap12" alignItems="center" pb="$padding16">
+    <Flex row gap="$gap12" alignItems="center" pb="$padding16" testID={TestID.PasskeyLoadingRow}>
       <Loader.Box borderRadius="$roundedFull" height={40} width={40} opacity={0.5} />
       <Flex gap="$gap8">
         <Loader.Box borderRadius="$rounded12" height={14} width={72} opacity={0.5} />
@@ -324,6 +324,7 @@ export default function PasskeyMenu({ onClose }: { onClose: () => void }) {
               target="_blank"
               rel="noreferrer"
               href={uniswapUrls.helpArticleUrls.passkeysInfo}
+              height="$padding20"
               {...ClickableTamaguiStyle}
             >
               <Buoy size="$icon.20" color="$neutral2" />

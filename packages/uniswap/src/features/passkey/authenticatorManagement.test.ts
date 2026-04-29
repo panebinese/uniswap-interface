@@ -37,7 +37,24 @@ vi.mock('@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-walle
 
 vi.mock('uniswap/src/features/passkey/embeddedWallet', () => ({
   authenticateWithPasskey: vi.fn(),
+  refreshNeckSession: vi.fn(),
 }))
+
+vi.mock('uniswap/src/features/passkey/deviceSession', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('uniswap/src/features/passkey/deviceSession')>()
+  return {
+    ...actual,
+    loadNeckMetadata: vi.fn().mockReturnValue(null),
+    loadNeckSigningKey: vi.fn().mockResolvedValue('mock-private-key'),
+    storeNeckMetadata: vi.fn(),
+    storeNeckSigningKey: vi.fn().mockResolvedValue(undefined),
+    generateDeviceKeyPair: vi.fn().mockResolvedValue({
+      privateKey: 'mock-private-key',
+      publicKeyBase64: 'mock-public-key',
+    }),
+    signWithDeviceKey: vi.fn().mockResolvedValue('mock-device-signature'),
+  }
+})
 
 vi.mock('uniswap/src/features/passkey/passkey', () => ({
   authenticatePasskey: vi.fn(),
@@ -87,6 +104,10 @@ describe('authenticatorManagement', () => {
   describe('listAuthenticators', () => {
     it('returns authenticators from the API', async () => {
       const mockAuthenticators = [{ credentialId: 'cred-1' }, { credentialId: 'cred-2' }]
+      mockFetchChallengeRequest.mockResolvedValue({
+        signingPayload: 'mock-signing-payload',
+        sessionActive: true,
+      } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
       mockFetchListAuthenticatorsRequest.mockResolvedValue({
         authenticators: mockAuthenticators,
         recoveryMethods: [],
@@ -96,7 +117,9 @@ describe('authenticatorManagement', () => {
 
       expect(result.authenticators).toEqual(mockAuthenticators)
       expect(result.recoveryMethods).toEqual([])
-      expect(mockFetchListAuthenticatorsRequest).toHaveBeenCalledWith({ walletId: 'wallet-1' })
+      expect(mockFetchListAuthenticatorsRequest).toHaveBeenCalledWith({
+        deviceAuth: expect.objectContaining({ walletId: 'wallet-1' }),
+      })
     })
   })
 

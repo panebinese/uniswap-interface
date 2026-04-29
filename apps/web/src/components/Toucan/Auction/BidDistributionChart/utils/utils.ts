@@ -127,7 +127,7 @@ export function mergeUserBidVolumes(params: {
  * @param decimals - Number of decimals
  * @returns Decimal number
  */
-function toDecimal(value: string, decimals: number): number {
+export function toDecimal(value: string, decimals: number): number {
   return Number(formatUnits(BigInt(value), decimals))
 }
 

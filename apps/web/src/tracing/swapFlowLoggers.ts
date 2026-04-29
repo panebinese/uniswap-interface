@@ -89,6 +89,7 @@ const ROUTING_TO_SWAP_ROUTING: Partial<Record<TradingApi.Routing, SwapRouting>> 
   [TradingApi.Routing.DUTCH_V2]: 'uniswap_x_v2',
   [TradingApi.Routing.DUTCH_V3]: 'uniswap_x_v3',
   [TradingApi.Routing.BRIDGE]: 'bridge',
+  [TradingApi.Routing.CHAINED]: 'chained',
 }
 
 export function logUniswapXSwapFinalized({

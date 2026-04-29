@@ -39,7 +39,9 @@ export const SlideOutMenu = ({ children, onClose, title, rightIcon, ...flexProps
               <Text color="$neutral1" variant="subheading1">
                 {title}
               </Text>
-              <Flex width="15%">{rightIcon}</Flex>
+              <Flex width="15%" alignItems="center" justifyContent="flex-end">
+                {rightIcon}
+              </Flex>
             </Flex>
             {children}
           </Flex>

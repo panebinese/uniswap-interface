@@ -66,7 +66,7 @@ export function useTokenBalanceListMultichainExpansion({
             isTestnetModeEnabled,
           })
           for (const t of orderedTokens) {
-            result.push(makeChainRowId(currencyId as CurrencyId, t.chainId))
+            result.push(makeChainRowId(currencyId as CurrencyId, t))
           }
         }
       }

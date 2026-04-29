@@ -54,7 +54,6 @@ export function* handleAtomicSendCalls(
     const signer = yield* call(getSigner, address)
     const batchId = yield* call(() => sendCalls({ signer, batchedTxRequests, from: address, chainId }))
 
-    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     const connectorId = getAccount(wagmiConfig).connector?.id
     const batchInfo = { connectorId, batchId, chainId }
 

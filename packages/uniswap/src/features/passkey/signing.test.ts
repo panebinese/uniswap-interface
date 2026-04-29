@@ -1,6 +1,4 @@
 import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
-import { clearDeviceSession, generateDeviceKeyPair, setDeviceSession } from 'uniswap/src/features/passkey/deviceSession'
-import { authenticateWithPasskey } from 'uniswap/src/features/passkey/embeddedWallet'
 import {
   exportEncryptedSeedPhrase,
   sign7702AuthorizationWithPasskey,
@@ -23,8 +21,20 @@ vi.mock('uniswap/src/data/rest/embeddedWallet/requests', () => ({
   },
 }))
 
+const mockAuthenticateWithPasskey = vi.fn()
+const mockRefreshNeckSession = vi.fn()
 vi.mock('uniswap/src/features/passkey/embeddedWallet', () => ({
-  authenticateWithPasskey: vi.fn(),
+  authenticateWithPasskey: (...args: unknown[]) => mockAuthenticateWithPasskey(...args),
+  refreshNeckSession: (...args: unknown[]) => mockRefreshNeckSession(...args),
+}))
+
+const mockLoadNeckMetadata = vi.fn()
+const mockSignWithDeviceKey = vi.fn()
+const mockEnsureNeckKeyPair = vi.fn()
+vi.mock('uniswap/src/features/passkey/deviceSession', () => ({
+  loadNeckMetadata: (...args: unknown[]) => mockLoadNeckMetadata(...args),
+  signWithDeviceKey: (...args: unknown[]) => mockSignWithDeviceKey(...args),
+  ensureNeckKeyPair: (...args: unknown[]) => mockEnsureNeckKeyPair(...args),
 }))
 
 vi.mock('@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb', () => ({
@@ -41,6 +51,10 @@ vi.mock('@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-walle
   },
 }))
 
+vi.mock('@universe/api', () => ({
+  SharedQueryClient: { setQueryData: vi.fn() },
+}))
+
 const MOCK_ACTION = {
   SIGN_MESSAGE: 1,
   SIGN_TRANSACTION: 2,
@@ -48,7 +62,10 @@ const MOCK_ACTION = {
   EXPORT_SEED_PHRASE: 4,
 } as const
 
-const mockAuthenticateWithPasskey = authenticateWithPasskey as MockedFunction<typeof authenticateWithPasskey>
+const MOCK_AUTH_TYPES = {
+  PASSKEY_AUTHENTICATION: 1,
+} as const
+
 const mockFetchChallengeRequest = EmbeddedWalletApiClient.fetchChallengeRequest as MockedFunction<
   typeof EmbeddedWalletApiClient.fetchChallengeRequest
 >
@@ -64,35 +81,63 @@ const mockFetchSignTypedDataRequest = EmbeddedWalletApiClient.fetchSignTypedData
 const mockFetchExportSeedPhraseRequest = EmbeddedWalletApiClient.fetchExportSeedPhraseRequest as MockedFunction<
   typeof EmbeddedWalletApiClient.fetchExportSeedPhraseRequest
 >
+const mockFetchSign7702Auth = EmbeddedWalletApiClient.fetchSign7702AuthorizationRequest as MockedFunction<
+  typeof EmbeddedWalletApiClient.fetchSign7702AuthorizationRequest
+>
+const mockFetchSign7702Tx = EmbeddedWalletApiClient.fetchSign7702TransactionRequest as MockedFunction<
+  typeof EmbeddedWalletApiClient.fetchSign7702TransactionRequest
+>
 
-const MOCK_AUTH_TYPES = {
-  PASSKEY_AUTHENTICATION: 1,
-} as const
+/**
+ * Sets up mocks for the signWithDeviceSessionOrPasskey flow with active session.
+ */
+function setupDeviceSessionMocks(walletId = 'wallet-1'): void {
+  mockLoadNeckMetadata.mockReturnValue({
+    publicKeyBase64: 'mock-device-public-key',
+    walletId,
+    deviceKeyQuorumId: 'quorum-1',
+  })
+  mockEnsureNeckKeyPair.mockResolvedValue({
+    privateKey: 'mock-private-key',
+    publicKeyBase64: 'mock-device-public-key',
+    isFresh: false,
+  })
+  mockFetchChallengeRequest.mockResolvedValue({
+    signingPayload: 'mock-signing-payload',
+    sessionActive: true,
+  } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
+  mockSignWithDeviceKey.mockResolvedValue('mock-device-signature')
+}
+
+/**
+ * Sets up mocks for the signWithDeviceSessionOrPasskey flow when no session exists.
+ * ensureNeckKeyPair absorbs the generate + persist steps and returns the fresh pair.
+ */
+function setupNoSessionMocks(): void {
+  mockLoadNeckMetadata.mockReturnValue(null)
+  // isFresh: true simulates a fresh regeneration — the caller should trigger a
+  // refreshNeckSession upfront to bind the new pub key server-side.
+  mockEnsureNeckKeyPair.mockResolvedValue({
+    privateKey: 'mock-generated-private-key',
+    publicKeyBase64: 'mock-generated-public-key',
+    isFresh: true,
+  })
+  mockFetchChallengeRequest.mockResolvedValue({
+    signingPayload: 'mock-signing-payload',
+    sessionActive: true,
+  } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
+  mockRefreshNeckSession.mockResolvedValue(undefined)
+  mockSignWithDeviceKey.mockResolvedValue('mock-device-signature')
+}
 
 describe('signing', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    clearDeviceSession()
   })
 
-  afterEach(() => {
-    clearDeviceSession()
-  })
-
-  describe('signWithDeviceSessionOrPasskey fast-path (device session)', () => {
-    it('uses device session when available and signingPayload is returned', async () => {
-      const { privateKey } = await generateDeviceKeyPair()
-      setDeviceSession({
-        privateKey,
-        policyId: 'policy-1',
-        policyExpiresAt: Date.now() + 60_000,
-        walletId: 'wallet-1',
-      })
-
-      mockFetchChallengeRequest.mockResolvedValue({
-        signingPayload: btoa('test-payload').replace(/\+/g, '-').replace(/\//g, '_').replace(/[=]+$/, ''),
-      } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
-
+  describe('signWithDeviceSessionOrPasskey (active session)', () => {
+    it('uses NECK device auth when session is active', async () => {
+      setupDeviceSessionMocks()
       mockFetchSignMessagesRequest.mockResolvedValue({
         signatures: ['0xsig123'],
       } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchSignMessagesRequest>>)
@@ -105,69 +150,104 @@ describe('signing', () => {
           type: MOCK_AUTH_TYPES.PASSKEY_AUTHENTICATION,
           action: MOCK_ACTION.SIGN_MESSAGE,
           walletId: 'wallet-1',
+          devicePublicKey: 'mock-device-public-key',
           message: 'hello',
         }),
       )
       expect(mockFetchSignMessagesRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           messages: ['hello'],
-          auth: expect.objectContaining({
+          auth: {
             case: 'deviceAuth',
-            value: expect.objectContaining({ walletId: 'wallet-1' }),
-          }),
+            value: { deviceSignature: 'mock-device-signature', walletId: 'wallet-1' },
+          },
         }),
       )
-      // Should NOT fall back to passkey
-      expect(mockAuthenticateWithPasskey).not.toHaveBeenCalled()
+      expect(mockRefreshNeckSession).not.toHaveBeenCalled()
     })
   })
 
-  describe('passkey fallback (no device session)', () => {
-    it('falls back to passkey when no device session exists', async () => {
-      mockAuthenticateWithPasskey.mockResolvedValue('passkey-credential-123')
+  describe('signWithDeviceSessionOrPasskey (no session, refreshes NECK)', () => {
+    it('generates keypair and refreshes NECK when no metadata exists', async () => {
+      setupNoSessionMocks()
       mockFetchSignMessagesRequest.mockResolvedValue({
-        signatures: ['0xpasskeysig'],
+        signatures: ['0xsig-after-refresh'],
       } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchSignMessagesRequest>>)
 
-      const result = await signMessageWithPasskey('hello')
+      const result = await signMessageWithPasskey('hello', 'wallet-1')
 
-      expect(result).toBe('0xpasskeysig')
-      expect(mockAuthenticateWithPasskey).toHaveBeenCalledWith(MOCK_ACTION.SIGN_MESSAGE, { message: 'hello' })
-      expect(mockFetchSignMessagesRequest).toHaveBeenCalledWith(
+      expect(result).toBe('0xsig-after-refresh')
+      expect(mockEnsureNeckKeyPair).toHaveBeenCalledWith('wallet-1')
+      // isFresh: true triggers an upfront refresh to bind the new pub key server-side
+      expect(mockRefreshNeckSession).toHaveBeenCalledWith('mock-generated-public-key', 'wallet-1')
+      // After upfront refresh, a single Challenge suffices — server returns sessionActive: true
+      expect(mockFetchChallengeRequest).toHaveBeenCalledTimes(1)
+      expect(mockFetchChallengeRequest).toHaveBeenCalledWith(
         expect.objectContaining({
-          auth: { case: 'credential', value: 'passkey-credential-123' },
+          devicePublicKey: 'mock-generated-public-key',
         }),
       )
     })
 
-    it('falls back to passkey when challenge has no signingPayload', async () => {
-      const { privateKey } = await generateDeviceKeyPair()
-      setDeviceSession({
-        privateKey,
-        policyId: 'policy-1',
-        policyExpiresAt: Date.now() + 60_000,
+    it('throws when challenge has no signingPayload', async () => {
+      mockLoadNeckMetadata.mockReturnValue({
+        publicKeyBase64: 'mock-key',
         walletId: 'wallet-1',
+        deviceKeyQuorumId: 'q-1',
       })
-
+      mockEnsureNeckKeyPair.mockResolvedValue({
+        privateKey: 'mock-private-key',
+        publicKeyBase64: 'mock-key',
+        isFresh: false,
+      })
       mockFetchChallengeRequest.mockResolvedValue({
         signingPayload: undefined,
+        sessionActive: false,
       } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
+      mockRefreshNeckSession.mockResolvedValue(undefined)
 
-      mockAuthenticateWithPasskey.mockResolvedValue('fallback-cred')
+      await expect(signMessageWithPasskey('hello')).rejects.toThrow('Challenge did not return a signing payload')
+    })
+
+    it('fires a second refreshNeckSession when post-upfront-refresh Challenge still returns sessionActive: false', async () => {
+      // isFresh: true triggers an upfront refresh. If the server hasn't propagated
+      // the new NECK registration by the first Challenge (rare timing), the code
+      // must fire a second refreshNeckSession and re-Challenge.
+      mockLoadNeckMetadata.mockReturnValue(null)
+      mockEnsureNeckKeyPair.mockResolvedValue({
+        privateKey: 'mock-generated-private-key',
+        publicKeyBase64: 'mock-generated-public-key',
+        isFresh: true,
+      })
+      mockFetchChallengeRequest
+        .mockResolvedValueOnce({
+          signingPayload: 'first-payload',
+          sessionActive: false,
+        } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
+        .mockResolvedValueOnce({
+          signingPayload: 'second-payload',
+          sessionActive: true,
+        } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
+      mockRefreshNeckSession.mockResolvedValue(undefined)
+      mockSignWithDeviceKey.mockResolvedValue('mock-device-signature')
       mockFetchSignMessagesRequest.mockResolvedValue({
-        signatures: ['0xfallbacksig'],
+        signatures: ['0xsig-after-double-refresh'],
       } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchSignMessagesRequest>>)
 
-      const result = await signMessageWithPasskey('hello')
+      const result = await signMessageWithPasskey('hello', 'wallet-1')
 
-      expect(result).toBe('0xfallbacksig')
-      expect(mockAuthenticateWithPasskey).toHaveBeenCalled()
+      expect(result).toBe('0xsig-after-double-refresh')
+      // Two refreshes: one upfront (isFresh: true), one for the not-yet-active Challenge
+      expect(mockRefreshNeckSession).toHaveBeenCalledTimes(2)
+      expect(mockFetchChallengeRequest).toHaveBeenCalledTimes(2)
+      // Second (post-recovery) Challenge's payload is what was signed
+      expect(mockSignWithDeviceKey).toHaveBeenCalledWith('mock-generated-private-key', 'second-payload')
     })
   })
 
   describe('signTransactionWithPasskey', () => {
-    it('calls through correctly with passkey fallback', async () => {
-      mockAuthenticateWithPasskey.mockResolvedValue('tx-cred')
+    it('calls through correctly with device auth', async () => {
+      setupDeviceSessionMocks()
       mockFetchSignTransactionsRequest.mockResolvedValue({
         signatures: ['0xtxsig'],
       } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchSignTransactionsRequest>>)
@@ -175,21 +255,24 @@ describe('signing', () => {
       const result = await signTransactionWithPasskey('0xtxdata')
 
       expect(result).toBe('0xtxsig')
-      expect(mockAuthenticateWithPasskey).toHaveBeenCalledWith(MOCK_ACTION.SIGN_TRANSACTION, {
-        transaction: '0xtxdata',
-      })
+      expect(mockFetchChallengeRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: MOCK_ACTION.SIGN_TRANSACTION,
+          transaction: '0xtxdata',
+        }),
+      )
       expect(mockFetchSignTransactionsRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           transactions: ['0xtxdata'],
-          auth: { case: 'credential', value: 'tx-cred' },
+          auth: expect.objectContaining({ case: 'deviceAuth' }),
         }),
       )
     })
   })
 
   describe('signTypedDataWithPasskey', () => {
-    it('calls through correctly with passkey fallback', async () => {
-      mockAuthenticateWithPasskey.mockResolvedValue('typed-cred')
+    it('calls through correctly with device auth', async () => {
+      setupDeviceSessionMocks()
       mockFetchSignTypedDataRequest.mockResolvedValue({
         signatures: ['0xtypedsig'],
       } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchSignTypedDataRequest>>)
@@ -197,13 +280,16 @@ describe('signing', () => {
       const result = await signTypedDataWithPasskey('{"type":"data"}')
 
       expect(result).toBe('0xtypedsig')
-      expect(mockAuthenticateWithPasskey).toHaveBeenCalledWith(MOCK_ACTION.SIGN_TYPED_DATA, {
-        typedData: '{"type":"data"}',
-      })
+      expect(mockFetchChallengeRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: MOCK_ACTION.SIGN_TYPED_DATA,
+          typedData: '{"type":"data"}',
+        }),
+      )
       expect(mockFetchSignTypedDataRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           typedDataBatch: ['{"type":"data"}'],
-          auth: { case: 'credential', value: 'typed-cred' },
+          auth: expect.objectContaining({ case: 'deviceAuth' }),
         }),
       )
     })
@@ -235,12 +321,8 @@ describe('signing', () => {
   })
 
   describe('sign7702AuthorizationWithPasskey', () => {
-    const mockFetchSign7702Auth = EmbeddedWalletApiClient.fetchSign7702AuthorizationRequest as MockedFunction<
-      typeof EmbeddedWalletApiClient.fetchSign7702AuthorizationRequest
-    >
-
-    it('uses passkey fallback and returns correct shape', async () => {
-      mockAuthenticateWithPasskey.mockResolvedValue('auth-cred')
+    it('sends devicePublicKey in challenge and returns correct shape', async () => {
+      setupDeviceSessionMocks()
       mockFetchSign7702Auth.mockResolvedValue({
         contractAddress: '0xcontract',
         chainId: 130,
@@ -265,25 +347,31 @@ describe('signing', () => {
         s: '0xs',
         yParity: 1,
       })
-      expect(mockAuthenticateWithPasskey).toHaveBeenCalledWith(
-        14,
+      expect(mockFetchChallengeRequest).toHaveBeenCalledWith(
         expect.objectContaining({
+          action: 14,
           walletId: 'wallet-1',
+          devicePublicKey: 'mock-device-public-key',
           authorizationContractAddress: '0xcontract',
           authorizationChainId: '130',
           authorizationNonce: '5',
         }),
       )
+      expect(mockFetchSign7702Auth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contractAddress: '0xcontract',
+          chainId: 130,
+          nonce: 5,
+          auth: {
+            case: 'deviceAuth',
+            value: { deviceSignature: 'mock-device-signature', walletId: 'wallet-1' },
+          },
+        }),
+      )
     })
 
-    it('uses device session path when available', async () => {
-      const { privateKey } = await generateDeviceKeyPair()
-      setDeviceSession({ privateKey, policyId: 'policy-1', policyExpiresAt: Date.now() + 60_000, walletId: 'wallet-1' })
-
-      mockFetchChallengeRequest.mockResolvedValue({
-        signingPayload: btoa('test-payload').replace(/\+/g, '-').replace(/\//g, '_').replace(/[=]+$/, ''),
-      } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
-
+    it('refreshes NECK session when not active', async () => {
+      setupNoSessionMocks()
       mockFetchSign7702Auth.mockResolvedValue({
         contractAddress: '0xcontract',
         chainId: 130,
@@ -293,19 +381,26 @@ describe('signing', () => {
         yParity: 0,
       })
 
-      const result = await sign7702AuthorizationWithPasskey({ contractAddress: '0xcontract', chainId: 130, nonce: 5 })
+      const result = await sign7702AuthorizationWithPasskey({
+        contractAddress: '0xcontract',
+        chainId: 130,
+        nonce: 5,
+        walletId: 'wallet-1',
+      })
 
       expect(result.yParity).toBe(0)
-      expect(mockFetchSign7702Auth).toHaveBeenCalledWith(
+      expect(mockRefreshNeckSession).toHaveBeenCalled()
+      expect(mockFetchChallengeRequest).toHaveBeenCalledWith(
         expect.objectContaining({
-          auth: expect.objectContaining({ case: 'deviceAuth' }),
+          devicePublicKey: 'mock-generated-public-key',
         }),
       )
-      expect(mockAuthenticateWithPasskey).not.toHaveBeenCalled()
     })
 
     it('throws when no walletId available', async () => {
-      mockAuthenticateWithPasskey.mockResolvedValue(undefined)
+      mockLoadNeckMetadata.mockReturnValue(null)
+      // No walletId passed + no metadata → throws before ensureNeckKeyPair is called
+
       await expect(
         sign7702AuthorizationWithPasskey({ contractAddress: '0xcontract', chainId: 130, nonce: 5 }),
       ).rejects.toThrow()
@@ -313,9 +408,6 @@ describe('signing', () => {
   })
 
   describe('sign7702TransactionWithPasskey', () => {
-    const mockFetchSign7702Tx = EmbeddedWalletApiClient.fetchSign7702TransactionRequest as MockedFunction<
-      typeof EmbeddedWalletApiClient.fetchSign7702TransactionRequest
-    >
     const txParams = {
       to: '0xrecipient',
       data: '0xcalldata',
@@ -329,37 +421,41 @@ describe('signing', () => {
       walletId: 'wallet-1',
     }
 
-    it('returns signed transaction hex via passkey fallback', async () => {
-      mockAuthenticateWithPasskey.mockResolvedValue('tx-cred')
+    it('sends devicePublicKey in challenge and returns signed transaction', async () => {
+      setupDeviceSessionMocks()
       mockFetchSign7702Tx.mockResolvedValue({ signedTransaction: '0xsignedtype4' })
 
       const result = await sign7702TransactionWithPasskey(txParams)
 
       expect(result).toBe('0xsignedtype4')
+      expect(mockFetchChallengeRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 15,
+          walletId: 'wallet-1',
+          devicePublicKey: 'mock-device-public-key',
+        }),
+      )
       expect(mockFetchSign7702Tx).toHaveBeenCalledWith(
         expect.objectContaining({
           to: '0xrecipient',
           chainId: 130,
           authorizationContractAddress: '0xcontract',
-          auth: { case: 'credential', value: 'tx-cred' },
+          auth: {
+            case: 'deviceAuth',
+            value: { deviceSignature: 'mock-device-signature', walletId: 'wallet-1' },
+          },
         }),
       )
     })
 
-    it('returns signed transaction hex via device session', async () => {
-      const { privateKey } = await generateDeviceKeyPair()
-      setDeviceSession({ privateKey, policyId: 'policy-1', policyExpiresAt: Date.now() + 60_000, walletId: 'wallet-1' })
-
-      mockFetchChallengeRequest.mockResolvedValue({
-        signingPayload: btoa('test-payload').replace(/\+/g, '-').replace(/\//g, '_').replace(/[=]+$/, ''),
-      } as unknown as Awaited<ReturnType<typeof EmbeddedWalletApiClient.fetchChallengeRequest>>)
-
+    it('refreshes NECK session when not active', async () => {
+      setupNoSessionMocks()
       mockFetchSign7702Tx.mockResolvedValue({ signedTransaction: '0xsignedtype4device' })
 
       const result = await sign7702TransactionWithPasskey(txParams)
 
       expect(result).toBe('0xsignedtype4device')
-      expect(mockAuthenticateWithPasskey).not.toHaveBeenCalled()
+      expect(mockRefreshNeckSession).toHaveBeenCalled()
     })
   })
 })

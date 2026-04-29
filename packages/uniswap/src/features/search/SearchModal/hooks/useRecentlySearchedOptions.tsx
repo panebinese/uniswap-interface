@@ -70,6 +70,7 @@ function multichainHistoryToTokenOption(
     type: OnchainItemListOptionType.MultichainToken,
     multichainResult,
     primaryCurrencyInfo,
+    ...(history.tdpChainFilter != null ? { tdpChainFilter: history.tdpChainFilter } : {}),
   }
 }
 

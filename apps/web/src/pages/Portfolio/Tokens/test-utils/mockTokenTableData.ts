@@ -48,6 +48,7 @@ export function createMockTokenTableData(overrides: Partial<TokenData> = {}): To
       totalValue: 0,
       allocation: 0,
       isStablecoin: false,
+      isMultichainAsset: false,
       ...restOverrides,
       tokens: [],
     }
@@ -66,6 +67,7 @@ export function createMockTokenTableData(overrides: Partial<TokenData> = {}): To
     totalValue: 100,
     allocation: 1,
     isStablecoin: false,
+    isMultichainAsset: tokens.length > 1,
     ...restOverrides,
     tokens,
   }

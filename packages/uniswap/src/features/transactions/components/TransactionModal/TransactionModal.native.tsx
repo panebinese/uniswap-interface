@@ -18,6 +18,7 @@ import type {
   TransactionModalProps,
 } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalProps'
 import { TransactionModalUpdateLogger } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalUpdateLogger'
+import { SwapFlowTimerContext } from 'uniswap/src/features/transactions/swap/utils/SwapFlowTimerContext'
 import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
 import { isAndroid } from 'utilities/src/platform'
 
@@ -31,6 +32,7 @@ export function TransactionModal({
   renderBiometricsIcon,
   swapRedirectCallback,
   walletNeedsRestore,
+  swapFlowTimer,
 }: TransactionModalProps): JSX.Element {
   const [screen, setScreen] = useState<TransactionScreen>(TransactionScreen.Form)
   const fullscreen = screen === TransactionScreen.Form
@@ -90,7 +92,11 @@ export function TransactionModal({
         onClose={onClose}
         onCurrencyChange={onCurrencyChange}
       >
-        {children}
+        {swapFlowTimer ? (
+          <SwapFlowTimerContext.Provider value={swapFlowTimer}>{children}</SwapFlowTimerContext.Provider>
+        ) : (
+          children
+        )}
         <TransactionModalUpdateLogger modalName={modalName} />
       </TransactionModalContextProvider>
     </Modal>

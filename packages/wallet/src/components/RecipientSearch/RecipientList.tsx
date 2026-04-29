@@ -120,6 +120,7 @@ export const RecipientRow = memo(function RecipientRow({ recipient, onPress }: R
         address={recipient.address}
         overrideDisplayName={isNonUnitagSubdomain && recipient.name ? recipient.name : undefined}
         showViewOnlyBadge={isViewOnlyWallet}
+        addressNumVisibleCharacters={8}
         size={35}
       />
     </TouchableArea>

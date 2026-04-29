@@ -8,10 +8,16 @@ import { useLocalizationContext } from 'uniswap/src/features/language/Localizati
 import { getCurrencyAmount, ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
 import { NumberType } from 'utilities/src/format/types'
 import { PostAuctionLiquiditySelector } from '~/pages/Liquidity/CreateAuction/components/PostAuctionLiquiditySelector'
-import { type RaiseCurrency } from '~/pages/Liquidity/CreateAuction/types'
+import {
+  type PostAuctionLiquidityAllocation,
+  PostAuctionLiquidityAllocationType,
+  type PostAuctionLiquidityTier,
+  type RaiseCurrency,
+} from '~/pages/Liquidity/CreateAuction/types'
 import { getRaiseCurrencyAsCurrency } from '~/pages/Liquidity/CreateAuction/utils'
 
 interface PostAuctionLiquiditySectionProps {
+  allocation: PostAuctionLiquidityAllocation
   postAuctionLiquidityPercent: number
   auctionSupplyAmount: CurrencyAmount<Currency>
   postAuctionLiquidityAmount: CurrencyAmount<Currency>
@@ -19,10 +25,15 @@ interface PostAuctionLiquiditySectionProps {
   raiseCurrency: RaiseCurrency
   chainId: UniverseChainId
   tokenSymbol: string
+  onAllocationTypeSelect: (type: PostAuctionLiquidityAllocationType) => void
   onSelectPercent: (percent: number) => void
+  onAddTier: () => void
+  onUpdateTier: (tierId: string, config: Partial<Pick<PostAuctionLiquidityTier, 'raiseMilestone' | 'percent'>>) => void
+  onRemoveTier: (tierId: string) => void
 }
 
 export function PostAuctionLiquiditySection({
+  allocation,
   postAuctionLiquidityPercent,
   auctionSupplyAmount,
   postAuctionLiquidityAmount,
@@ -30,7 +41,11 @@ export function PostAuctionLiquiditySection({
   raiseCurrency,
   chainId,
   tokenSymbol,
+  onAllocationTypeSelect,
   onSelectPercent,
+  onAddTier,
+  onUpdateTier,
+  onRemoveTier,
 }: PostAuctionLiquiditySectionProps) {
   const { t } = useTranslation()
   const { formatNumberOrString } = useLocalizationContext()
@@ -43,7 +58,10 @@ export function PostAuctionLiquiditySection({
       amount: '0',
       raiseCurrency,
     })
-    const zero = { subtitle: zeroSubtitle, showSubtitleTooltip: false as const }
+    const zero = {
+      subtitle: zeroSubtitle,
+      showSubtitleTooltip: false as const,
+    }
 
     const raiseSdk = getRaiseCurrencyAsCurrency(raiseCurrency, chainId)
     const trimmedFloor = floorPrice.trim()
@@ -66,7 +84,10 @@ export function PostAuctionLiquiditySection({
 
     let floorPriceAsPrice: Price<Currency, Currency>
     try {
-      floorPriceAsPrice = new Price({ baseAmount: oneAuctionToken, quoteAmount: quotePerToken })
+      floorPriceAsPrice = new Price({
+        baseAmount: oneAuctionToken,
+        quoteAmount: quotePerToken,
+      })
     } catch {
       return zero
     }
@@ -101,11 +122,16 @@ export function PostAuctionLiquiditySection({
       </Flex>
 
       <PostAuctionLiquiditySelector
+        allocation={allocation}
         postAuctionLiquidityPercent={postAuctionLiquidityPercent}
         raiseCurrencySymbol={raiseCurrency}
         subtitle={subtitle}
         showSubtitleTooltip={showSubtitleTooltip}
+        onAllocationTypeSelect={onAllocationTypeSelect}
         onSelectPercent={onSelectPercent}
+        onAddTier={onAddTier}
+        onUpdateTier={onUpdateTier}
+        onRemoveTier={onRemoveTier}
       />
 
       <Flex gap="$spacing4">

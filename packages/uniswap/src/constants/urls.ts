@@ -227,13 +227,6 @@ export const uniswapUrls = {
   gasServicePath: '/v1/gas-fee',
   tradingApiPaths: {
     approval: `${tradingApiVersionPrefix}/check_approval`,
-    claimLpFees: `${tradingApiVersionPrefix}/lp/claim`,
-    claimRewards: `${tradingApiVersionPrefix}/lp/claim_rewards`,
-    createLp: `${tradingApiVersionPrefix}/lp/create`,
-    decreaseLp: `${tradingApiVersionPrefix}/lp/decrease`,
-    increaseLp: `${tradingApiVersionPrefix}/lp/increase`,
-    lpApproval: `${tradingApiVersionPrefix}/lp/approve`,
-    poolInfo: `${tradingApiVersionPrefix}/lp/pool_info`,
     order: `${tradingApiVersionPrefix}/order`,
     orders: `${tradingApiVersionPrefix}/orders`,
     plan: `${tradingApiVersionPrefix}/plan`,

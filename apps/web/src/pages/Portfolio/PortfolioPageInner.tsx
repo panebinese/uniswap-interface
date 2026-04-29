@@ -1,4 +1,5 @@
 import { Flex } from 'ui/src'
+import { useScrollCompact } from '~/hooks/useScrollCompact'
 import { PortfolioConnectWalletBanner } from '~/pages/Portfolio/ConnectWalletBanner'
 import { ConnectWalletFixedBottomButton } from '~/pages/Portfolio/ConnectWalletFixedBottomButton'
 import { PortfolioHeader } from '~/pages/Portfolio/Header/Header'
@@ -7,13 +8,12 @@ import { PortfolioContent } from '~/pages/Portfolio/PortfolioContent'
 import { PortfolioOutageProvider } from '~/pages/Portfolio/PortfolioOutageContext'
 
 interface PortfolioPageInnerProps {
-  scrollY: number
-  isBannerVisible: boolean
   mb?: number | string
 }
 
-export function PortfolioPageInner({ scrollY, isBannerVisible, mb }: PortfolioPageInnerProps): JSX.Element {
+export function PortfolioPageInner({ mb }: PortfolioPageInnerProps): JSX.Element {
   const showDemoView = useShowDemoView()
+  const isCompact = useScrollCompact({})
 
   return (
     <PortfolioOutageProvider>
@@ -29,10 +29,10 @@ export function PortfolioPageInner({ scrollY, isBannerVisible, mb }: PortfolioPa
         $sm={{ p: '$spacing8' }}
       >
         {showDemoView && <PortfolioConnectWalletBanner />}
-        {showDemoView && <ConnectWalletFixedBottomButton shouldShow={!isBannerVisible} />}
+        {showDemoView && <ConnectWalletFixedBottomButton shouldShow={isCompact} />}
         {/* Animated Content Area - All routes show same content, filtered by chain */}
         <Flex gap="$spacing24">
-          <PortfolioHeader scrollY={showDemoView ? undefined : scrollY} />
+          <PortfolioHeader isCompact={showDemoView ? false : isCompact} />
           {showDemoView ? (
             <Flex cursor="not-allowed">
               <PortfolioContent disabled />

@@ -21,6 +21,7 @@ import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks
 import { Power } from '~/components/Icons/Power'
 import { useAccountsStore, useActiveConnector, useActiveWallet } from '~/features/accounts/store/hooks'
 import { type ExternalWallet } from '~/features/accounts/store/types'
+import { useAccount } from '~/hooks/useAccount'
 import { useDisconnect } from '~/hooks/useDisconnect'
 import { useSignOutWithPasskey } from '~/hooks/useSignOutWithPasskey'
 
@@ -274,6 +275,7 @@ function InLineDisconnectButton() {
   const colors = useSporeColors()
   const evmConnectorId = useActiveConnector(Platform.EVM)?.externalLibraryId
   const svmConnectorId = useActiveConnector(Platform.SVM)?.externalLibraryId
+  const isEmbeddedWallet = useAccount().connector?.id === CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID
 
   const handleDisconnect = useEvent(() => {
     sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
@@ -288,7 +290,7 @@ function InLineDisconnectButton() {
     <DisconnectMenuButtonRow onPress={handleDisconnect} testId={TestID.WalletDisconnectInModal}>
       <Power height={16} width={16} color={colors.neutral1.val} />
       <Text variant="buttonLabel3" color="$neutral1" lineHeight={20}>
-        {t('common.button.disconnect')}
+        {isEmbeddedWallet ? t('settings.logOut') : t('common.button.disconnect')}
       </Text>
     </DisconnectMenuButtonRow>
   )

@@ -13,6 +13,7 @@ import {
 } from 'ui/src'
 import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { NumberType } from 'utilities/src/format/types'
 import { ArrowChangeDown } from '~/components/Icons/ArrowChangeDown'
 import { ArrowChangeUp } from '~/components/Icons/ArrowChangeUp'
 import { useStatsBannerData } from '~/components/Toucan/Auction/hooks/useStatsBannerData'
@@ -86,10 +87,124 @@ function StatSecondaryText({ children, color = '$neutral2' }: { children: React.
 // Threshold for using subscript notation (number of leading zeros after decimal)
 const SUBSCRIPT_THRESHOLD = 4
 
-export function AuctionStatsBanner() {
+interface PriceChangeIndicatorProps {
+  changePercent: number
+  changeLabel: 'pastHour' | 'aboveFloor'
+  isPositiveChange: boolean
+  changePercentFormatted: string | null
+}
+
+function PriceChangeIndicator({
+  changePercent,
+  changeLabel,
+  isPositiveChange,
+  changePercentFormatted,
+}: PriceChangeIndicatorProps) {
   const { t } = useTranslation()
   const colors = useSporeColors()
-  const { formatPercent } = useLocalizationContext()
+  const media = useMedia()
+
+  const arrowColor = isPositiveChange ? colors.statusSuccess.val : colors.statusCritical.val
+  const arrowSize = media.lg ? 10 : 16
+  const showArrow = changeLabel === 'aboveFloor' || changePercent !== 0
+  const isZeroPastHour = changeLabel === 'pastHour' && changePercent === 0
+
+  const textColor: ColorTokens = isZeroPastHour ? '$neutral2' : isPositiveChange ? '$statusSuccess' : '$statusCritical'
+  const suffix = changeLabel === 'pastHour' ? t('toucan.statsBanner.pastHour') : t('toucan.statsBanner.aboveFloor')
+
+  return (
+    <Flex row alignItems="center" gap="$spacing2">
+      {showArrow &&
+        (isPositiveChange ? (
+          <ArrowChangeUp width={arrowSize} height={arrowSize} color={arrowColor} />
+        ) : (
+          <ArrowChangeDown width={arrowSize} height={arrowSize} color={arrowColor} />
+        ))}
+      <StatSecondaryText color={textColor}>
+        {changePercentFormatted} {!media.xl && suffix}
+      </StatSecondaryText>
+    </Flex>
+  )
+}
+
+interface ConcentrationDisplayProps {
+  concentrationStartDecimal: number | null
+  concentrationEndDecimal: number | null
+  concentrationStartFiatValue: number | null
+  concentrationEndFiatValue: number | null
+  bidTokenSymbol: string | null
+  currencySymbol: string
+  statCellTitleVariant: TextProps['variant']
+}
+
+function ConcentrationDisplay({
+  concentrationStartDecimal,
+  concentrationEndDecimal,
+  concentrationStartFiatValue,
+  concentrationEndFiatValue,
+  bidTokenSymbol,
+  currencySymbol,
+  statCellTitleVariant,
+}: ConcentrationDisplayProps) {
+  const media = useMedia()
+
+  if (concentrationStartDecimal === null || concentrationEndDecimal === null) {
+    return <StatPrimaryText>--</StatPrimaryText>
+  }
+
+  return (
+    <>
+      <Flex row alignItems="center" gap="$spacing4">
+        <SubscriptZeroPrice
+          value={concentrationStartDecimal}
+          symbol={bidTokenSymbol ?? undefined}
+          variant={statCellTitleVariant}
+          color="$neutral1"
+          minSignificantDigits={2}
+          maxSignificantDigits={2}
+          subscriptThreshold={SUBSCRIPT_THRESHOLD}
+        />
+        <StatPrimaryText color="$neutral3">–</StatPrimaryText>
+        <SubscriptZeroPrice
+          value={concentrationEndDecimal}
+          symbol={bidTokenSymbol ?? undefined}
+          variant={statCellTitleVariant}
+          color="$neutral1"
+          minSignificantDigits={2}
+          maxSignificantDigits={2}
+          subscriptThreshold={SUBSCRIPT_THRESHOLD}
+        />
+      </Flex>
+      {concentrationStartFiatValue !== null && concentrationEndFiatValue !== null && (
+        <Flex row alignItems="center" gap="$spacing4">
+          <SubscriptZeroPrice
+            value={concentrationStartFiatValue}
+            prefix={currencySymbol}
+            variant={media.lg ? 'body4' : 'body3'}
+            color="$neutral2"
+            minSignificantDigits={2}
+            maxSignificantDigits={4}
+            subscriptThreshold={SUBSCRIPT_THRESHOLD}
+          />
+          <StatSecondaryText>–</StatSecondaryText>
+          <SubscriptZeroPrice
+            value={concentrationEndFiatValue}
+            prefix={currencySymbol}
+            variant={media.lg ? 'body4' : 'body3'}
+            color="$neutral2"
+            minSignificantDigits={2}
+            maxSignificantDigits={4}
+            subscriptThreshold={SUBSCRIPT_THRESHOLD}
+          />
+        </Flex>
+      )}
+    </>
+  )
+}
+
+export function AuctionStatsBanner() {
+  const { t } = useTranslation()
+  const { formatPercent, formatNumberOrString } = useLocalizationContext()
   const { symbol: currencySymbol } = useAppFiatCurrencyInfo()
   const statCellTitleVariant = useStatCellTitleVariant()
   const media = useMedia()
@@ -99,6 +214,7 @@ export function AuctionStatsBanner() {
     clearingPriceFiatValue,
     changePercent,
     isPositiveChange,
+    changeLabel,
     bidTokenSymbol,
     currentValuationFormatted,
     currentValuationFiatFormatted,
@@ -115,12 +231,22 @@ export function AuctionStatsBanner() {
     isAuctionNotStarted,
   } = useStatsBannerData()
 
-  const arrowColor = isPositiveChange ? colors.statusSuccess.val : colors.statusCritical.val
-  const arrowSize = media.lg ? 10 : 16
-  const showChangePercent = changePercent !== null && changePercent > 0
+  const showChangePercent = changePercent !== null && (changeLabel === 'pastHour' || changePercent > 0)
 
-  // Format the change percent (formatPercent expects a raw percentage like 36 for 36%)
-  const changePercentFormatted = changePercent !== null ? formatPercent(changePercent) : null
+  // Format the change percent using compact notation for large values (e.g., "24.3T%" instead of "24,309,849,856,032.78%")
+  const changePercentFormatted = (() => {
+    if (changePercent === null) {
+      return null
+    }
+    const abs = Math.abs(changePercent)
+    if (abs >= 1_000_000) {
+      return '1M+%'
+    }
+    if (abs >= 1000) {
+      return `${formatNumberOrString({ value: abs, type: NumberType.TokenQuantityStats })}%`
+    }
+    return formatPercent(abs)
+  })()
 
   return (
     <Flex
@@ -164,16 +290,12 @@ export function AuctionStatsBanner() {
             subscriptThreshold={SUBSCRIPT_THRESHOLD}
           />
           {showChangePercent && (
-            <Flex row alignItems="center" gap="$spacing2">
-              {isPositiveChange ? (
-                <ArrowChangeUp width={arrowSize} height={arrowSize} color={arrowColor} />
-              ) : (
-                <ArrowChangeDown width={arrowSize} height={arrowSize} color={arrowColor} />
-              )}
-              <StatSecondaryText color={isPositiveChange ? '$statusSuccess' : '$statusCritical'}>
-                {changePercentFormatted} {!media.xl && t('toucan.statsBanner.aboveFloor')}
-              </StatSecondaryText>
-            </Flex>
+            <PriceChangeIndicator
+              changePercent={changePercent}
+              changeLabel={changeLabel}
+              isPositiveChange={isPositiveChange}
+              changePercentFormatted={changePercentFormatted}
+            />
           )}
         </Flex>
         {clearingPriceFiatValue !== null && (
@@ -266,56 +388,15 @@ export function AuctionStatsBanner() {
         hasData={hasData}
         $lg={{ pt: '$spacing12', pl: '$spacing12' }}
       >
-        {concentrationStartDecimal !== null && concentrationEndDecimal !== null ? (
-          <>
-            <Flex row alignItems="center" gap="$spacing4">
-              <SubscriptZeroPrice
-                value={concentrationStartDecimal}
-                symbol={bidTokenSymbol ?? undefined}
-                variant={statCellTitleVariant}
-                color="$neutral1"
-                minSignificantDigits={2}
-                maxSignificantDigits={2}
-                subscriptThreshold={SUBSCRIPT_THRESHOLD}
-              />
-              <StatPrimaryText color="$neutral3">–</StatPrimaryText>
-              <SubscriptZeroPrice
-                value={concentrationEndDecimal}
-                symbol={bidTokenSymbol ?? undefined}
-                variant={statCellTitleVariant}
-                color="$neutral1"
-                minSignificantDigits={2}
-                maxSignificantDigits={2}
-                subscriptThreshold={SUBSCRIPT_THRESHOLD}
-              />
-            </Flex>
-            {concentrationStartFiatValue !== null && concentrationEndFiatValue !== null && (
-              <Flex row alignItems="center" gap="$spacing4">
-                <SubscriptZeroPrice
-                  value={concentrationStartFiatValue}
-                  prefix={currencySymbol}
-                  variant={media.lg ? 'body4' : 'body3'}
-                  color="$neutral2"
-                  minSignificantDigits={2}
-                  maxSignificantDigits={4}
-                  subscriptThreshold={SUBSCRIPT_THRESHOLD}
-                />
-                <StatSecondaryText>–</StatSecondaryText>
-                <SubscriptZeroPrice
-                  value={concentrationEndFiatValue}
-                  prefix={currencySymbol}
-                  variant={media.lg ? 'body4' : 'body3'}
-                  color="$neutral2"
-                  minSignificantDigits={2}
-                  maxSignificantDigits={4}
-                  subscriptThreshold={SUBSCRIPT_THRESHOLD}
-                />
-              </Flex>
-            )}
-          </>
-        ) : (
-          <StatPrimaryText>--</StatPrimaryText>
-        )}
+        <ConcentrationDisplay
+          concentrationStartDecimal={concentrationStartDecimal}
+          concentrationEndDecimal={concentrationEndDecimal}
+          concentrationStartFiatValue={concentrationStartFiatValue}
+          concentrationEndFiatValue={concentrationEndFiatValue}
+          bidTokenSymbol={bidTokenSymbol}
+          currencySymbol={currencySymbol}
+          statCellTitleVariant={statCellTitleVariant}
+        />
       </StatCell>
     </Flex>
   )

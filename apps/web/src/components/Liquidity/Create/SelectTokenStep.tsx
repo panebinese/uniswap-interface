@@ -135,7 +135,7 @@ export function SelectTokensStep({
   })
 
   const {
-    positionState: { hook, userApprovedHook, fee, initialPosition },
+    positionState: { hook, userApprovedHook, fee, migratingPosition },
     setPositionState,
     protocolVersion,
     creatingPoolOrPair,
@@ -440,7 +440,10 @@ export function SelectTokensStep({
                 onFeeSelect={handleFeeTierSelect}
                 feeTiers={defaultFeeTiers}
                 disabled={
-                  hasError || !currencyInputs.tokenA || !currencyInputs.tokenB || Boolean(initialPosition?.isOutOfRange)
+                  hasError ||
+                  !currencyInputs.tokenA ||
+                  !currencyInputs.tokenB ||
+                  Boolean(migratingPosition?.isOutOfRange)
                 }
                 isLpIncentivesEnabled={isLpIncentivesEnabled}
                 hasLpRewards={feeTierHasLpRewards}

@@ -184,6 +184,7 @@ const Toolbar = () => {
           containerStyle={{ width: 'auto' }}
           buttonStyle={{ py: '$spacing8', px: '$spacing12' }}
           dropdownStyle={{ width: 200, borderRadius: '$rounded16' }}
+          adaptToSheet
           menuLabel={
             <Text variant="buttonLabel3" lineHeight="16px" whiteSpace="nowrap">
               {t('position.protocol', { protocol: getProtocolVersionLabel(protocolVersion) })}

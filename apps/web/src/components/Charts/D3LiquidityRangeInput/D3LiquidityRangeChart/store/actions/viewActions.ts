@@ -166,10 +166,14 @@ export const createViewActions = ({
         maxTick = newMaxTick
       }
 
-      if (isFullRange) {
+      if (isFullRange && priceData.length > 0) {
+        const { priceToY, yToTick } = renderingContext
+        const viewportMinTick = snapTickToSpacing(yToTick(priceToY({ price: priceDataMin })), tickSpacing)
+        const viewportMaxTick = snapTickToSpacing(yToTick(priceToY({ price: priceDataMax })), tickSpacing)
+
         const { targetZoom: desiredZoom, targetPanY: centerPanY } = calculateRangeViewport({
-          minTick: minTickValue,
-          maxTick: maxTickValue,
+          minTick: viewportMinTick,
+          maxTick: viewportMaxTick,
           tickSpacing,
         })
 

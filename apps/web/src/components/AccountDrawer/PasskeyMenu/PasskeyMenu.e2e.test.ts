@@ -11,6 +11,7 @@ const EW_ENABLED = `featureFlagOverride=${getFeatureFlagName(FeatureFlags.Embedd
 
 const LIST_AUTHENTICATORS_URL = '**/uniswap.privyembeddedwallet.v1.EmbeddedWalletService/ListAuthenticators'
 const CHALLENGE_URL = '**/uniswap.privyembeddedwallet.v1.EmbeddedWalletService/Challenge'
+const WALLET_SIGNIN_URL = '**/uniswap.privyembeddedwallet.v1.EmbeddedWalletService/WalletSignIn'
 const START_AUTHENTICATED_SESSION_URL =
   '**/uniswap.privyembeddedwallet.v1.EmbeddedWalletService/StartAuthenticatedSession'
 const ADD_AUTHENTICATOR_URL = '**/uniswap.privyembeddedwallet.v1.EmbeddedWalletService/AddAuthenticator'
@@ -81,7 +82,7 @@ async function setupWebAuthnMock(
         clientDataJSON: emptyBuf,
         attestationObject: emptyBuf,
         getTransports: () => ['hybrid'],
-        getPublicKey: () => null,
+        getPublicKey: () => emptyBuf,
         getPublicKeyAlgorithm: () => -7,
         getAuthenticatorData: () => emptyBuf,
       },
@@ -119,7 +120,51 @@ const REGISTRATION_CHALLENGE_RESPONSE = JSON.stringify({
     timeout: 60000,
     attestation: 'none',
   }),
+  existingPublicKeys: [],
+  keyQuorumId: 'test-key-quorum-id',
 })
+
+/**
+ * NECK device session challenge response for LIST_AUTHENTICATORS.
+ * sessionActive=true skips the refreshNeckSession re-entry in listAuthenticators.
+ */
+const NECK_LIST_CHALLENGE_RESPONSE = JSON.stringify({
+  sessionActive: true,
+  signingPayload: 'dGVzdC1zaWduaW5nLXBheWxvYWQ', // base64url "test-signing-payload"
+})
+
+/**
+ * Sets up NECK device-session mocks needed for all tests because listAuthenticators
+ * now calls Challenge(WALLET_SIGNIN) + WalletSignIn before the actual list RPC.
+ */
+async function setupNeckMocks(
+  page: Awaited<Parameters<Parameters<typeof test>[2]>[0]>['page'],
+  credentialId = 'cred-icloud-1',
+) {
+  await setupWebAuthnMock(page, credentialId)
+  await page.route(WALLET_SIGNIN_URL, async (route) => {
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({}) })
+  })
+}
+
+/**
+ * Route handler that dispatches Challenge responses based on the request action.
+ * LIST_AUTHENTICATORS → NECK device-session response (sessionActive=true).
+ * PASSKEY_REGISTRATION type → registration challenge (for registerNewAuthenticator).
+ * All other actions → standard auth challenge (WALLET_SIGNIN, DELETE_AUTHENTICATOR, etc.).
+ */
+async function setupNeckAwareChallengeRoute(page: Awaited<Parameters<Parameters<typeof test>[2]>[0]>['page']) {
+  await page.route(CHALLENGE_URL, async (route) => {
+    const body = route.request().postDataJSON() as Record<string, unknown>
+    if (body.action === 'LIST_AUTHENTICATORS') {
+      await route.fulfill({ contentType: 'application/json', body: NECK_LIST_CHALLENGE_RESPONSE })
+    } else if (body.type === 'PASSKEY_REGISTRATION') {
+      await route.fulfill({ contentType: 'application/json', body: REGISTRATION_CHALLENGE_RESPONSE })
+    } else {
+      await route.fulfill({ contentType: 'application/json', body: AUTH_CHALLENGE_RESPONSE })
+    }
+  })
+}
 
 test.describe(
   'PasskeyMenu',
@@ -133,6 +178,8 @@ test.describe(
   () => {
     test('shows authenticators after API response', async ({ page }) => {
       await setupEmbeddedWalletState(page)
+      await setupNeckMocks(page)
+      await setupNeckAwareChallengeRoute(page)
 
       await page.route(LIST_AUTHENTICATORS_URL, async (route) => {
         await route.fulfill({ path: Mocks.EmbeddedWallet.list_authenticators_multi })
@@ -141,13 +188,16 @@ test.describe(
       await page.goto(`/swap?${EW_ENABLED}`)
       await navigateToPasskeyMenu(page)
 
-      await expect(page.getByText('iCloud')).toBeVisible()
-      await expect(page.getByText('Chrome')).toBeVisible()
-      await expect(page.getByRole('button', { name: /add passkey/i })).toBeVisible()
+      const drawer = page.getByTestId(TestID.AccountDrawer)
+      await expect(drawer.getByText('iCloud')).toBeVisible()
+      await expect(drawer.getByText('Chrome')).toBeVisible()
+      await expect(drawer.getByRole('button', { name: /add a passkey/i })).toBeVisible()
     })
 
     test('shows loading skeletons while fetching', async ({ page }) => {
       await setupEmbeddedWalletState(page)
+      await setupNeckMocks(page)
+      await setupNeckAwareChallengeRoute(page)
 
       // Delay the response so we can observe loading state
       await page.route(LIST_AUTHENTICATORS_URL, async (route) => {
@@ -159,12 +209,14 @@ test.describe(
       await navigateToPasskeyMenu(page)
 
       // While the request is in-flight, skeleton rows should be visible
-      const skeletons = page.locator('[data-tamagui-tag="Loader.Box"]')
+      const skeletons = page.locator(`[data-testid="${TestID.PasskeyLoadingRow}"]`)
       await expect(skeletons.first()).toBeVisible()
     })
 
     test('opens verify passkey modal when trash icon is clicked', async ({ page }) => {
       await setupEmbeddedWalletState(page)
+      await setupNeckMocks(page)
+      await setupNeckAwareChallengeRoute(page)
 
       await page.route(LIST_AUTHENTICATORS_URL, async (route) => {
         await route.fulfill({ path: Mocks.EmbeddedWallet.list_authenticators_multi })
@@ -173,22 +225,27 @@ test.describe(
       await page.goto(`/swap?${EW_ENABLED}`)
       await navigateToPasskeyMenu(page)
 
+      const drawer = page.getByTestId(TestID.AccountDrawer)
+
       // Wait for authenticators to load
-      await expect(page.getByText('iCloud')).toBeVisible()
+      await expect(drawer.getByText('iCloud')).toBeVisible()
 
       // Hover over the first authenticator to reveal the trash icon
-      await page.getByText('iCloud').hover()
+      await drawer.getByText('iCloud').hover()
 
-      // The trash icon button should appear and be clickable
-      // After clicking, the verify passkey modal should open
-      const trashButtons = page.locator('[data-testid="delete-passkey"]')
+      // The overflow menu button should appear and be clickable
+      // After clicking, select "Remove" from the context menu, then the verify passkey modal opens
+      const trashButtons = page.locator(`[data-testid="${TestID.DeletePasskey}"]`)
       await expect(trashButtons.first()).toBeVisible()
-      await trashButtons.first().click()
-      await expect(page.getByText('Verify your passkey')).toBeVisible()
+      await trashButtons.first().dispatchEvent('mousedown', { button: 0, bubbles: true, cancelable: true })
+      await page.getByText('Remove').click()
+      await expect(page.getByText('Passkey required')).toBeVisible()
     })
 
     test('shows last passkey warning when only one authenticator exists', async ({ page }) => {
       await setupEmbeddedWalletState(page)
+      await setupNeckMocks(page)
+      await setupNeckAwareChallengeRoute(page)
 
       await page.route(LIST_AUTHENTICATORS_URL, async (route) => {
         await route.fulfill({ path: Mocks.EmbeddedWallet.list_authenticators_single })
@@ -197,22 +254,27 @@ test.describe(
       await page.goto(`/swap?${EW_ENABLED}`)
       await navigateToPasskeyMenu(page)
 
+      const drawer = page.getByTestId(TestID.AccountDrawer)
+
       // With only one authenticator, the component passes isLastAuthenticator=true
       // to the DeletePasskeyMenu, which shows a warning
-      await expect(page.getByText('iCloud')).toBeVisible()
+      await expect(drawer.getByText('iCloud')).toBeVisible()
 
       // Hover to reveal trash icon
-      await page.getByText('iCloud').hover()
+      await drawer.getByText('iCloud').hover()
 
-      // Assert trash icon appears and clicking it opens the verify modal
-      const trashButton = page.locator('[data-testid="delete-passkey"]')
+      // Assert overflow menu button appears; clicking it opens context menu, then select "Remove"
+      const trashButton = page.locator(`[data-testid="${TestID.DeletePasskey}"]`)
       await expect(trashButton.first()).toBeVisible()
-      await trashButton.first().click()
-      await expect(page.getByText('Verify your passkey')).toBeVisible()
+      await trashButton.first().dispatchEvent('mousedown', { button: 0, bubbles: true, cancelable: true })
+      await page.getByText('Remove').click()
+      await expect(page.getByText('Passkey required')).toBeVisible()
     })
 
     test('shows delete speedbump before deletion of last passkey', async ({ page }) => {
       await setupEmbeddedWalletState(page)
+      await setupNeckMocks(page)
+      await setupNeckAwareChallengeRoute(page)
 
       await page.route(LIST_AUTHENTICATORS_URL, async (route) => {
         await route.fulfill({ path: Mocks.EmbeddedWallet.list_authenticators_single })
@@ -221,20 +283,22 @@ test.describe(
       await page.goto(`/swap?${EW_ENABLED}`)
       await navigateToPasskeyMenu(page)
 
-      await expect(page.getByText('iCloud')).toBeVisible()
-      await page.getByText('iCloud').hover()
+      const drawer = page.getByTestId(TestID.AccountDrawer)
+      await expect(drawer.getByText('iCloud')).toBeVisible()
+      await drawer.getByText('iCloud').hover()
 
-      const trashButtons = page.locator('[data-element="delete-passkey"]')
+      const trashButtons = page.locator(`[data-testid="${TestID.DeletePasskey}"]`)
       await expect(trashButtons.first()).toBeVisible()
-      await trashButtons.first().click()
+      await trashButtons.first().dispatchEvent('mousedown', { button: 0, bubbles: true, cancelable: true })
+      await page.getByText('Remove').click()
 
       // Clicking trash on last passkey shows verify modal before proceeding to delete
-      await expect(page.getByText('Verify your passkey')).toBeVisible()
+      await expect(page.getByText('Passkey required')).toBeVisible()
     })
 
     test('successfully adds a new passkey', async ({ page }) => {
       await setupEmbeddedWalletState(page)
-      await setupWebAuthnMock(page)
+      await setupNeckMocks(page)
 
       let listAuthenticatorsCallCount = 0
 
@@ -248,13 +312,7 @@ test.describe(
         await route.fulfill({ path: mockPath })
       })
 
-      // First Challenge call is for authentication (verify step), second for registration
-      let challengeCallCount = 0
-      await page.route(CHALLENGE_URL, async (route) => {
-        challengeCallCount++
-        const body = challengeCallCount === 1 ? AUTH_CHALLENGE_RESPONSE : REGISTRATION_CHALLENGE_RESPONSE
-        await route.fulfill({ contentType: 'application/json', body })
-      })
+      await setupNeckAwareChallengeRoute(page)
 
       await page.route(START_AUTHENTICATED_SESSION_URL, async (route) => {
         await route.fulfill({ path: Mocks.EmbeddedWallet.start_authenticated_session })
@@ -267,29 +325,30 @@ test.describe(
       await page.goto(`/swap?${EW_ENABLED}`)
       await navigateToPasskeyMenu(page)
 
-      await expect(page.getByText('iCloud')).toBeVisible()
+      const drawer = page.getByTestId(TestID.AccountDrawer)
+      await expect(drawer.getByText('iCloud')).toBeVisible()
 
       // Click "Add passkey" — this opens the verify passkey modal
-      await page.getByRole('button', { name: /add passkey/i }).click()
-      await expect(page.getByText('Verify your passkey')).toBeVisible()
+      await drawer.getByRole('button', { name: /add a passkey/i }).click()
+      await expect(page.getByText('Passkey required')).toBeVisible()
 
       // Click the verify button — triggers authenticateWithPasskey (uses mocked navigator.credentials.get)
-      await page.getByRole('button', { name: /verify/i }).click()
+      await page.getByRole('button', { name: /sign in with passkey/i }).click()
 
       // After verification, the AddPasskeyMenu should open showing authenticator type selection
-      await expect(page.getByText(/continue with this device/i)).toBeVisible()
+      await expect(page.getByText('This device')).toBeVisible()
 
-      // Click "Continue with this device" — triggers registerNewAuthenticator
-      await page.getByText(/continue with this device/i).click()
+      // Click "This device" — triggers registerNewAuthenticator
+      await page.getByText('This device').click()
 
       // After successful add, menu returns to list with two passkeys
-      await expect(page.getByText('iCloud')).toBeVisible()
-      await expect(page.getByText('Chrome')).toBeVisible()
+      await expect(drawer.getByText('iCloud')).toBeVisible()
+      await expect(drawer.getByText('Chrome')).toBeVisible()
     })
 
     test('calls StartAuthenticatedSession before AddAuthenticator', async ({ page }) => {
       await setupEmbeddedWalletState(page)
-      await setupWebAuthnMock(page)
+      await setupNeckMocks(page)
 
       const callOrder: string[] = []
 
@@ -297,12 +356,7 @@ test.describe(
         await route.fulfill({ path: Mocks.EmbeddedWallet.list_authenticators_single })
       })
 
-      let challengeCallCount = 0
-      await page.route(CHALLENGE_URL, async (route) => {
-        challengeCallCount++
-        const body = challengeCallCount === 1 ? AUTH_CHALLENGE_RESPONSE : REGISTRATION_CHALLENGE_RESPONSE
-        await route.fulfill({ contentType: 'application/json', body })
-      })
+      await setupNeckAwareChallengeRoute(page)
 
       await page.route(START_AUTHENTICATED_SESSION_URL, async (route) => {
         callOrder.push('StartAuthenticatedSession')
@@ -317,12 +371,13 @@ test.describe(
       await page.goto(`/swap?${EW_ENABLED}`)
       await navigateToPasskeyMenu(page)
 
-      await expect(page.getByText('iCloud')).toBeVisible()
-      await page.getByRole('button', { name: /add passkey/i }).click()
-      await expect(page.getByText('Verify your passkey')).toBeVisible()
-      await page.getByRole('button', { name: /verify/i }).click()
-      await expect(page.getByText(/continue with this device/i)).toBeVisible()
-      await page.getByText(/continue with this device/i).click()
+      const drawer = page.getByTestId(TestID.AccountDrawer)
+      await expect(drawer.getByText('iCloud')).toBeVisible()
+      await drawer.getByRole('button', { name: /add a passkey/i }).click()
+      await expect(page.getByText('Passkey required')).toBeVisible()
+      await page.getByRole('button', { name: /sign in with passkey/i }).click()
+      await expect(page.getByText('This device')).toBeVisible()
+      await page.getByText('This device').click()
 
       // Wait for both API calls to complete
       await page.waitForResponse((resp) => resp.url().includes('AddAuthenticator'))
@@ -332,9 +387,9 @@ test.describe(
 
     test('Challenge request for delete uses DELETE_AUTHENTICATOR action and authenticatorId', async ({ page }) => {
       await setupEmbeddedWalletState(page)
-      await setupWebAuthnMock(page, 'cred-icloud-1')
+      await setupNeckMocks(page, 'cred-icloud-1')
 
-      // Capture the Challenge request body to assert correct action + authenticatorId
+      // Only capture the DELETE_AUTHENTICATOR challenge (NECK adds WALLET_SIGNIN + LIST_AUTHENTICATORS before it)
       let capturedChallengeBody: Record<string, unknown> | undefined
 
       await page.route(LIST_AUTHENTICATORS_URL, async (route) => {
@@ -342,34 +397,44 @@ test.describe(
       })
 
       await page.route(CHALLENGE_URL, async (route) => {
-        capturedChallengeBody = route.request().postDataJSON() as Record<string, unknown>
-        await route.fulfill({ contentType: 'application/json', body: AUTH_CHALLENGE_RESPONSE })
+        const body = route.request().postDataJSON() as Record<string, unknown>
+        if (body.action === 'LIST_AUTHENTICATORS') {
+          await route.fulfill({ contentType: 'application/json', body: NECK_LIST_CHALLENGE_RESPONSE })
+        } else {
+          if (body.action === 'DELETE_AUTHENTICATOR') {
+            capturedChallengeBody = body
+          }
+          await route.fulfill({ contentType: 'application/json', body: AUTH_CHALLENGE_RESPONSE })
+        }
       })
 
       await page.goto(`/swap?${EW_ENABLED}`)
       await navigateToPasskeyMenu(page)
 
-      await expect(page.getByText('iCloud')).toBeVisible()
-      await page.getByText('iCloud').hover()
+      const drawer = page.getByTestId(TestID.AccountDrawer)
+      await expect(drawer.getByText('iCloud')).toBeVisible()
+      await drawer.getByText('iCloud').hover()
 
-      const trashButtons = page.locator('[data-element="delete-passkey"]')
-      await trashButtons.first().click()
+      const trashButtons = page.locator(`[data-testid="${TestID.DeletePasskey}"]`)
+      await trashButtons.first().dispatchEvent('mousedown', { button: 0, bubbles: true, cancelable: true })
+      await page.getByText('Remove').click()
 
       // Wait for the Challenge request to fire (triggered by VerifyPasskeyMenu verify button)
-      await expect(page.getByText('Verify your passkey')).toBeVisible()
-      await page.getByRole('button', { name: /verify/i }).click()
+      await expect(page.getByText('Passkey required')).toBeVisible()
+      // Set up waitForResponse BEFORE the click to avoid race condition
+      const challengeResponsePromise = page.waitForResponse((resp) => resp.url().includes('Challenge'))
+      await page.getByRole('button', { name: /sign in with passkey/i }).click()
+      await challengeResponsePromise
 
-      await page.waitForResponse((resp) => resp.url().includes('Challenge'))
-
-      // Action 10 = DELETE_AUTHENTICATOR — assert the correct enum is sent, not DELETE_RECORD (7)
-      expect(capturedChallengeBody?.action).toBe(10)
+      // Action enum is serialized as string name in protobuf JSON — assert DELETE_AUTHENTICATOR, not DELETE_RECORD
+      expect(capturedChallengeBody?.action).toBe('DELETE_AUTHENTICATOR')
       // authenticatorId should be the credentialId of the targeted authenticator
       expect(capturedChallengeBody?.authenticatorId).toBeDefined()
     })
 
     test('successfully deletes a non-last passkey', async ({ page }) => {
       await setupEmbeddedWalletState(page)
-      await setupWebAuthnMock(page)
+      await setupNeckMocks(page)
 
       let listCallCount = 0
 
@@ -383,9 +448,7 @@ test.describe(
         await route.fulfill({ path: mockPath })
       })
 
-      await page.route(CHALLENGE_URL, async (route) => {
-        await route.fulfill({ contentType: 'application/json', body: AUTH_CHALLENGE_RESPONSE })
-      })
+      await setupNeckAwareChallengeRoute(page)
 
       await page.route(DELETE_AUTHENTICATOR_URL, async (route) => {
         await route.fulfill({ path: Mocks.EmbeddedWallet.delete_authenticator })
@@ -394,41 +457,44 @@ test.describe(
       await page.goto(`/swap?${EW_ENABLED}`)
       await navigateToPasskeyMenu(page)
 
-      await expect(page.getByText('iCloud')).toBeVisible()
-      await expect(page.getByText('Chrome')).toBeVisible()
+      const drawer = page.getByTestId(TestID.AccountDrawer)
+      await expect(drawer.getByText('iCloud')).toBeVisible()
+      await expect(drawer.getByText('Chrome')).toBeVisible()
 
-      // Hover to reveal trash icon and click it
-      await page.getByText('iCloud').hover()
-      const trashButtons = page.locator('[data-element="delete-passkey"]')
-      await trashButtons.first().click()
+      // Hover to reveal overflow menu and click it, then select "Remove"
+      await drawer.getByText('iCloud').hover()
+      const trashButtons = page.locator(`[data-testid="${TestID.DeletePasskey}"]`)
+      await trashButtons.first().dispatchEvent('mousedown', { button: 0, bubbles: true, cancelable: true })
+      await page.getByText('Remove').click()
 
       // Verify passkey modal opens — click verify
-      await expect(page.getByText('Verify your passkey')).toBeVisible()
-      await page.getByRole('button', { name: /verify/i }).click()
+      await expect(page.getByText('Passkey required')).toBeVisible()
+      await page.getByRole('button', { name: /sign in with passkey/i }).click()
+
+      // Speedbump warns to back up recovery phrase — click Continue
+      await expect(page.getByText('Are you sure?')).toBeVisible()
+      await page.getByRole('button', { name: /continue/i }).click()
 
       // Delete confirmation modal opens — must check the acknowledge checkbox to enable delete
       await expect(page.getByRole('button', { name: /^delete$/i })).toBeDisabled()
-      await page.locator('[data-element="delete-passkey-acknowledge"]').click()
+      await page.getByTestId(TestID.DeletePasskeyAcknowledge).click()
       await expect(page.getByRole('button', { name: /^delete$/i })).toBeEnabled()
+      const deleteResponsePromise = page.waitForResponse((resp) => resp.url().includes('DeleteAuthenticator'))
       await page.getByRole('button', { name: /^delete$/i }).click()
-
-      // After deletion, list refreshes to show only the remaining passkey
-      await page.waitForResponse((resp) => resp.url().includes('DeleteAuthenticator'))
-      await expect(page.getByText('iCloud')).toBeVisible()
-      await expect(page.getByText('Chrome')).not.toBeVisible()
+      await deleteResponsePromise
+      await expect(drawer.getByText('iCloud')).toBeVisible()
+      await expect(drawer.getByText('Chrome')).not.toBeVisible()
     })
 
     test('deleting last passkey disconnects wallet and closes drawer', async ({ page }) => {
       await setupEmbeddedWalletState(page)
-      await setupWebAuthnMock(page)
+      await setupNeckMocks(page)
 
       await page.route(LIST_AUTHENTICATORS_URL, async (route) => {
         await route.fulfill({ path: Mocks.EmbeddedWallet.list_authenticators_single })
       })
 
-      await page.route(CHALLENGE_URL, async (route) => {
-        await route.fulfill({ contentType: 'application/json', body: AUTH_CHALLENGE_RESPONSE })
-      })
+      await setupNeckAwareChallengeRoute(page)
 
       await page.route(DELETE_AUTHENTICATOR_URL, async (route) => {
         await route.fulfill({ path: Mocks.EmbeddedWallet.delete_authenticator })
@@ -442,19 +508,25 @@ test.describe(
       await page.goto(`/swap?${EW_ENABLED}`)
       await navigateToPasskeyMenu(page)
 
-      await expect(page.getByText('iCloud')).toBeVisible()
+      const drawer = page.getByTestId(TestID.AccountDrawer)
+      await expect(drawer.getByText('iCloud')).toBeVisible()
 
-      await page.getByText('iCloud').hover()
-      const trashButtons = page.locator('[data-element="delete-passkey"]')
-      await trashButtons.first().click()
+      await drawer.getByText('iCloud').hover()
+      const trashButtons = page.locator(`[data-testid="${TestID.DeletePasskey}"]`)
+      await trashButtons.first().dispatchEvent('mousedown', { button: 0, bubbles: true, cancelable: true })
+      await page.getByText('Remove').click()
 
-      await expect(page.getByText('Verify your passkey')).toBeVisible()
-      await page.getByRole('button', { name: /verify/i }).click()
+      await expect(page.getByText('Passkey required')).toBeVisible()
+      await page.getByRole('button', { name: /sign in with passkey/i }).click()
 
-      await page.locator('[data-element="delete-passkey-acknowledge"]').click()
+      // Speedbump warns to back up recovery phrase — click Continue
+      await expect(page.getByText('Are you sure?')).toBeVisible()
+      await page.getByRole('button', { name: /continue/i }).click()
+
+      await page.getByTestId(TestID.DeletePasskeyAcknowledge).click()
+      const deleteResponsePromise = page.waitForResponse((resp) => resp.url().includes('DeleteAuthenticator'))
       await page.getByRole('button', { name: /^delete$/i }).click()
-
-      await page.waitForResponse((resp) => resp.url().includes('DeleteAuthenticator'))
+      await deleteResponsePromise
 
       // After deleting last passkey, wallet disconnects — connect wallet button reappears
       await expect(page.getByTestId(TestID.Web3StatusConnected)).not.toBeVisible()

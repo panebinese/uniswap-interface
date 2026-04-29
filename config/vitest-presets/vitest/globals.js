@@ -21,8 +21,6 @@ module.exports = {
     SCANTASTIC_API_URL_OVERRIDE: '',
     SHAKE_CLIENT_ID: 123,
     SHAKE_CLIENT_SECRET: 123,
-    SIMPLEHASH_API_KEY: 'key',
-    SIMPLEHASH_API_URL: 'https://api.simplehash.com',
     STATSIG_API_KEY: 'client-000000000000000000000000000000000000000000',
     STATSIG_PROXY_URL: 'https://api.statsig.com',
     STATSIG_PROXY_URL_OVERRIDE: '',

@@ -141,13 +141,8 @@ export function ReviewModal({
   const { baseCurrency, quoteCurrency } = getBaseAndQuoteCurrencies(currencies.sdk, priceInverted)
 
   const ticksAtLimit = useMemo(() => {
-    // V2 pools return 0 tick spacing because every V2 position is full range
-    if (!fee?.tickSpacing) {
-      return [false, false]
-    }
-
     return getTicksAtLimit({
-      tickSpacing: fee.tickSpacing,
+      tickSpacing: fee?.tickSpacing,
       lowerTick: minTick,
       upperTick: maxTick,
       fullRange,

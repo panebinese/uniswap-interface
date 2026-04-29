@@ -42,7 +42,9 @@ export function PriceSettingsSection({
     const usdc = getChainInfo(chainId).tokens.USDC
     return usdc ? buildCurrencyId(chainId, usdc.address) : undefined
   }, [chainId])
-  const usdcCurrencyInfo = useCurrencyInfo(usdcCurrencyId, { skip: !usdcCurrencyId })
+  const usdcCurrencyInfo = useCurrencyInfo(usdcCurrencyId, {
+    skip: !usdcCurrencyId,
+  })
 
   useEffect(() => {
     if (nativeCurrencyInfo && nativeCurrencyInfo.currency.symbol !== 'ETH') {
@@ -51,7 +53,11 @@ export function PriceSettingsSection({
           'PriceSettingsSection: only ETH and USDC are accepted for raising; native currency on this chain is not ETH',
         ),
         {
-          tags: { file: 'PriceSettingsSection.tsx', function: 'PriceSettingsSection', chainId },
+          tags: {
+            file: 'PriceSettingsSection.tsx',
+            function: 'PriceSettingsSection',
+            chainId,
+          },
           extra: {
             nativeCurrencySymbol: nativeCurrencyInfo.currency.symbol,
           },

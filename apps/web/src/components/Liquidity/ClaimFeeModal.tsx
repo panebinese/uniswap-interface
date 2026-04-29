@@ -1,9 +1,7 @@
+import { useQuery } from '@tanstack/react-query'
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import { ClaimLPFeesRequest } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
-import { V3Pool, V3Position, V4Pool, V4Position } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
 import { ClaimFeesRequest } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
 import { type Currency, CurrencyAmount } from '@uniswap/sdk-core'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { type Dispatch, type SetStateAction, useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Button, Flex, Switch, Text } from 'ui/src'
@@ -12,10 +10,10 @@ import { iconSizes } from 'ui/src/theme'
 import { CurrencyLogo } from 'uniswap/src/components/CurrencyLogo/CurrencyLogo'
 import { GetHelpHeader } from 'uniswap/src/components/dialog/GetHelpHeader'
 import { Modal } from 'uniswap/src/components/modals/Modal'
-import { PollingInterval, ZERO_ADDRESS } from 'uniswap/src/constants/misc'
+import { PollingInterval } from 'uniswap/src/constants/misc'
 import { nativeOnChain } from 'uniswap/src/constants/tokens'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
-import { useClaimFeesQuery } from 'uniswap/src/data/apiClients/liquidityService/useClaimFeesQuery'
+import { liquidityQueries } from 'uniswap/src/data/apiClients/liquidityService/liquidityQueries'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { useGetPasskeyAuthStatus } from 'uniswap/src/features/passkey/hooks/useGetPasskeyAuthStatus'
@@ -50,107 +48,29 @@ import useSelectChain from '~/hooks/useSelectChain'
 import { useAppDispatch } from '~/state/hooks'
 import { liquiditySaga } from '~/state/sagas/liquidity/liquiditySaga'
 
-function getProtocolCase(
-  version: ProtocolVersion,
-): 'v2ClaimLpFeesRequest' | 'v3ClaimLpFeesRequest' | 'v4ClaimLpFeesRequest' | undefined {
-  switch (version) {
-    case ProtocolVersion.V2:
-      return 'v2ClaimLpFeesRequest'
-    case ProtocolVersion.V3:
-      return 'v3ClaimLpFeesRequest'
-    case ProtocolVersion.V4:
-      return 'v4ClaimLpFeesRequest'
-    default:
-      return undefined
-  }
-}
-
-// V2 does not support claim fees
 function getClaimLpFeesRequest({
   currency0,
-  currency1,
   positionInfo,
   unwrapNativeCurrency,
   address,
-  isClaimFeesNewEndpoint,
 }: {
   currency0: Currency
-  currency1: Currency
   positionInfo: PositionInfo
   unwrapNativeCurrency: boolean
   address: string | undefined
-  isClaimFeesNewEndpoint: boolean
-}): ClaimLPFeesRequest | ClaimFeesRequest | undefined {
-  const protocolCase = getProtocolCase(positionInfo.version)
-
-  if (!protocolCase || !address || !positionInfo.tokenId) {
+}): ClaimFeesRequest | undefined {
+  if (!address || !positionInfo.tokenId) {
     return undefined
   }
 
-  if (isClaimFeesNewEndpoint) {
-    return new ClaimFeesRequest({
-      walletAddress: address,
-      chainId: currency0.chainId,
-      tokenId: positionInfo.tokenId,
-      simulateTransaction: true,
-      collectAsWeth: positionInfo.version !== ProtocolVersion.V4 ? !unwrapNativeCurrency : undefined,
-      protocol: getProtocols(positionInfo.version),
-    })
-  }
-
-  if (protocolCase === 'v3ClaimLpFeesRequest') {
-    return new ClaimLPFeesRequest({
-      claimLPFeesRequest: {
-        case: protocolCase,
-        value: {
-          simulateTransaction: true,
-          protocol: getProtocols(positionInfo.version),
-          tokenId: Number(positionInfo.tokenId),
-          position: new V3Position({
-            pool: new V3Pool({
-              token0: currency0.isNative ? ZERO_ADDRESS : currency0.address,
-              token1: currency1.isNative ? ZERO_ADDRESS : currency1.address,
-              fee: positionInfo.feeTier?.feeAmount,
-              tickSpacing: positionInfo.tickSpacing ? Number(positionInfo.tickSpacing) : undefined,
-            }),
-            tickLower: positionInfo.tickLower,
-            tickUpper: positionInfo.tickUpper,
-          }),
-          walletAddress: address,
-          chainId: currency0.chainId,
-          collectAsWETH: !unwrapNativeCurrency,
-          expectedTokenOwed0RawAmount: positionInfo.token0UncollectedFees,
-          expectedTokenOwed1RawAmount: positionInfo.token1UncollectedFees,
-        },
-      },
-    })
-  } else if (protocolCase === 'v4ClaimLpFeesRequest') {
-    return new ClaimLPFeesRequest({
-      claimLPFeesRequest: {
-        case: protocolCase,
-        value: {
-          simulateTransaction: true,
-          protocol: getProtocols(positionInfo.version),
-          tokenId: Number(positionInfo.tokenId),
-          position: new V4Position({
-            pool: new V4Pool({
-              token0: currency0.isNative ? ZERO_ADDRESS : currency0.address,
-              token1: currency1.isNative ? ZERO_ADDRESS : currency1.address,
-              fee: positionInfo.feeTier?.feeAmount,
-              tickSpacing: positionInfo.tickSpacing ? Number(positionInfo.tickSpacing) : undefined,
-              hooks: positionInfo.v4hook,
-            }),
-            tickLower: positionInfo.tickLower,
-            tickUpper: positionInfo.tickUpper,
-          }),
-          walletAddress: address,
-          chainId: currency0.chainId,
-        },
-      },
-    })
-  }
-
-  return undefined
+  return new ClaimFeesRequest({
+    walletAddress: address,
+    chainId: currency0.chainId,
+    tokenId: positionInfo.tokenId,
+    simulateTransaction: true,
+    collectAsWeth: positionInfo.version !== ProtocolVersion.V4 ? !unwrapNativeCurrency : undefined,
+    protocol: getProtocols(positionInfo.version),
+  })
 }
 
 function UnwrapUnderCard({
@@ -232,32 +152,30 @@ export function ClaimFeeModal() {
     connectedAccount.connector?.id,
   )
 
-  const isClaimFeesV2 = useFeatureFlag(FeatureFlags.ClaimFeesV2)
-
-  const claimFeesQueryParams = useMemo((): ClaimLPFeesRequest | ClaimFeesRequest | undefined => {
-    if (!positionInfo || !currency0 || !currency1) {
+  const claimFeesQueryParams = useMemo((): ClaimFeesRequest | undefined => {
+    if (!positionInfo || !currency0) {
       return undefined
     }
 
     return getClaimLpFeesRequest({
       currency0,
-      currency1,
       positionInfo,
       unwrapNativeCurrency,
       address: account?.address,
-      isClaimFeesNewEndpoint: isClaimFeesV2,
     })
-  }, [account?.address, currency0, currency1, positionInfo, unwrapNativeCurrency, isClaimFeesV2])
+  }, [account?.address, currency0, positionInfo, unwrapNativeCurrency])
 
   const {
-    claimFeesData: data,
-    claimFeesLoading: calldataLoading,
-    claimFeesError: error,
-    claimFeesRefetch: refetch,
-  } = useClaimFeesQuery({
-    claimFeesQueryParams,
-    isQueryEnabled: Boolean(claimFeesQueryParams),
-  })
+    data,
+    isLoading: calldataLoading,
+    error,
+    refetch,
+  } = useQuery(
+    liquidityQueries.claimFees({
+      params: claimFeesQueryParams,
+      enabled: Boolean(claimFeesQueryParams),
+    }),
+  )
 
   // prevent logging of the empty error object for now since those are burying signals
   if (error && Object.keys(error).length > 0) {

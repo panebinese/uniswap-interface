@@ -31,6 +31,10 @@ import {
 import { formatTokenVolume } from '~/components/Toucan/Auction/BidDistributionChart/utils/tokenFormatters'
 import type { ChartBarData } from '~/components/Toucan/Auction/BidDistributionChart/utils/utils'
 import { generateChartData, mergeUserBidVolumes } from '~/components/Toucan/Auction/BidDistributionChart/utils/utils'
+import {
+  buildViewAdaptiveBars,
+  parseBidEntries,
+} from '~/components/Toucan/Auction/BidDistributionChart/utils/viewAdaptiveBars'
 import { useAuctionValueFormatters } from '~/components/Toucan/Auction/hooks/useAuctionValueFormatters'
 import type { AuctionDetails, BidTokenInfo } from '~/components/Toucan/Auction/store/types'
 import { AuctionProgressState } from '~/components/Toucan/Auction/store/types'
@@ -224,6 +228,7 @@ export function CombinedAuctionChart({
 
   const effectiveHeight = CHART_DIMENSIONS.HEIGHT
   const scaleFactor = normalizedData?.scaleFactor ?? 1
+  const chartAreaHeight = effectiveHeight - TIME_SCALE_HEIGHT
 
   // ── Y-axis panning, zooming, and auto-grouped bars ──
   const { pannedNormalizedData, groupedBars, tickSizeDecimal, chartWheelRef, panToPrice } = useYAxisPanZoom({
@@ -233,11 +238,34 @@ export function CombinedAuctionChart({
     tickSize,
     bidTokenDecimals: bidTokenInfo.decimals,
     auctionTokenDecimals,
+    chartHeightPx: chartAreaHeight,
   })
 
   const maxFractionDigits = pannedNormalizedData ? calculateMaxFractionDigits(pannedNormalizedData.yMax) : 0
 
-  const chartAreaHeight = effectiveHeight - TIME_SCALE_HEIGHT
+  // ── View-adaptive overlay bars: re-bucket raw bids against the current visible
+  // price range so bar resolution matches zoom level, bypassing the generation-time
+  // barStep grid (which is too coarse for narrow views and too fine for wide ones). ──
+  // Parse bid entries once per bidData change; re-bucket per view change without
+  // repeating BigInt Q96→decimal conversions.
+  const parsedBidEntries = useMemo(
+    () => parseBidEntries({ bidData: effectiveBidDistributionData, bidTokenInfo, auctionTokenDecimals }),
+    [effectiveBidDistributionData, bidTokenInfo, auctionTokenDecimals],
+  )
+
+  const adaptiveOverlayBars = useMemo(() => {
+    if (!visiblePriceRange || parsedBidEntries.length === 0 || scaleFactor <= 0) {
+      return []
+    }
+    return buildViewAdaptiveBars({
+      entries: parsedBidEntries,
+      visiblePriceRangeUnscaled: {
+        min: visiblePriceRange.min / scaleFactor,
+        max: visiblePriceRange.max / scaleFactor,
+      },
+      chartHeightPx: chartAreaHeight,
+    })
+  }, [visiblePriceRange, parsedBidEntries, scaleFactor, chartAreaHeight])
 
   // ── User bid price line (horizontal dashed line) ──
   const bidLineY = useMemo(() => {
@@ -382,7 +410,7 @@ export function CombinedAuctionChart({
           overflow="hidden"
         >
           <DistributionBarsOverlay
-            bars={groupedBars ?? chartData.bars}
+            bars={adaptiveOverlayBars.length > 0 ? adaptiveOverlayBars : (groupedBars ?? chartData.bars)}
             clearingPriceDecimal={clearingPriceDecimal}
             concentration={chartData.concentration}
             priceRange={visiblePriceRange}

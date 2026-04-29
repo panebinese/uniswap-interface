@@ -339,9 +339,9 @@ export function ClaimUnitagContent({
                   onChangeText={onChangeTextInput}
                   onSubmitEditing={onPressContinue}
                   onLayout={getInitialUnitagNameInputWidth}
-                  // field-sizing css prop is supported only on Chrome. On other browsers, we want to
-                  // fully expand the username TextInput to the available space.
-                  {...(isWebPlatform && !supportsFieldSizing && { flexGrow: 1 })}
+                  // Always expand the TextInput on web so the .uni.eth suffix is right-aligned.
+                  // field-sizing: content still controls min-width on Chrome.
+                  {...(isWebPlatform && { flexGrow: 1 })}
                 />
                 <Flex
                   animation="lazy"

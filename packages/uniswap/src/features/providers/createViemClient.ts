@@ -44,6 +44,7 @@ export function createViemClient({
       const flashbotsUrl = buildFlashbotsUrl({
         address: signerInfo?.address,
         refundPercent: rpcConfig.flashbotsConfig.refundPercent,
+        calldataHintsEnabled: rpcConfig.flashbotsConfig.calldataHintsEnabled,
       })
       const baseFlashbotsTransport = createFlashbotsTransport({
         url: flashbotsUrl,

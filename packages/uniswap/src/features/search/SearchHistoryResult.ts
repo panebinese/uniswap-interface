@@ -45,6 +45,8 @@ export interface MultichainTokenSearchHistoryResult extends SearchResultBase {
   logoUrl?: string
   /** Per-chain currency rows, first entry is the primary (same order as search UI). */
   tokenCurrencyIds: CurrencyId[]
+  /** When set, TDP opens with this network selected (`?chain=`). */
+  tdpChainFilter?: UniverseChainId
 }
 
 export function isMultichainTokenSearchHistoryResult(x: SearchHistoryResult): x is MultichainTokenSearchHistoryResult {

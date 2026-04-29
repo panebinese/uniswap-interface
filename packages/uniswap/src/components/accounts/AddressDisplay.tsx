@@ -47,7 +47,7 @@ type AddressDisplayProps = {
   notificationsBadgeContainer?: ({ children, address }: { children: JSX.Element; address: string }) => JSX.Element
   gapBetweenLines?: SpaceTokens
   showViewOnlyBadge?: boolean
-  addressNumVisibleCharacters?: 4 | 6
+  addressNumVisibleCharacters?: 4 | 6 | 8
   grow?: boolean
 }
 

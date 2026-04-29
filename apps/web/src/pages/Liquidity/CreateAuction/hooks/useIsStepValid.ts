@@ -1,6 +1,7 @@
 import { getMinStartTime } from '~/pages/Liquidity/CreateAuction/components/DurationSection'
 import { isValidPoolOwner } from '~/pages/Liquidity/CreateAuction/components/PoolOwnerSection'
 import { useCreateAuctionStore } from '~/pages/Liquidity/CreateAuction/CreateAuctionContext'
+import { isPostAuctionLiquidityAllocationValid } from '~/pages/Liquidity/CreateAuction/store/postAuctionLiquidityAllocationState'
 import { CreateAuctionStep, TokenMode } from '~/pages/Liquidity/CreateAuction/types'
 
 export function useIsStepValid(step: CreateAuctionStep): boolean {
@@ -23,12 +24,17 @@ export function useIsStepValid(step: CreateAuctionStep): boolean {
         )
 
       case CreateAuctionStep.CONFIGURE_AUCTION: {
-        const { committed, startTime, floorPrice } = configureAuction
+        const { committed, floorPrice, postAuctionLiquidityAllocation, startTime } = configureAuction
         if (!committed) {
           return false
         }
         const isStartTimeValid = !!startTime && startTime.getTime() >= getMinStartTime().getTime()
-        return isStartTimeValid && !committed.auctionSupplyAmount.equalTo(0) && !!floorPrice
+        return (
+          isStartTimeValid &&
+          !committed.auctionSupplyAmount.equalTo(0) &&
+          !!floorPrice &&
+          isPostAuctionLiquidityAllocationValid(postAuctionLiquidityAllocation)
+        )
       }
 
       case CreateAuctionStep.CUSTOMIZE_POOL:

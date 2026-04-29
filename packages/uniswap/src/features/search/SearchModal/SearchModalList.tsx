@@ -197,7 +197,7 @@ export const SearchModalList = memo(function SearchModalListInner({
               ) : undefined
             }
             onPress={() => {
-              registerSearchItem(item)
+              registerSearchItem(item, { tdpChainFilter: searchFilters.searchChainFilter })
 
               navigateToTokenDetails(item.currencyInfo.currencyId, searchFilters.searchChainFilter)
 
@@ -244,9 +244,12 @@ export const SearchModalList = memo(function SearchModalListInner({
               ) : undefined
             }
             onPress={() => {
-              registerSearchItem(item)
+              registerSearchItem(item, { tdpChainFilter: searchFilters.searchChainFilter })
 
-              navigateToTokenDetails(item.primaryCurrencyInfo.currencyId, searchFilters.searchChainFilter)
+              navigateToTokenDetails(
+                item.primaryCurrencyInfo.currencyId,
+                item.tdpChainFilter ?? searchFilters.searchChainFilter,
+              )
 
               sendSearchOptionItemClickedAnalytics({
                 item,

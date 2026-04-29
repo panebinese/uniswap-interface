@@ -202,11 +202,7 @@ describe(useTokenBalanceListMultichainExpansion, () => {
       })
 
       expect(result.current.expandedCurrencyIds.has(parentId)).toBe(true)
-      expect(result.current.rows).toEqual([
-        parentId,
-        makeChainRowId(parentId, CHAIN_ID_MAINNET),
-        makeChainRowId(parentId, CHAIN_ID_ARBITRUM),
-      ])
+      expect(result.current.rows).toEqual([parentId, makeChainRowId(parentId, tHigh), makeChainRowId(parentId, tLow)])
 
       act(() => {
         result.current.toggleExpanded(parentId)
@@ -228,6 +224,58 @@ describe(useTokenBalanceListMultichainExpansion, () => {
       })
 
       expect(result.current.rows).toEqual(['one-chain'])
+    })
+
+    it('emits distinct row ids for same-chain balances with different addresses', () => {
+      const tBridged = createPortfolioChainBalance({
+        chainId: CHAIN_ID_MAINNET,
+        valueUsd: 100,
+        address: ADDR_A,
+        currencyInfo: {
+          currencyId: currencyIdOnChain(CHAIN_ID_MAINNET, ADDR_A),
+          currency: {
+            chainId: CHAIN_ID_MAINNET,
+            address: ADDR_A,
+            isToken: true,
+            symbol: 'A',
+            name: 'A',
+            isNative: false,
+          } as PortfolioChainBalance['currencyInfo']['currency'],
+          logoUrl: undefined,
+        },
+      })
+      const tNative = createPortfolioChainBalance({
+        chainId: CHAIN_ID_MAINNET,
+        valueUsd: 200,
+        address: ADDR_B,
+        currencyInfo: {
+          currencyId: currencyIdOnChain(CHAIN_ID_MAINNET, ADDR_B),
+          currency: {
+            chainId: CHAIN_ID_MAINNET,
+            address: ADDR_B,
+            isToken: true,
+            symbol: 'B',
+            name: 'B',
+            isNative: false,
+          } as PortfolioChainBalance['currencyInfo']['currency'],
+          logoUrl: undefined,
+        },
+      })
+      const parentId = 'mc-same-chain' as CurrencyId
+      const mc = createPortfolioMultichainBalance({ id: parentId, tokens: [tBridged, tNative] })
+      const sortedData = makeSortedData({ balances: [mc] })
+
+      const { result } = renderHook(() =>
+        useTokenBalanceListMultichainExpansion({ sortedData, hiddenTokensExpanded: false }),
+      )
+
+      act(() => {
+        result.current.toggleExpanded(parentId)
+      })
+
+      const childRowIds = result.current.rows.filter((r) => r !== parentId && r !== HIDDEN_TOKEN_BALANCES_ROW)
+      expect(childRowIds).toHaveLength(2)
+      expect(new Set(childRowIds).size).toBe(2)
     })
   })
 

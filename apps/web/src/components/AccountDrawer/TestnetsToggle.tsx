@@ -11,7 +11,7 @@ export function TestnetsToggle() {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const { isTestnetModeEnabled } = useEnabledChains()
-  const { openModal: openTestnetModal } = useModalState(ModalName.TestnetMode)
+  const { openModal: openTestnetModal, closeModal: closeTestnetModal } = useModalState(ModalName.TestnetMode)
 
   return (
     <SettingsToggle
@@ -23,6 +23,8 @@ export function TestnetsToggle() {
         const nextIsTestnetModeEnabled = !isTestnetModeEnabled
         if (nextIsTestnetModeEnabled) {
           openTestnetModal()
+        } else {
+          closeTestnetModal()
         }
         dispatch(setIsTestnetModeEnabled(nextIsTestnetModeEnabled))
       }}

@@ -8,15 +8,6 @@ vi.mock('@universe/gating', async (importOriginal) => {
   }
 })
 
-vi.mock('@universe/config', async () => {
-  const { getConfig } = await vi.importActual<typeof import('@universe/config/src/getConfig.web')>(
-    '@universe/config/src/getConfig.web',
-  )
-  return {
-    getConfig,
-  }
-})
-
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 

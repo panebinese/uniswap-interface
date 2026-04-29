@@ -38,13 +38,16 @@ export const MiniTokensTable = memo(function MiniTokensTable({ maxTokens = 8, ch
     externalAddress: externalAddress?.address,
   })
 
+  // Same as Portfolio tokens tab: single-chain view should use flat `tokenProfitLosses`, not multichain shape.
+  const requestMultichainPnlShape = multichainTokenUxEnabled && chainId === undefined
+
   const { data: tokenProfitLossData, isError: isProfitLossError } = useGetWalletTokensProfitLossQuery({
     input: {
       evmAddress: portfolioAddresses.evmAddress,
       svmAddress: portfolioAddresses.svmAddress,
       chainIds: chainId ? [chainId] : enabledChains,
       modifier,
-      multichain: multichainTokenUxEnabled || undefined,
+      multichain: requestMultichainPnlShape || undefined,
     },
     enabled: isProfitLossEnabled,
   })

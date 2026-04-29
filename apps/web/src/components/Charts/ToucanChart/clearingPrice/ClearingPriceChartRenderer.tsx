@@ -347,6 +347,7 @@ export function ClearingPriceChartRenderer({
       hideXAxis: normalizedData.isAuctionInProgress,
       isZoomEnabled: !normalizedData.isAuctionInProgress,
       disableMouseWheelInteractions,
+      preBidEndTime: normalizedData.preBidEndTime,
     })
 
     const coords = controllerRef.current?.getLastPointCoordinates()
@@ -448,6 +449,7 @@ export function ClearingPriceChartRenderer({
                   scaleFactor={normalizedData.scaleFactor}
                   totalSupply={totalSupply}
                   auctionTokenDecimals={auctionTokenDecimals}
+                  isPreBidEnd={tooltipState.isPreBidEnd}
                 />
               )}
             </TooltipContainer>
@@ -511,6 +513,7 @@ export function ClearingPriceChartRenderer({
                 scaleFactor={normalizedData.scaleFactor}
                 totalSupply={totalSupply}
                 auctionTokenDecimals={auctionTokenDecimals}
+                isPreBidEnd={tooltipState.isPreBidEnd}
               />
             )}
           </TooltipContainer>

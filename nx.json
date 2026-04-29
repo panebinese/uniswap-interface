@@ -101,7 +101,7 @@
       "inputs": ["default", "lintConfig"]
     },
     "lint:oxlint:fix": {
-      "command": "oxlint --fix-dangerously --threads=4 -c oxlint.config.ts {projectRoot}",
+      "command": "oxlint --fix --threads=4 -c oxlint.config.ts {projectRoot}",
       "dependsOn": ["prepare"],
       "cache": false
     },

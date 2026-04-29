@@ -42,14 +42,21 @@ function SearchModalResultsListInner({
   const shouldPrioritizeWallets =
     searchQuery?.toLowerCase().endsWith('.eth') || searchQuery?.toLowerCase().endsWith('.uni')
 
+  /** Align with token search: network from UI filter or parsed from query (e.g. "Unichain ETH"). Pools tab uses UI filter only. */
+  const effectiveTokenSearchChainFilter = useMemo((): UniverseChainId | null => {
+    if (activeTab === SearchTab.Pools) {
+      return chainFilter
+    }
+    return chainFilter ?? parsedChainFilter
+  }, [activeTab, chainFilter, parsedChainFilter])
+
   const {
     data: sections,
     loading,
     error,
     refetch,
   } = useSectionsForSearchResults({
-    // turn off parsed chainFilter for pools (to avoid "eth usdc" searches filtering by eth mainnet)
-    chainFilter: activeTab !== SearchTab.Pools ? (chainFilter ?? parsedChainFilter) : chainFilter,
+    chainFilter: effectiveTokenSearchChainFilter,
     searchFilter: searchQuery,
     activeTab,
     shouldPrioritizePools: searchQuery?.includes('/') ?? false,
@@ -101,7 +108,7 @@ function SearchModalResultsListInner({
       sections={isOfflineWithNoData ? [] : sections}
       searchFilters={{
         query: debouncedParsedSearchFilter ?? debouncedSearchFilter ?? undefined,
-        searchChainFilter: chainFilter,
+        searchChainFilter: effectiveTokenSearchChainFilter,
         searchTabFilter: activeTab,
       }}
       renderedInModal={renderedInModal}

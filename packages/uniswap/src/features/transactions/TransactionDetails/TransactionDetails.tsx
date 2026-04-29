@@ -85,6 +85,7 @@ export function TransactionDetails({
   transactionUSDValue,
   txSimulationErrors,
   routingType,
+  isSwap: isSwapProp,
   AccountDetails,
   estimatedSwapTime,
   RoutingInfo,
@@ -105,7 +106,7 @@ export function TransactionDetails({
   const isChainedTrade = routingType && isChained({ routing: routingType })
   const isBridgeTrade = routingType && isBridge({ routing: routingType })
   const isWrapTrade = routingType && isWrap({ routing: routingType })
-  const isSwap = !isBridgeTrade && !isChainedTrade && !isWrapTrade
+  const isSwap = isSwapProp ?? (!isBridgeTrade && !isChainedTrade && !isWrapTrade)
 
   // Used to show slippage settings on mobile, where the modal needs to be added outside of the conditional expected failure banner
   const [showSlippageSettings, setShowSlippageSettings] = useState(false)

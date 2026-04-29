@@ -86,6 +86,7 @@ export const HeaderRightElement = memo(function HeaderRightElement(): JSX.Elemen
         source: 'token-details',
         currency: currencyInfo?.currency,
         isMarkedSpam: currencyInfo?.isSpam,
+        isMultichainAsset: isMultichainToken,
       })
     }, MODAL_OPEN_WAIT_TIME)
   })
@@ -114,6 +115,7 @@ export const HeaderRightElement = memo(function HeaderRightElement(): JSX.Elemen
     isBlocked: currencyInfo?.safetyInfo?.tokenList === TokenList.Blocked,
     tokenSymbolForNotification: currencyInfo?.currency.symbol,
     portfolioBalance: currentChainBalance,
+    isMultichainAsset: isMultichainToken,
     openContractAddressExplainerModal,
     openReportDataIssueModal,
     openReportTokenModal,

@@ -22,6 +22,7 @@ exports[`PasskeyMenu > shows 3 skeleton rows while loading 1`] = `
           </span>
           <div
             class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _gap-t-space-gap1569 _alignItems-center _pb-t-space-pad1331704925"
+            data-testid="passkey-loading-row"
           >
             <style>
               
@@ -102,6 +103,7 @@ exports[`PasskeyMenu > shows 3 skeleton rows while loading 1`] = `
           </div>
           <div
             class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _gap-t-space-gap1569 _alignItems-center _pb-t-space-pad1331704925"
+            data-testid="passkey-loading-row"
           >
             <style>
               
@@ -182,6 +184,7 @@ exports[`PasskeyMenu > shows 3 skeleton rows while loading 1`] = `
           </div>
           <div
             class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _gap-t-space-gap1569 _alignItems-center _pb-t-space-pad1331704925"
+            data-testid="passkey-loading-row"
           >
             <style>
               

@@ -16,6 +16,7 @@ import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants/trace/page'
 import { Trace } from 'uniswap/src/features/telemetry/Trace'
+import { DetailsHeaderContainer } from '~/components/Explore/stickyHeader/DetailsHeaderContainer'
 import { ActivitySection } from '~/components/Toucan/Auction/ActivityTimeline/ActivitySection'
 import { AuctionDetailsModal } from '~/components/Toucan/Auction/ActivityTimeline/AuctionDetailsModal'
 import { BidDistributionChartTab } from '~/components/Toucan/Auction/AuctionChartShared'
@@ -37,6 +38,7 @@ import { useAuctionStore, useAuctionStoreActions } from '~/components/Toucan/Auc
 import { ToucanActionButton } from '~/components/Toucan/Shared/ToucanActionButton'
 import { ToucanContainer } from '~/components/Toucan/Shared/ToucanContainer'
 import { ToucanIntroModal } from '~/components/Toucan/ToucanIntroModal'
+import { useScrollCompact } from '~/hooks/useScrollCompact'
 import { LeftPanel, RightPanel, TokenDetailsLayout } from '~/pages/TokenDetails/components/skeleton/Skeleton'
 import { useAppDispatch, useAppSelector } from '~/state/hooks'
 import { InterfaceState } from '~/state/webReducer'
@@ -68,6 +70,7 @@ function ToucanTokenContent({ isModalOpen, onCloseModal }: { isModalOpen: boolea
     chainId: auctionDetails?.chainId,
   })
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
+  const isCompact = useScrollCompact({ thresholdCompact: 100 })
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const handleDetailsModal = useCallback(() => setIsDetailsModalOpen(true), [])
   const handleCloseDetailsModal = useCallback(() => setIsDetailsModalOpen(false), [])
@@ -106,7 +109,7 @@ function ToucanTokenContent({ isModalOpen, onCloseModal }: { isModalOpen: boolea
     >
       <ToucanIntroModal isOpen={isModalOpen} onClose={onCloseModal} />
       <AuctionDetailsModal isOpen={isDetailsModalOpen} onClose={handleCloseDetailsModal} />
-      <ToucanContainer mb="$spacing48">
+      <ToucanContainer>
         <AuctionIntroBanner onLearnMorePress={handleDetailsModal} />
         {shouldShowTokenLaunchedBanner && (
           <TokenLaunchedBanner
@@ -116,7 +119,13 @@ function ToucanTokenContent({ isModalOpen, onCloseModal }: { isModalOpen: boolea
             auctionTokenDecimals={auctionDetails.token?.currency.decimals}
           />
         )}
-        <AuctionHeader />
+      </ToucanContainer>
+      <DetailsHeaderContainer isCompact={isCompact} px="$none" $lg={{ px: '$none' }}>
+        <ToucanContainer>
+          <AuctionHeader isCompact={isCompact} />
+        </ToucanContainer>
+      </DetailsHeaderContainer>
+      <ToucanContainer mb="$spacing48">
         <AuctionStatsBanner />
         <TokenDetailsLayout justifyContent="flex-start" px="$none" $lg={{ px: '$none' }} gap={46}>
           <LeftPanel

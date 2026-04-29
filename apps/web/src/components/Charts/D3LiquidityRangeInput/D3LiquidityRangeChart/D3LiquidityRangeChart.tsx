@@ -22,14 +22,14 @@ import type { ChartEntry } from '~/components/Charts/LiquidityRangeInput/types'
 import type { PriceChartData } from '~/components/Charts/PriceChart'
 import type { ChartQueryResult, ChartType } from '~/components/Charts/utils'
 import { useLiquidityUrlState } from '~/components/Liquidity/Create/hooks/useLiquidityUrlState'
-import type { InitialPosition } from '~/components/Liquidity/Create/types'
+import type { MigratingPosition } from '~/components/Liquidity/Create/types'
 
 const D3LiquidityRangeChart = ({
   priceData,
   liquidityData,
   quoteCurrency,
   baseCurrency,
-  initialPosition,
+  migratingPosition,
   currentTick,
   tickSpacing,
   rawTicks,
@@ -41,7 +41,7 @@ const D3LiquidityRangeChart = ({
   liquidityData: ChartEntry[]
   quoteCurrency: Maybe<Currency>
   baseCurrency: Maybe<Currency>
-  initialPosition?: InitialPosition
+  migratingPosition?: MigratingPosition
   currentTick: number
   tickSpacing: number
   rawTicks: TickData[]
@@ -157,7 +157,7 @@ const D3LiquidityRangeChart = ({
     // oxlint-disable-next-line no-shadow
     let maxTick
 
-    if (initialPosition) {
+    if (migratingPosition) {
       return
     }
 
@@ -173,7 +173,7 @@ const D3LiquidityRangeChart = ({
       maxTick,
     })
     // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
-  }, [priceData.dataHash, initialPosition, reset])
+  }, [priceData.dataHash, migratingPosition, reset])
 
   return (
     <Flex opacity={dimensions.isInitialized ? 1 : 0} animation="fast" flexDirection="column">
@@ -197,7 +197,13 @@ const D3LiquidityRangeChart = ({
             touchAction: 'manipulation',
           }}
           onMouseEnter={() => setChartState({ isChartHovered: true })}
-          onMouseLeave={() => setChartState({ isChartHovered: false })}
+          onMouseMove={(e) => {
+            const rect = svgRef.current?.getBoundingClientRect()
+            if (rect) {
+              setChartState({ hoverPriceX: e.clientX - rect.left, hoverPriceY: e.clientY - rect.top })
+            }
+          }}
+          onMouseLeave={() => setChartState({ isChartHovered: false, hoverPriceX: undefined, hoverPriceY: undefined })}
         >
           <title>Liquidity Range Chart</title>
         </svg>

@@ -577,6 +577,8 @@ export function tradeRoutingToFillType({
       return 'classic'
     case TradingApi.Routing.BRIDGE:
       return 'bridge'
+    case TradingApi.Routing.CHAINED:
+      return 'chained'
     case TradingApi.Routing.JUPITER:
       return 'jupiter'
     default:

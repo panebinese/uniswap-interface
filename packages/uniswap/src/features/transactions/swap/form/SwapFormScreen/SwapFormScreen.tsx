@@ -1,5 +1,6 @@
 import type { BottomSheetView } from '@gorhom/bottom-sheet'
 import type { ComponentProps } from 'react'
+import { useEffect } from 'react'
 import type { FlexProps } from 'ui/src'
 import { Flex } from 'ui/src'
 import { chainIdToPlatform } from 'uniswap/src/features/platforms/utils/chains'
@@ -25,6 +26,9 @@ import {
   useSwapFormStore,
   useSwapFormStoreDerivedSwapInfo,
 } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
+import { useSwapFlowTimer } from 'uniswap/src/features/transactions/swap/utils/SwapFlowTimerContext'
+import { DDRumManualTiming } from 'utilities/src/logger/datadog/datadogEvents'
+import { usePerformanceLogger } from 'utilities/src/logger/usePerformanceLogger'
 import { isExtensionApp, isWebApp } from 'utilities/src/platform'
 
 interface SwapFormScreenProps {
@@ -48,6 +52,12 @@ export function SwapFormScreen({
   focusHook,
 }: SwapFormScreenProps): JSX.Element {
   const { bottomSheetViewStyles } = useTransactionModalContext()
+  const tracker = useSwapFlowTimer()
+
+  useEffect(() => {
+    tracker?.mark(DDRumManualTiming.SwapFormScreenMount)
+  }, [tracker])
+
   const { selectingCurrencyField, hideSettings } = useSwapFormStore((s) => ({
     selectingCurrencyField: s.selectingCurrencyField,
     hideSettings: s.hideSettings,
@@ -81,6 +91,8 @@ export function SwapFormScreen({
 }
 
 function SwapFormContent(): JSX.Element {
+  usePerformanceLogger(DDRumManualTiming.SwapFormContentRender, [])
+
   return (
     <Flex grow gap="$spacing8" justifyContent="space-between">
       <Flex gap="$spacing4" animation="quick" exitStyle={EXIT_STYLE} grow={isExtensionApp}>

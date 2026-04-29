@@ -4,17 +4,19 @@ import { ApolloError } from '@apollo/client'
 import { createColumnHelper } from '@tanstack/react-table'
 import type { MultichainToken } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { ReactElement, useMemo } from 'react'
+import { ReactElement, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, useMedia } from 'ui/src'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { fromGraphQLChain, toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { useTokenSpotPrice } from 'uniswap/src/features/dataApi/tokenDetails/useTokenSpotPriceWrapper'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import { ElementName, SectionName, UniswapEventName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { FiatNumberType, NumberType } from 'utilities/src/format/types'
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { SparklineMap } from '~/appGraphql/data/types'
 import { getTokenDetailsURL, OrderDirection, unwrapToken } from '~/appGraphql/data/util'
 import SparklineChart from '~/components/Charts/SparklineChart'
@@ -31,6 +33,7 @@ import { getTokenDescriptionColumnSize, TokenDescription } from '~/pages/Explore
 import { TokenTableHeader } from '~/pages/Explore/tables/Tokens/TokenTableHeader'
 import { useTokenTableSortStore } from '~/pages/Explore/tables/Tokens/tokenTableSortStore'
 import { VolumeByNetworkPopover } from '~/pages/Explore/tables/Tokens/VolumeByNetworkPopover/VolumeByNetworkPopover'
+import { getExploreMultichainExpandRowMetrics } from '~/state/explore/listTokens/utils/getExploreMultichainExpandRowMetrics'
 import { multichainTokenToDisplayToken } from '~/state/explore/listTokens/utils/multichainTokenToDisplayToken'
 import { getChainIdsByVolume } from '~/state/explore/listTokens/utils/multichainVolume'
 import { TokenStat } from '~/state/explore/types'
@@ -78,6 +81,7 @@ export function TokenTable({
   loadMore?: ({ onComplete }: { onComplete?: () => void }) => void
 }) {
   const { t } = useTranslation()
+  const trace = useTrace()
   const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { convertFiatAmountFormatted, formatPercent } = useLocalizationContext()
   const { defaultChainId } = useEnabledChains()
@@ -186,6 +190,22 @@ export function TokenTable({
   )
 
   const showLoadingSkeleton = loading || !!error
+
+  useEffect(() => {
+    if (!multichainTokenUxEnabled || showLoadingSkeleton) {
+      return
+    }
+    const { totalTokenRowCount, multichainRowReductionCount, multichainAssetCount } =
+      getExploreMultichainExpandRowMetrics(tokens)
+    sendAnalyticsEvent(UniswapEventName.MultichainExploreMetrics, {
+      ...trace,
+      total_token_row_count: totalTokenRowCount,
+      multichain_row_reduction_count: multichainRowReductionCount,
+      multichain_asset_count: multichainAssetCount,
+      element: ElementName.ExploreTokensTab,
+      section: SectionName.ExploreTopTokensSection,
+    })
+  }, [multichainTokenUxEnabled, showLoadingSkeleton, tokens, trace])
 
   const rowHeight = useMemo(() => (multichainTokenUxEnabled ? 64 : undefined), [multichainTokenUxEnabled])
 
@@ -316,7 +336,11 @@ export function TokenTable({
         cell: (volume) => {
           const row = volume.row?.original as TokenTableValue | undefined
           if (!row) {
-            return null
+            return (
+              <Cell loading={showLoadingSkeleton} grow testId={TestID.VolumeCell}>
+                <EllipsisText>{volume.getValue?.()}</EllipsisText>
+              </Cell>
+            )
           }
           return (
             <Cell loading={showLoadingSkeleton} grow testId={TestID.VolumeCell}>

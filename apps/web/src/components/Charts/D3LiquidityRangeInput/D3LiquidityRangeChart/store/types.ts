@@ -37,6 +37,8 @@ export type ChartState = {
   dragStartY: number | null
   hoveredTick?: ChartEntry
   hoveredY?: number
+  hoverPriceX?: number
+  hoverPriceY?: number
   /** The hovered segment's tick range - used for highlighting all buckets in the same segment */
   hoveredSegment?: { startTick: number; endTick: number }
   initialViewSet: boolean

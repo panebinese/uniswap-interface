@@ -29,7 +29,7 @@ import { getLPBaseAnalyticsProperties } from '~/components/Liquidity/analytics'
 import { FormStepsWrapper, FormWrapper } from '~/components/Liquidity/Create/FormWrapper'
 import { useLiquidityUrlState } from '~/components/Liquidity/Create/hooks/useLiquidityUrlState'
 import { useLPSlippageValue } from '~/components/Liquidity/Create/hooks/useLPSlippageValues'
-import { DEFAULT_POSITION_STATE, InitialPosition, PositionFlowStep } from '~/components/Liquidity/Create/types'
+import { DEFAULT_POSITION_STATE, MigratingPosition, PositionFlowStep } from '~/components/Liquidity/Create/types'
 import { LiquidityPositionCard } from '~/components/Liquidity/LiquidityPositionCard'
 import { LoadingRow } from '~/components/Liquidity/Loader'
 import { ReviewModal } from '~/components/Liquidity/ReviewModal'
@@ -48,7 +48,7 @@ import {
   useCreateLiquidityContext,
 } from '~/pages/CreatePosition/CreateLiquidityContextProvider'
 import { SharedCreateModals } from '~/pages/CreatePosition/CreatePosition'
-import useInitialPosition from '~/pages/Migrate/hooks/useInitialPosition'
+import useMigratingPosition from '~/pages/Migrate/hooks/useMigratingPosition'
 import { MigratePositionTxContextProvider, useMigrateTxContext } from '~/pages/Migrate/MigrateLiquidityTxContext'
 import { MultichainContextProvider } from '~/state/multichain/MultichainContext'
 import { liquiditySaga } from '~/state/sagas/liquidity/liquiditySaga'
@@ -260,12 +260,12 @@ function getCurrencyInputs(positionInfo?: PositionInfo) {
 }
 
 function Toolbar({
-  initialPosition,
+  migratingPosition,
   currency0Amount,
   currency1Amount,
   setCurrencyInputs,
 }: {
-  initialPosition: InitialPosition | undefined
+  migratingPosition: MigratingPosition | undefined
   currency0Amount: CurrencyAmount<Currency>
   currency1Amount: CurrencyAmount<Currency>
   setCurrencyInputs: Dispatch<SetStateAction<{ tokenA: Maybe<Currency>; tokenB: Maybe<Currency> }>>
@@ -275,7 +275,7 @@ function Toolbar({
   const { fee, hook, protocolVersion: finalProtocolVersion } = positionState
 
   const isFormUnchanged = useMemo(() => {
-    const isRangeUnchanged = initialPosition?.isOutOfRange
+    const isRangeUnchanged = migratingPosition?.isOutOfRange
       ? true
       : priceRangeState.fullRange === DEFAULT_PRICE_RANGE_STATE.fullRange &&
         priceRangeState.maxTick === DEFAULT_PRICE_RANGE_STATE.maxTick &&
@@ -283,15 +283,15 @@ function Toolbar({
 
     return (
       fee &&
-      initialPosition &&
-      fee.feeAmount === initialPosition.fee.feeAmount &&
-      fee.tickSpacing === initialPosition.fee.tickSpacing &&
-      fee.isDynamic === initialPosition.fee.isDynamic &&
+      migratingPosition &&
+      fee.feeAmount === migratingPosition.fee.feeAmount &&
+      fee.tickSpacing === migratingPosition.fee.tickSpacing &&
+      fee.isDynamic === migratingPosition.fee.isDynamic &&
       hook === DEFAULT_POSITION_STATE.hook &&
       priceRangeState.initialPrice === DEFAULT_PRICE_RANGE_STATE.initialPrice &&
       isRangeUnchanged
     )
-  }, [fee, hook, priceRangeState, initialPosition])
+  }, [fee, hook, priceRangeState, migratingPosition])
 
   return (
     <Flex>
@@ -304,9 +304,9 @@ function Toolbar({
         onPress={() => {
           setPositionState({
             ...DEFAULT_POSITION_STATE,
-            initialPosition,
+            migratingPosition,
             protocolVersion: finalProtocolVersion,
-            fee: initialPosition?.fee,
+            fee: migratingPosition?.fee,
           })
           setCurrencyInputs({
             tokenA: getCurrencyForProtocol(currency0Amount.currency, finalProtocolVersion),
@@ -356,8 +356,8 @@ export default function MigrateV3() {
 
   const positionInfo = useMemo(() => parseRestPosition(position), [position])
 
-  // Need the initial position when migrating out of range positions.
-  const initialPosition = useInitialPosition(positionInfo)
+  // Need the migrating (source) position when migrating out of range positions.
+  const migratingPosition = useMigratingPosition(positionInfo)
   const initialCurrencyInputs = useMemo(() => getCurrencyInputs(positionInfo), [positionInfo])
   const initialProtocolVersion = positionInfo?.version
 
@@ -414,8 +414,8 @@ export default function MigrateV3() {
         <LPTransactionSettingsStoreContextProvider autoSlippageTolerance={autoSlippageTolerance}>
           <CreateLiquidityContextProvider
             initialPositionState={{
-              initialPosition,
-              fee: initialPosition?.fee,
+              migratingPosition,
+              fee: migratingPosition?.fee,
               protocolVersion: initialProtocolVersion === ProtocolVersion.V2 ? ProtocolVersion.V3 : ProtocolVersion.V4,
             }}
             currencyInputs={currencyInputs}
@@ -440,7 +440,7 @@ export default function MigrateV3() {
                 }
                 toolbar={
                   <Toolbar
-                    initialPosition={initialPosition}
+                    migratingPosition={migratingPosition}
                     currency0Amount={currency0Amount}
                     currency1Amount={currency1Amount}
                     setCurrencyInputs={setCurrencyInputs}

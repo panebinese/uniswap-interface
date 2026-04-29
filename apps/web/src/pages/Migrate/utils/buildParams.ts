@@ -1,19 +1,11 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import {
-  CheckApprovalLPRequest,
   MigrateV2ToV3LPPositionRequest,
   MigrateV3ToV4LPPositionRequest,
 } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
-import {
-  Protocols,
-  V2CheckApprovalLPRequest,
-  V3CheckApprovalLPRequest,
-  V3Position,
-  V4Position,
-} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
+import { Protocols, V3Position, V4Position } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
 import { LPApprovalRequest } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
 import { LPAction, LPToken } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/types_pb'
-import { V3_MIGRATOR_ADDRESSES } from '@uniswap/sdk-core'
 import { Pair } from '@uniswap/v2-sdk'
 import { Pool as V3Pool } from '@uniswap/v3-sdk'
 import { Pool as V4Pool } from '@uniswap/v4-sdk'
@@ -32,12 +24,10 @@ export function isV3ToV4MigrationPositionInfo(
 export function buildCheckLPApprovalRequestParams({
   positionInfo,
   address,
-  isCheckApprovalV2,
 }: {
   positionInfo: V2PairInfo | V3PositionInfo
   address: string
-  isCheckApprovalV2: boolean
-}): CheckApprovalLPRequest | LPApprovalRequest | undefined {
+}): LPApprovalRequest | undefined {
   const protocol = getProtocols(positionInfo.version)
 
   if (protocol === undefined) {
@@ -47,22 +37,6 @@ export function buildCheckLPApprovalRequestParams({
   const chainId = positionInfo.currency0Amount.currency.chainId
   switch (protocol) {
     case Protocols.V2:
-      if (!isCheckApprovalV2) {
-        return new CheckApprovalLPRequest({
-          checkApprovalLPRequest: {
-            case: 'v2CheckApprovalLpRequest',
-            value: new V2CheckApprovalLPRequest({
-              protocol: getProtocols(ProtocolVersion.V2),
-              walletAddress: address,
-              chainId,
-              positionToken: positionInfo.liquidityToken?.address,
-              positionAmount: positionInfo.liquidityAmount?.quotient.toString() ?? '0',
-              spenderAddress: V3_MIGRATOR_ADDRESSES[chainId],
-              simulateTransaction: true,
-            }),
-          },
-        })
-      }
       return new LPApprovalRequest({
         walletAddress: address,
         protocol: getProtocols(ProtocolVersion.V2),
@@ -70,31 +44,17 @@ export function buildCheckLPApprovalRequestParams({
         lpTokens: [
           new LPToken({
             tokenAddress: positionInfo.currency0Amount.currency.wrapped.address,
-            amount: '0', // the amounts here don't matter since the approval is based on the positionToken
+            amount: '0',
           }),
           new LPToken({
             tokenAddress: positionInfo.currency1Amount.currency.wrapped.address,
-            amount: '0', // the amounts here don't matter since the approval is based on the positionToken
+            amount: '0',
           }),
         ],
         action: LPAction.MIGRATE,
         simulateTransaction: true,
       })
     case Protocols.V3:
-      if (!isCheckApprovalV2) {
-        return new CheckApprovalLPRequest({
-          checkApprovalLPRequest: {
-            case: 'v3CheckApprovalLpRequest',
-            value: new V3CheckApprovalLPRequest({
-              protocol: getProtocols(ProtocolVersion.V3),
-              walletAddress: address,
-              chainId,
-              positionToken: positionInfo.tokenId,
-              simulateTransaction: true,
-            }),
-          },
-        })
-      }
       return new LPApprovalRequest({
         walletAddress: address,
         protocol: getProtocols(ProtocolVersion.V3),

@@ -3,6 +3,7 @@ import { TFunction, t } from 'i18next'
 import { ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, styled, Text, Tooltip, TouchableArea, useMedia } from 'ui/src'
+import { ArrowRight } from 'ui/src/components/icons/ArrowRight'
 import { Globe } from 'ui/src/components/icons/Globe'
 import { XTwitter } from 'ui/src/components/icons/XTwitter'
 import { zIndexes } from 'ui/src/theme/zIndexes'
@@ -45,7 +46,7 @@ export function formatImpliedTokenPrice({
   stacked = false,
 }: {
   impliedTokenPrice: { start: string; end?: string } | null
-  variant?: 'subheading1' | 'body3'
+  variant?: 'subheading1' | 'subheading2' | 'body3'
   stacked?: boolean
 }): ReactNode {
   if (!impliedTokenPrice) {
@@ -93,6 +94,7 @@ function buildStatItems({
   auctionTokenSymbol,
   totalSupply,
   isAuctionEnded,
+  valueVariant,
 }: Pick<
   BuildStatItemsParams,
   | 't'
@@ -102,11 +104,11 @@ function buildStatItems({
   | 'auctionTokenSymbol'
   | 'totalSupply'
   | 'isAuctionEnded'
->): StatItem[] {
+> & { valueVariant: 'subheading1' | 'subheading2' }): StatItem[] {
   return [
     {
       label: isAuctionEnded ? t('toucan.statsBanner.finalClearingPrice') : t('toucan.auction.stats.impliedTokenPrice'),
-      value: formatImpliedTokenPrice({ impliedTokenPrice, variant: 'subheading1', stacked: true }),
+      value: formatImpliedTokenPrice({ impliedTokenPrice, variant: valueVariant, stacked: true }),
     },
     {
       label: t('toucan.auction.stats.totalBids'),
@@ -177,10 +179,8 @@ const StatCell = styled(Flex, {
 
 const InfoRow = styled(Flex, {
   width: '100%',
-  '$platform-web': {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr',
-  },
+  flexDirection: 'row',
+  gap: '$spacing16',
 })
 
 const InfoCell = styled(Flex, {
@@ -242,6 +242,8 @@ export const AuctionStatsGrid = ({ onViewAllStats }: { onViewAllStats?: () => vo
     impliedTokenPrice,
   } = useAuctionStatsData()
 
+  const valueVariant = media.lg ? 'subheading2' : 'subheading1'
+
   const statItems = buildStatItems({
     t,
     impliedTokenPrice,
@@ -250,6 +252,7 @@ export const AuctionStatsGrid = ({ onViewAllStats }: { onViewAllStats?: () => vo
     auctionTokenSymbol,
     totalSupply,
     isAuctionEnded,
+    valueVariant,
   })
 
   return (
@@ -261,9 +264,7 @@ export const AuctionStatsGrid = ({ onViewAllStats }: { onViewAllStats?: () => vo
             <Text variant="body3" color="$neutral2" hoverStyle={{ color: '$neutral1' }}>
               {t('toucan.auction.viewAllStats')}
             </Text>
-            <Text variant="body3" color="$neutral2">
-              →
-            </Text>
+            <ArrowRight color="$neutral2" size="$icon.12" />
           </TouchableArea>
         )}
       </Flex>
@@ -283,7 +284,7 @@ export const AuctionStatsGrid = ({ onViewAllStats }: { onViewAllStats?: () => vo
                 {item.label}
               </Text>
               {typeof item.value === 'string' ? (
-                <Text variant="subheading1" color="$neutral1">
+                <Text variant={valueVariant} color="$neutral1">
                   {item.value}
                 </Text>
               ) : (
@@ -352,7 +353,7 @@ export const AuctionInfo = () => {
             <Text variant="body3" color="$neutral2">
               {t('toucan.auction.contractAddress')}
             </Text>
-            <Flex row gap="$spacing4" alignItems="center">
+            <Flex row gap="$spacing4" alignItems="center" flexWrap="nowrap">
               <CopyHelper
                 toCopy={contractAddress}
                 iconPosition="right"
@@ -360,7 +361,7 @@ export const AuctionInfo = () => {
                 iconColor="$neutral2"
                 alwaysShowIcon
               >
-                <Text variant="subheading1" color="$neutral1">
+                <Text variant="subheading1" color="$neutral1" numberOfLines={1}>
                   {tokenAddress ? shortenAddress({ address: tokenAddress, chars: 4 }) : '--'}
                 </Text>
               </CopyHelper>

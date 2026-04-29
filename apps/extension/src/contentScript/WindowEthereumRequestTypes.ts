@@ -1,3 +1,4 @@
+/* oxlint-disable eslint-js/no-restricted-syntax */
 import { EthersTransactionRequestSchema } from 'src/app/features/dappRequests/types/EthersTypes'
 import { HexadecimalNumberSchema } from 'src/app/features/dappRequests/types/utilityTypes'
 import { HomeTabs } from 'src/app/navigation/constants'

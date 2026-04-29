@@ -8,6 +8,7 @@ import { DataApiOutageBanner } from 'uniswap/src/features/dataApi/outage/DataApi
 import type { DataApiOutageState } from 'uniswap/src/features/dataApi/types'
 import { ElementName, InterfacePageName, UniswapEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
+import { buildNetworkFilterSelectedChainFields } from 'uniswap/src/features/telemetry/utils/buildNetworkFilterSelectedChainFields'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useEvent } from 'utilities/src/react/hooks'
 import { HEADER_TRANSITION } from '~/components/Explore/stickyHeader/constants'
@@ -15,7 +16,6 @@ import { NetworkFilter } from '~/components/NetworkFilter/NetworkFilter'
 import { useActiveAddresses } from '~/features/accounts/store/hooks'
 import { useAppHeaderHeight } from '~/hooks/useAppHeaderHeight'
 import { useDataApiOutageModal } from '~/hooks/useDataApiOutageModal'
-import { useScrollCompact } from '~/hooks/useScrollCompact'
 import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
 import { PortfolioAddressDisplay } from '~/pages/Portfolio/Header/PortfolioAddressDisplay/PortfolioAddressDisplay'
 import { PortfolioMoreMenu } from '~/pages/Portfolio/Header/PortfolioMoreMenu'
@@ -67,10 +67,10 @@ function getOutageState({
 }
 
 interface PortfolioHeaderProps {
-  scrollY?: number
+  isCompact: boolean
 }
 
-export function PortfolioHeader({ scrollY }: PortfolioHeaderProps) {
+export function PortfolioHeader({ isCompact }: PortfolioHeaderProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const media = useMedia()
@@ -78,7 +78,6 @@ export function PortfolioHeader({ scrollY }: PortfolioHeaderProps) {
   const activeAddresses = useActiveAddresses()
   const showDemoView = useShowDemoView()
   const isPnLEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
-  const isCompact = useScrollCompact({ scrollY })
   const headerHeight = useAppHeaderHeight()
   const buttonSize = media.md || isCompact ? 'small' : 'medium'
 
@@ -110,12 +109,12 @@ export function PortfolioHeader({ scrollY }: PortfolioHeaderProps) {
 
   const onNetworkPress = useEvent((chainId: UniverseChainId | undefined) => {
     const currentPageName = getPageNameFromTab(tab)
-    const selectedChain = chainId ?? ('All' as const)
+    const networkFilterChainFields = buildNetworkFilterSelectedChainFields(chainId)
 
     sendAnalyticsEvent(UniswapEventName.NetworkFilterSelected, {
       element: ElementName.PortfolioNetworkFilter,
       page: currentPageName,
-      chain: selectedChain,
+      ...networkFilterChainFields,
     })
 
     navigate(buildPortfolioUrl({ tab, chainId, externalAddress: externalAddress?.address }))
@@ -151,6 +150,7 @@ export function PortfolioHeader({ scrollY }: PortfolioHeaderProps) {
               onPress={onNetworkPress}
               currentChainId={currentChainId}
               size={buttonSize}
+              tracePage={getPageNameFromTab(tab)}
               transition={HEADER_TRANSITION}
             />
           </Flex>

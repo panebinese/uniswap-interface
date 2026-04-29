@@ -2,8 +2,9 @@ import { Currency } from '@uniswap/sdk-core'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { Flex } from 'ui/src'
+import { Flex, useMedia } from 'ui/src'
 import { getNativeAddress } from 'uniswap/src/constants/addresses'
+import { UniswapContext, useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
 import { useUrlContext } from 'uniswap/src/contexts/UrlContext'
 import { isUniverseChainId, toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
@@ -35,6 +36,15 @@ export function TDPSwapComponent() {
   }))
   const navigate = useNavigate()
   const swapCurrency = useTDPSwapCurrency()
+
+  // Widget mounts-but-hidden at ≤xl, so chain-filter churn fires a ghost toast.
+  // Silence onSwapChainsChanged only when hidden; passthrough when visible (iPad landscape, desktop).
+  const media = useMedia()
+  const parentUniswapContext = useUniswapContext()
+  const uniswapContextOverride = useMemo(
+    () => (media.xl ? { ...parentUniswapContext, onSwapChainsChanged: () => {} } : parentUniswapContext),
+    [parentUniswapContext, media.xl],
+  )
 
   const currencyInfo = useCurrencyInfo(currencyId(currency))
 
@@ -145,15 +155,17 @@ export function TDPSwapComponent() {
       {/* TODO(SWAP-2334): Update interaction detection after swap flow refactor */}
       {/* oxlint-disable-next-line react/forbid-elements -- raw div needed for onPointerDownCapture */}
       <div onPointerDownCapture={markInteracted}>
-        <Swap
-          syncTabToUrl={false}
-          initialInputChainId={swapCurrency.chainId}
-          initialInputCurrency={initialInputCurrency}
-          initialOutputCurrency={initialOutputCurrency}
-          onCurrencyChange={handleCurrencyChange}
-          tokenColor={tokenColor}
-          tdpCurrency={swapCurrency}
-        />
+        <UniswapContext.Provider value={uniswapContextOverride}>
+          <Swap
+            syncTabToUrl={false}
+            initialInputChainId={swapCurrency.chainId}
+            initialInputCurrency={initialInputCurrency}
+            initialOutputCurrency={initialOutputCurrency}
+            onCurrencyChange={handleCurrencyChange}
+            tokenColor={tokenColor}
+            tdpCurrency={swapCurrency}
+          />
+        </UniswapContext.Provider>
       </div>
       <TokenWarningCard currencyInfo={currencyInfo} onPress={() => setShowWarningModal(true)} />
       {currencyInfo && (

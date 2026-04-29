@@ -1,3 +1,4 @@
+/* oxlint-disable eslint-js/no-restricted-syntax */
 import { isHexString } from 'ethers/lib/utils'
 import { HexadecimalNumberSchema } from 'src/app/features/dappRequests/types/utilityTypes'
 import { z } from 'zod'

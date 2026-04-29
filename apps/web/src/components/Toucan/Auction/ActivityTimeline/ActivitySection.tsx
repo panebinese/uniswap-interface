@@ -2,6 +2,7 @@ import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Skeleton, Text, TouchableArea, useMedia, useSporeColors } from 'ui/src'
+import { ArrowRight } from 'ui/src/components/icons/ArrowRight'
 import { opacifyRaw } from 'ui/src/theme'
 import { ActivityTimeline } from '~/components/Toucan/Auction/ActivityTimeline/ActivityTimeline'
 import { AuctionDetailsModal } from '~/components/Toucan/Auction/ActivityTimeline/AuctionDetailsModal'
@@ -50,20 +51,29 @@ function ActivitySectionTabs({ isAuctionEnded }: { isAuctionEnded: boolean }) {
 
   const tabVariant = media.lg ? 'subheading1' : 'heading3'
 
+  const activityTab = (
+    <TouchableArea key={ActivityTab.Activity} onPress={() => setActiveTab(ActivityTab.Activity)}>
+      <Text variant={tabVariant} color={activeTab === ActivityTab.Activity ? '$neutral1' : '$neutral2'}>
+        {t('toucan.auction.latestActivity')}
+      </Text>
+    </TouchableArea>
+  )
+
+  const timelineTab = (
+    <TouchableArea key={ActivityTab.Timeline} onPress={() => setActiveTab(ActivityTab.Timeline)}>
+      <Text variant={tabVariant} color={activeTab === ActivityTab.Timeline ? '$neutral1' : '$neutral2'}>
+        {t('toucan.timeline.title')}
+      </Text>
+    </TouchableArea>
+  )
+
+  const orderedTabs = isAuctionEnded ? [timelineTab, activityTab] : [activityTab, timelineTab]
+
   return (
     <Flex width="100%" minWidth={0} flexShrink={1} gap="$spacing16">
       <Flex row justifyContent="space-between" alignItems="center">
         <Flex row gap="$spacing16" alignItems="center">
-          <TouchableArea onPress={() => setActiveTab(ActivityTab.Activity)}>
-            <Text variant={tabVariant} color={activeTab === ActivityTab.Activity ? '$neutral1' : '$neutral2'}>
-              {t('toucan.auction.latestActivity')}
-            </Text>
-          </TouchableArea>
-          <TouchableArea onPress={() => setActiveTab(ActivityTab.Timeline)}>
-            <Text variant={tabVariant} color={activeTab === ActivityTab.Timeline ? '$neutral1' : '$neutral2'}>
-              {t('toucan.timeline.title')}
-            </Text>
-          </TouchableArea>
+          {orderedTabs}
         </Flex>
         {activeTab === ActivityTab.Activity && totalBidCount !== null && totalBidCount > 0 && (
           <Flex
@@ -98,11 +108,16 @@ function ActivitySectionTabs({ isAuctionEnded }: { isAuctionEnded: boolean }) {
             <Text variant="body3" color="$neutral2" hoverStyle={{ color: '$neutral1' }}>
               {t('toucan.details.seeFullDetails')}
             </Text>
+            <ArrowRight color="$neutral2" size="$icon.12" />
           </TouchableArea>
         )}
       </Flex>
       {activeTab === ActivityTab.Activity ? <BidActivities hideHeader /> : <ActivityTimeline />}
-      <AuctionDetailsModal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} />
+      <AuctionDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        initialTab="howItWorks"
+      />
     </Flex>
   )
 }

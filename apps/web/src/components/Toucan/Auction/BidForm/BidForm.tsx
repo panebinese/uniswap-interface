@@ -293,7 +293,7 @@ export function BidForm({ onInputChange, onBidSubmitted }: BidFormProps): JSX.El
               label={buttonLabel}
               isDisabled={buttonDisabled}
               onPress={handleButtonPress}
-              shouldUseBranded={!isWalletConnected}
+              shouldUseSoftBranded={!isWalletConnected}
             />
           )}
         </Flex>

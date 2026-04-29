@@ -12,6 +12,7 @@ export const ModalName = {
   AddressQR: 'address-qr-modal',
   AddWallet: 'add-wallet-modal',
   AppRatingModal: 'app-rating-modal',
+  AuctionKycHookSetup: 'auction-kyc-hook-setup-modal',
   BackupReminder: 'backup-reminder-modal',
   BackupReminderWarning: 'backup-reminder-warning-modal',
   Bag: 'bag-modal',

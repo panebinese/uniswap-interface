@@ -190,7 +190,6 @@ function ExploreSectionsInner({
             showFavorites={showFavorites}
             showLoading={isInitialLoading}
             selectedNetwork={selectedNetwork}
-            tokenRankingsData={data}
             onSelectNetwork={onSelectNetwork}
             onOrderByChange={onOrderByChange}
           />
@@ -311,7 +310,6 @@ type ListHeaderProps = {
   showLoading: boolean
   showFavorites: boolean
   onOrderByChange: (orderBy: ExploreOrderBy) => void
-  tokenRankingsData: TokenRankingsResponse | undefined
 }
 
 const ListHeader = memo(function ListHeader({
@@ -320,15 +318,12 @@ const ListHeader = memo(function ListHeader({
   showLoading,
   showFavorites,
   onOrderByChange,
-  tokenRankingsData,
 }: ListHeaderProps): JSX.Element {
   const { t } = useTranslation()
 
   return (
     <Sortable.Layer>
-      {showFavorites && (
-        <FavoritesSection showLoading={showLoading} listRef={listRef} tokenRankingsData={tokenRankingsData} />
-      )}
+      {showFavorites && <FavoritesSection showLoading={showLoading} listRef={listRef} />}
       <Flex row alignItems="center" justifyContent="space-between" px="$spacing12">
         <Text color="$neutral2" flexShrink={0} paddingEnd="$spacing8" variant="subheading1">
           {t('explore.tokens.top.title')}
@@ -349,7 +344,6 @@ const ListHeaderComponent = ({
   showLoading,
   showFavorites,
   onOrderByChange,
-  tokenRankingsData,
 }: ListHeaderProps & NetworkPillsProps): JSX.Element => {
   return (
     <>
@@ -358,7 +352,6 @@ const ListHeaderComponent = ({
         orderBy={orderBy}
         showLoading={showLoading}
         showFavorites={showFavorites}
-        tokenRankingsData={tokenRankingsData}
         onOrderByChange={onOrderByChange}
       />
       <NetworkPills selectedNetwork={selectedNetwork} onSelectNetwork={onSelectNetwork} />

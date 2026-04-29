@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Slider, Text } from 'ui/src'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
@@ -39,6 +39,7 @@ export function ValuationSliderV2({
 }: ValuationSliderV2Props): JSX.Element {
   const { t } = useTranslation()
   const { convertFiatAmountFormatted } = useLocalizationContext()
+  const containerRef = useRef<HTMLDivElement>(null)
 
   // Token price as a number for SubscriptZeroPrice rendering
   const tokenPriceNum = useMemo(() => {
@@ -55,10 +56,46 @@ export function ValuationSliderV2({
     return convertFiatAmountFormatted(priceFiat, NumberType.FiatTokenPrice)
   }, [tokenPriceNum, bidTokenPriceFiat, convertFiatAmountFormatted])
 
+  const getIndexFromClientX = (clientX: number): number => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect || totalTicks === 0) {
+      return 0
+    }
+    const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    return Math.round(fraction * totalTicks)
+  }
+
+  const handlePointerDown = (e: PointerEvent): void => {
+    if (disabled) {
+      return
+    }
+    containerRef.current?.setPointerCapture(e.pointerId)
+    onPointerDown()
+    onValueChange([getIndexFromClientX(e.clientX)])
+  }
+
+  const handlePointerMove = (e: PointerEvent): void => {
+    if (!containerRef.current?.hasPointerCapture(e.pointerId)) {
+      return
+    }
+    onValueChange([getIndexFromClientX(e.clientX)])
+  }
+
   return (
     <Flex gap="$spacing8" alignItems="center" width="100%" opacity={disabled ? 0.5 : 1} pb="$spacing32">
       {/* Slider container — no overflow hidden so thumb isn't clipped */}
-      <Flex width="100%" height={V2_TRACK_HEIGHT} position="relative">
+      <Flex
+        ref={containerRef as React.RefObject<HTMLDivElement>}
+        width="100%"
+        height={V2_TRACK_HEIGHT}
+        position="relative"
+        cursor={disabled ? 'default' : 'pointer'}
+        // Tamagui's Flex types onPointerDown/Move with RN's PointerEvent; handlers are DOM-typed.
+        // Cast through (event: unknown) => void to satisfy the prop without losing type safety
+        // inside the handlers themselves.
+        onPointerDown={handlePointerDown as unknown as (event: unknown) => void}
+        onPointerMove={handlePointerMove as unknown as (event: unknown) => void}
+      >
         {/* Visual track background — overflow hidden for rounded clipping */}
         <Flex
           position="absolute"
@@ -99,19 +136,19 @@ export function ValuationSliderV2({
             <Flex key={i} width={4} height={4} borderRadius="$roundedFull" backgroundColor="$neutral3" />
           ))}
         </Flex>
-        {/* Slider — transparent, sits on top for interaction + thumb positioning */}
+        {/* Slider — visual only (pointerEvents none); interaction handled by the container above */}
         <StyledSlider
           min={0}
           max={totalTicks}
           step={1}
           value={[clampedSliderIndex]}
           onValueChange={onValueChange}
-          onPointerDown={onPointerDown}
           disabled={disabled}
           backgroundColor="transparent"
           width="100%"
           height={V2_TRACK_HEIGHT}
           zIndex={2}
+          style={{ pointerEvents: 'none' }}
         >
           <Slider.Track style={{ background: 'none', backgroundColor: 'transparent' }} />
           <SliderThumbUnstyled index={0}>

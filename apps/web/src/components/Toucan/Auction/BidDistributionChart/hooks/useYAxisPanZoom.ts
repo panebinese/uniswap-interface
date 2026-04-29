@@ -29,6 +29,7 @@ export function useYAxisPanZoom<T extends NormalizedDataSlice>({
   tickSize,
   bidTokenDecimals,
   auctionTokenDecimals,
+  chartHeightPx,
 }: {
   normalizedData: T | null | undefined
   chartData: ProcessedChartData | null
@@ -36,6 +37,7 @@ export function useYAxisPanZoom<T extends NormalizedDataSlice>({
   tickSize: string
   bidTokenDecimals: number
   auctionTokenDecimals: number
+  chartHeightPx?: number
 }) {
   const { setClearingPriceZoomState, clearChartZoomCommand } = useAuctionStoreActions()
   const chartZoomCommand = useAuctionStore((state) => state.chartZoomCommand)
@@ -64,8 +66,17 @@ export function useYAxisPanZoom<T extends NormalizedDataSlice>({
       tickSizeDecimal,
       clearingPriceDecimal,
       yZoomLevel,
+      chartHeightPx,
     })
-  }, [chartData, tickSizeDecimal, clearingPriceDecimal, normalizedData?.yMin, normalizedData?.yMax, yZoomLevel])
+  }, [
+    chartData,
+    tickSizeDecimal,
+    clearingPriceDecimal,
+    normalizedData?.yMin,
+    normalizedData?.yMax,
+    yZoomLevel,
+    chartHeightPx,
+  ])
 
   // Sync isZoomed to store so the footer reset button enables/disables
   const isZoomed = yPanOffset !== 0 || yZoomLevel !== 1
@@ -96,10 +107,11 @@ export function useYAxisPanZoom<T extends NormalizedDataSlice>({
     return applyPanZoom({
       normalizedData,
       concentration: chartData?.concentration,
+      bars: chartData?.bars,
       yPanOffset,
       yZoomLevel,
     })
-  }, [normalizedData, chartData?.concentration, yPanOffset, yZoomLevel])
+  }, [normalizedData, chartData?.concentration, chartData?.bars, yPanOffset, yZoomLevel])
 
   const panBounds = useMemo(() => {
     if (!chartData || !normalizedData) {
@@ -194,13 +206,18 @@ export function useYAxisPanZoom<T extends NormalizedDataSlice>({
       if (!normalizedData) {
         return
       }
-      const conc = chartData?.concentration
-      const baseYMin = conc ? Math.min(normalizedData.yMin, conc.startTick) : normalizedData.yMin
-      const baseYMax = conc ? Math.max(normalizedData.yMax, conc.endTick) : normalizedData.yMax
-      const baseMidpoint = (baseYMin + baseYMax) / 2
+      // Mirror applyPanZoom's widened-window logic so the offset lands on the same midpoint.
+      const view = applyPanZoom({
+        normalizedData,
+        concentration: chartData?.concentration,
+        bars: chartData?.bars,
+        yPanOffset: 0,
+        yZoomLevel: 1,
+      })
+      const baseMidpoint = (view.yMin + view.yMax) / 2
       setYPanOffset(targetPrice - baseMidpoint)
     },
-    [normalizedData, chartData?.concentration],
+    [normalizedData, chartData?.concentration, chartData?.bars],
   )
 
   return { pannedNormalizedData, groupedBars, tickSizeDecimal, chartWheelRef, panToPrice }

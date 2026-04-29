@@ -1,26 +1,20 @@
-import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
 import { Flex, Text } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
 import { NumberType } from 'utilities/src/format/types'
-import { getCurrencyForProtocol } from '~/components/Liquidity/utils/currency'
 import CurrencyLogo from '~/components/Logo/CurrencyLogo'
 
 export function TokenInfo({
   currencyAmount,
   currencyUSDAmount,
-  isMigrating = false,
 }: {
   currencyAmount: Maybe<CurrencyAmount<Currency>>
   currencyUSDAmount: Maybe<CurrencyAmount<Currency>>
-  isMigrating?: boolean
 }) {
   const { formatCurrencyAmount } = useLocalizationContext()
-  const currency = isMigrating
-    ? getCurrencyForProtocol(currencyAmount?.currency, ProtocolVersion.V4)
-    : currencyAmount?.currency
+  const currency = currencyAmount?.currency
 
   return (
     <Flex row alignItems="center">

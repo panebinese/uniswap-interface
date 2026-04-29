@@ -85,6 +85,7 @@ const useLongPressGesture = ({
 export function TokenBalanceItemContextMenu({
   children,
   portfolioBalance,
+  isMultichainAsset,
   excludedActions,
   openContractAddressExplainerModal,
   openReportTokenModal,
@@ -99,6 +100,7 @@ export function TokenBalanceItemContextMenu({
     isBlocked: portfolioBalance.currencyInfo.safetyInfo?.tokenList === TokenList.Blocked,
     tokenSymbolForNotification: portfolioBalance.currencyInfo.currency.symbol,
     portfolioBalance,
+    isMultichainAsset,
     openContractAddressExplainerModal,
     openReportTokenModal,
     copyAddressToClipboard,

@@ -20,10 +20,11 @@ import { createLogger } from 'utilities/src/logger/logger'
 const FILE_NAME = 'searchTokensAndPools.ts'
 
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import { type CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { buildCurrency, buildCurrencyInfo } from 'uniswap/src/features/dataApi/utils/buildCurrency'
 import { getCurrencySafetyInfo } from 'uniswap/src/features/dataApi/utils/getCurrencySafetyInfo'
 import { PoolSearchHistoryResult, SearchHistoryResultType } from 'uniswap/src/features/search/SearchHistoryResult'
+import type { CurrencyId } from 'uniswap/src/types/currency'
 import { buildCurrencyId, currencyId, isNativeCurrencyAddress } from 'uniswap/src/utils/currencyId'
 import { ONE_DAY_MS, ONE_HOUR_MS } from 'utilities/src/time/time'
 
@@ -166,9 +167,21 @@ export function chainTokenToCurrencyInfo(
  * Flattens a MultichainToken into one CurrencyInfo per chain.
  */
 export function multichainTokenToCurrencyInfos(multichainToken: MultichainToken): CurrencyInfo[] {
-  return multichainToken.chainTokens
+  const infos = multichainToken.chainTokens
     .map((chainToken) => chainTokenToCurrencyInfo(chainToken, multichainToken))
     .filter((c): c is CurrencyInfo => c !== null)
+
+  if (!infos.length) {
+    return []
+  }
+
+  const tokenCurrencyIds = infos.map((i) => i.currencyId) as CurrencyId[]
+  const searchMultichainParent = { id: multichainToken.multichainId, tokenCurrencyIds }
+
+  return infos.map((info) => ({
+    ...info,
+    searchMultichainParent,
+  }))
 }
 
 export function searchPoolToPoolSearchResult(pool: Pool): PoolSearchHistoryResult | undefined {

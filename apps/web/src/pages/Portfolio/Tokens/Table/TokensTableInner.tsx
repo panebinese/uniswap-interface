@@ -1,11 +1,11 @@
 import { type ColumnDef, Row } from '@tanstack/react-table'
 import { SharedEventName } from '@uniswap/analytics-events'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TouchableArea } from 'ui/src'
 import { InformationBanner } from 'uniswap/src/components/banners/InformationBanner'
-import { ElementName, SectionName } from 'uniswap/src/features/telemetry/constants'
+import { ElementName, SectionName, UniswapEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { HiddenTokenInfoModal } from 'uniswap/src/features/transactions/modals/HiddenTokenInfoModal'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
@@ -13,12 +13,13 @@ import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { Table } from '~/components/Table'
 import { PORTFOLIO_TABLE_ROW_HEIGHT } from '~/pages/Portfolio/constants'
-import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
 import { useNavigateToTokenDetails } from '~/pages/Portfolio/Tokens/hooks/useNavigateToTokenDetails'
 import { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
 import { TokenColumns, useTokenColumns } from '~/pages/Portfolio/Tokens/Table/columns/useTokenColumns'
 import {
   buildTokenTableRows,
+  getPortfolioMultichainExpandRowMetrics,
+  getPortfolioMultichainExpandRowMetricsIdentityKey,
   getSubRows,
   getTokenDataForRow,
   getTokenTableRowId,
@@ -68,14 +69,38 @@ export function TokensTableInner({
     [tokenData, allowMultichainExpandRows],
   )
 
+  const lastSentMultichainMetricsKeyRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!allowMultichainExpandRows) {
+      lastSentMultichainMetricsKeyRef.current = null
+      return
+    }
+    if (showLoadingSkeleton) {
+      return
+    }
+    const identityKey = getPortfolioMultichainExpandRowMetricsIdentityKey(tokenData)
+    if (lastSentMultichainMetricsKeyRef.current === identityKey) {
+      return
+    }
+    lastSentMultichainMetricsKeyRef.current = identityKey
+    const { totalTokenRowCount, multichainRowReductionCount, multichainAssetCount } =
+      getPortfolioMultichainExpandRowMetrics(tokenData)
+    sendAnalyticsEvent(UniswapEventName.MultichainPortfolioMetrics, {
+      total_token_row_count: totalTokenRowCount,
+      multichain_row_reduction_count: multichainRowReductionCount,
+      multichain_asset_count: multichainAssetCount,
+      ...trace,
+      ...(analyticsContext ? { element: analyticsContext.element, section: analyticsContext.section } : {}),
+    })
+  }, [allowMultichainExpandRows, showLoadingSkeleton, tokenData, trace, analyticsContext])
+
   const columns = useTokenColumns({
     hiddenColumns,
     showLoadingSkeleton,
     showUnrealizedPnlPercent,
     columnSortEnabled,
   })
-  const { chainId } = usePortfolioRoutes()
-
   const navigateToTokenDetails = useNavigateToTokenDetails()
 
   const handleTokenRowClick = useCallback(
@@ -85,9 +110,9 @@ export function TokensTableInner({
         section: analyticsContext?.section ?? SectionName.PortfolioTokensTab,
         ...trace,
       })
-      navigateToTokenDetails(data.currencyInfo.currency, chainId)
+      navigateToTokenDetails(data.currencyInfo.currency, data.chainId)
     },
-    [navigateToTokenDetails, trace, analyticsContext, chainId],
+    [navigateToTokenDetails, trace, analyticsContext],
   )
 
   const rowWrapper = useCallback(
@@ -97,7 +122,15 @@ export function TokensTableInner({
       }
       const canExpand = allowMultichainExpandRows && row.getCanExpand()
       const onPress = canExpand
-        ? () => row.toggleExpanded()
+        ? () => {
+            const nextExpanded = !row.getIsExpanded()
+            row.toggleExpanded()
+            sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
+              ...trace,
+              element: ElementName.BreakdownExpanded,
+              multichainTokenRowState: nextExpanded ? 'open' : 'close',
+            })
+          }
         : () => handleTokenRowClick(getTokenDataForRow(row.original))
       return (
         <TouchableArea onPress={onPress} pressStyle={{ scale: 1 }}>
@@ -105,7 +138,7 @@ export function TokensTableInner({
         </TouchableArea>
       )
     },
-    [loading, allowMultichainExpandRows, handleTokenRowClick],
+    [loading, allowMultichainExpandRows, handleTokenRowClick, trace],
   )
 
   return (

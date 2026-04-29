@@ -13,6 +13,7 @@ import {
   navigateTick,
   snapTickToSpacing,
 } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/utils/tickUtils'
+import { getCandlestickPriceBounds } from '~/components/Charts/PriceChart/utils'
 
 interface PriceActionCallbacks {
   onMinTickChange: (tick?: number) => void
@@ -71,7 +72,7 @@ export const createPriceActions = ({
       isFullRange: priceStrategy === DefaultPriceStrategy.FULL_RANGE,
     }))
 
-    const { tickSpacing, currentTick } = renderingContext
+    const { tickSpacing, currentTick, priceData, priceToY, yToTick } = renderingContext
 
     const { minTick: targetMinTick, maxTick: targetMaxTick } = calculateStrategyTicks({
       priceStrategy,
@@ -81,9 +82,18 @@ export const createPriceActions = ({
       defaultMaxTick,
     })
 
+    let viewportMinTick = targetMinTick
+    let viewportMaxTick = targetMaxTick
+
+    if (priceStrategy === DefaultPriceStrategy.FULL_RANGE && priceData.length > 0) {
+      const { min: priceMin, max: priceMax } = getCandlestickPriceBounds(priceData)
+      viewportMinTick = snapTickToSpacing(yToTick(priceToY({ price: priceMin })), tickSpacing)
+      viewportMaxTick = snapTickToSpacing(yToTick(priceToY({ price: priceMax })), tickSpacing)
+    }
+
     const { targetZoom, targetPanY } = calculateRangeViewport({
-      minTick: targetMinTick,
-      maxTick: targetMaxTick,
+      minTick: viewportMinTick,
+      maxTick: viewportMaxTick,
       tickSpacing,
     })
 

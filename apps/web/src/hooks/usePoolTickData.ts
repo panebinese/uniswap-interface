@@ -8,8 +8,6 @@ import ms from 'ms'
 import { useEffect, useMemo, useState } from 'react'
 import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { useGetPoolsByTokens } from 'uniswap/src/data/rest/getPools'
-import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
-import { useSupportedChainId } from 'uniswap/src/features/chains/hooks/useSupportedChainId'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { AddressStringFormat, normalizeAddress } from 'uniswap/src/utils/addresses'
@@ -49,13 +47,10 @@ function usePaginatedTickQuery({
   skip?: number
   chainId: UniverseChainId
 }) {
-  const { defaultChainId } = useEnabledChains()
-  const supportedChainId = useSupportedChainId(chainId)
-
   const v3Result = GraphQLApi.useAllV3TicksQuery({
     variables: {
       address: normalizeAddress(poolId ?? '', AddressStringFormat.Lowercase),
-      chain: toGraphQLChain(supportedChainId ?? defaultChainId),
+      chain: toGraphQLChain(chainId),
       skip,
       first: MAX_TICK_FETCH_VALUE,
     },
@@ -66,7 +61,7 @@ function usePaginatedTickQuery({
   const v4Result = GraphQLApi.useAllV4TicksQuery({
     variables: {
       poolId: poolId ?? '',
-      chain: toGraphQLChain(supportedChainId ?? defaultChainId),
+      chain: toGraphQLChain(chainId),
       skip,
       first: MAX_TICK_FETCH_VALUE,
     },

@@ -313,7 +313,7 @@ exports[`TDPPoolTable > renders data filled state 1`] = `
                               data-testid="token-logo"
                             >
                               <div
-                                class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _opacity-0 _height-9637 _width-9637 _zIndex-0 _backgroundColor-FFFFFF35 _position-absolute _top-237 _left-237 _borderTopLeftRadius-12px _borderTopRightRadius-12px _borderBottomRightRadius-12px _borderBottomLeftRadius-12px"
+                                class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _opacity-0 _height-9637 _width-9637 _zIndex-0 _backgroundColor-FFFFFF35 _position-absolute _top-237 _left-237 _borderTopLeftRadius-t-radius-ro1041013639 _borderTopRightRadius-t-radius-ro1041013639 _borderBottomRightRadius-t-radius-ro1041013639 _borderBottomLeftRadius-t-radius-ro1041013639"
                               />
                               <div
                                 class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
@@ -322,7 +322,7 @@ exports[`TDPPoolTable > renders data filled state 1`] = `
                                 <img
                                   height="24"
                                   src="https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
-                                  style="object-fit: contain; border-radius: 12px; z-index: 1;"
+                                  style="object-fit: contain; border-radius: 24px; z-index: 1;"
                                   width="24"
                                 />
                               </div>
@@ -337,7 +337,7 @@ exports[`TDPPoolTable > renders data filled state 1`] = `
                               data-testid="token-logo"
                             >
                               <div
-                                class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _opacity-0 _height-9637 _width-9637 _zIndex-0 _backgroundColor-FFFFFF35 _position-absolute _top-237 _left-237 _borderTopLeftRadius-12px _borderTopRightRadius-12px _borderBottomRightRadius-12px _borderBottomLeftRadius-12px"
+                                class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _opacity-0 _height-9637 _width-9637 _zIndex-0 _backgroundColor-FFFFFF35 _position-absolute _top-237 _left-237 _borderTopLeftRadius-t-radius-ro1041013639 _borderTopRightRadius-t-radius-ro1041013639 _borderBottomRightRadius-t-radius-ro1041013639 _borderBottomLeftRadius-t-radius-ro1041013639"
                               />
                               <div
                                 class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
@@ -346,7 +346,7 @@ exports[`TDPPoolTable > renders data filled state 1`] = `
                                 <img
                                   height="24"
                                   src="eth-logo.png"
-                                  style="object-fit: contain; border-radius: 12px; z-index: 1;"
+                                  style="object-fit: contain; border-radius: 24px; z-index: 1;"
                                   width="24"
                                 />
                               </div>

@@ -8,77 +8,23 @@ import { useLocalizationContext } from 'uniswap/src/features/language/Localizati
 import { NumberType } from 'utilities/src/format/types'
 import tryParseCurrencyAmount from '~/lib/utils/tryParseCurrencyAmount'
 import { PercentButton } from '~/pages/Liquidity/CreateAuction/components/PercentButton'
-import { percentOfAmount } from '~/pages/Liquidity/CreateAuction/utils'
+import {
+  expandCompactNumberInput,
+  isAllowedCompactNumberInput,
+  percentOfAmount,
+} from '~/pages/Liquidity/CreateAuction/utils'
 
 const QUICK_SELECT_PERCENTS = [2, 5, 10] as const
-
-const SUFFIX_EXPONENTS: Record<'k' | 'm' | 'b' | 't', number> = {
-  k: 3,
-  m: 6,
-  b: 9,
-  t: 12,
-}
-
-/**
- * Expands a suffixed numeric string into a plain decimal string using
- * integer arithmetic (no floating-point) to avoid rounding errors.
- *
- * Examples: "3.33b" → "3330000000", "500k" → "500000", "1.5m" → "1500000"
- */
-function expandSuffix(input: string): string | null {
-  const trimmed = input.trim().toLowerCase()
-  if (!trimmed) {
-    return null
-  }
-
-  const lastChar = trimmed[trimmed.length - 1]
-  const exponent =
-    lastChar in SUFFIX_EXPONENTS ? SUFFIX_EXPONENTS[lastChar as keyof typeof SUFFIX_EXPONENTS] : undefined
-
-  // No suffix — return as-is (plain number)
-  if (exponent === undefined) {
-    return /^\d*\.?\d+$/.test(trimmed) ? trimmed : null
-  }
-
-  const numStr = trimmed.slice(0, -1)
-  if (!numStr || !/^\d*\.?\d+$/.test(numStr)) {
-    return null
-  }
-
-  // Shift the decimal point right by `exponent` places using string ops
-  const dotIndex = numStr.indexOf('.')
-  if (dotIndex === -1) {
-    // Integer: just append zeros
-    return numStr + '0'.repeat(exponent)
-  }
-
-  const intPart = numStr.slice(0, dotIndex)
-  const fracPart = numStr.slice(dotIndex + 1)
-
-  if (fracPart.length <= exponent) {
-    // Fractional digits fit within the shift — result is an integer
-    return intPart + fracPart + '0'.repeat(exponent - fracPart.length)
-  }
-
-  // More fractional digits than the exponent — insert a new decimal point
-  const newIntPart = intPart + fracPart.slice(0, exponent)
-  const newFracPart = fracPart.slice(exponent)
-  return newIntPart + '.' + newFracPart
-}
 
 /**
  * Parses a suffixed input string into a CurrencyAmount with exact precision.
  */
 function parseSuffixedAmount(input: string, currency: Currency): CurrencyAmount<Currency> | null {
-  const expanded = expandSuffix(input)
+  const expanded = expandCompactNumberInput(input)
   if (!expanded) {
     return null
   }
   return tryParseCurrencyAmount(expanded, currency) ?? null
-}
-
-function isAllowedInput(value: string): boolean {
-  return /^(\d*\.?\d*)[kmbt]?$/i.test(value)
 }
 
 interface AuctionSupplySelectorProps {
@@ -123,7 +69,7 @@ export function AuctionSupplySelector({
 
   const handleChange = useCallback(
     (value: string) => {
-      if (!isAllowedInput(value)) {
+      if (!isAllowedCompactNumberInput(value)) {
         return
       }
       setRawInput(value)

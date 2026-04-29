@@ -12,7 +12,8 @@ import { normalizeCurrencyIdForMapLookup } from 'uniswap/src/data/cache'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
 import { submitTokenIssueReport, TokenReportOption } from 'uniswap/src/features/reporting/reports'
-import { ModalName } from 'uniswap/src/features/telemetry/constants'
+import { ModalName, WalletEventName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { setTokenVisibility } from 'uniswap/src/features/visibility/slice'
 import { currencyId, NATIVE_ANALYTICS_ADDRESS_VALUE } from 'uniswap/src/utils/currencyId'
 import { isProdEnv } from 'utilities/src/environment/env'
@@ -23,11 +24,12 @@ export type ReportTokenModalProps = {
   currency?: Currency
   source?: 'portfolio' | 'token-details'
   isMarkedSpam?: Maybe<boolean>
+  isMultichainAsset?: boolean
   onReportSuccess?: () => void
 }
 
 export const ReportTokenIssueModalPropsAtom = atom<
-  Pick<ReportTokenModalProps, 'source' | 'currency' | 'isMarkedSpam'> | undefined
+  Pick<ReportTokenModalProps, 'source' | 'currency' | 'isMarkedSpam' | 'isMultichainAsset'> | undefined
 >(undefined)
 
 export function ReportTokenIssueModal({
@@ -35,6 +37,7 @@ export function ReportTokenIssueModal({
   isOpen,
   source = 'token-details',
   isMarkedSpam,
+  isMultichainAsset = false,
   onReportSuccess,
   onClose,
 }: ReportTokenModalProps & BaseModalProps): JSX.Element {
@@ -53,10 +56,16 @@ export function ReportTokenIssueModal({
         return
       }
 
+      const normalizedCurrencyId = normalizeCurrencyIdForMapLookup(currencyId(currency))
+
       // Update the visibility of the token in the portfolio
-      dispatch(
-        setTokenVisibility({ currencyId: normalizeCurrencyIdForMapLookup(currencyId(currency)), isVisible: false }),
-      )
+      dispatch(setTokenVisibility({ currencyId: normalizedCurrencyId, isVisible: false }))
+
+      sendAnalyticsEvent(WalletEventName.TokenVisibilityChanged, {
+        currencyId: normalizedCurrencyId,
+        visible: false,
+        is_multichain_asset: isMultichainAsset,
+      })
 
       // Submit report to amplitude
       submitTokenIssueReport({
@@ -65,6 +74,7 @@ export function ReportTokenIssueModal({
         tokenAddress: currency.isNative ? NATIVE_ANALYTICS_ADDRESS_VALUE : currency.address,
         tokenName: currency.name,
         isMarkedSpam,
+        isMultichainAsset,
         reportOptions: Array.from(checkedItems),
         reportTexts,
       })

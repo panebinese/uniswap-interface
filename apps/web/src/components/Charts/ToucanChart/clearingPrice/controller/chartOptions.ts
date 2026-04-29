@@ -25,10 +25,8 @@ export function createClearingPriceChartOptions({
       visible: false,
       borderVisible: false,
       autoScale: true,
-      scaleMargins: {
-        top: 0,
-        bottom: 0,
-      },
+      // scaleMargins are applied via chart.priceScale('left').applyOptions in init.ts —
+      // lightweight-charts only honors them reliably after the scale exists.
     },
     rightPriceScale: {
       visible: false,
@@ -110,13 +108,13 @@ export function createAreaSeriesOptions({
 }): Record<string, unknown> {
   const lineColor = tokenColor || colors.accent1.val
 
-  // Custom autoscale provider that enforces calculated scaled yMin/yMax range.
-  // Adds bottom margin so the lowest data point doesn't overlap with x-axis labels.
-  const range = scaledYMax - scaledYMin
-  const bottomPad = range * 0.05
+  // Enforce calculated scaled yMin/yMax range. Clamp minValue to 0 — prices are
+  // non-negative by domain, and letting a small buffer push the floor negative
+  // produces mirrored y-axis labels (see priceFormatter.ts). Bottom breathing room
+  // comes from priceScale.scaleMargins, not from widening the data range.
   const autoscaleInfoProvider = () => ({
     priceRange: {
-      minValue: scaledYMin - bottomPad,
+      minValue: Math.max(0, scaledYMin),
       maxValue: scaledYMax,
     },
   })

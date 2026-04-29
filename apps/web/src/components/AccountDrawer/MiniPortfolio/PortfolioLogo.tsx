@@ -22,7 +22,7 @@ interface PortfolioLogoProps {
   customIcon?: React.ReactNode
 }
 
-const LOGO_DEFAULT_SIZE = 40
+export const PORTFOLIO_LOGO_DEFAULT_SIZE = 40
 
 export const PortfolioLogo = memo(function PortfolioLogo(props: PortfolioLogoProps) {
   const colors = useSporeColors()
@@ -46,7 +46,7 @@ function getLogo(
     fallbackSymbols,
     chainId,
     customIcon,
-    size = LOGO_DEFAULT_SIZE,
+    size = PORTFOLIO_LOGO_DEFAULT_SIZE,
   }: PortfolioLogoProps,
   colors: UseSporeColorsReturn,
 ) {

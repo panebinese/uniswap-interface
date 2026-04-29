@@ -13,7 +13,6 @@ exports[`PortfolioPageInner > connected user view > should render correctly with
         class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _gap-t-space-spa1360334047"
       >
         <div
-          data-scroll-y="200"
           data-testid="portfolio-header"
         >
           Portfolio Header Mock
@@ -45,7 +44,6 @@ exports[`PortfolioPageInner > connected user view > should render correctly with
         class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _gap-t-space-spa1360334047"
       >
         <div
-          data-scroll-y="0"
           data-testid="portfolio-header"
         >
           Portfolio Header Mock
@@ -79,7 +77,7 @@ exports[`PortfolioPageInner > demo view (disconnected) > should render demo view
         Connect Wallet Banner Mock
       </div>
       <div
-        data-should-show="true"
+        data-should-show="false"
         data-testid="connect-wallet-button"
       >
         Connect Wallet Button Mock

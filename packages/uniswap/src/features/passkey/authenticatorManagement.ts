@@ -13,12 +13,17 @@ import {
   base64ToBase64url,
   base64urlToBase64,
   canonicalizeJSON,
+  ensureNeckKeyPair,
   generateDeviceKeyPair,
   getDeviceSession,
+  loadNeckMetadata,
+  loadNeckSigningKey,
   setDeviceSession,
   signWithDeviceKey,
+  storeNeckMetadata,
+  storeNeckSigningKey,
 } from 'uniswap/src/features/passkey/deviceSession'
-import { authenticateWithPasskey } from 'uniswap/src/features/passkey/embeddedWallet'
+import { authenticateWithPasskey, refreshNeckSession } from 'uniswap/src/features/passkey/embeddedWallet'
 import { authenticatePasskey, registerPasskey } from 'uniswap/src/features/passkey/passkey'
 import { logger } from 'utilities/src/logger/logger'
 
@@ -26,7 +31,52 @@ export async function listAuthenticators(
   walletId?: string,
 ): Promise<{ authenticators: Authenticator[]; recoveryMethods: RecoveryMethod[] }> {
   try {
-    const resp = await EmbeddedWalletApiClient.fetchListAuthenticatorsRequest({ walletId })
+    const neckMeta = loadNeckMetadata()
+    const resolvedWalletId = walletId ?? neckMeta?.walletId
+
+    if (!resolvedWalletId) {
+      throw new Error('No walletId available for device auth')
+    }
+
+    // Ensure we have both metadata AND the in-memory private key. If either is
+    // missing (e.g. window was closed since last session), this regenerates a fresh
+    // pair; we then MUST refresh the server-side NECK registration to bind the new
+    // pub key, since Challenge(sessionActive) doesn't verify pub-key match.
+    const {
+      privateKey: neckSigningKey,
+      publicKeyBase64: devicePublicKey,
+      isFresh,
+    } = await ensureNeckKeyPair(resolvedWalletId)
+
+    if (isFresh) {
+      await refreshNeckSession(devicePublicKey, resolvedWalletId)
+    }
+
+    let challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
+      type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
+      action: Action.LIST_AUTHENTICATORS,
+      walletId: resolvedWalletId,
+      devicePublicKey,
+    })
+
+    if (!challenge.sessionActive) {
+      await refreshNeckSession(devicePublicKey, resolvedWalletId)
+      challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
+        type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
+        action: Action.LIST_AUTHENTICATORS,
+        walletId: resolvedWalletId,
+        devicePublicKey,
+      })
+    }
+
+    if (!challenge.signingPayload) {
+      throw new Error('Challenge did not return a signing payload for LIST_AUTHENTICATORS')
+    }
+
+    const deviceSignature = await signWithDeviceKey(neckSigningKey, challenge.signingPayload)
+    const resp = await EmbeddedWalletApiClient.fetchListAuthenticatorsRequest({
+      deviceAuth: { deviceSignature, walletId: resolvedWalletId, signingPayload: challenge.signingPayload },
+    })
     return { authenticators: resp.authenticators, recoveryMethods: resp.recoveryMethods }
   } catch (error) {
     logger.error(error, {
@@ -40,7 +90,23 @@ export async function listAuthenticators(
 }
 
 export async function startAddAuthenticatorSession(walletId?: string): Promise<string> {
-  const { privateKey, publicKeyBase64: devicePublicKey } = await generateDeviceKeyPair()
+  // Try to use existing NECK; generate a new one only if expired/missing
+  const neckMeta = loadNeckMetadata()
+  const resolvedWalletId = walletId ?? neckMeta?.walletId
+  let privateKey: CryptoKey | null = null
+  let devicePublicKey: string
+
+  if (neckMeta && resolvedWalletId) {
+    privateKey = loadNeckSigningKey(resolvedWalletId)
+  }
+
+  if (privateKey && neckMeta) {
+    devicePublicKey = neckMeta.publicKeyBase64
+  } else {
+    const newKeyPair = await generateDeviceKeyPair()
+    privateKey = newKeyPair.privateKey
+    devicePublicKey = newKeyPair.publicKeyBase64
+  }
 
   const challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
     type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
@@ -63,6 +129,17 @@ export async function startAddAuthenticatorSession(walletId?: string): Promise<s
     throw new Error('StartAuthenticatedSession did not return policy details')
   }
 
+  // Persist NECK from session response
+  if (resolvedWalletId) {
+    storeNeckSigningKey(resolvedWalletId, privateKey)
+    storeNeckMetadata({
+      publicKeyBase64: devicePublicKey,
+      walletId: resolvedWalletId,
+      deviceKeyQuorumId: neckMeta?.deviceKeyQuorumId ?? '',
+    })
+  }
+
+  // Keep legacy in-memory session for registerNewAuthenticator backward compat
   setDeviceSession({
     privateKey,
     policyId: sessionResp.policyId,

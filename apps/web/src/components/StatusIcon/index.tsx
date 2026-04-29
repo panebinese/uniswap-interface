@@ -1,4 +1,3 @@
-import { Passkey } from 'ui/src/components/icons/Passkey'
 import { Flex, FlexProps } from 'ui/src/components/layout'
 import { breakpoints } from 'ui/src/theme'
 import { CONNECTION_PROVIDER_NAMES } from 'uniswap/src/constants/web3'
@@ -70,13 +69,8 @@ function MiniWalletIcon({ platform }: { platform: Platform }) {
     return null
   }
 
-  // Embedded wallet uses the Passkey React component so it respects theme colors
   if (wallet.name === CONNECTION_PROVIDER_NAMES.EMBEDDED_WALLET) {
-    return (
-      <MiniIconContainer $side="right" data-testid="MiniIcon">
-        <Passkey size={MINI_ICON_SIZE} color="$neutral1" />
-      </MiniIconContainer>
-    )
+    return null
   }
 
   // TODO(APPS-8471): this should use useConnectedWallet() which returns connected WalletConnectorMeta, which is post-icon-override-map transformation

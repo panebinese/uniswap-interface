@@ -1,3 +1,4 @@
+// oxlint-disable eslint-js/no-restricted-syntax
 // oxlint-disable-next-line no-restricted-imports -- playwright test utilities needed for test fixtures
 import { mergeTests } from '@playwright/test'
 import { test as amplitudeTest } from '~/playwright/fixtures/amplitude'

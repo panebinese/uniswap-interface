@@ -2,6 +2,7 @@ import {
   createChart,
   type IChartApi,
   type ISeriesApi,
+  LineStyle,
   LineType,
   type MouseEventParams,
   type Time,
@@ -13,6 +14,8 @@ import type { ClearingPriceChartControllerCreateParams } from '~/components/Char
 interface InitClearingPriceChartResult {
   chart: IChartApi
   series: ISeriesApi<'Area'>
+  /** Area series for the pre-bid portion — rendered with a dashed line and the same area fill. */
+  preBidSeries: ISeriesApi<'Area'>
   teardown: () => void
   /** Deferred subscription setup - call AFTER first setData to avoid internal errors */
   subscribeVisibleRangeChanges: () => void
@@ -59,6 +62,30 @@ export function initClearingPriceChart(params: {
     crosshairMarkerRadius: 0,
   })
 
+  const preBidSeries = chart.addAreaSeries({
+    priceScaleId: 'left',
+    lineType: LineType.WithSteps,
+    lineWidth: 2,
+    lineStyle: LineStyle.Dashed,
+    lineColor,
+    topColor: lineColor,
+    bottomColor: opacify(0, createParams.colors.surface1.val),
+    priceLineVisible: false,
+    lastValueVisible: false,
+    crosshairMarkerRadius: 0,
+  })
+
+  // Apply scale margins via priceScale().applyOptions rather than createChart options —
+  // lightweight-charts honors these reliably only after the scale exists (matches the
+  // bidDistribution v1 pattern).
+  chart.priceScale('left').applyOptions({
+    scaleMargins: {
+      top: 0.1,
+      bottom: 0.1,
+    },
+    autoScale: true,
+  })
+
   // Set up event subscriptions (except visible range - deferred until after first setData)
   chart.subscribeCrosshairMove(onCrosshairMove)
 
@@ -85,6 +112,7 @@ export function initClearingPriceChart(params: {
   return {
     chart,
     series,
+    preBidSeries,
     teardown,
     subscribeVisibleRangeChanges,
   }

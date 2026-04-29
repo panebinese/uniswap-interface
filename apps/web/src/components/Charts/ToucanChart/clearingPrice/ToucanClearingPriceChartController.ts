@@ -40,6 +40,7 @@ export class ToucanClearingPriceChartController {
 
   private chart: IChartApi | null = null
   private series: ISeriesApi<'Area'> | null = null
+  private preBidSeries: ISeriesApi<'Area'> | null = null
   private container: HTMLDivElement
   private teardownFn: (() => void) | null = null
   private subscribeVisibleRangeChangesFn: (() => void) | null = null
@@ -57,6 +58,7 @@ export class ToucanClearingPriceChartController {
     visibleRange: null,
     isZoomed: false,
   }
+  private latestPreBidEndTime: UTCTimestamp | undefined
   private latestScaleFactor = 1
   private latestMaxFractionDigits = 4
   private latestScaledYMin = 0
@@ -149,7 +151,10 @@ export class ToucanClearingPriceChartController {
       hideXAxis,
       isZoomEnabled = true,
       disableMouseWheelInteractions = false,
+      preBidEndTime,
     } = params
+
+    this.latestPreBidEndTime = preBidEndTime
 
     // Store positioning mode for coordinate calculations and resize handling
     this.useLogicalRangePositioning = useLogicalRangePositioning ?? false
@@ -164,39 +169,7 @@ export class ToucanClearingPriceChartController {
     this.fullRangeEnd = this.initialRangeEnd ?? resolvedEnd
     /* oxlint-enable typescript/no-unnecessary-condition */
 
-    const interactionOptions = isZoomEnabled
-      ? {
-          handleScroll: {
-            mouseWheel: !disableMouseWheelInteractions,
-            pressedMouseMove: true,
-            horzTouchDrag: true,
-            vertTouchDrag: false,
-          },
-          handleScale: {
-            mouseWheel: !disableMouseWheelInteractions,
-            pinch: true,
-            axisPressedMouseMove: {
-              time: true,
-              price: false,
-            },
-          },
-        }
-      : {
-          handleScroll: {
-            mouseWheel: false,
-            pressedMouseMove: false,
-            horzTouchDrag: false,
-            vertTouchDrag: false,
-          },
-          handleScale: {
-            mouseWheel: false,
-            pinch: false,
-            axisPressedMouseMove: {
-              time: false,
-              price: false,
-            },
-          },
-        }
+    const interactionOptions = buildInteractionOptions({ isZoomEnabled, disableMouseWheelInteractions })
 
     // Apply chart options including timeScale visibility
     chart.applyOptions({
@@ -219,9 +192,12 @@ export class ToucanClearingPriceChartController {
       ...interactionOptions,
     })
 
-    // Set data and series options
+    // Set data and series options. If a pre-bid phase is defined, split the data so the
+    // pre-bid portion renders as a dashed line (no area fill) and the clearing portion
+    // renders as the usual area series. The boundary point is included in both slices
+    // so the two segments visually connect.
     this.latestData = data
-    series.setData(data)
+    applyPreBidSplitData({ data, preBidEndTime, series, preBidSeries: this.preBidSeries })
 
     // Subscribe to visible range changes AFTER first setData to avoid lightweight-charts
     // internal errors when range change events fire before data is loaded.
@@ -230,30 +206,17 @@ export class ToucanClearingPriceChartController {
       this.hasSubscribedVisibleRangeChanges = true
     }
 
+    const resolvedTokenColor = tokenColor ?? this.createParams.tokenColor
     const seriesOptions = createAreaSeriesOptions({
       colors: this.createParams.colors,
-      tokenColor: tokenColor ?? this.createParams.tokenColor,
+      tokenColor: resolvedTokenColor,
       scaledYMin,
       scaledYMax,
     })
     series.applyOptions(seriesOptions)
+    this.preBidSeries?.applyOptions(seriesOptions)
 
-    // Set visible range based on positioning mode
-    // Wrap in try-catch because range operations can throw if chart's internal state isn't ready
-    try {
-      if (useLogicalRangePositioning && data.length > 0) {
-        // Use logical range for 75% positioning (data occupies 75% of chart width)
-        const logicalEnd = Math.ceil(data.length / 0.75)
-        chart.timeScale().setVisibleLogicalRange({ from: 0, to: logicalEnd })
-      } else if (visibleRangeStart !== undefined && visibleRangeEnd !== undefined) {
-        // For ended auctions or two-chart mode, use time-based range
-        chart.timeScale().setVisibleRange({ from: visibleRangeStart, to: visibleRangeEnd })
-      } else {
-        chart.timeScale().fitContent()
-      }
-    } catch {
-      // Chart not ready yet - ignore the error
-    }
+    applyVisibleRange({ chart, data, useLogicalRangePositioning, visibleRangeStart, visibleRangeEnd })
 
     this.latestScaleFactor = scaleFactor
     this.latestMaxFractionDigits = maxFractionDigits
@@ -347,6 +310,7 @@ export class ToucanClearingPriceChartController {
 
       this.chart = result.chart
       this.series = result.series
+      this.preBidSeries = result.preBidSeries
       this.teardownFn = result.teardown
       this.subscribeVisibleRangeChangesFn = result.subscribeVisibleRangeChanges
     } catch (error) {
@@ -368,6 +332,7 @@ export class ToucanClearingPriceChartController {
     chart.remove()
     this.chart = null
     this.series = null
+    this.preBidSeries = null
   }
 
   private onResize(): void {
@@ -412,6 +377,8 @@ export class ToucanClearingPriceChartController {
       param,
       chart,
       series,
+      preBidSeries: this.preBidSeries,
+      preBidEndTime: this.latestPreBidEndTime,
       onTooltipStateChange: this.callbacks.onTooltipStateChange,
     })
   }
@@ -612,5 +579,103 @@ export class ToucanClearingPriceChartController {
       return
     }
     this.applyInitialRange()
+  }
+}
+
+function buildInteractionOptions({
+  isZoomEnabled,
+  disableMouseWheelInteractions,
+}: {
+  isZoomEnabled: boolean
+  disableMouseWheelInteractions: boolean
+}): {
+  handleScroll: { mouseWheel: boolean; pressedMouseMove: boolean; horzTouchDrag: boolean; vertTouchDrag: boolean }
+  handleScale: {
+    mouseWheel: boolean
+    pinch: boolean
+    axisPressedMouseMove: { time: boolean; price: boolean }
+  }
+} {
+  if (!isZoomEnabled) {
+    return {
+      handleScroll: { mouseWheel: false, pressedMouseMove: false, horzTouchDrag: false, vertTouchDrag: false },
+      handleScale: {
+        mouseWheel: false,
+        pinch: false,
+        axisPressedMouseMove: { time: false, price: false },
+      },
+    }
+  }
+  return {
+    handleScroll: {
+      mouseWheel: !disableMouseWheelInteractions,
+      pressedMouseMove: true,
+      horzTouchDrag: true,
+      vertTouchDrag: false,
+    },
+    handleScale: {
+      mouseWheel: !disableMouseWheelInteractions,
+      pinch: true,
+      axisPressedMouseMove: { time: true, price: false },
+    },
+  }
+}
+
+function applyPreBidSplitData({
+  data,
+  preBidEndTime,
+  series,
+  preBidSeries,
+}: {
+  data: ClearingPriceChartPoint[]
+  preBidEndTime: UTCTimestamp | undefined
+  series: ISeriesApi<'Area'>
+  preBidSeries: ISeriesApi<'Area'> | null
+}): void {
+  if (preBidEndTime === undefined || data.length === 0) {
+    preBidSeries?.setData([])
+    series.setData(data)
+    return
+  }
+  const boundary = preBidEndTime as number
+  const splitIdx = data.findIndex((p) => (p.time as number) >= boundary)
+  if (splitIdx === -1) {
+    // All points are pre-bid — keep area series alive with the last point to preserve Y-axis labels
+    preBidSeries?.setData(data)
+    series.setData([data[data.length - 1]!])
+  } else if (splitIdx === 0) {
+    preBidSeries?.setData([])
+    series.setData(data)
+  } else {
+    preBidSeries?.setData(data.slice(0, splitIdx + 1))
+    series.setData(data.slice(splitIdx))
+  }
+}
+
+function applyVisibleRange({
+  chart,
+  data,
+  useLogicalRangePositioning,
+  visibleRangeStart,
+  visibleRangeEnd,
+}: {
+  chart: IChartApi
+  data: ClearingPriceChartPoint[]
+  useLogicalRangePositioning: boolean | undefined
+  visibleRangeStart: UTCTimestamp | undefined
+  visibleRangeEnd: UTCTimestamp | undefined
+}): void {
+  // Range operations can throw if chart's internal state isn't ready
+  try {
+    if (useLogicalRangePositioning && data.length > 0) {
+      const logicalEnd = Math.ceil(data.length / 0.75)
+      chart.timeScale().setVisibleLogicalRange({ from: 0, to: logicalEnd })
+    } else if (visibleRangeStart !== undefined && visibleRangeEnd !== undefined) {
+      chart.timeScale().setVisibleRange({ from: visibleRangeStart, to: visibleRangeEnd })
+    } else {
+      chart.timeScale().fitContent()
+    }
+  } catch {
+    // Chart not ready yet
   }
 }

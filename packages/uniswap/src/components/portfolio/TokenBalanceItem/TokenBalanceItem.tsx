@@ -170,9 +170,11 @@ export const TokenBalanceItem = memo(function TokenBalanceItemInner({
   )
 
   if (contextMenuActions && portfolioBalanceForMenu) {
+    const isMultichainAsset = (portfolioBalance?.tokens.length ?? 0) > 1
     return (
       <TokenBalanceItemContextMenu
         portfolioBalance={portfolioBalanceForMenu}
+        isMultichainAsset={isMultichainAsset}
         copyAddressToClipboard={contextMenuActions.copyAddressToClipboard}
         openReportTokenModal={contextMenuActions.openReportTokenModal}
         onPressToken={handleMenuRowPress}

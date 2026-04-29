@@ -35,8 +35,12 @@ export function useGetWalletTokensProfitLossQuery(
       input?.multichain,
       input?.modifier,
     ] as const,
-    queryFn: () =>
-      transformedInput ? profitLossClient.getWalletTokensProfitLoss(transformedInput) : Promise.resolve(undefined),
+    queryFn: async () => {
+      if (!transformedInput) {
+        return undefined
+      }
+      return await profitLossClient.getWalletTokensProfitLoss(transformedInput)
+    },
     enabled: !!address && enabled !== false,
   })
 }

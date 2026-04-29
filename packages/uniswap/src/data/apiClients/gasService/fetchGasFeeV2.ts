@@ -5,7 +5,6 @@ import { mapGasServiceV2Response } from 'uniswap/src/data/apiClients/gasService/
 import { mapToEstimateGasFeeRequest } from 'uniswap/src/data/apiClients/gasService/mapToEstimateGasFeeRequest'
 import { estimateGasWithClientSideProvider } from 'uniswap/src/features/gas/utils'
 import { logger } from 'utilities/src/logger/logger'
-import { isWebApp } from 'utilities/src/platform'
 
 export async function fetchGasFeeV2({
   tx,
@@ -39,9 +38,6 @@ export async function fetchGasFeeV2({
       },
     })
 
-    if (isWebApp) {
-      return estimateGasWithClientSideProvider({ tx, fallbackGasLimit })
-    }
-    throw error
+    return estimateGasWithClientSideProvider({ tx, fallbackGasLimit })
   }
 }

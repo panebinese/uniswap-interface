@@ -71,7 +71,6 @@ export function Checkbox({ checked, variant = 'default', size = '$icon.20', ...r
       height={sizes.FocusRing}
       justifyContent="center"
       width={sizes.FocusRing}
-      testID={rest.testID}
     >
       <TamaguiCheckbox
         {...rest}

@@ -1,19 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
+import { Protocols } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
 import {
-  CreateLPPositionRequest,
-  IncreaseLPPositionRequest,
-} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
-import {
-  IndependentToken,
-  Protocols,
-  V3CreateLPPosition,
-  V3IncreaseLPPosition,
-} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
-import {
-  IncreasePositionRequest as V2IncreasePositionRequest,
-  IncreasePositionResponse as V2IncreasePositionResponse,
+  CreatePositionRequest,
+  CreatePositionResponse,
+  IncreasePositionRequest,
+  IncreasePositionResponse,
 } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
-import { LPToken } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/types_pb'
+import { CreateToken, LPToken, PositionTickBounds } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/types_pb'
 import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
 import JSBI from 'jsbi'
 import { USDC_MAINNET } from 'uniswap/src/constants/tokens'
@@ -49,85 +42,43 @@ vi.mock('uniswap/src/features/transactions/hooks/useUSDCPriceWrapper', () => ({
 
 const refetchInterval = 5 * ONE_SECOND_MS
 
-const BASE_CREATE_PARAMS = new CreateLPPositionRequest({
-  createLpPosition: {
-    case: 'v3CreateLpPosition',
-    value: new V3CreateLPPosition({
-      walletAddress: '0x123',
-      chainId: 1,
-      protocols: Protocols.V3,
-      independentAmount: '1000',
-      independentToken: IndependentToken.TOKEN_0,
-      slippageTolerance: 0.5,
-      deadline: Date.now() + 1000000,
-      simulateTransaction: true,
-      position: {
-        tickLower: -887272,
-        tickUpper: 887272,
-        pool: {
-          token0: TEST_TOKEN_1.address,
-          token1: TEST_TOKEN_2.address,
-          fee: 3000,
-          tickSpacing: 60,
-        },
-      },
-    }),
+const BASE_CREATE_PARAMS = new CreatePositionRequest({
+  walletAddress: '0x123',
+  chainId: 1,
+  protocol: Protocols.V3,
+  independentToken: new CreateToken({ tokenAddress: TEST_TOKEN_1.address, amount: '1000' }),
+  slippageTolerance: 0.5,
+  deadline: Date.now() + 1000000,
+  simulateTransaction: true,
+  pool: {
+    case: 'existingPool',
+    value: { token0Address: TEST_TOKEN_1.address, token1Address: TEST_TOKEN_2.address, poolReference: 'test-pool-id' },
+  },
+  tickPrice: {
+    case: 'tickBounds',
+    value: new PositionTickBounds({ tickLower: -887272, tickUpper: 887272 }),
   },
 })
 
-const BASE_CREATE_PARAMS_NO_SIMULATE = new CreateLPPositionRequest({
-  createLpPosition: {
-    case: 'v3CreateLpPosition',
-    value: new V3CreateLPPosition({
-      walletAddress: '0x123',
-      chainId: 1,
-      protocols: Protocols.V3, // Protocols.V3
-      independentAmount: '1000',
-      independentToken: IndependentToken.TOKEN_0, // IndependentToken.TOKEN_0
-      slippageTolerance: 0.5,
-      deadline: Date.now() + 1000000,
-      simulateTransaction: false,
-      position: {
-        tickLower: -887272,
-        tickUpper: 887272,
-        pool: {
-          token0: TEST_TOKEN_1.address,
-          token1: TEST_TOKEN_2.address,
-          fee: 3000,
-          tickSpacing: 60,
-        },
-      },
-    }),
+const BASE_CREATE_PARAMS_NO_SIMULATE = new CreatePositionRequest({
+  walletAddress: '0x123',
+  chainId: 1,
+  protocol: Protocols.V3,
+  independentToken: new CreateToken({ tokenAddress: TEST_TOKEN_1.address, amount: '1000' }),
+  slippageTolerance: 0.5,
+  deadline: Date.now() + 1000000,
+  simulateTransaction: false,
+  pool: {
+    case: 'existingPool',
+    value: { token0Address: TEST_TOKEN_1.address, token1Address: TEST_TOKEN_2.address, poolReference: 'test-pool-id' },
+  },
+  tickPrice: {
+    case: 'tickBounds',
+    value: new PositionTickBounds({ tickLower: -887272, tickUpper: 887272 }),
   },
 })
 
-const BASE_INCREASE_PARAMS = new IncreaseLPPositionRequest({
-  increaseLpPosition: {
-    case: 'v3IncreaseLpPosition',
-    value: new V3IncreaseLPPosition({
-      walletAddress: '0x123',
-      chainId: 1,
-      protocols: Protocols.V3,
-      independentAmount: '1000',
-      independentToken: IndependentToken.TOKEN_0,
-      slippageTolerance: 0.5,
-      deadline: Date.now() + 1000000,
-      simulateTransaction: true,
-      position: {
-        pool: {
-          token0: TEST_TOKEN_1.address,
-          token1: TEST_TOKEN_2.address,
-          fee: 3000,
-          tickSpacing: 60,
-        },
-        tickLower: -887272,
-        tickUpper: 887272,
-      },
-    }),
-  },
-})
-
-const BASE_V2_INCREASE_PARAMS = new V2IncreasePositionRequest({
+const BASE_INCREASE_PARAMS = new IncreasePositionRequest({
   walletAddress: '0x123',
   chainId: 1,
   protocol: Protocols.V3,
@@ -139,7 +90,7 @@ const BASE_V2_INCREASE_PARAMS = new V2IncreasePositionRequest({
   simulateTransaction: true,
 })
 
-const BASE_V2_INCREASE_PARAMS_NO_SIMULATE = new V2IncreasePositionRequest({
+const BASE_INCREASE_PARAMS_NO_SIMULATE = new IncreasePositionRequest({
   walletAddress: '0x123',
   chainId: 1,
   protocol: Protocols.V3,
@@ -149,32 +100,6 @@ const BASE_V2_INCREASE_PARAMS_NO_SIMULATE = new V2IncreasePositionRequest({
   slippageTolerance: 0.5,
   deadline: Date.now() + 1000000,
   simulateTransaction: false,
-})
-
-const BASE_INCREASE_PARAMS_NO_SIMULATE = new IncreaseLPPositionRequest({
-  increaseLpPosition: {
-    case: 'v3IncreaseLpPosition',
-    value: new V3IncreaseLPPosition({
-      walletAddress: '0x123',
-      chainId: 1,
-      protocols: Protocols.V3,
-      independentAmount: '1000',
-      independentToken: IndependentToken.TOKEN_0,
-      slippageTolerance: 0.5,
-      deadline: Date.now() + 1000000,
-      simulateTransaction: false,
-      position: {
-        pool: {
-          token0: TEST_TOKEN_1.address,
-          token1: TEST_TOKEN_2.address,
-          fee: 3000,
-          tickSpacing: 60,
-        },
-        tickLower: -887272,
-        tickUpper: 887272,
-      },
-    }),
-  },
 })
 
 describe('useIncreasePositionDependentAmountFallback', () => {
@@ -189,9 +114,13 @@ describe('useIncreasePositionDependentAmountFallback', () => {
     vi.clearAllMocks()
   })
 
-  it('returns dependentAmount on success', async () => {
+  it('returns dependent token amount when exactField is TOKEN0', () => {
+    const response = new IncreasePositionResponse({
+      token0: new LPToken({ tokenAddress: TEST_TOKEN_1.address, amount: '500' }),
+      token1: new LPToken({ tokenAddress: TEST_TOKEN_2.address, amount: '750' }),
+    })
     useQueryMock.mockReturnValue({
-      data: { dependentAmount: '123' },
+      data: response,
       error: null,
     } as any)
 
@@ -203,32 +132,31 @@ describe('useIncreasePositionDependentAmountFallback', () => {
       }),
     )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(2)
-    const callArgs = useQueryMock.mock.calls[0][0]
-    expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('increasePositionDeprecated')
-
-    // Verify params structure
-    const params = callArgs.queryKey[2] as IncreaseLPPositionRequest
-    expect(params).toBeDefined()
-    expect(params.increaseLpPosition.case).toBe('v3IncreaseLpPosition')
-    expect(params.increaseLpPosition.value?.simulateTransaction).toBe(false)
-    expect(params.increaseLpPosition.value?.walletAddress).toBe('0x123')
-    expect(params.increaseLpPosition.value?.chainId).toBe(1)
-
-    expect(callArgs.enabled).toBe(true)
-    expect(callArgs.retry).toBe(false)
-    expect(callArgs.refetchInterval).toBe(refetchInterval)
-
-    expect(result.current).toBe('123')
+    expect(result.current).toBe('750')
   })
 
-  it('only enables query if simulateTransaction is true', () => {
+  it('returns dependent token amount when exactField is TOKEN1', () => {
+    const response = new IncreasePositionResponse({
+      token0: new LPToken({ tokenAddress: TEST_TOKEN_1.address, amount: '500' }),
+      token1: new LPToken({ tokenAddress: TEST_TOKEN_2.address, amount: '750' }),
+    })
     useQueryMock.mockReturnValue({
-      data: undefined,
+      data: response,
       error: null,
     } as any)
 
+    const { result } = renderHook(() =>
+      useIncreasePositionDependentAmountFallback({
+        queryParams: BASE_INCREASE_PARAMS,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN1,
+      }),
+    )
+
+    expect(result.current).toBe('500')
+  })
+
+  it('only enables query if simulateTransaction is true', () => {
     renderHook(() =>
       useIncreasePositionDependentAmountFallback({
         queryParams: BASE_INCREASE_PARAMS_NO_SIMULATE,
@@ -237,16 +165,14 @@ describe('useIncreasePositionDependentAmountFallback', () => {
       }),
     )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(2)
+    expect(useQueryMock).toHaveBeenCalledTimes(1)
     const callArgs = useQueryMock.mock.calls[0][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('increasePositionDeprecated')
+    expect(callArgs.queryKey[1]).toBe('increasePosition')
 
-    // Verify params structure
-    const params = callArgs.queryKey[2] as IncreaseLPPositionRequest
+    const params = callArgs.queryKey[2] as IncreasePositionRequest
     expect(params).toBeDefined()
-    expect(params.increaseLpPosition.case).toBe('v3IncreaseLpPosition')
-    expect(params.increaseLpPosition.value?.simulateTransaction).toBe(false)
+    expect(params.simulateTransaction).toBe(false)
 
     expect(callArgs.enabled).toBe(false)
     expect(callArgs.retry).toBe(false)
@@ -254,11 +180,6 @@ describe('useIncreasePositionDependentAmountFallback', () => {
   })
 
   it('returns undefined if no data', () => {
-    useQueryMock.mockReturnValue({
-      data: undefined,
-      error: null,
-    } as any)
-
     const { result } = renderHook(() =>
       useIncreasePositionDependentAmountFallback({
         queryParams: BASE_INCREASE_PARAMS,
@@ -267,20 +188,15 @@ describe('useIncreasePositionDependentAmountFallback', () => {
       }),
     )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(2)
+    expect(useQueryMock).toHaveBeenCalledTimes(1)
     const callArgs = useQueryMock.mock.calls[0][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('increasePositionDeprecated')
+    expect(callArgs.queryKey[1]).toBe('increasePosition')
 
     expect(result.current).toBe(undefined)
   })
 
   it('updates hasErrorResponse when error changes and stops refetching', () => {
-    useQueryMock.mockReturnValue({
-      data: undefined,
-      error: null,
-    } as any)
-
     const { result, rerender } = renderHook(() =>
       useIncreasePositionDependentAmountFallback({
         queryParams: BASE_INCREASE_PARAMS,
@@ -291,16 +207,14 @@ describe('useIncreasePositionDependentAmountFallback', () => {
 
     expect(result.current).toBe(undefined)
 
-    expect(useQueryMock).toHaveBeenCalledTimes(2)
+    expect(useQueryMock).toHaveBeenCalledTimes(1)
     const firstCallArgs = useQueryMock.mock.calls[0][0]
     expect(firstCallArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(firstCallArgs.queryKey[1]).toBe('increasePositionDeprecated')
+    expect(firstCallArgs.queryKey[1]).toBe('increasePosition')
 
-    // Verify params structure
-    const firstParams = firstCallArgs.queryKey[2] as IncreaseLPPositionRequest
+    const firstParams = firstCallArgs.queryKey[2] as IncreasePositionRequest
     expect(firstParams).toBeDefined()
-    expect(firstParams.increaseLpPosition.case).toBe('v3IncreaseLpPosition')
-    expect(firstParams.increaseLpPosition.value?.simulateTransaction).toBe(false)
+    expect(firstParams.simulateTransaction).toBe(false)
 
     expect(firstCallArgs.enabled).toBe(true)
     expect(firstCallArgs.retry).toBe(false)
@@ -313,125 +227,19 @@ describe('useIncreasePositionDependentAmountFallback', () => {
 
     rerender()
 
-    // 2 calls per render × 3 renders (initial + rerender + useEffect state update) = 6
-    expect(useQueryMock).toHaveBeenCalledTimes(6)
-    // Last V1 call is at index 4 (3rd render, first useQuery call)
-    const lastCallArgs = useQueryMock.mock.calls[4][0]
+    // 1 call per render × 3 renders (initial + rerender + useEffect state update) = 3
+    expect(useQueryMock).toHaveBeenCalledTimes(3)
+    const lastCallArgs = useQueryMock.mock.calls[2][0]
     expect(lastCallArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(lastCallArgs.queryKey[1]).toBe('increasePositionDeprecated')
+    expect(lastCallArgs.queryKey[1]).toBe('increasePosition')
 
-    // Verify params structure remains the same
-    const lastParams = lastCallArgs.queryKey[2] as IncreaseLPPositionRequest
+    const lastParams = lastCallArgs.queryKey[2] as IncreasePositionRequest
     expect(lastParams).toBeDefined()
-    expect(lastParams.increaseLpPosition.case).toBe('v3IncreaseLpPosition')
-    expect(lastParams.increaseLpPosition.value?.simulateTransaction).toBe(false)
+    expect(lastParams.simulateTransaction).toBe(false)
 
-    expect(lastCallArgs.enabled).toBe(true)
+    expect(lastCallArgs.enabled).toBe(false)
     expect(lastCallArgs.retry).toBe(false)
     expect(lastCallArgs.refetchInterval).toBe(false)
-  })
-})
-
-describe('useIncreasePositionDependentAmountFallback (V2)', () => {
-  beforeEach(() => {
-    useQueryMock.mockReturnValue({
-      data: undefined,
-      error: null,
-    } as any)
-  })
-
-  afterEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('returns dependent token amount from V2 response when exactField is TOKEN0', () => {
-    const v2Response = new V2IncreasePositionResponse({
-      token0: new LPToken({ tokenAddress: TEST_TOKEN_1.address, amount: '500' }),
-      token1: new LPToken({ tokenAddress: TEST_TOKEN_2.address, amount: '750' }),
-    })
-    useQueryMock.mockReturnValue({
-      data: v2Response,
-      error: null,
-    } as any)
-
-    const { result } = renderHook(() =>
-      useIncreasePositionDependentAmountFallback({
-        queryParams: BASE_V2_INCREASE_PARAMS,
-        isQueryEnabled: true,
-        exactField: PositionField.TOKEN0,
-      }),
-    )
-
-    // When TOKEN0 is exact, the dependent token is token1
-    expect(result.current).toBe('750')
-  })
-
-  it('returns dependent token amount from V2 response when exactField is TOKEN1', () => {
-    const v2Response = new V2IncreasePositionResponse({
-      token0: new LPToken({ tokenAddress: TEST_TOKEN_1.address, amount: '500' }),
-      token1: new LPToken({ tokenAddress: TEST_TOKEN_2.address, amount: '750' }),
-    })
-    useQueryMock.mockReturnValue({
-      data: v2Response,
-      error: null,
-    } as any)
-
-    const { result } = renderHook(() =>
-      useIncreasePositionDependentAmountFallback({
-        queryParams: BASE_V2_INCREASE_PARAMS,
-        isQueryEnabled: true,
-        exactField: PositionField.TOKEN1,
-      }),
-    )
-
-    // When TOKEN1 is exact, the dependent token is token0
-    expect(result.current).toBe('500')
-  })
-
-  it('uses V2 query path (not V1) for V2 request params', () => {
-    useQueryMock.mockReturnValue({
-      data: undefined,
-      error: null,
-    } as any)
-
-    renderHook(() =>
-      useIncreasePositionDependentAmountFallback({
-        queryParams: BASE_V2_INCREASE_PARAMS,
-        isQueryEnabled: true,
-        exactField: PositionField.TOKEN0,
-      }),
-    )
-
-    expect(useQueryMock).toHaveBeenCalledTimes(2)
-
-    // V1 query (first call) should be disabled
-    const v1CallArgs = useQueryMock.mock.calls[0][0]
-    expect(v1CallArgs.enabled).toBe(false)
-
-    // V2 query (second call) should be enabled
-    const v2CallArgs = useQueryMock.mock.calls[1][0]
-    expect(v2CallArgs.enabled).toBe(true)
-    expect(v2CallArgs.queryKey[1]).toBe('increasePosition')
-  })
-
-  it('only enables V2 query if simulateTransaction is true', () => {
-    renderHook(() =>
-      useIncreasePositionDependentAmountFallback({
-        queryParams: BASE_V2_INCREASE_PARAMS_NO_SIMULATE,
-        isQueryEnabled: true,
-        exactField: PositionField.TOKEN0,
-      }),
-    )
-
-    expect(useQueryMock).toHaveBeenCalledTimes(2)
-
-    // V1 query should be disabled (not a V1 request)
-    const v1CallArgs = useQueryMock.mock.calls[0][0]
-    expect(v1CallArgs.enabled).toBe(false)
-
-    // V2 query should also be disabled (simulateTransaction is false)
-    const v2CallArgs = useQueryMock.mock.calls[1][0]
-    expect(v2CallArgs.enabled).toBe(false)
   })
 })
 
@@ -442,7 +250,10 @@ describe('useCreatePositionDependentAmountFallback', () => {
 
   it('returns dependentAmount on success', async () => {
     useQueryMock.mockReturnValue({
-      data: { dependentAmount: '123' },
+      data: new CreatePositionResponse({
+        token0: new LPToken({ tokenAddress: TEST_TOKEN_1.address, amount: '500' }),
+        token1: new LPToken({ tokenAddress: TEST_TOKEN_2.address, amount: '123' }),
+      }),
       error: null,
     } as any)
 
@@ -454,19 +265,18 @@ describe('useCreatePositionDependentAmountFallback', () => {
       }),
     )
 
-    // Three useQuery calls (v1 deprecated + classic + v2)
-    expect(useQueryMock).toHaveBeenCalledTimes(3)
-    const callArgs = useQueryMock.mock.calls[0][0]
+    // Two useQuery calls (classic + v2) — the V2 path is active for CreatePositionRequest
+    expect(useQueryMock).toHaveBeenCalledTimes(2)
+    // The second call is the createPosition query (v2 path)
+    const callArgs = useQueryMock.mock.calls[1][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('createPositionDeprecated')
+    expect(callArgs.queryKey[1]).toBe('createPosition')
 
-    // Verify params structure
-    const params = callArgs.queryKey[2] as CreateLPPositionRequest
+    const params = callArgs.queryKey[2] as CreatePositionRequest
     expect(params).toBeDefined()
-    expect(params.createLpPosition.case).toBe('v3CreateLpPosition')
-    expect(params.createLpPosition.value?.simulateTransaction).toBe(false)
-    expect(params.createLpPosition.value?.walletAddress).toBe('0x123')
-    expect(params.createLpPosition.value?.chainId).toBe(1)
+    expect(params.simulateTransaction).toBe(false)
+    expect(params.walletAddress).toBe('0x123')
+    expect(params.chainId).toBe(1)
 
     expect(callArgs.enabled).toBe(true)
     expect(callArgs.retry).toBe(false)
@@ -489,16 +299,14 @@ describe('useCreatePositionDependentAmountFallback', () => {
       }),
     )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(3)
-    const callArgs = useQueryMock.mock.calls[0][0]
+    expect(useQueryMock).toHaveBeenCalledTimes(2)
+    const callArgs = useQueryMock.mock.calls[1][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('createPositionDeprecated')
+    expect(callArgs.queryKey[1]).toBe('createPosition')
 
-    // Verify params structure
-    const params = callArgs.queryKey[2] as CreateLPPositionRequest
+    const params = callArgs.queryKey[2] as CreatePositionRequest
     expect(params).toBeDefined()
-    expect(params.createLpPosition.case).toBe('v3CreateLpPosition')
-    expect(params.createLpPosition.value?.simulateTransaction).toBe(false)
+    expect(params.simulateTransaction).toBe(false)
 
     expect(callArgs.enabled).toBe(false)
     expect(callArgs.retry).toBe(false)
@@ -518,10 +326,10 @@ describe('useCreatePositionDependentAmountFallback', () => {
       }),
     )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(3)
-    const callArgs = useQueryMock.mock.calls[0][0]
+    expect(useQueryMock).toHaveBeenCalledTimes(2)
+    const callArgs = useQueryMock.mock.calls[1][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('createPositionDeprecated')
+    expect(callArgs.queryKey[1]).toBe('createPosition')
 
     expect(result.current).toBe(undefined)
   })
@@ -542,17 +350,15 @@ describe('useCreatePositionDependentAmountFallback', () => {
 
     expect(result.current).toBe(undefined)
 
-    // Three useQuery calls per render (v1 deprecated + classic + v2)
-    expect(useQueryMock).toHaveBeenCalledTimes(3)
-    const firstCallArgs = useQueryMock.mock.calls[0][0]
+    // Two useQuery calls per render (classic + v2)
+    expect(useQueryMock).toHaveBeenCalledTimes(2)
+    const firstCallArgs = useQueryMock.mock.calls[1][0]
     expect(firstCallArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(firstCallArgs.queryKey[1]).toBe('createPositionDeprecated')
+    expect(firstCallArgs.queryKey[1]).toBe('createPosition')
 
-    // Verify params structure
-    const firstParams = firstCallArgs.queryKey[2] as CreateLPPositionRequest
+    const firstParams = firstCallArgs.queryKey[2] as CreatePositionRequest
     expect(firstParams).toBeDefined()
-    expect(firstParams.createLpPosition.case).toBe('v3CreateLpPosition')
-    expect(firstParams.createLpPosition.value?.simulateTransaction).toBe(false)
+    expect(firstParams.simulateTransaction).toBe(false)
 
     expect(firstCallArgs.enabled).toBe(true)
     expect(firstCallArgs.retry).toBe(false)
@@ -565,18 +371,16 @@ describe('useCreatePositionDependentAmountFallback', () => {
 
     rerender()
 
-    // 3 calls per render × 3 renders (initial + rerender + useEffect state update) = 9
-    expect(useQueryMock).toHaveBeenCalledTimes(9)
-    // Last v1 call is at index 6 (3rd render, first useQuery call)
-    const lastCallArgs = useQueryMock.mock.calls[6][0]
+    // 2 calls per render × 3 renders (initial + rerender + useEffect state update) = 6
+    expect(useQueryMock).toHaveBeenCalledTimes(6)
+    // Last v2 call is at index 5 (3rd render, second useQuery call)
+    const lastCallArgs = useQueryMock.mock.calls[5][0]
     expect(lastCallArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(lastCallArgs.queryKey[1]).toBe('createPositionDeprecated')
+    expect(lastCallArgs.queryKey[1]).toBe('createPosition')
 
-    // Verify params structure remains the same
-    const lastParams = lastCallArgs.queryKey[2] as CreateLPPositionRequest
+    const lastParams = lastCallArgs.queryKey[2] as CreatePositionRequest
     expect(lastParams).toBeDefined()
-    expect(lastParams.createLpPosition.case).toBe('v3CreateLpPosition')
-    expect(lastParams.createLpPosition.value?.simulateTransaction).toBe(false)
+    expect(lastParams.simulateTransaction).toBe(false)
 
     expect(lastCallArgs.enabled).toBe(true)
     expect(lastCallArgs.retry).toBe(false)

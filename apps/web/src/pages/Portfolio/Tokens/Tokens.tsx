@@ -64,13 +64,17 @@ export const PortfolioTokens = memo(function PortfolioTokens() {
   // Use URL chain ID as primary filter, search chain filter as fallback
   const effectiveChainId = urlChainId || chainFilter
 
+  // Multichain PnL responses use `multichainTokenProfitLoss` / `chainBreakdown`. With a single-network
+  // filter, the API often omits that shape; request flat `tokenProfitLosses` instead (multichain: false).
+  const requestMultichainPnlShape = multichainTokenUxEnabled && effectiveChainId === null
+
   const { data: tokenProfitLossData, isError: isProfitLossError } = useGetWalletTokensProfitLossQuery({
     input: {
       evmAddress: portfolioAddresses.evmAddress,
       svmAddress: portfolioAddresses.svmAddress,
       chainIds: effectiveChainId ? [effectiveChainId] : enabledChains,
       modifier,
-      multichain: multichainTokenUxEnabled || undefined,
+      multichain: requestMultichainPnlShape || undefined,
     },
     enabled: isProfitLossEnabled,
   })
@@ -115,7 +119,7 @@ export const PortfolioTokens = memo(function PortfolioTokens() {
 
   // Handler to clear chain filter and show all networks
   const handleShowAllNetworks = useCallback(() => {
-    navigate('/portfolio/tokens')
+    void navigate('/portfolio/tokens')
   }, [navigate])
 
   // Custom empty state for chain filtering

@@ -5,7 +5,6 @@ import { Link } from 'react-router'
 import { Flex, Text, useIsDarkMode, useMedia } from 'ui/src'
 import { CheckmarkCircle } from 'ui/src/components/icons/CheckmarkCircle'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
-import { iconSizes } from 'ui/src/theme'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
 import WarningIcon from 'uniswap/src/components/warnings/WarningIcon'
@@ -14,6 +13,8 @@ import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { getTokenWarningSeverity } from 'uniswap/src/features/tokens/warnings/safetyUtils'
 import { getTokenDetailsURL } from '~/appGraphql/data/util'
 import { BreadcrumbNavContainer, BreadcrumbNavLink, CurrentPageBreadcrumb } from '~/components/BreadcrumbNav'
+import { HEADER_TRANSITION } from '~/components/Explore/stickyHeader/constants'
+import { getHeaderLogoSize, getHeaderTitleVariant } from '~/components/Explore/stickyHeader/getHeaderLogoSize'
 import { useAuctionStore } from '~/components/Toucan/Auction/store/useAuctionStore'
 import { EllipsisTamaguiStyle } from '~/theme/components/styles'
 
@@ -45,6 +46,7 @@ const AuctionTokenInfo = ({
   verified,
   tokenDetailsUrl,
   token,
+  isCompact,
 }: {
   name: string
   symbol: string
@@ -53,30 +55,36 @@ const AuctionTokenInfo = ({
   verified: boolean
   tokenDetailsUrl?: string
   token?: CurrencyInfo
+  isCompact: boolean
 }) => {
   const media = useMedia()
   const severity = token ? getTokenWarningSeverity(token) : WarningSeverity.None
+  const logoSize = getHeaderLogoSize({ isCompact, media })
+  const titleVariant = getHeaderTitleVariant({ isCompact, media })
 
   const content = (
     <Flex row alignItems="center" gap="$gap16">
       <TokenLogo
-        size={media.lg ? iconSizes.icon48 : iconSizes.icon64}
+        size={logoSize}
         chainId={chainId}
         name={name}
         symbol={symbol}
         url={logoUrl}
+        transition={HEADER_TRANSITION}
       />
-      <Flex gap={4} justifyContent="center">
+      <Flex gap={isCompact ? '$gap4' : '$gap8'} justifyContent="center" transition={HEADER_TRANSITION}>
         <Flex row gap="$gap4">
-          <Text variant="heading3" $lg={{ variant: 'subheading1' }} minWidth={40} {...EllipsisTamaguiStyle}>
+          <Text variant={titleVariant} minWidth={40} transition={HEADER_TRANSITION} {...EllipsisTamaguiStyle}>
             {name}
           </Text>
           {severity > WarningSeverity.Low && <WarningIcon size="$icon.16" severity={severity} />}
           {verified && <CheckmarkCircle size="$icon.16" color="$accent1" />}
         </Flex>
-        <Text variant="heading3" $lg={{ variant: 'subheading1' }} textTransform="uppercase" color="$neutral2">
-          {symbol}
-        </Text>
+        {!isCompact && (
+          <Text variant={titleVariant} textTransform="uppercase" color="$neutral2" transition={HEADER_TRANSITION}>
+            {symbol}
+          </Text>
+        )}
       </Flex>
     </Flex>
   )
@@ -92,7 +100,7 @@ const AuctionTokenInfo = ({
   return content
 }
 
-export const AuctionHeader = () => {
+export const AuctionHeader = ({ isCompact = false }: { isCompact?: boolean }) => {
   const auctionDetails = useAuctionStore((state) => state.auctionDetails)
 
   const verifiedAuctionIds: string[] = useDynamicConfigValue({
@@ -129,8 +137,8 @@ export const AuctionHeader = () => {
   const logoUrl = auctionDetails.token?.logoUrl ?? ''
 
   return (
-    <Flex mt="$spacing24">
-      <AuctionBreadcrumbs symbol={tokenSymbol} address={auctionDetails.tokenAddress} />
+    <Flex gap="$gap8">
+      {!isCompact && <AuctionBreadcrumbs symbol={tokenSymbol} address={auctionDetails.tokenAddress} />}
       <AuctionTokenInfo
         name={tokenName}
         symbol={tokenSymbol}
@@ -139,6 +147,7 @@ export const AuctionHeader = () => {
         verified={verified}
         tokenDetailsUrl={tokenDetailsUrl}
         token={auctionDetails.token}
+        isCompact={isCompact}
       />
     </Flex>
   )

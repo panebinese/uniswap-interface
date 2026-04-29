@@ -2,6 +2,7 @@ import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EM_DASH, Flex, Text } from 'ui/src'
+import { ChevronsIn } from 'ui/src/components/icons/ChevronsIn'
 import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { GroupHoverTransition } from 'uniswap/src/components/GroupHoverTransition'
@@ -77,7 +78,11 @@ export const TokenDisplay = memo(function TokenDisplay({
                 {t('portfolio.tokens.table.balances')}
               </Text>
               {!isExpanded && <NetworkIconList chainIds={chainIds ?? []} />}
-              <ChevronsOut color="$neutral2" size="$icon.16" />
+              {isExpanded ? (
+                <ChevronsIn color="$neutral2" size="$icon.16" />
+              ) : (
+                <ChevronsOut color="$neutral2" size="$icon.16" />
+              )}
             </Flex>
           }
         />

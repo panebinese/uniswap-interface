@@ -6,7 +6,6 @@ import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
 import { NetworkIconList } from 'uniswap/src/components/network/NetworkIconList/NetworkIconList'
 import { NetworkBalanceRow } from 'uniswap/src/components/tokenDetails/NetworkBalanceRow'
 import { sortBalancesByValue } from 'uniswap/src/components/tokenDetails/utils'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
@@ -20,7 +19,6 @@ interface NetworkBalanceBreakdownProps {
   onExpandedChange?: (expanded: boolean) => void
   collapsible?: boolean
   onSelectBalance?: (balance: PortfolioBalance) => void
-  renderNetworkLogo?: (chainId: UniverseChainId) => JSX.Element
 }
 
 export function NetworkBalanceBreakdown({
@@ -30,7 +28,6 @@ export function NetworkBalanceBreakdown({
   onExpandedChange,
   collapsible = true,
   onSelectBalance,
-  renderNetworkLogo,
 }: NetworkBalanceBreakdownProps): JSX.Element | null {
   const trace = useTrace()
   const sortedBalances = useMemo(() => sortBalancesByValue(balances), [balances])
@@ -86,7 +83,6 @@ export function NetworkBalanceBreakdown({
               <NetworkBalanceRow
                 key={balance.id}
                 balance={balance}
-                renderNetworkLogo={renderNetworkLogo}
                 onPress={onSelectBalance ? () => onSelectBalance(balance) : undefined}
               />
             ),

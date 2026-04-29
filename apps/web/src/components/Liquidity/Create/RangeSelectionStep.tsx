@@ -293,7 +293,7 @@ export const SelectPriceRangeStep = ({
   const { t } = useTranslation()
 
   const {
-    positionState: { fee, hook, initialPosition },
+    positionState: { fee, hook, migratingPosition },
     currencies,
     creatingPoolOrPair,
     poolOrPairLoading,
@@ -334,7 +334,7 @@ export const SelectPriceRangeStep = ({
 
   const handleSelectRange = useCallback(
     (option: RangeSelection) => {
-      if (initialPosition?.isOutOfRange) {
+      if (migratingPosition?.isOutOfRange) {
         return
       }
 
@@ -352,7 +352,7 @@ export const SelectPriceRangeStep = ({
         }))
       }
     },
-    [initialPosition?.isOutOfRange, setPriceRangeState],
+    [migratingPosition?.isOutOfRange, setPriceRangeState],
   )
 
   const segmentedControlRangeOptions = [
@@ -368,7 +368,7 @@ export const SelectPriceRangeStep = ({
 
   const handleChartRangeInput = useCallback(
     ({ input, tick }: { input: RangeSelectionInput; tick?: number }) => {
-      if (priceRangeState.fullRange || initialPosition?.isOutOfRange) {
+      if (priceRangeState.fullRange || migratingPosition?.isOutOfRange) {
         return
       } else if (input === RangeSelectionInput.MIN) {
         setPriceRangeState((prev) => ({ ...prev, minTick: tick, fullRange: false }))
@@ -376,7 +376,7 @@ export const SelectPriceRangeStep = ({
         setPriceRangeState((prev) => ({ ...prev, maxTick: tick, fullRange: false }))
       }
     },
-    [priceRangeState.fullRange, initialPosition?.isOutOfRange, setPriceRangeState],
+    [priceRangeState.fullRange, migratingPosition?.isOutOfRange, setPriceRangeState],
   )
 
   const invalidPrice = isInvalidPrice(price)
@@ -390,13 +390,13 @@ export const SelectPriceRangeStep = ({
 
   // Setting min/max price to empty string resets them to defaults (0 / Infinity)
   const setFallbackRangePrices = useCallback(() => {
-    if (initialPosition?.isOutOfRange) {
+    if (migratingPosition?.isOutOfRange) {
       return
     }
 
     handleChartRangeInput({ input: RangeSelectionInput.MIN, tick: undefined })
     handleChartRangeInput({ input: RangeSelectionInput.MAX, tick: undefined })
-  }, [handleChartRangeInput, initialPosition?.isOutOfRange])
+  }, [handleChartRangeInput, migratingPosition?.isOutOfRange])
 
   // If no pool is found for custom range, set min/max price to defaults
   useEffect(() => {
@@ -414,7 +414,7 @@ export const SelectPriceRangeStep = ({
     return <InitialPriceInput />
   }
 
-  const isDisabled = initialPosition?.isOutOfRange
+  const isDisabled = migratingPosition?.isOutOfRange
 
   return (
     <>
@@ -425,7 +425,7 @@ export const SelectPriceRangeStep = ({
             <Trans i18nKey="position.setRange" />
           </Text>
         </Flex>
-        {!initialPosition?.isOutOfRange && (
+        {!migratingPosition?.isOutOfRange && (
           <SegmentedControl
             options={segmentedControlRangeOptions}
             selectedOption={priceRangeState.fullRange ? RangeSelection.FULL : RangeSelection.CUSTOM}
@@ -434,7 +434,7 @@ export const SelectPriceRangeStep = ({
             size="large"
           />
         )}
-        {!initialPosition?.isOutOfRange && (
+        {!migratingPosition?.isOutOfRange && (
           <Text variant="body3" color="$neutral2">
             {creatingPoolOrPair
               ? t('position.provide.liquidityDescription.creatingPool')
@@ -479,7 +479,7 @@ export const SelectPriceRangeStep = ({
               price={price}
               currentPrice={Number(price?.toSignificant())}
               inputMode={priceRangeState.inputMode}
-              initialPosition={initialPosition}
+              migratingPosition={migratingPosition}
               minTick={priceRangeState.minTick}
               maxTick={priceRangeState.maxTick}
               isFullRange={priceRangeState.fullRange}

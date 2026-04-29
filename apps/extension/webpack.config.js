@@ -373,25 +373,32 @@ module.exports = (env) => {
                       : ['https://app.uniswap.org/*', 'https://ew.unihq.org/*', 'https://*.ew.unihq.org/*'],
                 },
                 // Ensure content scripts are registered in the webpack build (WXT handles this automatically).
-                // These mirror the matches/runAt used in the TS entrypoints.
-                content_scripts: [
-                  {
-                    id: 'injected',
-                    matches: ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*'],
-                    js: ['injected.js'],
-                    run_at: 'document_start',
-                    all_frames: true,
-                  },
-                  {
-                    id: 'ethereum',
-                    matches: ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*'],
-                    js: ['ethereum.js'],
-                    run_at: 'document_start',
-                    // Ethereum provider must run in the MAIN world to attach to window.ethereum
-                    world: 'MAIN',
-                    all_frames: true,
-                  },
-                ],
+                // These mirror the matches/runAt used in the TS entrypoints — localhost matches
+                // only in local (isDevelopment) and dev builds, never in beta/prod.
+                content_scripts: (() => {
+                  const matches =
+                    isDevelopment || BUILD_ENV === 'dev'
+                      ? ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*']
+                      : ['https://*/*']
+                  return [
+                    {
+                      id: 'injected',
+                      matches,
+                      js: ['injected.js'],
+                      run_at: 'document_start',
+                      all_frames: true,
+                    },
+                    {
+                      id: 'ethereum',
+                      matches,
+                      js: ['ethereum.js'],
+                      run_at: 'document_start',
+                      // Ethereum provider must run in the MAIN world to attach to window.ethereum
+                      world: 'MAIN',
+                      all_frames: true,
+                    },
+                  ]
+                })(),
               }
 
               return Buffer.from(JSON.stringify(transformedManifest, null, 2))

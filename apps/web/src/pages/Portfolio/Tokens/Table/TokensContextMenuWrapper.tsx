@@ -19,6 +19,21 @@ import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioR
 import { useShowDemoView } from '~/pages/Portfolio/hooks/useShowDemoView'
 import { useNavigateToTokenDetails } from '~/pages/Portfolio/Tokens/hooks/useNavigateToTokenDetails'
 import { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
+import { TokensMultichainParentContextMenu } from '~/pages/Portfolio/Tokens/Table/TokensMultichainParentContextMenu'
+
+/** Multichain aggregate row: per-chain actions only on child rows (hide, reports, data issue). */
+const MULTICHAIN_PARENT_MENU_EXCLUDED_ACTIONS: TokenMenuActionType[] = [
+  TokenMenuActionType.ToggleVisibility,
+  TokenMenuActionType.ReportToken,
+  TokenMenuActionType.DataIssue,
+]
+
+/** Union multichain-parent exclusions with wallet-context exclusions (e.g. external wallet). */
+function mergeMultichainParentExcludedActions(
+  walletContextExcluded: TokenMenuActionType[] | undefined,
+): TokenMenuActionType[] {
+  return [...new Set([...MULTICHAIN_PARENT_MENU_EXCLUDED_ACTIONS, ...(walletContextExcluded ?? [])])]
+}
 
 export function TokensContextMenuWrapper({
   tokenData,
@@ -30,7 +45,7 @@ export function TokensContextMenuWrapper({
 }>): React.ReactNode {
   const { t } = useTranslation()
   const showDemoView = useShowDemoView()
-  const { isExternalWallet, externalAddress, chainId } = usePortfolioRoutes()
+  const { isExternalWallet, externalAddress } = usePortfolioRoutes()
 
   const { openModal } = useModalState(ModalName.ReportTokenIssue)
   const [, setModalProps] = useAtom(ReportTokenIssueModalPropsAtom)
@@ -53,7 +68,12 @@ export function TokensContextMenuWrapper({
   }, [tokenData])
 
   const openReportTokenModal = useEvent((currency: Currency) => {
-    setModalProps({ source: 'portfolio', currency, isMarkedSpam: portfolioBalance.currencyInfo.isSpam })
+    setModalProps({
+      source: 'portfolio',
+      currency,
+      isMarkedSpam: portfolioBalance.currencyInfo.isSpam,
+      isMultichainAsset: tokenData.isMultichainAsset,
+    })
     openModal()
   })
 
@@ -92,20 +112,45 @@ export function TokensContextMenuWrapper({
     return undefined
   }, [isExternalWallet])
 
+  const multichainParentExcludedActions = useMemo(
+    () => mergeMultichainParentExcludedActions(excludedActions),
+    [excludedActions],
+  )
+
   // Context menu not available in demo view
   if (showDemoView) {
     return children
   }
 
+  if (tokenData.tokens.length > 1) {
+    return (
+      <TokensMultichainParentContextMenu
+        portfolioBalance={portfolioBalance}
+        tokenCurrencyInfos={tokenData.tokens.map((row) => row.currencyInfo)}
+        triggerMode={triggerMode}
+        excludedActions={multichainParentExcludedActions}
+        openReportTokenModal={openReportTokenModalForCurrency}
+        openReportDataIssueModal={undefined}
+        copyAddressToClipboard={copyAddressToClipboard}
+        onPressToken={() => navigateToTokenDetails(tokenData.currencyInfo.currency, tokenData.chainId)}
+        disableNotifications={true}
+        recipient={isExternalWallet ? externalAddress?.address : undefined}
+      >
+        {children}
+      </TokensMultichainParentContextMenu>
+    )
+  }
+
   return (
     <TokenBalanceItemContextMenu
       portfolioBalance={portfolioBalance}
+      isMultichainAsset={tokenData.isMultichainAsset}
       triggerMode={triggerMode}
       excludedActions={excludedActions}
       openReportTokenModal={openReportTokenModalForCurrency}
       openReportDataIssueModal={openReportDataIssueModalForCurrency}
       copyAddressToClipboard={copyAddressToClipboard}
-      onPressToken={() => navigateToTokenDetails(tokenData.currencyInfo.currency, chainId)}
+      onPressToken={() => navigateToTokenDetails(tokenData.currencyInfo.currency, tokenData.chainId)}
       disableNotifications={true}
       recipient={isExternalWallet ? externalAddress?.address : undefined}
     >

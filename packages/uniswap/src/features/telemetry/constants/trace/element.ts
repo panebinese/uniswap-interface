@@ -328,6 +328,7 @@ export enum ElementName {
   TokenOutputSelector = 'token-output-selector',
   TokenSelectorRow = 'token-selector-row',
   TokenWarningCard = 'token-warning-card',
+  TokenWarningReportContextMenu = 'token-warning-report-context-menu',
   TokensAllocationChart = 'tokens-allocation-chart',
   TokensTableRow = 'tokens-table-row',
   TwitterLink = 'twitter-link',

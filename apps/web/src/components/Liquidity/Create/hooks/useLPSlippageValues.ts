@@ -1,5 +1,5 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import { CreateLPPositionResponse } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+import { CreatePositionResponse } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
 import { Currency } from '@uniswap/sdk-core'
 import { DynamicConfigs, LPConfigKey, useDynamicConfigValue } from '@universe/gating'
 import { useEffect } from 'react'
@@ -42,21 +42,19 @@ export function useLPSlippageValue({
  * nativeTokenBalance is provided, the backend always computes the optimal value.
  */
 export function useDynamicNativeSlippage({
-  isEnabled,
   nativeTokenBalance,
   createCalldata,
   isSlippageDirty,
 }: {
-  isEnabled: boolean
   nativeTokenBalance?: string
-  createCalldata?: CreateLPPositionResponse
+  createCalldata?: CreatePositionResponse
   isSlippageDirty: boolean
 }): void {
   const { setCustomSlippageTolerance } = useTransactionSettingsActions()
   const setAutoSlippageTolerance = useSetTransactionSettingsAutoSlippageTolerance()
 
   useEffect(() => {
-    if (!createCalldata || !isEnabled || !nativeTokenBalance) {
+    if (!createCalldata || !nativeTokenBalance) {
       return
     }
     const responseSlippage = createCalldata.slippage
@@ -65,12 +63,5 @@ export function useDynamicNativeSlippage({
       setCustomSlippageTolerance(truncatedSlippage)
       setAutoSlippageTolerance(truncatedSlippage)
     }
-  }, [
-    isEnabled,
-    nativeTokenBalance,
-    createCalldata,
-    isSlippageDirty,
-    setCustomSlippageTolerance,
-    setAutoSlippageTolerance,
-  ])
+  }, [nativeTokenBalance, createCalldata, isSlippageDirty, setCustomSlippageTolerance, setAutoSlippageTolerance])
 }

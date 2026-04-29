@@ -78,38 +78,41 @@ export function useTokenDetailsHeaderActions({
     [t, openReportDataIssueModal, openReportTokenModal, currency.isNative],
   )
 
-  const sections: HeaderActionSection[] = useMemo(
-    () => [
+  const sections: HeaderActionSection[] = useMemo(() => {
+    const detailsActions: HeaderAction[] = [
+      ...(!multichainTokenUxEnabled
+        ? [
+            {
+              title: explorerName,
+              icon: <BlockExplorerIcon size="$icon.18" color="$neutral2" />,
+              href: explorerUrl,
+              onPress: () => {},
+              show: !!explorerUrl,
+            },
+            {
+              title: t('common.website'),
+              icon: <GlobeFilled size="$icon.18" color="$neutral2" />,
+              href: homepageUrl,
+              onPress: () => {},
+              show: !!homepageUrl,
+            },
+          ]
+        : []),
       {
-        title: t('common.details'),
-        actions: [
-          ...(!multichainTokenUxEnabled
-            ? [
-                {
-                  title: explorerName,
-                  icon: <BlockExplorerIcon size="$icon.18" color="$neutral2" />,
-                  href: explorerUrl,
-                  onPress: () => {},
-                  show: !!explorerUrl,
-                },
-                {
-                  title: t('common.website'),
-                  icon: <GlobeFilled size="$icon.18" color="$neutral2" />,
-                  href: homepageUrl,
-                  onPress: () => {},
-                  show: !!homepageUrl,
-                },
-              ]
-            : []),
-          {
-            title: t('common.twitter'),
-            icon: <XTwitter size="$icon.18" color="$neutral2" />,
-            href: twitterUrl,
-            onPress: () => {},
-            show: !!twitterUrl,
-          },
-        ],
+        title: t('common.twitter'),
+        icon: <XTwitter size="$icon.18" color="$neutral2" />,
+        href: twitterUrl,
+        onPress: () => {},
+        show: !!twitterUrl,
       },
+    ]
+
+    const detailsSection: HeaderActionSection | null = detailsActions.some((a) => a.show)
+      ? { title: t('common.details'), actions: detailsActions }
+      : null
+
+    return [
+      ...(detailsSection ? [detailsSection] : []),
       {
         title: t('common.share'),
         actions: [shareAction],
@@ -125,19 +128,18 @@ export function useTokenDetailsHeaderActions({
           },
         ],
       },
-    ],
-    [
-      t,
-      shareAction,
-      explorerName,
-      BlockExplorerIcon,
-      explorerUrl,
-      homepageUrl,
-      twitterUrl,
-      reportActions,
-      multichainTokenUxEnabled,
-    ],
-  )
+    ]
+  }, [
+    t,
+    shareAction,
+    explorerName,
+    BlockExplorerIcon,
+    explorerUrl,
+    homepageUrl,
+    twitterUrl,
+    reportActions,
+    multichainTokenUxEnabled,
+  ])
 
   return useMemo(() => deriveFromSections(sections), [sections])
 }

@@ -1,22 +1,15 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import {
-  CheckApprovalLPResponse,
-  CreateLPPositionRequest,
-} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
-import {
-  IndependentToken,
-  Protocols,
-  V2CreateLPPosition,
-  V3CreateLPPosition,
-  V4CreateLPPosition,
-} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
+  CreateClassicPositionRequest,
+  CreatePositionRequest,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
 import { CurrencyAmount } from '@uniswap/sdk-core'
 import { Pair } from '@uniswap/v2-sdk'
 import { FeeAmount, nearestUsableTick, TICK_SPACINGS, TickMath, Pool as V3Pool } from '@uniswap/v3-sdk'
 import { Pool as V4Pool } from '@uniswap/v4-sdk'
 import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { USDT } from 'uniswap/src/constants/tokens'
-import { normalizeApprovalResponse } from 'uniswap/src/data/apiClients/liquidityService/normalizeApprovalResponse'
+import type { NormalizedApprovalData } from 'uniswap/src/data/apiClients/liquidityService/normalizeApprovalResponse'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { describe, expect, it } from 'vitest'
 import { DYNAMIC_FEE_DATA, PositionState } from '~/components/Liquidity/Create/types'
@@ -254,7 +247,7 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
       ).toBeUndefined()
     })
 
-    it('returns CreateLPPositionRequest with V2 position', () => {
+    it('returns CreateClassicPositionRequest with V2 position', () => {
       const positionState: PositionState = {
         protocolVersion: ProtocolVersion.V2,
         fee: {
@@ -285,19 +278,15 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
         independentField: PositionField.TOKEN0,
       })
 
-      expect(result).toBeInstanceOf(CreateLPPositionRequest)
-      expect((result as CreateLPPositionRequest).createLpPosition.case).toBe('v2CreateLpPosition')
-
-      const v2Position = (result as CreateLPPositionRequest).createLpPosition.value as V2CreateLPPosition
-      expect(v2Position.walletAddress).toBe(ZERO_ADDRESS)
-      expect(v2Position.protocols).toBe(Protocols.V2)
-      expect(v2Position.simulateTransaction).toBe(true)
-      expect(v2Position.chainId).toBe(UniverseChainId.Mainnet)
-      expect(v2Position.independentToken).toBe(IndependentToken.TOKEN_0)
-      expect(v2Position.independentAmount).toBe('1000000000000000000')
-      expect(v2Position.defaultDependentAmount).toBe('1000000000000000000')
-      expect(v2Position.position?.pool?.token0).toBe(USDT.address)
-      expect(v2Position.position?.pool?.token1).toBe(ETH_MAINNET.wrapped.address)
+      expect(result).toBeInstanceOf(CreateClassicPositionRequest)
+      const classicRequest = result as CreateClassicPositionRequest
+      expect(classicRequest.walletAddress).toBe(ZERO_ADDRESS)
+      expect(classicRequest.simulateTransaction).toBe(true)
+      expect(classicRequest.independentToken?.tokenAddress).toBe(USDT.address)
+      expect(classicRequest.independentToken?.amount).toBe('1000000000000000000')
+      expect(classicRequest.dependentToken?.amount).toBe('1000000000000000000')
+      expect(classicRequest.poolParameters?.token0Address).toBe(USDT.address)
+      expect(classicRequest.poolParameters?.token1Address).toBe(ETH_MAINNET.wrapped.address)
     })
 
     it('sets simulateTransaction to false when approval data exists', () => {
@@ -315,11 +304,9 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
         CurrencyAmount.fromRawAmount(ETH_MAINNET.wrapped, '1000000000000000000'),
       )
 
-      const approvalCalldata = normalizeApprovalResponse(
-        new CheckApprovalLPResponse({
-          token0Approval: { to: '0x123', data: '0xabc' },
-        }),
-      )!
+      const approvalCalldata: NormalizedApprovalData = {
+        token0Approval: { to: '0x123', data: '0xabc' } as any,
+      }
 
       const result = generateLiquidityServiceCreateCalldataQueryParams({
         protocolVersion: ProtocolVersion.V2,
@@ -337,8 +324,8 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
         independentField: PositionField.TOKEN0,
       })
 
-      const v2Position = (result as CreateLPPositionRequest).createLpPosition.value as V2CreateLPPosition
-      expect(v2Position.simulateTransaction).toBe(false)
+      const classicRequest = result as CreateClassicPositionRequest
+      expect(classicRequest.simulateTransaction).toBe(false)
     })
   })
 
@@ -448,7 +435,7 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
       ).toBeUndefined()
     })
 
-    it('returns CreateLPPositionRequest with V3 position', () => {
+    it('returns CreatePositionRequest with V3 position', () => {
       const positionState: PositionState = {
         protocolVersion: ProtocolVersion.V3,
         fee: {
@@ -481,26 +468,21 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
           TOKEN1: CurrencyAmount.fromRawAmount(ETH_MAINNET.wrapped, '1000000000000000000'),
         },
         independentField: PositionField.TOKEN0,
+        poolId: 'test-pool-id',
       })
 
-      expect(result).toBeInstanceOf(CreateLPPositionRequest)
-      expect((result as CreateLPPositionRequest).createLpPosition.case).toBe('v3CreateLpPosition')
-
-      const v3Position = (result as CreateLPPositionRequest).createLpPosition.value as V3CreateLPPosition
-      expect(v3Position.walletAddress).toBe(ZERO_ADDRESS)
-      expect(v3Position.protocols).toBe(Protocols.V3)
-      expect(v3Position.simulateTransaction).toBe(true)
-      expect(v3Position.chainId).toBe(UniverseChainId.Mainnet)
-      expect(v3Position.independentToken).toBe(IndependentToken.TOKEN_0)
-      expect(v3Position.independentAmount).toBe('1000000000000000000')
-      expect(v3Position.initialDependentAmount).toBeUndefined() // No initial price
-      expect(v3Position.initialPrice).toBeUndefined()
-      expect(v3Position.position?.tickLower).toBe(tickSpaceLimits[0])
-      expect(v3Position.position?.tickUpper).toBe(tickSpaceLimits[1])
-      expect(v3Position.position?.pool?.token0).toBe(USDT.address)
-      expect(v3Position.position?.pool?.token1).toBe(ZERO_ADDRESS)
-      expect(v3Position.position?.pool?.fee).toBe(FeeAmount.MEDIUM)
-      expect(v3Position.position?.pool?.tickSpacing).toBe(TICK_SPACINGS[FeeAmount.MEDIUM])
+      expect(result).toBeInstanceOf(CreatePositionRequest)
+      const v3Request = result as CreatePositionRequest
+      expect(v3Request.walletAddress).toBe(ZERO_ADDRESS)
+      expect(v3Request.simulateTransaction).toBe(true)
+      expect(v3Request.chainId).toBe(UniverseChainId.Mainnet)
+      expect(v3Request.independentToken?.tokenAddress).toBe(USDT.address)
+      expect(v3Request.independentToken?.amount).toBe('1000000000000000000')
+      expect(v3Request.tickPrice.case).toBe('tickBounds')
+      if (v3Request.tickPrice.case === 'tickBounds') {
+        expect(v3Request.tickPrice.value.tickLower).toBe(tickSpaceLimits[0])
+        expect(v3Request.tickPrice.value.tickUpper).toBe(tickSpaceLimits[1])
+      }
     })
 
     it('includes initialPrice and initialDependentAmount when creating pool', () => {
@@ -538,9 +520,12 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
         independentField: PositionField.TOKEN0,
       })
 
-      const v3Position = (result as CreateLPPositionRequest).createLpPosition.value as V3CreateLPPosition
-      expect(v3Position.initialPrice).toBe(pool.sqrtRatioX96.toString())
-      expect(v3Position.initialDependentAmount).toBe('1000000000000000000')
+      const v3Request = result as CreatePositionRequest
+      expect(v3Request.pool.case).toBe('newPool')
+      if (v3Request.pool.case === 'newPool') {
+        expect(v3Request.pool.value.initialPrice).toBe(pool.sqrtRatioX96.toString())
+      }
+      expect(v3Request.dependentToken?.amount).toBe('1000000000000000000')
     })
 
     it('handles dynamic fees correctly', () => {
@@ -576,10 +561,12 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
           TOKEN1: CurrencyAmount.fromRawAmount(ETH_MAINNET.wrapped, '1000000000000000000'),
         },
         independentField: PositionField.TOKEN0,
+        poolId: 'test-pool-id',
       })
 
-      const v3Position = (result as CreateLPPositionRequest).createLpPosition.value as V3CreateLPPosition
-      expect(v3Position.position?.pool?.fee).toBe(DYNAMIC_FEE_DATA.feeAmount)
+      expect(result).toBeInstanceOf(CreatePositionRequest)
+      const v3Request = result as CreatePositionRequest
+      expect(v3Request.pool.case).toBe('existingPool')
     })
   })
 
@@ -653,7 +640,7 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
       ).toBeUndefined()
     })
 
-    it('returns CreateLPPositionRequest with V4 position', () => {
+    it('returns CreatePositionRequest with V4 position', () => {
       const positionState: PositionState = {
         protocolVersion: ProtocolVersion.V4,
         fee: {
@@ -689,27 +676,21 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
           TOKEN1: CurrencyAmount.fromRawAmount(ETH_MAINNET.wrapped, '1000000000000000000'),
         },
         independentField: PositionField.TOKEN0,
+        poolId: 'test-pool-id',
       })
 
-      expect(result).toBeInstanceOf(CreateLPPositionRequest)
-      expect((result as CreateLPPositionRequest).createLpPosition.case).toBe('v4CreateLpPosition')
-
-      const v4Position = (result as CreateLPPositionRequest).createLpPosition.value as V4CreateLPPosition
-      expect(v4Position.walletAddress).toBe(ZERO_ADDRESS)
-      expect(v4Position.protocols).toBe(Protocols.V4)
-      expect(v4Position.simulateTransaction).toBe(true)
-      expect(v4Position.chainId).toBe(UniverseChainId.Mainnet)
-      expect(v4Position.independentToken).toBe(IndependentToken.TOKEN_0)
-      expect(v4Position.independentAmount).toBe('1000000000000000000')
-      expect(v4Position.initialDependentAmount).toBeUndefined() // No initial price
-      expect(v4Position.initialPrice).toBeUndefined()
-      expect(v4Position.position?.tickLower).toBe(tickSpaceLimits[0])
-      expect(v4Position.position?.tickUpper).toBe(tickSpaceLimits[1])
-      expect(v4Position.position?.pool?.token0).toBe(USDT.address)
-      expect(v4Position.position?.pool?.token1).toBe(ZERO_ADDRESS)
-      expect(v4Position.position?.pool?.fee).toBe(FeeAmount.MEDIUM)
-      expect(v4Position.position?.pool?.tickSpacing).toBe(TICK_SPACINGS[FeeAmount.MEDIUM])
-      expect(v4Position.position?.pool?.hooks).toBe('0x0000000000000000000000000000000000000001')
+      expect(result).toBeInstanceOf(CreatePositionRequest)
+      const v4Request = result as CreatePositionRequest
+      expect(v4Request.walletAddress).toBe(ZERO_ADDRESS)
+      expect(v4Request.simulateTransaction).toBe(true)
+      expect(v4Request.chainId).toBe(UniverseChainId.Mainnet)
+      expect(v4Request.independentToken?.tokenAddress).toBe(USDT.address)
+      expect(v4Request.independentToken?.amount).toBe('1000000000000000000')
+      expect(v4Request.tickPrice.case).toBe('tickBounds')
+      if (v4Request.tickPrice.case === 'tickBounds') {
+        expect(v4Request.tickPrice.value.tickLower).toBe(tickSpaceLimits[0])
+        expect(v4Request.tickPrice.value.tickUpper).toBe(tickSpaceLimits[1])
+      }
     })
 
     it('includes initialPrice and initialDependentAmount when creating pool', () => {
@@ -750,9 +731,12 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
         independentField: PositionField.TOKEN0,
       })
 
-      const v4Position = (result as CreateLPPositionRequest).createLpPosition.value as V4CreateLPPosition
-      expect(v4Position.initialPrice).toBe(pool.sqrtRatioX96.toString())
-      expect(v4Position.initialDependentAmount).toBe('1000000000000000000')
+      const v4Request = result as CreatePositionRequest
+      expect(v4Request.pool.case).toBe('newPool')
+      if (v4Request.pool.case === 'newPool') {
+        expect(v4Request.pool.value.initialPrice).toBe(pool.sqrtRatioX96.toString())
+      }
+      expect(v4Request.dependentToken?.amount).toBe('1000000000000000000')
     })
   })
 
@@ -788,8 +772,8 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
         independentField: PositionField.TOKEN0,
       })
 
-      const v2Position = (result as CreateLPPositionRequest).createLpPosition.value as V2CreateLPPosition
-      expect(v2Position.independentToken).toBe(IndependentToken.TOKEN_0)
+      const classicRequest = result as CreateClassicPositionRequest
+      expect(classicRequest.independentToken?.tokenAddress).toBe(USDT.address)
     })
 
     it('correctly derives independentToken from independentField TOKEN1', () => {
@@ -823,8 +807,8 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
         independentField: PositionField.TOKEN1,
       })
 
-      const v2Position = (result as CreateLPPositionRequest).createLpPosition.value as V2CreateLPPosition
-      expect(v2Position.independentToken).toBe(IndependentToken.TOKEN_1)
+      const classicRequest = result as CreateClassicPositionRequest
+      expect(classicRequest.independentToken?.tokenAddress).toBe(ETH_MAINNET.wrapped.address)
     })
 
     it('sets simulateTransaction to false when permitData exists', () => {
@@ -842,11 +826,9 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
         CurrencyAmount.fromRawAmount(ETH_MAINNET.wrapped, '1000000000000000000'),
       )
 
-      const approvalCalldata = normalizeApprovalResponse(
-        new CheckApprovalLPResponse({
-          permitData: { case: 'permitBatchData', value: { domain: {}, types: {}, values: {} } },
-        }),
-      )!
+      const approvalCalldata: NormalizedApprovalData = {
+        v4BatchPermitData: { domain: {}, types: {}, values: {} } as any,
+      }
 
       const result = generateLiquidityServiceCreateCalldataQueryParams({
         protocolVersion: ProtocolVersion.V2,
@@ -864,8 +846,8 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
         independentField: PositionField.TOKEN0,
       })
 
-      const v2Position = (result as CreateLPPositionRequest).createLpPosition.value as V2CreateLPPosition
-      expect(v2Position.simulateTransaction).toBe(false)
+      const classicRequest = result as CreateClassicPositionRequest
+      expect(classicRequest.simulateTransaction).toBe(false)
     })
 
     it('passes through slippageTolerance and customDeadline', () => {
@@ -901,9 +883,9 @@ describe('generateLiquidityServiceCreateCalldataQueryParams', () => {
         customDeadline: 30,
       })
 
-      const v2Position = (result as CreateLPPositionRequest).createLpPosition.value as V2CreateLPPosition
-      expect(v2Position.slippageTolerance).toBe(0.5)
-      expect(v2Position.deadline).toBeDefined()
+      const classicRequest = result as CreateClassicPositionRequest
+      expect(classicRequest.slippageTolerance).toBe(0.5)
+      expect(classicRequest.deadline).toBeDefined()
     })
   })
 })

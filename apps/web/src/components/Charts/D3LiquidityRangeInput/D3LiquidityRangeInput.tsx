@@ -20,19 +20,17 @@ import { ChartEntry } from '~/components/Charts/LiquidityRangeInput/types'
 import { ChartSkeleton } from '~/components/Charts/LoadingState'
 import { PriceChartData } from '~/components/Charts/PriceChart'
 import { ChartType } from '~/components/Charts/utils'
-import { InitialPosition, RangeAmountInputPriceMode } from '~/components/Liquidity/Create/types'
+import { MigratingPosition, RangeAmountInputPriceMode } from '~/components/Liquidity/Create/types'
 import { getBaseAndQuoteCurrencies } from '~/components/Liquidity/utils/currency'
 import { useColor } from '~/hooks/useColor'
 import { usePoolPriceChartData } from '~/hooks/usePoolPriceChartData'
 import { useAllPoolTicks } from '~/hooks/usePoolTickData'
-import { useMultichainContext } from '~/state/multichain/useMultichainContext'
 
 const MIN_DATA_POINTS = 1
 
 /**
  * Chart input for selecting the min/max prices for a liquidity position.
  */
-// oxlint-disable-next-line complexity
 export function D3LiquidityRangeInput({
   baseCurrency,
   quoteCurrency,
@@ -48,7 +46,7 @@ export function D3LiquidityRangeInput({
   price,
   hook,
   currentPrice,
-  initialPosition,
+  migratingPosition,
   isFullRange,
   currentTick,
   minTick,
@@ -82,7 +80,7 @@ export function D3LiquidityRangeInput({
   minTick?: number
   maxTick?: number
   inputMode?: RangeAmountInputPriceMode
-  initialPosition?: InitialPosition
+  migratingPosition?: MigratingPosition
   setInputMode: (inputMode: RangeAmountInputPriceMode) => void
   setMinTick: (tick?: number) => void
   setMaxTick: (tick?: number) => void
@@ -92,7 +90,6 @@ export function D3LiquidityRangeInput({
   const { t } = useTranslation()
   const chainInfo = getChainInfo(quoteCurrency.chainId)
   const [internalChartError, setInternalChartError] = useState<string | undefined>(undefined)
-  const { chainId: multichainContextChainId } = useMultichainContext()
 
   // TODO: consider moving this to the store - requires rearranging loading and error states
   const [selectedHistoryDuration, setSelectedHistoryDuration] = useState<GraphQLApi.HistoryDuration>(
@@ -152,7 +149,7 @@ export function D3LiquidityRangeInput({
   const { ticks: rawTicks, isLoading: rawTicksLoading } = useAllPoolTicks({
     sdkCurrencies,
     feeAmount: Number(feeTier),
-    chainId: (multichainContextChainId ?? quoteCurrency.chainId) as UniverseChainId,
+    chainId: quoteCurrency.chainId as UniverseChainId,
     version: protocolVersion,
     tickSpacing,
     hooks: hook ?? ZERO_ADDRESS,
@@ -164,7 +161,7 @@ export function D3LiquidityRangeInput({
       return undefined
     }
     const activeTick = Math.floor(currentTick / tickSpacing) * tickSpacing
-    const uniqueTicksMap = new Map<number | undefined, ChartEntry>()
+    const uniqueTicksMap = new Map<number, ChartEntry>()
     let prevAmounts: Pick<ChartEntry, 'amount0Locked' | 'amount1Locked'> | undefined
     liquidityData.forEach((entry) => {
       // Negate ticks when priceInverted to match the visual tick scale
@@ -213,20 +210,17 @@ export function D3LiquidityRangeInput({
       return rawTicks
     }
     // Negate ticks and liquidityNet, then reverse to restore ascending order.
-    return (
-      rawTicks
-        // oxlint-disable-next-line no-shadow
-        ?.map((t) =>
-          t
-            ? {
-                ...t,
-                tick: t.tick !== undefined ? -t.tick : undefined,
-                liquidityNet: t.liquidityNet ? String(-BigInt(t.liquidityNet)) : t.liquidityNet,
-              }
-            : t,
-        )
-        .reverse()
-    )
+    return rawTicks
+      ?.map((rawTick) =>
+        rawTick
+          ? {
+              ...rawTick,
+              tick: rawTick.tick !== undefined ? -rawTick.tick : undefined,
+              liquidityNet: rawTick.liquidityNet ? String(-BigInt(rawTick.liquidityNet)) : rawTick.liquidityNet,
+            }
+          : rawTick,
+      )
+      .reverse()
   }, [rawTicks, priceInverted])
 
   return (
@@ -278,7 +272,7 @@ export function D3LiquidityRangeInput({
               baseCurrency={sdkBaseCurrency}
               priceData={finalPriceData}
               liquidityData={sortedLiquidityData}
-              initialPosition={initialPosition}
+              migratingPosition={migratingPosition}
               tickSpacing={tickSpacing}
               currentTick={priceInverted ? -currentTick : currentTick}
               rawTicks={finalTickData}

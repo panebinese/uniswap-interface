@@ -156,12 +156,27 @@
       }
     },
     "build:e2e": {
-      "command": "webpack --node-env=production --env BUILD_ENV=dev BUILD_NUM=0",
+      "command": "wxt build -b chrome --mode production",
+      "options": {
+        "cwd": "{projectRoot}",
+        "env": {
+          "NODE_ENV": "production",
+          "BUILD_ENV": "dev",
+          "BUILD_NUM": "0"
+        }
+      },
+      "inputs": ["dependencies", "sourceFiles", "tsConfig"],
+      "outputs": ["{projectRoot}/.output/chrome-mv3"],
+      "cache": true,
+      "dependsOn": ["^build", "prepare"]
+    },
+    "build:e2e:webpack": {
+      "command": "webpack --node-env=production --env BUILD_ENV=dev --env BUILD_NUM=0",
       "options": {
         "cwd": "{projectRoot}"
       },
       "inputs": ["dependencies", "sourceFiles", "tsConfig"],
-      "outputs": ["{projectRoot}/dist", "{projectRoot}/build", "{projectRoot}/.next", "{projectRoot}/types"],
+      "outputs": ["{projectRoot}/build"],
       "cache": true,
       "dependsOn": ["^build", "prepare"]
     },

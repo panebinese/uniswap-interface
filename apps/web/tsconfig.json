@@ -53,16 +53,19 @@
       "path": "../../packages/websocket"
     },
     {
-      "path": "../../packages/prices"
+      "path": "../../packages/sessions"
     },
     {
-      "path": "../../packages/sessions"
+      "path": "../../packages/prices"
     },
     {
       "path": "../../packages/notifications"
     },
     {
       "path": "../../packages/gating"
+    },
+    {
+      "path": "../../packages/config"
     },
     {
       "path": "../../packages/ui"

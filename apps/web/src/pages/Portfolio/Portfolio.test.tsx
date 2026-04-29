@@ -8,15 +8,11 @@ vi.mock('~/pages/Portfolio/hooks/useShowDemoView', () => ({
 }))
 
 vi.mock('~/pages/Portfolio/PortfolioPageInner', () => ({
-  PortfolioPageInner: ({ isBannerVisible, mb }: { isBannerVisible: boolean; mb?: number }) => (
-    <div data-testid="portfolio-page-inner" data-banner-visible={isBannerVisible} data-mb={mb}>
+  PortfolioPageInner: ({ mb }: { mb?: number }) => (
+    <div data-testid="portfolio-page-inner" data-mb={mb}>
       Portfolio Page Inner Mock
     </div>
   ),
-}))
-
-vi.mock('~/hooks/useScroll', () => ({
-  useScroll: vi.fn().mockReturnValue({ height: 0 }),
 }))
 
 describe('Portfolio', () => {

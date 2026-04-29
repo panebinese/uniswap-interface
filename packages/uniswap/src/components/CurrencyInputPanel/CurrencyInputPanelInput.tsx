@@ -155,7 +155,7 @@ export const CurrencyInputPanelInput = memo(
             onLayout={inputFontSize.onLayout}
           >
             {currencyInfo ? (
-              <Flex row flexShrink={isWebPlatform ? 1 : 0}>
+              <Flex fill row flexShrink={isWebPlatform ? 1 : 0}>
                 {disabled && (
                   // Invisible TouchableArea overlay to capture onPress events and trigger the shake animation when the input is disabled
                   <TouchableArea

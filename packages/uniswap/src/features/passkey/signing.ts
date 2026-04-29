@@ -3,47 +3,83 @@ import {
   AuthenticationTypes,
 } from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
 import type { Sign7702AuthorizationResult, SignAuth } from '@universe/api'
+import { SharedQueryClient } from '@universe/api'
 import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
-import { getDeviceSession, signWithDeviceKey } from 'uniswap/src/features/passkey/deviceSession'
-import { authenticateWithPasskey } from 'uniswap/src/features/passkey/embeddedWallet'
+import { ensureNeckKeyPair, loadNeckMetadata, signWithDeviceKey } from 'uniswap/src/features/passkey/deviceSession'
+import { authenticateWithPasskey, refreshNeckSession } from 'uniswap/src/features/passkey/embeddedWallet'
 import { logger } from 'utilities/src/logger/logger'
+import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 
 async function signWithDeviceSessionOrPasskey<T>({
   action,
   walletId,
   challengeParams,
   signRequest,
+  // Override for actions whose proto fields aren't in the typed client yet (e.g. 7702).
+  // When provided, this is called instead of EmbeddedWalletApiClient.fetchChallengeRequest.
+  rawChallenge,
 }: {
   action: Action
   walletId?: string
   challengeParams: Record<string, string>
   signRequest: (auth: SignAuth) => Promise<T>
+  rawChallenge?: (params: Record<string, unknown>) => Promise<{ signingPayload?: string; sessionActive?: boolean }>
 }): Promise<T> {
-  const session = getDeviceSession()
-  if (session) {
-    const challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
-      type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
-      action,
-      walletId: walletId ?? session.walletId,
-      ...challengeParams,
-    })
-    if (challenge.signingPayload) {
-      const resolvedWalletId = walletId ?? session.walletId
-      if (!resolvedWalletId) {
-        throw new Error('No walletId available for device auth')
-      }
-      const deviceSignature = await signWithDeviceKey(session.privateKey, challenge.signingPayload)
-      return signRequest({
-        case: 'deviceAuth',
-        value: { deviceSignature, walletId: resolvedWalletId },
-      })
-    }
+  const neckMeta = loadNeckMetadata()
+  const resolvedWalletId = walletId ?? neckMeta?.walletId
+  if (!resolvedWalletId) {
+    throw new Error('No walletId available for device auth')
   }
-  const credential = await authenticateWithPasskey(action, { walletId, ...challengeParams })
-  if (!credential) {
-    throw new Error('Passkey authentication returned no credential')
+
+  // Ensure we have both metadata AND the in-memory private key. If either is
+  // missing (e.g. window was closed since last session), this regenerates a fresh
+  // pair; we then MUST refresh the server-side NECK registration to bind the new
+  // pub key, since Challenge(sessionActive) doesn't verify pub-key match.
+  const {
+    privateKey: neckPrivateKey,
+    publicKeyBase64: devicePublicKey,
+    isFresh,
+  } = await ensureNeckKeyPair(resolvedWalletId)
+
+  if (isFresh) {
+    await refreshNeckSession(devicePublicKey, resolvedWalletId)
   }
-  return signRequest({ case: 'credential', value: credential })
+
+  // 1. Call Challenge for the actual action
+  const challengeBaseParams = {
+    type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
+    action,
+    walletId: resolvedWalletId,
+    devicePublicKey,
+    ...challengeParams,
+  }
+
+  let challenge = rawChallenge
+    ? await rawChallenge(challengeBaseParams)
+    : await EmbeddedWalletApiClient.fetchChallengeRequest(challengeBaseParams)
+
+  // Update React Query cache so UI reflects current session state
+  SharedQueryClient.setQueryData([ReactQueryCacheKey.PasskeyAuthStatus, true], challenge.sessionActive)
+
+  // 2. If not sessioned, refresh NECK via WALLET_SIGNIN passkey flow, then re-fetch a fresh challenge
+  if (!challenge.sessionActive) {
+    await refreshNeckSession(devicePublicKey, resolvedWalletId)
+    challenge = rawChallenge
+      ? await rawChallenge(challengeBaseParams)
+      : await EmbeddedWalletApiClient.fetchChallengeRequest(challengeBaseParams)
+    SharedQueryClient.setQueryData([ReactQueryCacheKey.PasskeyAuthStatus, true], challenge.sessionActive)
+  }
+
+  if (!challenge.signingPayload) {
+    throw new Error('Challenge did not return a signing payload')
+  }
+
+  // 3. Sign the fresh signingPayload with the in-memory NECK key
+  const deviceSignature = await signWithDeviceKey(neckPrivateKey, challenge.signingPayload)
+  return signRequest({
+    case: 'deviceAuth',
+    value: { deviceSignature, walletId: resolvedWalletId },
+  })
 }
 
 export async function signMessageWithPasskey(message: string, walletId?: string): Promise<string | undefined> {
@@ -109,7 +145,6 @@ export async function sign7702AuthorizationWithPasskey(params: {
   walletId?: string
 }): Promise<Sign7702AuthorizationResult> {
   const { contractAddress, chainId, nonce, walletId } = params
-
   try {
     return await signWithDeviceSessionOrPasskey({
       action: Action.SIGN_7702_AUTHORIZATION,
@@ -120,25 +155,14 @@ export async function sign7702AuthorizationWithPasskey(params: {
         authorizationNonce: String(nonce),
       },
       signRequest: (auth) =>
-        EmbeddedWalletApiClient.fetchSign7702AuthorizationRequest({
-          contractAddress,
-          chainId,
-          nonce,
-          auth,
-        }),
+        EmbeddedWalletApiClient.fetchSign7702AuthorizationRequest({ contractAddress, chainId, nonce, auth }),
     })
   } catch (error) {
-    logger.error(error, {
-      tags: { file: 'signing.ts', function: 'sign7702AuthorizationWithPasskey' },
-    })
+    logger.error(error, { tags: { file: 'signing.ts', function: 'sign7702AuthorizationWithPasskey' } })
     throw error
   }
 }
 
-/**
- * Signs a full EIP-7702 transaction via the privy-embedded-wallet backend.
- * The backend handles type-4 transaction signing and serialization.
- */
 export async function sign7702TransactionWithPasskey(params: {
   to: string
   data: string
@@ -152,7 +176,6 @@ export async function sign7702TransactionWithPasskey(params: {
   walletId?: string
 }): Promise<string> {
   const { to, data, value, chainId, gas, maxFeePerGas, maxPriorityFeePerGas, nonce, authorization, walletId } = params
-
   try {
     const txParams = { to, data, value, chainId, gas, maxFeePerGas, maxPriorityFeePerGas, nonce }
     const authorizationParams = {
@@ -178,9 +201,7 @@ export async function sign7702TransactionWithPasskey(params: {
     })
     return result.signedTransaction
   } catch (error) {
-    logger.error(error, {
-      tags: { file: 'signing.ts', function: 'sign7702TransactionWithPasskey' },
-    })
+    logger.error(error, { tags: { file: 'signing.ts', function: 'sign7702TransactionWithPasskey' } })
     throw error
   }
 }

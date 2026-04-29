@@ -40,6 +40,7 @@ describe('report submission analytics', () => {
           spam_token: true,
           something_else: true,
           text: 'this token is suspicious',
+          is_multichain_asset: false,
         }),
       )
     })
@@ -59,6 +60,25 @@ describe('report submission analytics', () => {
           spam_token: true,
           something_else: false,
           text: undefined,
+          is_multichain_asset: false,
+        }),
+      )
+    })
+
+    it('sends is_multichain_asset when true', () => {
+      submitTokenIssueReport({
+        source: 'token-details',
+        chainId: UniverseChainId.Mainnet,
+        tokenAddress: '0x123',
+        reportOptions: [TokenReportOption.Spam],
+        reportTexts: new Map(),
+        isMultichainAsset: true,
+      })
+
+      expect(mockSendAnalyticsEvent).toHaveBeenCalledWith(
+        UniswapEventName.SpamReportSubmitted,
+        expect.objectContaining({
+          is_multichain_asset: true,
         }),
       )
     })

@@ -1,9 +1,8 @@
 import { SharedEventName } from '@uniswap/analytics-events'
 import { Currency } from '@uniswap/sdk-core'
-import { memo, useCallback, useMemo, useState } from 'react'
+import { type MouseEvent, memo, useCallback, useMemo, useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { Flex, Loader } from 'ui/src'
-import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
+import { Flex, Loader, TouchableArea } from 'ui/src'
 import { HiddenTokensRow } from 'uniswap/src/components/portfolio/HiddenTokensRow'
 import { TokenBalanceItem } from 'uniswap/src/components/portfolio/TokenBalanceItem/TokenBalanceItem'
 import { TokenBalanceItemContextMenu } from 'uniswap/src/components/portfolio/TokenBalanceItem/TokenBalanceItemContextMenu'
@@ -11,6 +10,7 @@ import { ChainBalanceRow } from 'uniswap/src/components/portfolio/TokenBalanceLi
 import { PortfolioBalance, PortfolioChainBalance, PortfolioMultichainBalance } from 'uniswap/src/features/dataApi/types'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType, CopyNotificationType } from 'uniswap/src/features/notifications/slice/types'
+import { multichainChainTokenRowSuffix } from 'uniswap/src/features/portfolio/balances/flattenMultichainToSingleChainRows'
 import { useTokenBalanceListContext } from 'uniswap/src/features/portfolio/TokenBalanceListContext'
 import {
   isChainRowId,
@@ -99,9 +99,9 @@ const TokenBalanceItemRow = memo(function TokenBalanceItemRow({
 
   const { parentBalance, isChildRow, chainToken } = useMemo(() => {
     if (isChainRowId(item)) {
-      const { currencyId: cid, chainId } = parseChainRowId(item)
+      const { currencyId: cid, chainCurrencyId } = parseChainRowId(item)
       const balance = balancesById?.[cid]
-      const chain = balance?.tokens.find((t) => t.chainId === chainId)
+      const chain = balance?.tokens.find((t) => multichainChainTokenRowSuffix(t) === chainCurrencyId)
       return {
         parentBalance: balance,
         isChildRow: true,
@@ -129,6 +129,11 @@ const TokenBalanceItemRow = memo(function TokenBalanceItemRow({
       })
     }
   }, [expandedCurrencyIds, multichainRowExpansionEnabled, parentBalance, toggleExpanded, trace])
+
+  const suppressContextMenu = useCallback((event: MouseEvent<HTMLElement>): void => {
+    event.preventDefault()
+    event.stopPropagation()
+  }, [])
 
   const copyAddressToClipboard = useCallback(
     async (address: string): Promise<void> => {
@@ -186,6 +191,7 @@ const TokenBalanceItemRow = memo(function TokenBalanceItemRow({
     return (
       <TokenBalanceItemContextMenu
         portfolioBalance={portfolioBalanceForMenu}
+        isMultichainAsset={parentBalance.tokens.length > 1}
         copyAddressToClipboard={copyAddressToClipboard}
         openReportTokenModal={() =>
           openReportTokenModal(
@@ -225,23 +231,17 @@ const TokenBalanceItemRow = memo(function TokenBalanceItemRow({
 
   if (expandOnPrimaryClick) {
     return (
-      <TokenBalanceItemContextMenu
-        portfolioBalance={portfolioBalance}
-        copyAddressToClipboard={copyAddressToClipboard}
-        openReportTokenModal={() =>
-          openReportTokenModal(portfolioBalance.currencyInfo.currency, portfolioBalance.currencyInfo.isSpam)
-        }
-        triggerMode={ContextMenuTriggerMode.Secondary}
-        onPressToken={toggleMultichainRow}
-      >
-        {tokenBalanceItem}
-      </TokenBalanceItemContextMenu>
+      // oxlint-disable-next-line react/forbid-elements -- web only, need div to suppress context menu
+      <div role="presentation" style={{ width: '100%' }} onContextMenu={suppressContextMenu}>
+        <TouchableArea onPress={toggleMultichainRow}>{tokenBalanceItem}</TouchableArea>
+      </div>
     )
   }
 
   return (
     <TokenBalanceItemContextMenu
       portfolioBalance={portfolioBalance}
+      isMultichainAsset={parentBalance.tokens.length > 1}
       copyAddressToClipboard={copyAddressToClipboard}
       openReportTokenModal={() =>
         openReportTokenModal(portfolioBalance.currencyInfo.currency, portfolioBalance.currencyInfo.isSpam)

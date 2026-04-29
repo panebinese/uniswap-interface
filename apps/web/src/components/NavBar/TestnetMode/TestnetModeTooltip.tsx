@@ -22,7 +22,7 @@ export default function TestnetModeTooltip() {
           borderRadius="$rounded8"
           cursor="pointer"
           onPress={() => {
-            setMenu({ variant: MenuStateVariant.ADVANCED_SETTINGS })
+            setMenu({ variant: MenuStateVariant.SETTINGS })
             accountDrawer.open()
           }}
         >

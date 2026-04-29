@@ -46,6 +46,8 @@ const INITIAL_DRAG_STATE = {
 const INITIAL_HOVER_STATE = {
   hoveredY: undefined as number | undefined,
   hoveredTick: undefined as ChartEntry | undefined,
+  hoverPriceX: undefined as number | undefined,
+  hoverPriceY: undefined as number | undefined,
   isChartHovered: false,
 }
 

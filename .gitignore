@@ -85,6 +85,7 @@ claude.local.md
 CLAUDE.local.md
 .claude/settings.local.json
 .claude/local/
+.claude/worktrees/
 **/*/.claude/user/*
 **/*/.claude/local/
 

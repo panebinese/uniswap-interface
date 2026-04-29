@@ -34,7 +34,7 @@ export enum RangeAmountInputPriceMode {
   PERCENTAGE = 'percentage',
 }
 
-export interface InitialPosition {
+export interface MigratingPosition {
   tickLower: number
   tickUpper: number
   isOutOfRange: boolean
@@ -46,8 +46,8 @@ export interface PositionState {
   fee?: FeeData
   hook?: string
   userApprovedHook?: string // address of approved hook. If different from `hook`, user needs to reapprove the new hook
-  // Initial position is provided for migration purposes.
-  initialPosition?: InitialPosition
+  // The source position being migrated from (e.g. V3 → V4). Only set during migration flows.
+  migratingPosition?: MigratingPosition
 }
 
 export const DEFAULT_FEE_DATA = {

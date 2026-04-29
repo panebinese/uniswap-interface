@@ -172,7 +172,6 @@ export function TokenLaunchedBanner({
       priceData={{
         currentTickValue: effectivePriceData.currentTickValue,
         priceSeries: effectiveChartSeries ?? [],
-        changePercentage: effectivePriceData.changePercentage,
       }}
       bannerGradient={bannerGradient}
       accentColor={accentColor}

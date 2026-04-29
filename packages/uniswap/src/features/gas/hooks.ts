@@ -236,9 +236,17 @@ export function useTransactionGasWarning({
 
   return useMemo(() => {
     // if balance is already insufficient, dont need to show warning about network fee
-    if (gasFee === undefined || isSmartContractAddress || balanceInsufficient || !gasBalance || hasGasFunds) {
+    if (isSmartContractAddress || balanceInsufficient || !gasBalance) {
       return undefined
     }
+
+    // Fire even without a concrete gasFee when gas-token balance is provably zero
+    // (e.g. Gas Service v2 refused to estimate because the account is underfunded).
+    const gasBalanceIsZero = gasBalance.equalTo(0)
+    if (!gasBalanceIsZero && (gasFee === undefined || hasGasFunds)) {
+      return undefined
+    }
+
     const currencySymbol = gasBalance.currency.symbol ?? ''
 
     return {

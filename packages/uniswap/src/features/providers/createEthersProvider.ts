@@ -26,8 +26,8 @@ export function createEthersProvider({
 
     // If we should use Flashbots, create a FlashbotsRpcProvider
     if (rpcConfig.shouldUseFlashbots && rpcConfig.flashbotsConfig) {
-      const { refundPercent } = rpcConfig.flashbotsConfig
-      return new FlashbotsRpcProvider({ signerInfo, refundPercent, network: chainId })
+      const { refundPercent, calldataHintsEnabled } = rpcConfig.flashbotsConfig
+      return new FlashbotsRpcProvider({ signerInfo, refundPercent, calldataHintsEnabled, network: chainId })
     }
 
     // Otherwise, create an instrumented JsonRpcProvider, passing the chainId to lower the number of needed RPC calls

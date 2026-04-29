@@ -6,6 +6,7 @@ import type { TieredNetworkOptions } from 'uniswap/src/components/network/Networ
 import { NetworkOption } from 'uniswap/src/components/network/NetworkOption'
 import { useNewChainIds } from 'uniswap/src/features/chains/hooks/useNewChainIds'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import { isExtensionApp, isWebApp } from 'utilities/src/platform'
 import { useEvent } from 'utilities/src/react/hooks'
 
@@ -55,7 +56,12 @@ function SelectableNetworkOption({
   })
 
   return (
-    <TouchableArea hoverable borderRadius="$rounded8" onPress={handlePress}>
+    <TouchableArea
+      hoverable
+      borderRadius="$rounded8"
+      testID={`${ElementName.NetworkButton}-${chainId ?? 'all'}`}
+      onPress={handlePress}
+    >
       <NetworkOption
         chainId={chainId}
         currentlySelected={selectedChain === chainId}

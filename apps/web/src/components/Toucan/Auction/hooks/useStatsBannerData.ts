@@ -1,7 +1,16 @@
+import { useQuery } from '@tanstack/react-query'
+import { GetClearingPriceHistoryRequest } from '@uniswap/client-data-api/dist/data/v1/auction_pb'
 import { useMemo } from 'react'
+import { auctionQueries } from 'uniswap/src/data/rest/auctions/auctionQueries'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
 import { fromQ96ToDecimalWithTokenDecimals } from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
+import { computeCurrentValuationFiatFormatted } from '~/components/Toucan/Auction/hooks/computeCurrentValuationFiat'
+import {
+  computeHourlyChangePercent,
+  formatAsBidToken,
+  formatValuationAsBidToken,
+} from '~/components/Toucan/Auction/hooks/statsBannerFormatters'
 import { useBidTokenInfo } from '~/components/Toucan/Auction/hooks/useBidTokenInfo'
 import { useCurrencyRaisedFormatted } from '~/components/Toucan/Auction/hooks/useCurrencyRaisedFormatted'
 import { AuctionProgressState, BidTokenInfo } from '~/components/Toucan/Auction/store/types'
@@ -9,7 +18,6 @@ import { useAuctionStore } from '~/components/Toucan/Auction/store/useAuctionSto
 import { getClearingPrice } from '~/components/Toucan/Auction/utils/clearingPrice'
 import {
   approximateNumberFromRaw,
-  computeFdvBidTokenRaw,
   formatCompactFromRaw,
   formatTokenAmountWithSymbol,
 } from '~/components/Toucan/Auction/utils/fixedPointFdv'
@@ -18,7 +26,28 @@ import {
   buildTokenMarketPriceKey,
   useTokenMarketPrices,
 } from '~/components/Toucan/hooks/useTokenMarketPrices'
-import { computeCompletedAuctionMarketFdvUsd } from '~/components/Toucan/utils/computeProjectedFdv'
+
+// When above-floor % exceeds this threshold and hourly data is available, switch to hourly change display
+const HOURLY_CHANGE_THRESHOLD = 1000
+
+interface ShouldFetchClearingPriceHistoryParams {
+  isAuctionActive: boolean
+  hasClearingPriceHistoryParams: boolean
+  aboveFloorPercent: number | null
+}
+
+function shouldFetchClearingPriceHistory({
+  isAuctionActive,
+  hasClearingPriceHistoryParams,
+  aboveFloorPercent,
+}: ShouldFetchClearingPriceHistoryParams): boolean {
+  return (
+    isAuctionActive &&
+    hasClearingPriceHistoryParams &&
+    aboveFloorPercent !== null &&
+    aboveFloorPercent > HOURLY_CHANGE_THRESHOLD
+  )
+}
 
 interface StatsBannerData {
   // Current clearing price
@@ -28,6 +57,7 @@ interface StatsBannerData {
   clearingPriceFiatValue: number | null // Numeric fiat value for SubscriptZeroPrice (in user's currency)
   changePercent: number | null // null if no change (clearing === floor)
   isPositiveChange: boolean
+  changeLabel: 'aboveFloor' | 'pastHour' // which label to show next to the change %
   bidTokenSymbol: string | null // e.g., "ETH"
   bidTokenInfo: BidTokenInfo | undefined // Full bid token info for formatting
 
@@ -59,52 +89,6 @@ interface StatsBannerData {
   // Auction state
   isAuctionEnded: boolean
   isAuctionNotStarted: boolean
-}
-
-/**
- * Helper to format a tick value as bid token amount (e.g., "1.25 ETH")
- */
-function formatAsBidToken({
-  tickValue,
-  bidTokenInfo,
-  formatNumber,
-}: {
-  tickValue: number
-  bidTokenInfo: BidTokenInfo
-  formatNumber: (value: number, type: NumberType) => string
-}): string {
-  const formatted = formatNumber(tickValue, NumberType.TokenNonTx)
-  return `${formatted} ${bidTokenInfo.symbol}`
-}
-
-/**
- * Helper to format a valuation value (totalSupply * price) as bid token amount
- */
-function formatValuationAsBidToken({
-  tickQ96,
-  totalSupply,
-  auctionTokenDecimals,
-  bidTokenInfo,
-}: {
-  tickQ96: string
-  totalSupply: string
-  auctionTokenDecimals: number
-  bidTokenInfo: BidTokenInfo
-}): string {
-  const valuationRaw = computeFdvBidTokenRaw({
-    priceQ96: tickQ96,
-    bidTokenDecimals: bidTokenInfo.decimals,
-    totalSupplyRaw: totalSupply,
-    auctionTokenDecimals,
-  })
-
-  const formatted = formatCompactFromRaw({
-    raw: valuationRaw,
-    decimals: bidTokenInfo.decimals,
-    maxFractionDigits: 2,
-  })
-
-  return `${formatted} ${bidTokenInfo.symbol}`
 }
 
 /**
@@ -221,13 +205,57 @@ export function useStatsBannerData(): StatsBannerData {
   const clearingPriceDecimal = useMemo(() => parseQ96ToDecimal(clearingPrice), [clearingPrice, parseQ96ToDecimal])
   const floorPriceDecimal = useMemo(() => parseQ96ToDecimal(floorPrice), [floorPrice, parseQ96ToDecimal])
 
-  // Calculate change percentage (only if clearing > floor)
-  const changePercent = useMemo(() => {
+  // Calculate change percentage relative to floor price
+  const aboveFloorPercent = useMemo(() => {
     if (floorPriceDecimal === 0 || clearingPriceDecimal === floorPriceDecimal) {
       return null
     }
     return ((clearingPriceDecimal - floorPriceDecimal) / floorPriceDecimal) * 100
   }, [clearingPriceDecimal, floorPriceDecimal])
+
+  // When above-floor % is extreme, fetch clearing price history to show hourly change instead.
+  // This query shares the same react-query cache key as the chart, so no extra network request.
+  const clearingPriceHistoryParams = useMemo(
+    () =>
+      auctionDetails
+        ? new GetClearingPriceHistoryRequest({ chainId: auctionDetails.chainId, address: auctionDetails.address })
+        : undefined,
+    [auctionDetails],
+  )
+
+  const shouldFetchHistory = shouldFetchClearingPriceHistory({
+    isAuctionActive,
+    hasClearingPriceHistoryParams: !!clearingPriceHistoryParams,
+    aboveFloorPercent,
+  })
+
+  const { data: clearingPriceHistoryResponse } = useQuery(
+    auctionQueries.getClearingPriceHistory({
+      params: clearingPriceHistoryParams ?? new GetClearingPriceHistoryRequest(),
+      enabled: shouldFetchHistory,
+    }),
+  )
+
+  const hourlyChangePercent = useMemo(() => {
+    if (!shouldFetchHistory) {
+      return null
+    }
+    return computeHourlyChangePercent({
+      clearingPriceDecimal,
+      changes: clearingPriceHistoryResponse?.changes,
+      bidTokenDecimals: bidTokenInfo?.decimals,
+      auctionTokenDecimals,
+    })
+  }, [
+    shouldFetchHistory,
+    clearingPriceHistoryResponse,
+    clearingPriceDecimal,
+    bidTokenInfo?.decimals,
+    auctionTokenDecimals,
+  ])
+
+  const changePercent = hourlyChangePercent ?? aboveFloorPercent
+  const changeLabel: StatsBannerData['changeLabel'] = hourlyChangePercent !== null ? 'pastHour' : 'aboveFloor'
 
   // Format number helper
   const formatNumber = useMemo(
@@ -280,58 +308,35 @@ export function useStatsBannerData(): StatsBannerData {
   }, [auctionTokenDecimals, bidTokenInfo, clearingPrice, totalSupply])
 
   // Format current valuation in user's selected fiat currency (no "USD" suffix)
-  // For completed auctions, match top-auctions FDV by using auction token market price.
+  // For completed auctions, this should represent FDV at launch using launch-time clearing
+  // price and launch-time bid-token USD price from auction details.
+  // Fall back to auction token market price, then current bid token price.
   // Returns "--" when required price data is unavailable.
-  const currentValuationFiatFormatted = useMemo(() => {
-    if (!totalSupply || totalSupply === '0') {
-      return '--'
-    }
-
-    const isCompleted = auctionProgressState === AuctionProgressState.ENDED
-    if (isCompleted && auctionTokenMarketPriceUsd !== undefined) {
-      const valuationFiat = computeCompletedAuctionMarketFdvUsd({
+  const currentValuationFiatFormatted = useMemo(
+    () =>
+      computeCurrentValuationFiatFormatted({
         totalSupplyRaw: totalSupply,
+        auctionProgressState,
         auctionTokenDecimals,
-        auctionTokenUsdPrice: auctionTokenMarketPriceUsd,
-      })
-
-      if (valuationFiat === undefined) {
-        return '--'
-      }
-
-      return convertFiatAmountFormatted(valuationFiat, NumberType.FiatTokenStats)
-    }
-
-    const bidTokenPriceUsd =
-      bidTokenMarketPriceUsd ?? (bidTokenInfo?.priceFiat === 0 ? undefined : bidTokenInfo?.priceFiat)
-    if (!bidTokenInfo || bidTokenPriceUsd === undefined) {
-      return '--'
-    }
-
-    const valuationRaw = computeFdvBidTokenRaw({
-      priceQ96: clearingPrice,
-      bidTokenDecimals: bidTokenInfo.decimals,
-      totalSupplyRaw: totalSupply,
+        clearingPriceQ96: clearingPrice,
+        launchBidTokenPriceUsdRaw: auctionDetails?.currencyPriceUsd,
+        bidTokenInfo,
+        auctionTokenMarketPriceUsd,
+        bidTokenMarketPriceUsd,
+        convertFiatAmountFormatted,
+      }),
+    [
+      auctionDetails?.currencyPriceUsd,
+      auctionProgressState,
       auctionTokenDecimals,
-    })
-
-    const valuationBidTokenApprox = approximateNumberFromRaw({
-      raw: valuationRaw,
-      decimals: bidTokenInfo.decimals,
-      significantDigits: 15,
-    })
-    const valuationFiat = valuationBidTokenApprox * bidTokenPriceUsd
-    return convertFiatAmountFormatted(valuationFiat, NumberType.FiatTokenStats)
-  }, [
-    auctionTokenDecimals,
-    auctionProgressState,
-    auctionTokenMarketPriceUsd,
-    bidTokenInfo,
-    bidTokenMarketPriceUsd,
-    clearingPrice,
-    convertFiatAmountFormatted,
-    totalSupply,
-  ])
+      auctionTokenMarketPriceUsd,
+      bidTokenInfo,
+      bidTokenMarketPriceUsd,
+      clearingPrice,
+      convertFiatAmountFormatted,
+      totalSupply,
+    ],
+  )
 
   // Format concentration band values
   // Returns null for fiat range when priceFiat is unavailable
@@ -449,6 +454,7 @@ export function useStatsBannerData(): StatsBannerData {
     clearingPriceFiatValue,
     changePercent,
     isPositiveChange: (changePercent ?? 0) > 0,
+    changeLabel,
     bidTokenSymbol: bidTokenInfo?.symbol ?? null,
     bidTokenInfo,
     currentValuationFormatted,

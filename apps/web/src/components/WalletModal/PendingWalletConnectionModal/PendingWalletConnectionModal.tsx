@@ -53,7 +53,6 @@ function useSolanaWalletToPrompt(applicablePendingWallet: ExternalWallet | undef
 
   const [solanaWalletToPrompt, setSolanaWalletToPrompt] = useState<ExternalWallet>()
 
-  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   const isMultiPlatformConnection = !useConnectWallet().variables?.individualPlatform
 
   // Set a flag to keep the modal open if the solana prompt should be shown

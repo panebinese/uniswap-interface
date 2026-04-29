@@ -311,6 +311,7 @@ export function SendReviewDetails({
         }
         chainId={chainId as UniverseChainId}
         gasFee={gasFee}
+        isSwap={false}
         showWarning={Boolean(transferWarning)}
         warning={transferWarning}
         onShowWarning={onShowWarning}

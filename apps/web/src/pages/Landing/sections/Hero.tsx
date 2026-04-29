@@ -8,9 +8,9 @@ import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledCh
 import { SwapRedirectFn } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
 import { ColumnCenter } from '~/components/deprecated/Column'
 import { useCurrency } from '~/hooks/Tokens'
-import { useScroll } from '~/hooks/useScroll'
 import { Hover, RiseIn, RiseInText } from '~/pages/Landing/components/animations'
 import { TokenCloud } from '~/pages/Landing/components/TokenCloud'
+import useScrollParallax from '~/pages/Landing/sections/useScrollParallax'
 import { Swap } from '~/pages/Swap'
 import { serializeSwapStateToURLParameters } from '~/state/swap/hooks'
 
@@ -22,21 +22,14 @@ interface HeroProps {
 export function Hero({ scrollToRef, transition }: HeroProps) {
   const media = useMedia()
   const colors = useSporeColors()
-  const { height: scrollPosition } = useScroll({ enabled: !media.sm })
   const { defaultChainId, chains } = useEnabledChains()
+  const { outerRef, innerRef, chevronRef } = useScrollParallax(!media.sm)
   const initialInputCurrency = useCurrency({
     address: 'ETH',
     chainId: defaultChainId,
   })
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { translateY, opacityY } = useMemo(
-    () => ({
-      translateY: !media.sm ? -scrollPosition / 7 : 0,
-      opacityY: !media.sm ? 1 - scrollPosition / 1000 : 1,
-    }),
-    [media.sm, scrollPosition],
-  )
 
   const swapRedirectCallback = useCallback(
     ({ inputCurrency, outputCurrency, typedValue, independentField, chainId }: Parameters<SwapRedirectFn>[0]) => {
@@ -72,10 +65,9 @@ export function Hero({ scrollToRef, transition }: HeroProps) {
 
   return (
     <Flex
+      ref={outerRef}
       position="relative"
       justifyContent="center"
-      y={translateY}
-      opacity={opacityY}
       minWidth="100%"
       minHeight="100vh"
       height="min-content"
@@ -85,13 +77,12 @@ export function Hero({ scrollToRef, transition }: HeroProps) {
       {!media.sm && <TokenCloud />}
 
       <Flex
+        ref={innerRef}
         alignSelf="center"
         maxWidth="85vw"
         pointerEvents="none"
         pt={48}
         gap="$gap20"
-        transform={`translate(0px, ${translateY}px)`}
-        opacity={opacityY}
         $lg={{ pt: 24 }}
         $sm={{ pt: 8 }}
         $platform-web={{
@@ -149,16 +140,13 @@ export function Hero({ scrollToRef, transition }: HeroProps) {
       <Flex flex={1} />
 
       <Flex
+        ref={chevronRef}
         position="absolute"
         width="100%"
         centered
         pointerEvents="none"
         bottom={48}
-        style={{
-          transform: `translate(0px, ${translateY}px)`,
-          opacity: scrollPosition > 100 ? 0 : opacityY,
-          transition: 'opacity 0.3s ease-out',
-        }}
+        style={{ transition: 'opacity 0.3s ease-out' }}
         $lgHeight={{ display: 'none' }}
       >
         <RiseIn delay={2}>

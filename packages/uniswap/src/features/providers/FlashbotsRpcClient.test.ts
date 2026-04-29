@@ -1,5 +1,9 @@
 import { Signer } from '@ethersproject/abstract-signer'
-import { SignerInfo, waitForFlashbotsProtectReceipt } from 'uniswap/src/features/providers/FlashbotsCommon'
+import {
+  buildFlashbotsUrl,
+  SignerInfo,
+  waitForFlashbotsProtectReceipt,
+} from 'uniswap/src/features/providers/FlashbotsCommon'
 import { createFlashbotsRpcClient } from 'uniswap/src/features/providers/FlashbotsRpcClient'
 import { HexString } from 'utilities/src/addresses/hex'
 import { Chain, PublicClient } from 'viem'
@@ -124,6 +128,59 @@ describe('FlashbotsRpcClient', () => {
       const fetchCall = (global.fetch as Mock).mock.calls[0]!
       const requestUrl = fetchCall[0]
       expect(requestUrl).toContain(`refund=${testAddress}:${refundPercent}`)
+    })
+  })
+
+  describe('buildFlashbotsUrl hint params', () => {
+    it('should not include hint params when calldataHintsEnabled is false', () => {
+      const url = buildFlashbotsUrl({
+        address: testAddress,
+        refundPercent: 50,
+        calldataHintsEnabled: false,
+      })
+      expect(url).not.toContain('hint=')
+      expect(url).toContain(`refund=${testAddress}:50`)
+      expect(url).toContain('blockRange=10')
+    })
+
+    it('should not include hint params when calldataHintsEnabled is undefined', () => {
+      const url = buildFlashbotsUrl({
+        address: testAddress,
+        refundPercent: 50,
+      })
+      expect(url).not.toContain('hint=')
+    })
+
+    it('should include calldata and logs hints when calldataHintsEnabled is true', () => {
+      const url = buildFlashbotsUrl({
+        address: testAddress,
+        refundPercent: 90,
+        calldataHintsEnabled: true,
+      })
+      expect(url).toContain('hint=calldata')
+      expect(url).toContain('hint=logs')
+      expect(url).toContain(`refund=${testAddress}:90`)
+      expect(url).toContain('blockRange=10')
+    })
+
+    it('should produce the correct full URL for the treatment group', () => {
+      const url = buildFlashbotsUrl({
+        address: testAddress,
+        refundPercent: 90,
+        calldataHintsEnabled: true,
+      })
+      expect(url).toBe(
+        `https://rpc.flashbots.net/fast?originId=uniswapwallet&hint=calldata&hint=logs&refund=${testAddress}:90&blockRange=10`,
+      )
+    })
+
+    it('should produce the correct full URL for the control group', () => {
+      const url = buildFlashbotsUrl({
+        address: testAddress,
+        refundPercent: 50,
+        calldataHintsEnabled: false,
+      })
+      expect(url).toBe(`https://rpc.flashbots.net/fast?originId=uniswapwallet&refund=${testAddress}:50&blockRange=10`)
     })
   })
 

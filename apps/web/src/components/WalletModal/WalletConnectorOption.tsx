@@ -8,7 +8,7 @@ import { ScanQr } from 'ui/src/components/icons/ScanQr'
 import { UniswapLogo } from 'ui/src/components/icons/UniswapLogo'
 import { WalletFilled } from 'ui/src/components/icons/WalletFilled'
 import { UseSporeColorsReturn } from 'ui/src/hooks/useSporeColors'
-import { iconSizes, opacify } from 'ui/src/theme'
+import { iconSizes } from 'ui/src/theme'
 import Badge, { BadgeVariant } from 'uniswap/src/components/badge/Badge'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
@@ -84,13 +84,7 @@ function getIcon({
     return <EmbeddedWalletIcon />
   } else if (wallet.id === CONNECTION_PROVIDER_IDS.UNISWAP_WALLET_CONNECT_CONNECTOR_ID) {
     return isEmbeddedWalletEnabled ? (
-      <Flex
-        p="$spacing4"
-        backgroundColor="$accent2"
-        borderRadius="$rounded8"
-        borderWidth="$spacing1"
-        borderColor={opacify(20, themeColors.accent1.val)}
-      >
+      <Flex p="$spacing4" backgroundColor="$accent2" borderRadius="$rounded8">
         <UniswapLogo size={iconSize - 10} color="$accent1" />
       </Flex>
     ) : (
@@ -256,7 +250,7 @@ function WalletConnectorOptionBase({
         px="$spacing12"
         py={isEmbeddedWalletEnabled ? '$spacing12' : '$spacing18'}
         cursor={isDisabled ? 'auto' : 'pointer'}
-        hoverStyle={{ backgroundColor: isDisabled ? '$surface2' : '$surface1Hovered' }}
+        hoverStyle={{ backgroundColor: isDisabled ? '$surface2' : '$surface2Hovered' }}
         opacity={isDisabled && !isPendingConnection ? 0.5 : 1}
         onPress={onPress}
       >

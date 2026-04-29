@@ -8,7 +8,7 @@ import { ValuationSliderV1 } from '~/components/Toucan/Shared/valuationSliderPar
 import { ValuationSliderV2 } from '~/components/Toucan/Shared/valuationSliderParts/ValuationSliderV2'
 
 // When the clearing-price FDV is below these thresholds,
-// expand the slider range to the target FDV instead of the default 4900% (~50x).
+// expand the slider range to the target FDV instead of the default MAX_PERCENTAGE multiple.
 const LOW_FDV_THRESHOLD_USD = 10_000
 const LOW_FDV_TARGET_USD = 1_000_000
 // Fallback thresholds in bid-token units (e.g., ETH) when fiat price is unavailable
@@ -72,7 +72,7 @@ function ValuationSliderComponent({
     }
 
     if (!targetFdvRaw) {
-      return undefined // use default 4900% (~50x) range
+      return undefined // use default MAX_PERCENTAGE range
     }
 
     // targetPriceQ96 = targetFdvRaw * Q96 / totalSupplyRaw

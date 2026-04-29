@@ -46,7 +46,7 @@ export function useSignInWithPasskey({
   onSuccess,
   onError,
 }: SignInWithPasskeyOptions = {}) {
-  const { setIsConnected, setWalletAddress, setWalletId } = useEmbeddedWalletState()
+  const { walletId: existingWalletId, setIsConnected, setWalletAddress, setWalletId } = useEmbeddedWalletState()
   const connector = useWagmiConnectorWithId(CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID, {
     shouldThrow: true,
   })
@@ -99,7 +99,7 @@ export function useSignInWithPasskey({
 
         return { walletAddress: walletData.address, walletId: walletData.walletId }
       } else {
-        const signInResponse = await signInWithPasskeyAPI()
+        const signInResponse = await signInWithPasskeyAPI(existingWalletId ?? undefined)
         if (!signInResponse || !signInResponse.walletAddress || !signInResponse.walletId) {
           throw new Error(`Failed to sign in with passkey`)
         }

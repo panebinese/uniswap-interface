@@ -1,10 +1,4 @@
-/* oxlint-disable max-lines */
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import {
-  CreateLPPositionRequest,
-  CreateLPPositionResponse,
-} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
-import { V4CreateLPPosition } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
 import {
   CreateClassicPositionResponse,
   CreatePositionRequest,
@@ -69,8 +63,8 @@ export function generateCreatePositionTxRequest({
 }: {
   protocolVersion: ProtocolVersion
   approvalCalldata?: NormalizedApprovalData
-  createCalldata?: CreateLPPositionResponse | CreateClassicPositionResponse | CreatePositionResponse
-  createCalldataQueryParams?: CreateLPPositionRequest | CreatePositionRequest
+  createCalldata?: CreateClassicPositionResponse | CreatePositionResponse
+  createCalldataQueryParams?: CreatePositionRequest
   currencyAmounts?: { [field in PositionField]?: Maybe<CurrencyAmount<Currency>> }
   poolOrPair: Pair | undefined
   canBatchTransactions: boolean
@@ -109,29 +103,14 @@ export function generateCreatePositionTxRequest({
     return undefined
   }
 
-  let updatedCreateCalldataQueryParams: CreateLPPositionRequest | CreatePositionRequest | undefined
-  if (createCalldataQueryParams instanceof CreatePositionRequest) {
-    updatedCreateCalldataQueryParams = validatedPermitRequest
+  const updatedCreateCalldataQueryParams =
+    createCalldataQueryParams && validatedPermitRequest
       ? new CreatePositionRequest({
           // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
           ...createCalldataQueryParams,
           batchPermitData: validatedPermitRequest,
         })
       : createCalldataQueryParams
-  } else if (createCalldataQueryParams?.createLpPosition.case === 'v4CreateLpPosition') {
-    updatedCreateCalldataQueryParams = new CreateLPPositionRequest({
-      createLpPosition: {
-        case: 'v4CreateLpPosition',
-        value: new V4CreateLPPosition({
-          // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
-          ...createCalldataQueryParams.createLpPosition.value,
-          batchPermitData,
-        }),
-      },
-    })
-  } else {
-    updatedCreateCalldataQueryParams = createCalldataQueryParams
-  }
 
   return {
     type: LiquidityTransactionType.Create,
@@ -228,9 +207,6 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
     isSlippageDirty: s.isSlippageDirty,
   }))
   const isLiquidityBatchedTransactionsEnabled = useFeatureFlag(FeatureFlags.LiquidityBatchedTransactions)
-  const isLpDynamicNativeSlippageEnabled = useFeatureFlag(FeatureFlags.LpDynamicNativeSlippage)
-  const isCreatePositionV2 = useFeatureFlag(FeatureFlags.CreatePositionV2)
-  const isCheckApprovalV2 = useFeatureFlag(FeatureFlags.CheckApprovalV2)
   const canBatchTransactions =
     (useUniswapContextSelector((ctx) => ctx.getCanBatchTransactions?.(poolOrPair?.chainId)) ?? false) &&
     poolOrPair?.chainId !== UniverseChainId.Monad &&
@@ -249,9 +225,8 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
       currencyAmounts,
       canBatchTransactions,
       action: LPAction.CREATE,
-      isCheckApprovalV2,
     })
-  }, [evmAddress, protocolVersion, currencyAmounts, canBatchTransactions, isCheckApprovalV2])
+  }, [evmAddress, protocolVersion, currencyAmounts, canBatchTransactions])
 
   const {
     approvalData: approvalCalldata,
@@ -281,7 +256,7 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
   const gasFeeToken1PermitUSD = useUSDCurrencyAmountOfGasFee(poolOrPair?.chainId, gasFeeToken1Permit)
 
   const nativeTokenBalance = useMemo(() => {
-    if (!isLpDynamicNativeSlippageEnabled || protocolVersion !== ProtocolVersion.V4) {
+    if (protocolVersion !== ProtocolVersion.V4) {
       return undefined
     }
     // Only set native token balance if the token0 is the native token
@@ -290,9 +265,7 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
       return currencyMaxAmounts.TOKEN0.quotient.toString()
     }
     return undefined
-  }, [isLpDynamicNativeSlippageEnabled, protocolVersion, currencyMaxAmounts])
-
-  const useV2Endpoints = isCreatePositionV2
+  }, [protocolVersion, currencyMaxAmounts])
 
   const createCalldataQueryParams = useMemo(() => {
     return generateLiquidityServiceCreateCalldataQueryParams({
@@ -309,7 +282,6 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
       slippageTolerance: nativeTokenBalance && !isSlippageDirty ? undefined : customSlippageTolerance,
       customDeadline,
       nativeTokenBalance,
-      useV2Endpoints,
       poolId,
     })
   }, [
@@ -328,7 +300,6 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
     protocolVersion,
     customDeadline,
     nativeTokenBalance,
-    useV2Endpoints,
   ])
 
   const isUserCommittedToCreate =
@@ -447,10 +418,7 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
       approvalCalldata,
       createCalldata,
       createCalldataQueryParams:
-        createCalldataQueryParams instanceof CreateLPPositionRequest ||
-        createCalldataQueryParams instanceof CreatePositionRequest
-          ? createCalldataQueryParams
-          : undefined,
+        createCalldataQueryParams instanceof CreatePositionRequest ? createCalldataQueryParams : undefined,
       currencyAmounts,
       poolOrPair: protocolVersion === ProtocolVersion.V2 ? poolOrPair : undefined,
       canBatchTransactions,
@@ -468,9 +436,8 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
   ])
 
   useDynamicNativeSlippage({
-    isEnabled: isLpDynamicNativeSlippageEnabled,
     nativeTokenBalance,
-    createCalldata: createCalldata instanceof CreateLPPositionResponse ? createCalldata : undefined,
+    createCalldata: createCalldata instanceof CreatePositionResponse ? createCalldata : undefined,
     isSlippageDirty,
   })
 
@@ -481,12 +448,9 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
     if (createCalldata instanceof CreateClassicPositionResponse) {
       return createCalldata.dependentToken?.amount
     }
-    if (createCalldata instanceof CreatePositionResponse) {
-      const dependentField =
-        depositState.exactField === PositionField.TOKEN0 ? createCalldata.token1 : createCalldata.token0
-      return dependentField?.amount
-    }
-    return createCalldata?.dependentAmount
+    const dependentField =
+      depositState.exactField === PositionField.TOKEN0 ? createCalldata?.token1 : createCalldata?.token0
+    return dependentField?.amount
   }, [createCalldata, createError, dependentAmountFallback, depositState.exactField])
 
   const value = useMemo(

@@ -25,7 +25,7 @@ interface PortfolioPerformanceProps {
 export const PortfolioPerformance = memo(function PortfolioPerformance({
   evmAddress,
   chainIds,
-}: PortfolioPerformanceProps): JSX.Element {
+}: PortfolioPerformanceProps): JSX.Element | null {
   const { t } = useTranslation()
   const [selectedPeriod, setSelectedPeriod] = useState<ProfitLossPeriod>(ProfitLossPeriod.ALL)
   const modifier = useRestPortfolioValueModifier(evmAddress)
@@ -41,7 +41,7 @@ export const PortfolioPerformance = memo(function PortfolioPerformance({
     },
   })
 
-  const profitLoss = isError ? undefined : data?.profitLoss
+  const profitLoss = data?.profitLoss
 
   useEffect(() => {
     if (!profitLoss) {
@@ -96,6 +96,10 @@ export const PortfolioPerformance = memo(function PortfolioPerformance({
     ),
     [options, selectedPeriod, t],
   )
+
+  if (isError) {
+    return null
+  }
 
   return (
     <Flex testID={TestID.PortfolioPerformance} pointerEvents="box-none" pb="$spacing16">

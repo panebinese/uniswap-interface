@@ -60,7 +60,7 @@ export function ModalContent({
               )}
               {learnMoreLink && (
                 <ExternalLink href={learnMoreLink}>
-                  <Text variant="buttonLabel1">{t('common.button.learn')}</Text>
+                  <Text variant="body2">{t('common.button.learn')}</Text>
                 </ExternalLink>
               )}
             </Flex>
