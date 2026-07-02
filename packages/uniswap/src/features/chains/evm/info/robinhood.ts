@@ -46,6 +46,7 @@ export const ROBINHOOD_CHAIN_INFO = {
   },
   blockPerMainnetEpochForChainId: 1,
   blockWaitMsBeforeWarning: DEFAULT_MS_BEFORE_WARNING,
+  bridge: 'https://portal.arbitrum.io/bridge?destinationChain=robinhood-chain',
   docs: 'https://docs.robinhood.com/chain/',
   elementName: ElementName.ChainRobinhood,
   explorer: {
