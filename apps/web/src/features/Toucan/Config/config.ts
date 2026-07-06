@@ -53,6 +53,9 @@ const AUCTION_METADATA_OVERRIDES: Record<string, AuctionMetadataOverride> = {
   '1-0xe172e9b6cfbeeb5593bdce3f077356fdb33af904': {
     logoUrl: '/images/logos/fold-token-launch-logo.jpeg',
   },
+  '42161-0x170f6e39ea851108f0713090467871f28a62a5d4': {
+    logoUrl: '/images/logos/boardwalk-token-launch-logo.png',
+  },
 }
 
 /**
