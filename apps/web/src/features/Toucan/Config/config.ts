@@ -50,6 +50,9 @@ const AUCTION_METADATA_OVERRIDES: Record<string, AuctionMetadataOverride> = {
     logoUrl: '/images/logos/strato-token-launch-logo.jpeg',
     tradingRestrictedUntilTge: true,
   },
+  '1-0xb10afc08888a2f9946bdc991f4b0c8d3ce02f9f9': {
+    logoUrl: '/images/logos/fold-token-launch-logo.jpeg',
+  },
 }
 
 /**
@@ -117,4 +120,5 @@ export const DEFAULT_VERIFIED_AUCTION_IDS = [
   '1_0xb3079Ec6b82f22A1ABfDCA1A22659aB07Cdf2f0F',
   '1_0xfFDab1083fCbBCEE32997795388B3D61Ebab786E',
   '1_0x20eEBd78151EAe9Ed2380AC613204aaF5CA0cd24',
+  '1_0xD9E8355f9f57185928347a5BdDEe164006b16e58',
 ]
