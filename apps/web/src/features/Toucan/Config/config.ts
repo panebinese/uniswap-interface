@@ -50,7 +50,7 @@ const AUCTION_METADATA_OVERRIDES: Record<string, AuctionMetadataOverride> = {
     logoUrl: '/images/logos/strato-token-launch-logo.jpeg',
     tradingRestrictedUntilTge: true,
   },
-  '1-0xb10afc08888a2f9946bdc991f4b0c8d3ce02f9f9': {
+  '1-0xe172e9b6cfbeeb5593bdce3f077356fdb33af904': {
     logoUrl: '/images/logos/fold-token-launch-logo.jpeg',
   },
   '42161-0x170f6e39ea851108f0713090467871f28a62a5d4': {
@@ -123,5 +123,5 @@ export const DEFAULT_VERIFIED_AUCTION_IDS = [
   '1_0xb3079Ec6b82f22A1ABfDCA1A22659aB07Cdf2f0F',
   '1_0xfFDab1083fCbBCEE32997795388B3D61Ebab786E',
   '1_0x20eEBd78151EAe9Ed2380AC613204aaF5CA0cd24',
-  '1_0xD9E8355f9f57185928347a5BdDEe164006b16e58',
+  '1_0x687Cc38d8279dF3352b64cF3EC1fe8e033933595', // Interfold (FOLD)
 ]
