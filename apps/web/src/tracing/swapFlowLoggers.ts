@@ -34,6 +34,8 @@ export function logSwapFinalized({
   planAnalytics,
   transactedUSDValue,
   priceSource,
+  isSponsored,
+  sponsorshipCampaignId,
   rwaAnalytics,
 }: {
   id: string
@@ -48,6 +50,8 @@ export function logSwapFinalized({
   priceSource?: PriceSourceTag
   planAnalytics?: PlanSwapTransactionInfoFields
   transactedUSDValue?: number
+  isSponsored?: boolean
+  sponsorshipCampaignId?: string
   rwaAnalytics?: Pick<
     SwapTradeBaseProperties,
     'market_closed' | 'price_warning' | 'token_in_stocks' | 'token_out_stocks'
@@ -77,6 +81,8 @@ export function logSwapFinalized({
     swap_start_timestamp: swapStartTimestamp,
     transactedUSDValue,
     price_source: priceSource,
+    is_sponsored: isSponsored,
+    sponsorship_campaign_id: sponsorshipCampaignId,
     ...rwaAnalytics,
     ...planAnalyticsToSnakeCase(planAnalytics),
     ...analyticsContext,

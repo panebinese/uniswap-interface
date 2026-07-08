@@ -1,6 +1,6 @@
 # @universe/compliance
 
-Client wrapper over `@uniswap/client-compliancev2`. Reads a token's deny-list status (and records per-token acknowledgements) from the compliance v2 `featureGatedTokens` endpoint via Entry Gateway. Powers the swap geo-restriction surface.
+Client wrapper over `@uniswap/client-compliancev2`. Reads a token's deny-list status (and records per-token acknowledgements) from the compliance v2 `featureGatedTokens` endpoint via Entry Gateway, and reads which product features are geo-blocked for the caller's region from `gatedFeatures`. Powers the swap geo-restriction surface.
 
 ## Install
 
@@ -51,6 +51,26 @@ await acknowledgeToken({ chainId, address }) // only valid while REQUIRES_ACKNOW
 ```
 
 On success it invalidates the token's status query, so the next `useTokenComplianceStatus` read flips `REQUIRES_ACKNOWLEDGEMENT` → `ACKNOWLEDGED`.
+
+## Check geo-blocked features (region-level)
+
+Separate from the per-token surface above: `gatedFeatures` answers "is product feature X geo-blocked for my region?". The region is resolved server-side from the Entry Gateway request context — no region input is sent.
+
+```tsx
+import { useIsFeatureGated, GatedFeature } from '@universe/compliance'
+
+const isRwaRegionBlocked = useIsFeatureGated(GatedFeature.ISSUER_SPECIFIC_RWA)
+```
+
+```tsx
+import { useGatedFeatures, GatedFeature } from '@universe/compliance'
+
+const { features, isLoading } = useGatedFeatures() // GatedFeature[] blocked for this region
+```
+
+`GatedFeature` values today: `TOKEN_LAUNCHER`, `ISSUER_SPECIFIC_RWA`. The feature check is region-level only — it does **not** know whether a given token is an RWA, so pair it with your own token check (e.g. `regionBlocked && tokenIsRwa`); checking the feature alone would gate every token for users in a blocked region.
+
+`useGatedFeatures` runs one no-arg query under a single cache key (region is the same for every feature), so `useIsFeatureGated` is free to call per feature. Both fail open: empty/`false` while loading and for unauthenticated callers — never read empty as "verified not gated".
 
 ## Testing
 

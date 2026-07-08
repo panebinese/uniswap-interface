@@ -1,5 +1,6 @@
 import { type Currency } from '@uniswap/sdk-core'
-import { RestrictionReason, useTokenComplianceStatus } from '@universe/compliance'
+import { RestrictionReason, useIsFeatureGated, useTokenComplianceStatus } from '@universe/compliance'
+import { useIsRWAToken } from 'uniswap/src/features/rwa/useIsRWAToken'
 import { useGeoRestrictionMode } from 'uniswap/src/features/transactions/swap/hooks/useGeoRestrictionMode'
 import { useSwapFormStoreDerivedSwapInfo } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 import { renderHookWithProviders } from 'uniswap/src/test/render'
@@ -8,6 +9,11 @@ import type { Mock } from 'vitest'
 vi.mock('@universe/compliance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@universe/compliance')>()),
   useTokenComplianceStatus: vi.fn(),
+  useIsFeatureGated: vi.fn(),
+}))
+
+vi.mock('uniswap/src/features/rwa/useIsRWAToken', () => ({
+  useIsRWAToken: vi.fn(),
 }))
 
 vi.mock('uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore', () => ({
@@ -18,6 +24,8 @@ vi.mock('uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapForm
 type DerivedSwapInfoSelector<T> = (s: { currencies: Record<string, { currency?: Currency } | undefined> }) => T
 
 const mockUseTokenComplianceStatus = useTokenComplianceStatus as Mock
+const mockUseIsFeatureGated = useIsFeatureGated as Mock
+const mockUseIsRWAToken = useIsRWAToken as Mock
 const mockUseSwapFormStoreDerivedSwapInfo = useSwapFormStoreDerivedSwapInfo as Mock
 
 const INPUT_CURRENCY = { chainId: 1, isNative: false, address: '0xINPUT' } as unknown as Currency
@@ -43,6 +51,8 @@ describe(useGeoRestrictionMode, () => {
       selector({ currencies: { input: { currency: INPUT_CURRENCY }, output: { currency: OUTPUT_CURRENCY } } }),
     )
     setReasonsByAddress({})
+    mockUseIsFeatureGated.mockReturnValue(false)
+    mockUseIsRWAToken.mockReturnValue(false)
   })
 
   it('returns default when neither token is restricted', () => {
@@ -84,6 +94,18 @@ describe(useGeoRestrictionMode, () => {
 
   it('returns default for UNSPECIFIED so the generic blocked-token UX handles it (not geo)', () => {
     setReasonsByAddress({ [OUTPUT_KEY]: [RestrictionReason.UNSPECIFIED] })
+    expect(renderMode()).toBe('default')
+  })
+
+  it('returns restricted when RWA is region-blocked and the token is an RWA', () => {
+    mockUseIsFeatureGated.mockReturnValue(true)
+    mockUseIsRWAToken.mockReturnValue(true)
+    expect(renderMode()).toBe('restricted')
+  })
+
+  it('falls through to compliance reasons when the region blocks RWA but the token is not an RWA', () => {
+    mockUseIsFeatureGated.mockReturnValue(true)
+    mockUseIsRWAToken.mockReturnValue(false)
     expect(renderMode()).toBe('default')
   })
 })

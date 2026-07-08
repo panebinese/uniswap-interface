@@ -18,7 +18,7 @@ import { getUnitagFormatError } from 'uniswap/src/features/unitags/getUnitagForm
 import { useCanClaimUnitagName } from 'uniswap/src/features/unitags/hooks/useCanClaimUnitagName'
 import { UnitagInfoModal } from 'uniswap/src/features/unitags/UnitagInfoModal'
 import { UnitagName } from 'uniswap/src/features/unitags/UnitagName'
-import { getYourNameString } from 'uniswap/src/features/unitags/utils'
+import { getYourNameString, normalizeUnitagUsernameInput } from 'uniswap/src/features/unitags/utils'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import {
   OnboardingScreens,
@@ -170,23 +170,25 @@ export function ClaimUnitagContent({
 
   const onChangeTextInput = useCallback(
     (text: string): void => {
-      if (text.length === 0) {
+      const normalized = normalizeUnitagUsernameInput(text)
+
+      if (normalized.length === 0) {
         onSetFontSize(inputPlaceholder + UNITAG_SUFFIX_CHARS_ONLY)
       } else {
-        onSetFontSize(text + UNITAG_SUFFIX_CHARS_ONLY)
+        onSetFontSize(normalized + UNITAG_SUFFIX_CHARS_ONLY)
       }
 
       setIsUnitagAvailable(false)
       setShowVerificationLoading(false)
       setUnitagAvailableError(undefined)
 
-      if (text.length > MAX_UNITAG_CHAR_LENGTH) {
-        setUnitagAvailableError(getUnitagFormatError(text, t))
-        setUnitagInputValue(text.slice(0, MAX_UNITAG_CHAR_LENGTH).trim() || undefined)
+      if (normalized.length > MAX_UNITAG_CHAR_LENGTH) {
+        setUnitagAvailableError(getUnitagFormatError(normalized, t))
+        setUnitagInputValue(normalized.slice(0, MAX_UNITAG_CHAR_LENGTH) || undefined)
         return
       }
 
-      const nextValue = text.trim() || undefined
+      const nextValue = normalized || undefined
       setUnitagInputValue(nextValue)
 
       if (!nextValue) {

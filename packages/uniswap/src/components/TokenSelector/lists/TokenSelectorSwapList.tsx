@@ -1,5 +1,5 @@
 import { GqlResult } from '@universe/api'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { GatedFeature, useIsFeatureGated } from '@universe/compliance'
 import { memo, useCallback, useMemo, useRef } from 'react'
 import { Flex } from 'ui/src'
 import { TokenSelectorListOption, TokenSelectorOption } from 'uniswap/src/components/lists/items/types'
@@ -33,6 +33,7 @@ const PORTFOLIO_OUTAGE_SECTION_HEADER_ROW_HEIGHT = 104
 export function useTokenSectionsForSwap({
   addresses,
   chainFilter,
+  chainIds,
   oppositeSelectedToken,
   variation,
 }: TokenSectionsHookProps): GqlResult<OnchainItemSection<TokenSelectorListOption>[]> {
@@ -46,14 +47,14 @@ export function useTokenSectionsForSwap({
     error: portfolioTokenOptionsError,
     refetch: refetchPortfolioTokenOptions,
     loading: portfolioTokenOptionsLoading,
-  } = usePortfolioTokenOptions({ chainFilter, portfolioData })
+  } = usePortfolioTokenOptions({ chainFilter, chainIds, portfolioData })
 
   const {
     data: trendingTokenOptions,
     error: trendingTokenOptionsError,
     refetch: refetchTrendingTokenOptions,
     loading: trendingTokenOptionsLoading,
-  } = useTrendingTokensOptions({ chainFilter, portfolioData })
+  } = useTrendingTokensOptions({ chainFilter, chainIds, portfolioData })
 
   const {
     data: commonTokenOptions,
@@ -72,9 +73,9 @@ export function useTokenSectionsForSwap({
     refetch: refetchBridgingTokenOptions,
     loading: bridgingTokenOptionsLoading,
     shouldNest: shouldNestBridgingTokens,
-  } = useBridgingTokensOptions({ oppositeSelectedToken, chainFilter, portfolioData })
+  } = useBridgingTokensOptions({ oppositeSelectedToken, chainFilter, chainIds, portfolioData })
 
-  const recentlySearchedTokenOptions = useRecentlySearchedTokens(chainFilter)
+  const recentlySearchedTokenOptions = useRecentlySearchedTokens(chainFilter, { chainIds })
 
   const error =
     (!portfolioTokenOptions && portfolioTokenOptionsError) ||
@@ -109,8 +110,9 @@ export function useTokenSectionsForSwap({
     options: suggestedSectionOptions,
   })
 
-  const stocksEnabled = useFeatureFlag(FeatureFlags.RwaUxTokenSelector)
-  const shouldShowStocks = stocksEnabled && variation === TokenSelectorVariation.SwapOutput && !isTestnetModeEnabled
+  const isRwaRegionBlocked = useIsFeatureGated(GatedFeature.ISSUER_SPECIFIC_RWA)
+  const shouldShowStocks =
+    !isRwaRegionBlocked && variation === TokenSelectorVariation.SwapOutput && !isTestnetModeEnabled
   // Gate the RWA query so it isn't fetched unless the Stocks section will actually render.
   const rwaTokenOptions = useRwaTokenOptions({ chainFilter, enabled: shouldShowStocks })
   const stocksSectionOptions = useMemo(() => [rwaTokenOptions], [rwaTokenOptions])
@@ -211,6 +213,7 @@ function TokenSelectorSwapListInner({
   onSelectRwaToken,
   addresses,
   chainFilter,
+  chainIds,
   oppositeSelectedToken,
   renderedInModal,
   variation,
@@ -228,6 +231,7 @@ function TokenSelectorSwapListInner({
   } = useTokenSectionsForSwap({
     addresses,
     chainFilter,
+    chainIds,
     oppositeSelectedToken,
     variation,
   })

@@ -1,8 +1,5 @@
-import { BigNumber } from '@ethersproject/bignumber'
-import type { Percent } from '@uniswap/sdk-core'
 import { TradeType } from '@uniswap/sdk-core'
-import type { FlatFeeOptions } from '@uniswap/universal-router-sdk'
-import type { FeeOptions } from '@uniswap/v3-sdk'
+import type { Percent } from '@uniswap/sdk-core'
 import { TradingApi } from '@universe/api'
 import { useCallback } from 'react'
 import { useDispatch } from 'react-redux'
@@ -20,32 +17,12 @@ import {
 import type { TransactionTypeInfo } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { currencyId } from 'uniswap/src/utils/currencyId'
 import { useAccount } from '~/hooks/useAccount'
-import type { PermitSignature } from '~/hooks/usePermitAllowance'
 import { useSelectChain } from '~/hooks/useSelectChain'
 import { useUniswapXSwapCallback } from '~/hooks/useUniswapXSwapCallback'
-import { useUniversalRouterSwapCallback } from '~/hooks/useUniversalRouter'
 import { useMultichainContext } from '~/state/multichain/useMultichainContext'
 import type { InterfaceTrade } from '~/state/routing/types'
-import { isClassicTrade, isLimitTrade, isUniswapXTrade } from '~/state/routing/utils'
-import { useTransaction, useTransactionAdder } from '~/state/transactions/hooks'
-import { TradeFillType, type LimitOrderResult } from '~/types/trade'
-
-type UniversalRouterFeeField = { feeOptions: FeeOptions } | { flatFeeOptions: FlatFeeOptions }
-
-function getUniversalRouterFeeFields(trade?: InterfaceTrade): UniversalRouterFeeField | undefined {
-  if (!isClassicTrade(trade)) {
-    return undefined
-  }
-  if (!trade.swapFee) {
-    return undefined
-  }
-
-  if (trade.tradeType === TradeType.EXACT_INPUT) {
-    return { feeOptions: { fee: trade.swapFee.percent, recipient: trade.swapFee.recipient } }
-  } else {
-    return { flatFeeOptions: { amount: BigNumber.from(trade.swapFee.amount), recipient: trade.swapFee.recipient } }
-  }
-}
+import { isLimitTrade, isUniswapXTrade } from '~/state/routing/utils'
+import type { LimitOrderResult } from '~/types/trade'
 
 // Returns a function that will execute a swap, if the parameters are all valid
 // and the user has approved the slippage adjusted input amount for the trade
@@ -53,37 +30,23 @@ export function useLimitOrderCallback({
   trade,
   fiatValues,
   allowedSlippage,
-  permitSignature,
 }: {
   trade?: InterfaceTrade // trade to execute
   fiatValues: { amountIn?: number; amountOut?: number; feeUsd?: number } // usd values for amount in and out, and the fee value, logged for analytics
   allowedSlippage: Percent // in bips
-  permitSignature?: PermitSignature
 }) {
   const dispatch = useDispatch()
-  const addClassicTransaction = useTransactionAdder()
   const account = useAccount()
   const supportedConnectedChainId = useSupportedChainId(account.chainId)
   const { chainId: swapChainId } = useMultichainContext()
 
-  const uniswapXSwapCallback = useUniswapXSwapCallback({
+  const swapCallback = useUniswapXSwapCallback({
     trade: isUniswapXTrade(trade) ? trade : undefined,
     allowedSlippage,
     fiatValues,
   })
 
-  const universalRouterSwapCallback = useUniversalRouterSwapCallback({
-    trade: isClassicTrade(trade) ? trade : undefined,
-    fiatValues,
-    options: {
-      slippageTolerance: allowedSlippage,
-      permit: permitSignature,
-      ...getUniversalRouterFeeFields(trade),
-    },
-  })
-
   const selectChain = useSelectChain()
-  const swapCallback = isUniswapXTrade(trade) ? uniswapXSwapCallback : universalRouterSwapCallback
 
   return useCallback(async (): Promise<LimitOrderResult> => {
     if (!trade) {
@@ -106,7 +69,7 @@ export function useLimitOrderCallback({
       type: TransactionType.Swap,
       inputCurrencyId: currencyId(trade.inputAmount.currency),
       outputCurrencyId: currencyId(trade.outputAmount.currency),
-      isUniswapXOrder: result.type === TradeFillType.UniswapX || result.type === TradeFillType.UniswapXv2,
+      isUniswapXOrder: true,
       ...(trade.tradeType === TradeType.EXACT_INPUT
         ? {
             tradeType: TradeType.EXACT_INPUT,
@@ -123,9 +86,7 @@ export function useLimitOrderCallback({
     }
 
     // Limit orders need to be added manually since they don't go through the saga when initially submitted
-    if (result.type === TradeFillType.Classic) {
-      addClassicTransaction(result.response, swapInfo, result.deadline?.toNumber())
-    } else if (isLimitTrade(trade)) {
+    if (isLimitTrade(trade)) {
       // Create transaction details for limit order
       const limitOrderTransaction: UniswapXOrderDetails<InterfaceTransactionDetails> = {
         id: result.response.orderHash,
@@ -149,7 +110,6 @@ export function useLimitOrderCallback({
   }, [
     account.address,
     account.isConnected,
-    addClassicTransaction,
     allowedSlippage,
     dispatch,
     selectChain,
@@ -158,16 +118,4 @@ export function useLimitOrderCallback({
     swapChainId,
     trade,
   ])
-}
-
-export function useLimitOrderTransactionStatus(
-  limitOrderResult: LimitOrderResult | undefined,
-): TransactionStatus | undefined {
-  const transaction = useTransaction(
-    limitOrderResult?.type === TradeFillType.Classic ? limitOrderResult.response.hash : undefined,
-  )
-  if (!transaction) {
-    return undefined
-  }
-  return transaction.status
 }

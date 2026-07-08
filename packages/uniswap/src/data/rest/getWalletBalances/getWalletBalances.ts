@@ -10,7 +10,7 @@ import type {
   WalletBalance,
 } from '@uniswap/client-data-api/dist/data/v1/api_pb.d'
 import { createDataApiServiceClient, getGetWalletBalancesQueryOptions, type WithoutWalletAccount } from '@universe/api'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { FeatureFlags, useFeatureFlagWithExposureLoggingDisabled } from '@universe/gating'
 import { useMemo } from 'react'
 import { entryGatewayPostTransport } from 'uniswap/src/data/rest/base'
 import { type PortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/buildPortfolioBalance'
@@ -31,6 +31,7 @@ export type PortfolioBalanceBreakdown = {
   total: PortfolioTotalValue
   tokens: PortfolioTotalValue
   pools: PortfolioTotalValue
+  failedChainIds: number[]
 }
 
 /**
@@ -38,18 +39,23 @@ export type PortfolioBalanceBreakdown = {
  * the optimistic cache writers use this so every caller produces the same query key.
  */
 export function useWalletBalancesIncludeCategories(): WalletBalanceCategory[] {
-  const portfolioPoolsBalancesEnabled = useFeatureFlag(FeatureFlags.PortfolioPoolsBalances)
+  // Read without logging; the pools exposure is logged only where the feature is actually shown (see usePoolsTabVisibility).
+  const portfolioPoolsBalancesEnabled = useFeatureFlagWithExposureLoggingDisabled(FeatureFlags.PortfolioPoolsBalances)
   return useMemo(
     () => (portfolioPoolsBalancesEnabled ? [WalletBalanceCategory.POOLS] : []),
     [portfolioPoolsBalancesEnabled],
   )
 }
 
+type PortfolioValueSlice = {
+  [K in keyof PortfolioBalanceBreakdown]: PortfolioBalanceBreakdown[K] extends PortfolioTotalValue ? K : never
+}[keyof PortfolioBalanceBreakdown]
+
 /**
  * The breakdown slice each opt-in category populates. `tokens` is always returned, so it is not an
  * opt-in category. Supporting a new category is a single entry here.
  */
-const BREAKDOWN_SLICE_BY_CATEGORY: Partial<Record<WalletBalanceCategory, keyof PortfolioBalanceBreakdown>> = {
+const BREAKDOWN_SLICE_BY_CATEGORY: Partial<Record<WalletBalanceCategory, PortfolioValueSlice>> = {
   [WalletBalanceCategory.POOLS]: 'pools',
 }
 
@@ -92,6 +98,8 @@ export type GetWalletBalancesInput<TSelectData = PlainMessage<GetWalletBalancesR
     svmAddress?: string
   }
   enabled?: boolean
+  /** Cache-only read: never fetches, but still re-renders when another observer updates the cached data. */
+  cacheOnly?: boolean
   refetchInterval?: number | false
   select?: (data: PlainMessage<GetWalletBalancesResponse> | undefined) => TSelectData
 }
@@ -123,6 +131,7 @@ type GetWalletBalancesQuery<TSelectData = PlainMessage<GetWalletBalancesResponse
 export const getWalletBalancesQuery = <TSelectData = PlainMessage<GetWalletBalancesResponse>>({
   input,
   enabled = true,
+  cacheOnly = false,
   refetchInterval,
   select,
 }: GetWalletBalancesInput<TSelectData>): GetWalletBalancesQuery<TSelectData> => {
@@ -131,9 +140,10 @@ export const getWalletBalancesQuery = <TSelectData = PlainMessage<GetWalletBalan
   // `meta.persist: true` propagates from `baseOptions` for cold-start hydration on mobile + extension.
   return queryOptions({
     ...baseOptions,
-    enabled,
+    enabled: enabled && !cacheOnly,
     refetchInterval,
-    subscribed: !!enabled,
+    subscribed: cacheOnly || !!enabled,
+    notifyOnChangeProps: cacheOnly ? ['data'] : undefined,
     select,
   })
 }
@@ -179,6 +189,7 @@ export const selectPortfolioBalanceBreakdown = (
         total: mapBalanceComponent(balance.total),
         tokens: mapBalanceComponent(balance.tokens),
         pools: mapBalanceComponent(balance.pools),
+        failedChainIds: balance.failedChainIds,
       }
     : undefined
 }

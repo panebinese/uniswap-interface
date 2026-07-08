@@ -182,6 +182,104 @@ describe(useRwaIssuerCurrencyInfos, () => {
   })
 })
 
+describe('useRwaIssuerCurrencyInfos searchMultichainParent', () => {
+  it('attaches searchMultichainParent when an issuer is deployed on more than one chain', () => {
+    const multichainIssuer = makeIssuer({
+      issuer: 'ondo',
+      chainTokens: [
+        { chainId: MAINNET, address: ADDR_A },
+        { chainId: ARBITRUM, address: ADDR_B },
+      ],
+    })
+    const rwa = makeRwa({ issuerTokens: [multichainIssuer] })
+    const sections = [
+      makeSection([{ type: OnchainItemListOptionType.RwaCollection, rwa } as unknown as SearchModalOption]),
+    ]
+    mockUseCurrencyInfos.mockReturnValue([ciA])
+
+    const { result } = renderHook(() => useRwaIssuerCurrencyInfos({ sections }))
+
+    const key = `${MAINNET}-${normalizeTokenAddressForCache(ADDR_A)}`
+    expect(result.current.get(key)?.searchMultichainParent).toEqual({
+      id: key,
+      tokenCurrencyIds: [`${MAINNET}-${ADDR_A}`, `${ARBITRUM}-${ADDR_B}`],
+    })
+  })
+
+  it('leaves a single-chain issuer untouched (identity-preserving)', () => {
+    const rwa = makeRwa({ issuerTokens: [issuerA] })
+    const sections = [
+      makeSection([{ type: OnchainItemListOptionType.RwaCollection, rwa } as unknown as SearchModalOption]),
+    ]
+    mockUseCurrencyInfos.mockReturnValue([ciA])
+
+    const { result } = renderHook(() => useRwaIssuerCurrencyInfos({ sections }))
+
+    const key = `${MAINNET}-${normalizeTokenAddressForCache(ADDR_A)}`
+    expect(result.current.get(key)).toBe(ciA)
+  })
+
+  it('excludes chain tokens with an unsupported chainId, and omits the parent when only one valid id remains', () => {
+    const issuerWithUnsupportedChain = makeIssuer({
+      issuer: 'ondo',
+      chainTokens: [
+        { chainId: MAINNET, address: ADDR_A },
+        { chainId: 999_999_999, address: ADDR_B },
+      ],
+    })
+    const rwa = makeRwa({ issuerTokens: [issuerWithUnsupportedChain] })
+    const sections = [
+      makeSection([{ type: OnchainItemListOptionType.RwaCollection, rwa } as unknown as SearchModalOption]),
+    ]
+    mockUseCurrencyInfos.mockReturnValue([ciA])
+
+    const { result } = renderHook(() => useRwaIssuerCurrencyInfos({ sections }))
+
+    const key = `${MAINNET}-${normalizeTokenAddressForCache(ADDR_A)}`
+    expect(result.current.get(key)?.searchMultichainParent).toBeUndefined()
+  })
+
+  it('excludes chain tokens on disabled chains, and omits the parent when only one enabled id remains', () => {
+    const issuerWithDisabledChain = makeIssuer({
+      issuer: 'ondo',
+      chainTokens: [
+        { chainId: MAINNET, address: ADDR_A },
+        { chainId: UniverseChainId.Polygon, address: ADDR_B },
+      ],
+    })
+    const rwa = makeRwa({ issuerTokens: [issuerWithDisabledChain] })
+    const sections = [
+      makeSection([{ type: OnchainItemListOptionType.RwaCollection, rwa } as unknown as SearchModalOption]),
+    ]
+    mockUseCurrencyInfos.mockReturnValue([ciA])
+
+    const { result } = renderHook(() => useRwaIssuerCurrencyInfos({ sections }))
+
+    const key = `${MAINNET}-${normalizeTokenAddressForCache(ADDR_A)}`
+    expect(result.current.get(key)?.searchMultichainParent).toBeUndefined()
+  })
+
+  it('dedupes chain tokens that resolve to the same normalized currencyId before counting', () => {
+    const issuerWithDupChain = makeIssuer({
+      issuer: 'ondo',
+      chainTokens: [
+        { chainId: MAINNET, address: ADDR_A },
+        { chainId: MAINNET, address: normalizeTokenAddressForCache(ADDR_A) },
+      ],
+    })
+    const rwa = makeRwa({ issuerTokens: [issuerWithDupChain] })
+    const sections = [
+      makeSection([{ type: OnchainItemListOptionType.RwaCollection, rwa } as unknown as SearchModalOption]),
+    ]
+    mockUseCurrencyInfos.mockReturnValue([ciA])
+
+    const { result } = renderHook(() => useRwaIssuerCurrencyInfos({ sections }))
+
+    const key = `${MAINNET}-${normalizeTokenAddressForCache(ADDR_A)}`
+    expect(result.current.get(key)?.searchMultichainParent).toBeUndefined()
+  })
+})
+
 describe(getRwaIssuerCurrencyInfo, () => {
   it('returns the resolved CurrencyInfo for an issuer present in the map', () => {
     const map = new Map<string, CurrencyInfo>([[`${MAINNET}-${normalizeTokenAddressForCache(ADDR_A)}`, ciA]])

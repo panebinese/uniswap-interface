@@ -3,6 +3,7 @@ import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes
 import type { Rwa } from 'uniswap/src/data/rest/rwa/types'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { CurrencyInfo, MultichainSearchResult } from 'uniswap/src/features/dataApi/types'
+import type { EarnPositionInfo, EarnVaultInfo } from 'uniswap/src/features/earn/types'
 
 /* Types of list item options */
 export enum OnchainItemListOptionType {
@@ -14,6 +15,7 @@ export enum OnchainItemListOptionType {
   Unitag = 'Unitag',
   Rwa = 'Rwa',
   RwaCollection = 'RwaCollection',
+  EarnVault = 'EarnVault',
 }
 
 /** Variable-height row descriptor read by the list primitives. Absent → fixed-height row.
@@ -78,6 +80,20 @@ export interface MultichainTokenOption extends BaseOption {
   rwaIssuerSlug?: string
 }
 
+/** A vault share token surfaced as an Earn opportunity. Renders the vault's underlying asset (e.g. USDC) +
+ *  APY; pressing it opens the underlying token's earn destination. */
+export interface EarnVaultOption extends BaseOption {
+  type: OnchainItemListOptionType.EarnVault
+  vault: EarnVaultInfo
+  /** Underlying (deposit) token of the vault, used for the row logo + symbol. */
+  underlyingCurrencyInfo: Maybe<CurrencyInfo>
+  apyPercent: number
+  /** USD value of the user's position in this vault, shown on the right when they hold shares. */
+  positionValueUsd?: number
+  /** The user's position in this vault, passed to navigation when they hold shares. */
+  position?: EarnPositionInfo
+}
+
 export interface PoolOption extends BaseOption {
   type: OnchainItemListOptionType.Pool
   poolId: string
@@ -110,8 +126,19 @@ export interface UnitagOption extends BaseOption {
 }
 
 // Union of item types for different list use cases
-export type MobileExploreSearchModalOption = TokenOption | MultichainTokenOption | WalletOption | RwaCollectionOption
-export type WebSearchModalOption = TokenOption | MultichainTokenOption | PoolOption | WalletOption | RwaCollectionOption
+export type MobileExploreSearchModalOption =
+  | TokenOption
+  | MultichainTokenOption
+  | WalletOption
+  | RwaCollectionOption
+  | EarnVaultOption
+export type WebSearchModalOption =
+  | TokenOption
+  | MultichainTokenOption
+  | PoolOption
+  | WalletOption
+  | RwaCollectionOption
+  | EarnVaultOption
 export type SearchModalOption = MobileExploreSearchModalOption | WebSearchModalOption
 
 export type TokenSelectorOption = TokenOption | TokenOption[]

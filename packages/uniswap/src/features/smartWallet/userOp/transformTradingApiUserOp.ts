@@ -1,6 +1,6 @@
 import { TradingApi } from '@universe/api'
 import { parseHex, parseOptionalHex } from '@universe/encoding'
-import type { RpcAuthorization } from 'viem'
+import { pad, type RpcAuthorization } from 'viem'
 import type { RpcUserOperation } from 'viem/account-abstraction'
 
 function transformEip7702Auth(auth: TradingApi.Eip7702Authorization): RpcAuthorization {
@@ -8,8 +8,10 @@ function transformEip7702Auth(auth: TradingApi.Eip7702Authorization): RpcAuthori
     address: parseHex(auth.address),
     chainId: parseHex(auth.chainId),
     nonce: parseHex(auth.nonce),
-    r: parseHex(auth.r),
-    s: parseHex(auth.s),
+    // Pad r/s to a full 32 bytes: ECDSA r/s with a zero high byte can arrive as a
+    // short (odd-length) value that strict RPCs reject ("value length was not even").
+    r: pad(parseHex(auth.r), { size: 32 }),
+    s: pad(parseHex(auth.s), { size: 32 }),
     yParity: parseHex(auth.yParity),
   }
 }

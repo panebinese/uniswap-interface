@@ -13,6 +13,7 @@ import { useSearchPools } from 'uniswap/src/features/dataApi/searchPools'
 import { useMultichainSearchTokens } from 'uniswap/src/features/dataApi/searchTokens'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { NUMBER_OF_RESULTS_ALL_TAB } from 'uniswap/src/features/search/SearchModal/constants'
+import { useEarnSearchResults } from 'uniswap/src/features/search/SearchModal/hooks/useEarnSearchResults'
 import { useWalletSearchResults } from 'uniswap/src/features/search/SearchModal/hooks/useWalletSearchResults'
 import { applyRwaGroupingToSearchOptions } from 'uniswap/src/features/search/SearchModal/stocks/applyRwaGrouping'
 import { useRwaSearchIndex } from 'uniswap/src/features/search/SearchModal/stocks/useRwaSearchIndex'
@@ -119,6 +120,13 @@ export function useSectionsForSearchResults({
       activeTab === SearchTab.All ? groupedTokenOptions.slice(0, NUMBER_OF_RESULTS_ALL_TAB) : groupedTokenOptions,
   })
 
+  // Earn section: shown above the fold when an address search resolves to a vault share token.
+  const earnSearchOptions = useEarnSearchResults({ searchFilter, activeTab, tokenOptions })
+  const earnSearchResultsSection = useOnchainItemListSection({
+    sectionKey: OnchainItemSectionName.Earn,
+    options: earnSearchOptions,
+  })
+
   const poolSearchOptions = usePoolSearchResultsToPoolOptions(searchResultPools ?? [])
   const poolSearchResultsSection = useOnchainItemListSection({
     sectionKey: OnchainItemSectionName.Pools,
@@ -147,18 +155,27 @@ export function useSectionsForSearchResults({
   }, [poolSearchResultsSection, tokenSearchResultsSection, shouldPrioritizePools])
 
   const allSections = useMemo(() => {
+    // Earn always leads when present (vault share token searched by address).
+    const earnSections = earnSearchResultsSection ?? []
+
     // Don't include wallets in all search results in some cases
     if (!shouldShowWallets) {
-      return tokenAndPoolSections
+      return [...earnSections, ...tokenAndPoolSections]
     }
 
     // Prioritize wallets in all search results in some cases
     if (shouldPrioritizeWallets) {
-      return [...(walletSearchResultsSection ?? []), ...tokenAndPoolSections]
+      return [...earnSections, ...(walletSearchResultsSection ?? []), ...tokenAndPoolSections]
     }
 
-    return [...tokenAndPoolSections, ...(walletSearchResultsSection ?? [])]
-  }, [tokenAndPoolSections, walletSearchResultsSection, shouldPrioritizeWallets, shouldShowWallets])
+    return [...earnSections, ...tokenAndPoolSections, ...(walletSearchResultsSection ?? [])]
+  }, [
+    earnSearchResultsSection,
+    tokenAndPoolSections,
+    walletSearchResultsSection,
+    shouldPrioritizeWallets,
+    shouldShowWallets,
+  ])
 
   return useMemo((): GqlResult<OnchainItemSection<SearchModalOption>[]> => {
     switch (activeTab) {
@@ -171,7 +188,7 @@ export function useSectionsForSearchResults({
         }
       case SearchTab.Tokens:
         return {
-          data: tokenSearchResultsSection ?? [],
+          data: [...(earnSearchResultsSection ?? []), ...(tokenSearchResultsSection ?? [])],
           loading: searchTokensLoading,
           error: (!tokenOptions.length && searchTokensError) || undefined,
           refetch: refetchSearchTokens,
@@ -213,6 +230,7 @@ export function useSectionsForSearchResults({
     tokenSearchResultsSection,
     walletSearchResultsLoading,
     walletSearchResultsSection,
+    earnSearchResultsSection,
     allSections,
   ])
 }

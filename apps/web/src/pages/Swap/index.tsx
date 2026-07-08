@@ -12,6 +12,7 @@ import { TokenSelectorHoverConfigProvider } from 'uniswap/src/components/TokenSe
 import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
 import { useIsModeMismatch } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { getChainLabel } from 'uniswap/src/features/chains/utils'
 import type { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { RampDirection } from 'uniswap/src/features/fiatOnRamp/types'
 import { ShowGetStartedProvider } from 'uniswap/src/features/passkey/ShowGetStartedContext'
@@ -42,6 +43,7 @@ import { PageType, useIsPage } from '~/hooks/useIsPage'
 import { useModalState } from '~/hooks/useModalState'
 import { ReturnToAuctionBanner } from '~/pages/Swap/ReturnToAuctionBanner'
 import { SlideoutChartCard } from '~/pages/Swap/Swap/SlideoutChartCard/SlideoutChartCard'
+import { useSlideoutChartCardCurrencies } from '~/pages/Swap/Swap/SlideoutChartCard/useSlideoutChartCardCurrencies'
 import { useInitialCurrencyState } from '~/pages/Swap/Swap/state/hooks'
 import { SwapChartToggleButton } from '~/pages/Swap/Swap/SwapChartToggleButton'
 import { SwapForm, SwapFormSettingsButton } from '~/pages/Swap/Swap/SwapForm'
@@ -256,6 +258,7 @@ function UniversalSwapFlow({
 }) {
   const { currentTab, setCurrentTab } = useSwapAndLimitContext()
   const tdpCurrencyAsset = currencyToAsset(tdpCurrency)
+  const { inputCurrency, outputCurrency } = useSlideoutChartCardCurrencies()
   const isDataLivelinessEnabled = useFeatureFlag(FeatureFlags.DataLivelinessUI)
   const [showChart, setShowChart] = useState(false)
   const [tabsRowHeight, setTabsRowHeight] = useState(0)
@@ -324,8 +327,26 @@ function UniversalSwapFlow({
     if (!isDataLivelinessEnabled || media.lg || hideChart) {
       return undefined
     }
-    return <SwapChartToggleButton showChart={showChart} onPress={() => setShowChart((prev) => !prev)} />
-  }, [isDataLivelinessEnabled, media.lg, showChart, hideChart])
+    return (
+      <SwapChartToggleButton
+        showChart={showChart}
+        onPress={() => {
+          const next = !showChart
+          sendAnalyticsEvent(InterfaceEventName.SlideoutChartCardToggled, {
+            is_open: next,
+            tab: currentTab,
+            token_in_symbol: inputCurrency?.symbol,
+            token_in_chain_id: inputCurrency?.chainId,
+            token_in_chain_name: inputCurrency ? getChainLabel(inputCurrency.chainId as UniverseChainId) : undefined,
+            token_out_symbol: outputCurrency?.symbol,
+            token_out_chain_id: outputCurrency?.chainId,
+            token_out_chain_name: outputCurrency ? getChainLabel(outputCurrency.chainId as UniverseChainId) : undefined,
+          })
+          setShowChart(next)
+        }}
+      />
+    )
+  }, [isDataLivelinessEnabled, media.lg, showChart, hideChart, currentTab, inputCurrency, outputCurrency])
 
   const SWAP_TAB_OPTIONS: readonly SegmentedControlOption<SwapTab>[] = useMemo(() => {
     return SWAP_TABS.map((tab) => ({
@@ -359,7 +380,7 @@ function UniversalSwapFlow({
           $platform-web={{ flexShrink: 1, minWidth: 0 }}
         >
           <Flex width="100%" height="100%" pr="$spacing24">
-            <SlideoutChartCard />
+            <SlideoutChartCard isChartOpen={isChartVisible} />
           </Flex>
         </WidthAnimator>
       )}
@@ -380,7 +401,7 @@ function UniversalSwapFlow({
               onSelectOption={onTabClick}
               gap={isMobileWeb ? '$spacing8' : undefined}
             />
-            <Flex row gap="$spacing4" alignItems="center">
+            <Flex row gap="$spacing8" alignItems="center">
               {isChartEligibleTab(currentTab) && chartSettingsLeftContent}
               {currentTab === SwapTab.Swap && <SwapFormSettingsButton />}
             </Flex>

@@ -1,3 +1,4 @@
+import { FeatureFlags, useFeatureFlagWithExposureLoggingDisabled } from '@universe/gating'
 import { memo, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Loader, ScrollView } from 'ui/src'
@@ -8,6 +9,8 @@ import { PositionItem } from 'uniswap/src/components/portfolio/PositionItem/Posi
 import { PollingInterval } from 'uniswap/src/constants/misc'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
+import { PoolsDataIssueBanner } from 'uniswap/src/features/portfolio/pools/PoolsDataIssueBanner'
+import { usePoolsOutageBanner } from 'uniswap/src/features/portfolio/pools/usePoolsOutageBanner'
 import { PositionsEmptyFilterView } from 'uniswap/src/features/positions/components/PositionsEmptyFilterView'
 import {
   POSITION_STATUS_FILTER_TO_STATUSES,
@@ -37,6 +40,8 @@ export const PoolsTab = memo(function PoolsTabInner({
 }): JSX.Element {
   const { t } = useTranslation()
   const { chains } = useEnabledChains({ platform: Platform.EVM })
+  const portfolioPoolsBalancesEnabled = useFeatureFlagWithExposureLoggingDisabled(FeatureFlags.PortfolioPoolsBalances)
+  const outageBanner = usePoolsOutageBanner({ evmAddress: address, enabled: portfolioPoolsBalancesEnabled })
 
   const { value: hiddenExpanded, toggle: toggleHidden } = useBooleanState(false)
   const [statusFilter, setStatusFilter] = useState<PositionStatusFilterValue>(PositionStatusFilterValue.Open)
@@ -109,6 +114,12 @@ export const PoolsTab = memo(function PoolsTabInner({
       <Flex mb="$spacing8">
         <PositionStatusFilter value={statusFilter} onChange={setStatusFilter} disabled={hasErrorWithoutData} />
       </Flex>
+
+      {outageBanner.isVisible && (
+        <Flex mb="$spacing8">
+          <PoolsDataIssueBanner message={outageBanner.message} onDismiss={outageBanner.onDismiss} />
+        </Flex>
+      )}
 
       {hasErrorWithoutData ? (
         <BaseCard.ErrorState

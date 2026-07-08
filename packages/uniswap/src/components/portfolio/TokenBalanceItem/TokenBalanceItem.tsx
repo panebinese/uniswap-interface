@@ -338,7 +338,6 @@ function TokenBalanceRightSideColumn({
               alignRight
               numericValue={balanceUSD}
               value={balanceFormatted}
-              loadingPlaceholderText="$0.00"
               textVariant={isWebPlatform ? '$body2' : '$body1'}
               disableAnimations={!isDataLivelinessEnabled}
               warmLoading={isLoading}

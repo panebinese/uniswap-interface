@@ -121,12 +121,20 @@ export function create4337EVMSwapRepository(ctx?: {
       const chainId = tradingApiToUniverseChainId(params.quote.chainId)
       const delegationInfo = ctx?.getSwapDelegationInfo?.(chainId)
 
-      // When this swap activates the delegation (first sponsored swap on an
-      // undelegated account), sign the 7702 authorization up front so the backend's
-      // paymaster + bundler simulation runs against a delegated account. The signed auth
+      // This swap activates the delegation when the account isn't yet delegated on this chain
+      // (first sponsored swap on an undelegated account). The "Includes smart wallet activation"
+      // label is gated on this intent — not on whether a signed auth was produced — so it also
+      // shows on web, where the auth is signed later in the execution path (encode_4337) rather
+      // than during review. Mirrors the non-sponsored 7702 repo, which uses delegationInclusion.
+      const includesDelegation = Boolean(
+        chainId && delegationInfo?.delegationInclusion && delegationInfo.delegationAddress,
+      )
+
+      // Sign the 7702 authorization up front (in environments that provide the callback) so the
+      // backend's paymaster + bundler simulation runs against a delegated account. The signed auth
       // round-trips back on the returned UserOp, so the later signUserOp step reuses it.
       const eip7702Auth =
-        chainId && delegationInfo?.delegationInclusion && delegationInfo.delegationAddress
+        includesDelegation && chainId && delegationInfo?.delegationAddress
           ? await ctx?.signDelegationAuthorization?.({
               chainId,
               sender,
@@ -142,12 +150,7 @@ export function create4337EVMSwapRepository(ctx?: {
         sponsorshipInfo: params.sponsorshipInfo,
         eip7702Auth,
       }
-      // The label "Includes smart wallet activation" is gated on includesDelegation; mirror the
-      // 7702 path and surface it here whenever this swap actually bundles a delegation authorization.
-      return convertSwap4337ResponseToSwapData(
-        await TradingApiClient.fetchSwap4337(swap4337Params),
-        Boolean(eip7702Auth),
-      )
+      return convertSwap4337ResponseToSwapData(await TradingApiClient.fetchSwap4337(swap4337Params), includesDelegation)
     },
   }
 }

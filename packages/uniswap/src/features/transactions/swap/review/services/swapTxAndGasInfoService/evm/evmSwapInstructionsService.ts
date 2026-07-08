@@ -50,6 +50,13 @@ interface EVMSwapInstructionsServiceContext {
   getSwapDelegationInfo?: (chainId: UniverseChainId | undefined) => SwapDelegationInfo
   /** Signs the 7702 delegation auth to bundle into the sponsored /swap_4337 request. */
   signDelegationAuthorization?: SignDelegationAuthorizationFn
+  /**
+   * Whether this platform can execute a 4337 userOp swap directly (mobile/extension, which have
+   * `executeUserOpSwapSaga`). Web executes embedded-wallet swaps through the EIP-5792
+   * `wallet_sendCalls` surface and has no userOp swap execution path, so it leaves this false and
+   * sponsored delegated swaps route to /swap_5792 instead of the /swap_4337 userOp endpoint.
+   */
+  supportsUserOpSwaps?: boolean
 }
 
 function createLegacyEVMSwapInstructionsService(
@@ -150,10 +157,17 @@ export function createEVMSwapInstructionsService(ctx: EVMSwapInstructionsService
 
       if (smartContractWalletInstructionService && ctx.getSwapDelegationInfo?.(chainId).delegationAddress) {
         if (params.swapQuoteResponse.sponsorshipInfo?.sponsored) {
-          return userOp4337InstructionService.getSwapInstructions(params)
+          // The pre-encoded /swap_4337 userOp is only executable on platforms with a userOp swap
+          // execution path (mobile/extension). Web executes embedded-wallet swaps through the
+          // EIP-5792 `wallet_sendCalls` surface — which encodes 4337/7702 inside the connector — so
+          // it leaves `supportsUserOpSwaps` false and falls through to /swap_5792 below rather than
+          // /swap_4337, which web has no execution path for (would silently reset the swap).
+          if (ctx.supportsUserOpSwaps) {
+            return userOp4337InstructionService.getSwapInstructions(params)
+          }
+        } else {
+          return smartContractWalletInstructionService.getSwapInstructions(params)
         }
-
-        return smartContractWalletInstructionService.getSwapInstructions(params)
       }
 
       if (ctx.getCanBatchTransactions?.(chainId) || params.swapQuoteResponse.sponsorshipInfo?.sponsored) {

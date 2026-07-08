@@ -14,6 +14,7 @@ import { ReceiveAlt } from 'ui/src/components/icons/ReceiveAlt'
 import { SendAction } from 'ui/src/components/icons/SendAction'
 import { ShareArrow } from 'ui/src/components/icons/ShareArrow'
 import type { MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
+import { COPY_CLOSE_DELAY } from 'uniswap/src/constants/misc'
 import { UNISWAP_WEB_URL } from 'uniswap/src/constants/urls'
 import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
@@ -31,8 +32,6 @@ import { currencyAddress, currencyId, currencyIdToAddress, currencyIdToChain } f
 import { getTokenDetailsURL, type TDPView, tdpChainSelectionFromFilter } from 'uniswap/src/utils/linking'
 import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
-
-export const COPY_CLOSE_DELAY = 500
 
 export enum TokenContextMenuAction {
   CopyAddress = 'copyAddress',

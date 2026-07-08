@@ -2,15 +2,22 @@ import { renderHook } from '@testing-library/react'
 import { PositionStatus } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { usePoolsTabVisibility } from 'uniswap/src/features/positions/hooks/usePoolsTabVisibility'
 
-const { mockUseFeatureFlag, mockUsePortfolioBalancePart, mockUseWalletPositions } = vi.hoisted(() => ({
-  mockUseFeatureFlag: vi.fn(),
-  mockUsePortfolioBalancePart: vi.fn(),
-  mockUseWalletPositions: vi.fn(),
-}))
+const { mockUseFeatureFlag, mockUsePortfolioBalancePart, mockUseWalletPositions, mockGetFeatureFlag } = vi.hoisted(
+  () => ({
+    mockUseFeatureFlag: vi.fn(),
+    mockUsePortfolioBalancePart: vi.fn(),
+    mockUseWalletPositions: vi.fn(),
+    mockGetFeatureFlag: vi.fn(),
+  }),
+)
 
 vi.mock('@universe/gating', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@universe/gating')>()),
   useFeatureFlag: mockUseFeatureFlag,
+  // Visibility reads the flag via the exposure-disabled variant; the exposure itself is logged
+  // separately via getFeatureFlag (spied to assert it fires only once the tab is visible).
+  useFeatureFlagWithExposureLoggingDisabled: mockUseFeatureFlag,
+  getFeatureFlag: mockGetFeatureFlag,
 }))
 
 vi.mock('uniswap/src/features/chains/hooks/useEnabledChains', () => ({
@@ -110,5 +117,16 @@ describe('usePoolsTabVisibility', () => {
     const { result } = renderHook(() => usePoolsTabVisibility('0xabc'))
 
     expect(result.current.openPoolPositionsCount).toBe(2)
+  })
+
+  it('logs an exposure only once the Pools tab becomes visible', () => {
+    // Flag on but no count/positions/error -> tab hidden -> no exposure.
+    const { rerender } = renderHook(() => usePoolsTabVisibility('0xabc'))
+    expect(mockGetFeatureFlag).not.toHaveBeenCalled()
+
+    // Positions arrive -> tab becomes visible -> exposure logged.
+    mockUsePortfolioBalancePart.mockReturnValue({ data: { count: 1 } })
+    rerender()
+    expect(mockGetFeatureFlag).toHaveBeenCalled()
   })
 })

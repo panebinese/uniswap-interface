@@ -17,6 +17,7 @@ import {
   useCreateAuctionStoreActions,
 } from '~/pages/Liquidity/CreateAuction/CreateAuctionContext'
 import { useXOAuthFlow } from '~/pages/Liquidity/CreateAuction/hooks/useXOAuthFlow'
+import { MAX_TOKEN_DESCRIPTION_LENGTH } from '~/pages/Liquidity/CreateAuction/types'
 
 export function TokenAdditionalInfoSection({
   description,
@@ -50,6 +51,7 @@ export function TokenAdditionalInfoSection({
             value={description}
             onChangeText={onDescriptionChange}
             placeholder={t('toucan.createAuction.step.tokenInfo.descriptionPlaceholder')}
+            maxLength={MAX_TOKEN_DESCRIPTION_LENGTH}
             multiline
             numberOfLines={3}
             unstyled

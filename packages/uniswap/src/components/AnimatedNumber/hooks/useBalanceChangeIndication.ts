@@ -43,6 +43,8 @@ type UseBalanceChangeIndicationParams = {
   neutral2Color: string
   /** Native: skip unless balance and value are truthy. Web: skip on null/undefined balance or value. */
   requireTruthyBalanceAndValue?: boolean
+  /** Overrides the computed up/down direction (and its color) — e.g. for values like elapsed time that should always read as increasing. */
+  forceDirection?: AnimatedNumberDirection
   onDirectionChange?: (direction: AnimatedNumberDirection) => void
   onAnimate?: () => void
 }
@@ -56,6 +58,7 @@ export function useBalanceChangeIndication({
   statusSuccessColor,
   neutral2Color,
   requireTruthyBalanceAndValue = false,
+  forceDirection,
   onDirectionChange,
   onAnimate,
 }: UseBalanceChangeIndicationParams): {
@@ -84,7 +87,7 @@ export function useBalanceChangeIndication({
       colorTimeoutRef.current = null
     }
 
-    const direction = getBalanceChangeDirection(balance, prevBalance)
+    const direction = forceDirection ?? getBalanceChangeDirection(balance, prevBalance)
     setNextColor(getBalanceChangeColor({ direction, statusSuccessColor, neutral2Color }))
     onDirectionChangeRef.current?.(direction)
     setCommonPrefixLength(longestCommonPrefix(String(value), String(prevValue ?? '')).length)
@@ -95,6 +98,7 @@ export function useBalanceChangeIndication({
   }, [
     balance,
     colorIndicationDuration,
+    forceDirection,
     neutral2Color,
     prevBalance,
     prevValue,

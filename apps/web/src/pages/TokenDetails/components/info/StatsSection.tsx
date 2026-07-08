@@ -132,12 +132,7 @@ function Stat({
         </MouseoverTooltip>
       </Text>
       <Flex tag="td" mt="$spacing8" data-testid={`${testID}-value`} $platform-web={{ overflowWrap: 'break-word' }}>
-        <AnimatedNumber
-          numericValue={value ?? undefined}
-          loadingPlaceholderText="$0.00"
-          textVariant="$heading3"
-          value={formattedValue}
-        />
+        <AnimatedNumber numericValue={value ?? undefined} textVariant="$heading3" value={formattedValue} />
       </Flex>
     </StatWrapper>
   )

@@ -16,6 +16,7 @@ import { useEvent } from 'utilities/src/react/hooks'
 function useSearchTokensQuery<T>({
   searchQuery,
   chainFilter,
+  chainIds,
   skip,
   size = NUMBER_OF_RESULTS_LONG,
   multichain = false,
@@ -23,6 +24,7 @@ function useSearchTokensQuery<T>({
 }: {
   searchQuery: string | null
   chainFilter: UniverseChainId | null
+  chainIds?: UniverseChainId[]
   skip: boolean
   size?: number
   multichain?: boolean
@@ -35,14 +37,14 @@ function useSearchTokensQuery<T>({
   const variables = useMemo(
     () => ({
       searchQuery: searchQuery ?? undefined,
-      chainIds: chainFilter ? [chainFilter] : enabledChainIds,
+      chainIds: chainFilter ? [chainFilter] : (chainIds ?? enabledChainIds),
       searchType: SearchType.TOKEN,
       page: 1,
       size,
       prioritizeSvm: isSvmConnected,
       multichain,
     }),
-    [searchQuery, chainFilter, size, enabledChainIds, isSvmConnected, multichain],
+    [searchQuery, chainFilter, chainIds, size, enabledChainIds, isSvmConnected, multichain],
   )
 
   const { data, error, isPending, refetch } = useSearchTokensAndPoolsQuery<T>({
@@ -60,11 +62,13 @@ function useSearchTokensQuery<T>({
 export function useMultichainSearchTokens({
   searchQuery,
   chainFilter,
+  chainIds,
   skip,
   size,
 }: {
   searchQuery: string | null
   chainFilter: UniverseChainId | null
+  chainIds?: UniverseChainId[]
   skip: boolean
   size?: number
 }): GqlResult<MultichainSearchResult[]> {
@@ -75,5 +79,5 @@ export function useMultichainSearchTokens({
       .filter((r): r is MultichainSearchResult => r !== undefined)
   })
 
-  return useSearchTokensQuery({ searchQuery, chainFilter, skip, size, multichain: true, select })
+  return useSearchTokensQuery({ searchQuery, chainFilter, chainIds, skip, size, multichain: true, select })
 }

@@ -207,6 +207,14 @@ export type SwapTradeBaseProperties = {
   included_permit_transaction_step?: boolean
   includes_delegation?: boolean
   is_smart_wallet_transaction?: boolean
+  // Gas sponsorship, derived from the quote's `sponsorshipInfo` (see getSponsorshipAnalyticsProperties).
+  // `is_sponsored` mirrors the quote's sponsorship offer across the funnel: swap_4337 quotes are always
+  // sponsored, swap_5792 quotes are sponsored when the backend returns a paymaster.
+  is_sponsored?: boolean
+  // Reason sponsorship was not granted, present when `is_sponsored` is false.
+  sponsorship_rejection_reason?: string
+  // Machine-readable campaign identifier covering the sponsored swap.
+  sponsorship_campaign_id?: string
   // Chained actions context
   plan_id?: string
   step_index?: number
@@ -228,6 +236,8 @@ type BaseSwapTransactionResultProperties = {
   transactionOriginType: string
   time_to_swap?: number
   time_to_swap_since_first_input?: number
+  /** Submission-to-inclusion latency in ms (confirmedTime - userSubmissionTimestampMs). Wallet-native flow only. */
+  time_to_inclusion_ms?: number
   address?: string
   chain_id: number
   chain_id_in?: number
@@ -235,6 +245,9 @@ type BaseSwapTransactionResultProperties = {
   id: string
   hash: string
   batch_id?: string
+  /** For 4337 transactions, the UserOp hash returned by the bundler. Present on the wallet-native flow
+   *  (Uniswap-controlled bundler); null on web where the connected wallet owns submission. */
+  user_op_hash?: string
   added_time?: number
   confirmed_time?: number
   gas_used?: number
@@ -253,6 +266,9 @@ type BaseSwapTransactionResultProperties = {
   simulation_failure_reasons?: TradingApi.TransactionFailureReason[]
   includes_delegation?: SwapTradeBaseProperties['includes_delegation']
   is_smart_wallet_transaction?: SwapTradeBaseProperties['is_smart_wallet_transaction']
+  // Gas sponsorship, persisted on the swap typeInfo at submit and read back here. See SwapTradeBaseProperties.
+  is_sponsored?: SwapTradeBaseProperties['is_sponsored']
+  sponsorship_campaign_id?: SwapTradeBaseProperties['sponsorship_campaign_id']
   is_final_step?: boolean
   swap_start_timestamp?: number
 
@@ -619,6 +635,8 @@ export type AuctionCreateAnalyticsProperties = ITraceContext & {
   // Auction configuration
   /** Percent of total supply deposited into the auction (0-100). */
   auction_supply_pct?: number
+  /** Total supply of the new token, in whole tokens (LP-960). Undefined for existing tokens / pre-commit. */
+  token_total_supply?: number
   /** Percent of auctioned tokens reserved for post-auction liquidity (0-100). Omitted for bracketed (tiered) allocations. */
   lp_pct?: number
   /** True when the post-auction liquidity allocation uses raise-milestone brackets (tiers). */
@@ -674,6 +692,8 @@ export type AuctionDetailsInfoEnteredProperties = ITraceContext & {
   token_source: AuctionCreateTokenSource
   /** Percent of total supply deposited into the auction (0-100). */
   auction_supply_pct?: number
+  /** Total supply of the new token, in whole tokens (LP-960). Undefined for existing tokens / pre-commit. */
+  token_total_supply?: number
   floor_price?: string
   floor_price_usd?: number
   raise_currency: string
@@ -900,6 +920,38 @@ export type UniverseEventProperties = {
   [InterfaceEventName.SwapTabClicked]: {
     tab: SwapTab
   }
+  [InterfaceEventName.SlideoutChartCardToggled]: {
+    is_open: boolean
+    tab: SwapTab
+    token_in_symbol: string | undefined
+    token_in_chain_id: number | undefined
+    token_in_chain_name: string | undefined
+    token_out_symbol: string | undefined
+    token_out_chain_id: number | undefined
+    token_out_chain_name: string | undefined
+  }
+  [InterfaceEventName.SlideoutChartCardTimePeriodSelected]: {
+    time_period: string
+    token_symbol: string | undefined
+    chain_id: number
+    chain_name: string
+    tab: SwapTab
+  }
+  [InterfaceEventName.SlideoutChartCardTokenToggled]: {
+    token_field: CurrencyField
+    token_symbol: string | undefined
+    chain_id: number
+    chain_name: string
+    tab: SwapTab
+  }
+  [InterfaceEventName.SlideoutChartCardTokenSelected]: {
+    token_symbol: string | undefined
+    chain_id: number
+    chain_name: string
+    token_address: string | undefined
+    tab: SwapTab
+    is_chart_open: boolean
+  }
   [InterfaceEventName.LocalCurrencySelected]: {
     previous_local_currency: FiatCurrency
     new_local_currency: FiatCurrency
@@ -977,6 +1029,18 @@ export type UniverseEventProperties = {
     amount: string
     recipient: string
     price_source?: PriceSourceTag
+  }
+  [InterfaceEventName.TokenHoverCardDataLoaded]: ITraceContext & {
+    token_symbol?: string
+    chain_id?: number
+    token_address?: string
+    is_multichain?: boolean
+  }
+  [InterfaceEventName.TokenHoverCardOpened]: ITraceContext & {
+    token_symbol?: string
+    chain_id?: number
+    token_address?: string
+    is_multichain?: boolean
   }
   [InterfaceEventName.TokenSelectorOpened]: undefined
   [InterfaceEventName.LimitedWalletSupportToastDismissed]: {
@@ -1155,6 +1219,14 @@ export type UniverseEventProperties = {
     range_type?: string
     /** ElementName.AuctionTimelockToggle — resulting pool-timelock enabled state. */
     timelock_enabled?: boolean
+    /** ElementName.TokenHoverCard* — whether the token exists on multiple chains */
+    is_multichain?: boolean
+    /** ElementName.CollectFeesButton — collected pool + token symbols. */
+    pool_address?: string
+    token0_symbol?: string
+    token1_symbol?: string
+    /** ElementName.CreatePositionButton — selected protocol version ('v2' | 'v3' | 'v4'). */
+    protocol_version?: string
   }
   [SharedEventName.PAGE_VIEWED]: ITraceContext & {
     /** Token details */
@@ -1443,7 +1515,7 @@ export type UniverseEventProperties = {
   [UniswapEventName.LowNetworkTokenInfoModalOpened]: {
     location: 'send' | 'swap'
   }
-  [UniswapEventName.LpIncentiveCollectRewardsButtonClicked]: undefined
+  [UniswapEventName.LpIncentiveCollectRewardsButtonClicked]: Partial<ITraceContext> | undefined
   [UniswapEventName.LpIncentiveCollectRewardsErrorThrown]: { error: string }
   [UniswapEventName.LpIncentiveCollectRewardsRetry]: undefined
   [UniswapEventName.LpIncentiveCollectRewardsSuccess]: { token_rewards: string }
@@ -1602,6 +1674,60 @@ export type UniverseEventProperties = {
     originalEventName: string
   } & Record<string, unknown>
   [WalletEventName.ViewRecoveryPhrase]: undefined
+  [WalletEventName.NonceCalculated]: {
+    chain_id: number
+    address: string
+    submit_via_private_rpc: boolean
+    on_chain_pending_nonce: number
+    pending_private_tx_count: number
+    final_nonce: number
+    private_rpc_supported: boolean
+    inflating_tx_count?: number
+    oldest_inflating_tx_age_ms?: number
+    inflating_tx_ids?: string[]
+    inflating_tx_hashes?: string[]
+  }
+  [WalletEventName.OnchainTransactionSubmissionError]: {
+    transaction_id?: string
+    transaction_hash?: string
+    chain_id: number
+    nonce?: number
+    error_category: string
+    rpc_error_code?: string
+    rpc_provider: string
+    pending_private_tx_count_at_failure?: number
+    submit_via_private_rpc?: boolean
+    private_rpc_provider?: string
+    includes_delegation?: boolean
+    is_smart_wallet_transaction?: boolean
+    transaction_type: string
+  }
+  [WalletEventName.PendingTransactionStuck]: {
+    transaction_id: string
+    transaction_hash?: string
+    chain_id: number
+    request_nonce?: number
+    next_nonce?: number
+    // Measured-only: present (false) when the provider was actually queried and didn't know the tx
+    // (invalidation_check_false); omitted for reasons that don't probe the provider (SWAP-2471).
+    provider_knows_tx?: boolean
+    submit_via_private_rpc?: boolean
+    private_rpc_provider?: string
+    reason: 'invalidation_check_false' | 'flashbots_unknown' | 'poll_exhausted'
+    age_ms: number
+  }
+  [WalletEventName.PendingTransactionBacklogOnStartup]: {
+    total_incomplete: number
+    private_pending_count: number
+    oldest_private_pending_age_ms: number
+  }
+  [WalletEventName.SwapExecutionWindow]: {
+    saga: 'executePlan' | 'executeSwap'
+    phase: 'start' | 'end'
+    address: string
+    tx_id?: string
+    timestamp_ms: number
+  }
   // Please sort new values by EventName type!
 }
 

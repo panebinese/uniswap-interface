@@ -9,9 +9,9 @@ import {
 const EMPTY_INDEX: RwaSearchIndex = { rwas: [], byChainAddress: new Map() }
 
 /** Builds the all-chains RWA grouping index from the `ListRwas` response, gated by `enabled`.
- *  Shared by `useRwaSearchIndex` (RwaUxSearch) and the token selector (RwaUxTokenSelectorCategoryLabels).
+ *  Shared by `useRwaSearchIndex` (RwaUxSearch) and the token selector (region-gated via ISSUER_SPECIFIC_RWA).
  *  Requests `includeCommodities: true` so commodities are tagged — this gives the index its own `ListRwas`
- *  cache entry (it sends `true`; `useRWAWhitelist` / `useIsRWAGeoBlocked` omit it, proto-default `false`).
+ *  cache entry (it sends `true`; `useRWAWhitelist` / `useIsRWAToken` omit it, proto-default `false`).
  *  The `enabled` guard in the memo (not just the query) keeps the index empty when the flag is off, so callers
  *  may gate on `rwas.length` / `byChainAddress.size` alone without leaking the feature. */
 export function useRwaIndex(enabled: boolean): RwaSearchIndex {

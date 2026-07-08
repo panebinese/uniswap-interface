@@ -4,11 +4,8 @@ import { Button, Flex, Text } from 'ui/src'
 import { AlertTriangleFilled } from 'ui/src/components/icons/AlertTriangleFilled'
 import { LearnMoreLink } from 'uniswap/src/components/text/LearnMoreLink'
 import { UniswapHelpUrls } from 'uniswap/src/constants/urls'
-import { ExplorerDataType, getExplorerLink } from 'uniswap/src/utils/linking'
 import { TradeSummary } from '~/pages/Swap/Limit/ConfirmLimitOrderModal/TradeSummary'
-import { InterfaceTrade, TradeFillType } from '~/state/routing/types'
-import { ExternalLink } from '~/theme/components/Links'
-import type { LimitOrderResult } from '~/types/trade'
+import { InterfaceTrade } from '~/state/routing/types'
 
 export enum PendingModalError {
   TOKEN_APPROVAL_ERROR = 0,
@@ -23,7 +20,6 @@ interface ErrorModalContentProps {
   errorType?: PendingModalError
   trade?: InterfaceTrade
   showTrade?: boolean
-  limitOrderResult?: LimitOrderResult
   onRetry: () => void
 }
 
@@ -67,7 +63,7 @@ function getErrorContent(
   }
 }
 
-export function Error({ errorType, trade, showTrade, limitOrderResult, onRetry }: ErrorModalContentProps) {
+export function Error({ errorType, trade, showTrade, onRetry }: ErrorModalContentProps) {
   const { t } = useTranslation()
   if (errorType === undefined) {
     return null
@@ -98,18 +94,6 @@ export function Error({ errorType, trade, showTrade, limitOrderResult, onRetry }
       <Flex gap="$gap8" justifyContent="center" alignItems="center">
         {showTrade && trade && <TradeSummary trade={trade} />}
         {supportArticleURL && <LearnMoreLink url={supportArticleURL} centered />}
-        {limitOrderResult && limitOrderResult.type === TradeFillType.Classic && (
-          <ExternalLink
-            href={getExplorerLink({
-              chainId: limitOrderResult.response.chainId,
-              data: limitOrderResult.response.hash,
-              type: ExplorerDataType.TRANSACTION,
-            })}
-            color="neutral2"
-          >
-            {t('common.viewOnExplorer')}
-          </ExternalLink>
-        )}
       </Flex>
       <Button variant="default" emphasis="secondary" minHeight="$spacing48" mt="$spacing8" onPress={onRetry}>
         {t('common.tryAgain.error')}

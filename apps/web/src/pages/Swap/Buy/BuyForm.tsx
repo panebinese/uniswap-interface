@@ -93,7 +93,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
   const { symbol: fiatSymbol } = useFiatCurrencyComponents(fiatCurrency)
   const [, setSearchParams] = useSearchParams()
 
-  const { buyFormState, setBuyFormState, derivedBuyFormInfo } = useBuyFormContext()
+  const { buyFormState, setBuyFormState, derivedBuyFormInfo, externalTransactionIdSuffix } = useBuyFormContext()
   const {
     inputAmount,
     inputInFiat,
@@ -113,17 +113,38 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
   const inputRef = useRef<ComponentRef<typeof StyledNumericalInput>>(null)
 
   useEffect(() => {
-    const fiatValue = inputInFiat ? inputAmount : derivedBuyFormInfo.amountOut
+    const fiatValue = inputInFiat ? inputAmount : amountOut
 
     if (!fiatValue) {
       return
     }
 
-    sendAnalyticsEvent(FiatOnRampEventName.FiatOnRampAmountEntered, {
-      amountUSD: convertFiatAmount(Number(fiatValue)).amount,
-      source: 'textInput',
-    })
-  }, [inputAmount, derivedBuyFormInfo.amountOut, inputInFiat, convertFiatAmount])
+    sendAnalyticsEvent(
+      rampDirection === RampDirection.ON_RAMP
+        ? FiatOnRampEventName.FiatOnRampAmountEntered
+        : FiatOffRampEventName.FiatOffRampAmountEntered,
+      {
+        amountUSD: convertFiatAmount(Number(fiatValue)).amount,
+        chainId: quoteCurrency?.currencyInfo?.currency.chainId,
+        cryptoCurrency: quoteCurrency?.meldCurrencyCode ?? quoteCurrency?.currencyInfo?.currency.symbol,
+        externalTransactionIdSuffix,
+        fiatCurrency: meldSupportedFiatCurrency?.code,
+        isTokenInputMode: !inputInFiat,
+        source: 'textInput',
+      },
+    )
+  }, [
+    inputAmount,
+    amountOut,
+    inputInFiat,
+    convertFiatAmount,
+    rampDirection,
+    quoteCurrency?.currencyInfo?.currency.chainId,
+    quoteCurrency?.currencyInfo?.currency.symbol,
+    quoteCurrency?.meldCurrencyCode,
+    externalTransactionIdSuffix,
+    meldSupportedFiatCurrency?.code,
+  ])
 
   const { fontSize, onLayout, onSetFontSize, onExtraElementLayout } = useDynamicFontSizing({
     maxCharWidthAtMaxFontSize: CHAR_WIDTH,
@@ -327,6 +348,11 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
                       }))
                       sendAnalyticsEvent(FiatOnRampEventName.FiatOnRampAmountEntered, {
                         amountUSD: convertFiatAmount(amount).amount,
+                        chainId: quoteCurrency?.currencyInfo?.currency.chainId,
+                        cryptoCurrency: quoteCurrency?.meldCurrencyCode ?? quoteCurrency?.currencyInfo?.currency.symbol,
+                        externalTransactionIdSuffix,
+                        fiatCurrency: meldSupportedFiatCurrency?.code,
+                        isTokenInputMode: false,
                         source: 'chip',
                       })
                     }}
@@ -356,6 +382,11 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
                       }))
                       sendAnalyticsEvent(FiatOffRampEventName.FiatOffRampAmountEntered, {
                         amountUSD: convertFiatAmount(newInputAmount).amount,
+                        chainId: quoteCurrency?.currencyInfo?.currency.chainId,
+                        cryptoCurrency: quoteCurrency?.meldCurrencyCode ?? quoteCurrency?.currencyInfo?.currency.symbol,
+                        externalTransactionIdSuffix,
+                        fiatCurrency: meldSupportedFiatCurrency?.code,
+                        isTokenInputMode: true,
                         source: 'chip',
                       })
                     }}
@@ -386,13 +417,20 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
           }}
           onSelectCurrency={(currency) => {
             setBuyFormState((state) => ({ ...state, quoteCurrency: currency }))
-            sendAnalyticsEvent(FiatOnRampEventName.FiatOnRampTokenSelected, {
-              token:
-                currency.meldCurrencyCode ??
-                currency.moonpayCurrencyCode ??
-                currency.currencyInfo?.currency.symbol ??
-                '',
-            })
+            sendAnalyticsEvent(
+              rampDirection === RampDirection.ON_RAMP
+                ? FiatOnRampEventName.FiatOnRampTokenSelected
+                : FiatOffRampEventName.FiatOffRampTokenSelected,
+              {
+                chainId: currency.currencyInfo?.currency.chainId,
+                externalTransactionIdSuffix,
+                token:
+                  currency.meldCurrencyCode ??
+                  currency.moonpayCurrencyCode ??
+                  currency.currencyInfo?.currency.symbol ??
+                  '',
+              },
+            )
           }}
           currencies={supportedTokens}
           unsupportedCurrencies={unsupportedCurrencies}

@@ -5,6 +5,7 @@ import { dataApiServiceClient, type ListTokensParams } from 'uniswap/src/data/ap
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useEvent } from 'utilities/src/react/hooks'
+import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { EXPLORE_API_PAGE_SIZE } from '~/features/Explore/state/constants'
 import { useInfiniteLoadMore } from '~/features/Explore/state/hooks/useInfiniteLoadMore'
 import { createListTokensService } from '~/features/Explore/state/listTokens/services/listTokensService'
@@ -50,11 +51,11 @@ export function useListTokensService(
     ],
   )
   const listTokensQueryKey = useMemo(
-    () => ['topTokens', chainIds, ...optionsKeySegment, tokensV2EndpointsEnabled] as const,
+    () => [ReactQueryCacheKey.TopTokens, chainIds, ...optionsKeySegment, tokensV2EndpointsEnabled] as const,
     [chainIds, optionsKeySegment, tokensV2EndpointsEnabled],
   )
   const legacyQueryKey = useMemo(
-    () => ['topTokens', 'legacy', { multichain: true }, chainIds, ...optionsKeySegment] as const,
+    () => [ReactQueryCacheKey.TopTokens, 'legacy', { multichain: true }, chainIds, ...optionsKeySegment] as const,
     [chainIds, optionsKeySegment],
   )
 

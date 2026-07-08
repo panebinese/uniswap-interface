@@ -10,6 +10,7 @@ import {
   getTypesForEIP712Domain,
   hashTypedData,
   type Hex,
+  pad,
   type PublicClient,
   type SignedAuthorization,
   type TypedDataDomain,
@@ -163,12 +164,20 @@ async function signDelegationAuthorization({
     return undefined
   }
   const authorizationNonce = await publicClient.getTransactionCount({ address })
-  return sign7702AuthorizationWithPasskey({
+  const authResult = await sign7702AuthorizationWithPasskey({
     contractAddress: delegationResult.contractAddress,
     chainId,
     nonce: authorizationNonce,
     walletId,
   })
+  // Pad r/s to a full 32 bytes. ECDSA r/s are 256-bit integers; when the high
+  // byte is zero, a minimal-hex encoding from the signer yields a short
+  // (odd-length) value that strict RPCs reject ("value length was not even").
+  return {
+    ...authResult,
+    r: pad(parseHex(authResult.r), { size: 32 }),
+    s: pad(parseHex(authResult.s), { size: 32 }),
+  }
 }
 
 /**

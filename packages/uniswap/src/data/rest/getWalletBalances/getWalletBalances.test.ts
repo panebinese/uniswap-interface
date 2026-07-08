@@ -43,6 +43,7 @@ const fullResponse = makeResponse({
   total: totalComponent,
   tokens: tokensComponent,
   pools: poolsComponent,
+  failedChainIds: [],
 })
 
 describe('selectPortfolioTotal', () => {
@@ -132,7 +133,13 @@ describe('selectPortfolioBalanceBreakdown', () => {
       total: { balanceUSD: 1000, percentChange: 2.5, absoluteChangeUSD: 25 },
       tokens: { balanceUSD: 600, percentChange: 2.6, absoluteChangeUSD: 15 },
       pools: { balanceUSD: 400, percentChange: 2.4, absoluteChangeUSD: 10 },
+      failedChainIds: [],
     })
+  })
+
+  it('surfaces failed chain IDs from the response', () => {
+    const response = makeResponse({ ...fullResponse.balance, failedChainIds: [196, 42161] })
+    expect(selectPortfolioBalanceBreakdown(response)?.failedChainIds).toEqual([196, 42161])
   })
 })
 
@@ -146,6 +153,7 @@ describe('getUnavailableCategories', () => {
     total: slice(poolsBalanceUSD === undefined ? undefined : 1000),
     tokens: slice(600),
     pools: slice(poolsBalanceUSD),
+    failedChainIds: [],
   })
 
   it('returns [] when the breakdown is undefined', () => {
@@ -183,6 +191,7 @@ describe('getUnavailableCategories', () => {
       total: slice(undefined),
       tokens: slice(0),
       pools: slice(undefined),
+      failedChainIds: [],
     }
     expect(
       getUnavailableCategories({ breakdown: outageBreakdown, requestedCategories: [WalletBalanceCategory.POOLS] }),
@@ -200,6 +209,7 @@ describe('isEmptyWalletBalance', () => {
     total: slice(total),
     tokens: slice(0),
     pools: slice(0),
+    failedChainIds: [],
   })
 
   it('returns false when the breakdown is undefined', () => {

@@ -12,6 +12,7 @@ import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { ExplorerDataType, getExplorerLink, openUri } from 'uniswap/src/utils/linking'
 import { shortenAddress } from 'utilities/src/addresses'
+import { NumberType } from 'utilities/src/format/types'
 import { logger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
@@ -42,6 +43,7 @@ import { useCreateAuctionTokenColor } from '~/pages/Liquidity/CreateAuction/hook
 import { useExistingTokenWalletBalance } from '~/pages/Liquidity/CreateAuction/hooks/useExistingTokenWalletBalance'
 import { useLaunchAuctionFlow } from '~/pages/Liquidity/CreateAuction/hooks/useLaunchAuctionFlow'
 import { useStableRaiseUsdPrice } from '~/pages/Liquidity/CreateAuction/hooks/useStableRaiseUsdPrice'
+import { getLaunchThreshold } from '~/pages/Liquidity/CreateAuction/launchThreshold'
 import {
   CreateAuctionStep,
   PriceRangeStrategy,
@@ -55,7 +57,7 @@ import { resolveTokenImageSrc } from '~/pages/Liquidity/CreateAuction/utils/reso
 export function ReviewLaunchStep(): JSX.Element | null {
   const { t } = useTranslation()
   const tokenColor = useCreateAuctionTokenColor()
-  const { formatPercent } = useLocalizationContext()
+  const { formatNumberOrString, formatPercent } = useLocalizationContext()
   const tokenForm = useCreateAuctionStore((state) => state.tokenForm)
   const configureAuction = useCreateAuctionStore((state) => state.configureAuction)
   const customizePool = useCreateAuctionStore((state) => state.customizePool)
@@ -111,6 +113,19 @@ export function ReviewLaunchStep(): JSX.Element | null {
 
   const stableRaiseUsdPrice = useStableRaiseUsdPrice({ raiseCurrency: configureAuction.raiseCurrency, chainId })
   const floorPriceNum = configureAuction.floorPrice ? parseFloat(configureAuction.floorPrice) : undefined
+
+  const launchThreshold = committed
+    ? getLaunchThreshold({
+        floorPrice: configureAuction.floorPrice,
+        raiseCurrency: configureAuction.raiseCurrency,
+        chainId,
+        auctionSupplyAmount: committed.auctionSupplyAmount,
+        postAuctionLiquidityAmount: committed.postAuctionLiquidityAmount,
+      })
+    : undefined
+  const launchThresholdAmount = launchThreshold
+    ? formatNumberOrString({ value: launchThreshold.toExact(), type: NumberType.TokenQuantityStats })
+    : undefined
 
   const nativeCurrencyInfo = useNativeCurrencyInfo(chainId)
   const usdcCurrencyId = useMemo(() => {
@@ -245,6 +260,7 @@ export function ReviewLaunchStep(): JSX.Element | null {
           raiseCurrencyInfo={raiseCurrencyInfo}
           chainId={chainId}
           tokenSymbol={tokenSymbol}
+          isNewToken={tokenForm.mode === TokenMode.CREATE_NEW}
           tokenColor={tokenColor}
           stableRaiseUsdPrice={stableRaiseUsdPrice}
           floorPriceNum={floorPriceNum}
@@ -342,6 +358,7 @@ export function ReviewLaunchStep(): JSX.Element | null {
         endTime={configureAuction.endTime}
         feeTierDisplay={feeTierDisplay}
         raiseCurrencySymbol={configureAuction.raiseCurrency}
+        launchThresholdAmount={launchThresholdAmount}
         tokenColor={tokenColor}
         progressSteps={launchFlow.progressSteps}
         currentProgressStepIndex={launchFlow.currentProgressStepIndex}

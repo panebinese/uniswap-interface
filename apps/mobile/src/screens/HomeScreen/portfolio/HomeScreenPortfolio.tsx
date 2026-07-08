@@ -33,6 +33,7 @@ import {
   PositionStatusFilterButton,
   PositionStatusFilterValue,
 } from 'uniswap/src/features/positions/components/PositionStatusFilter'
+import { usePoolsPositionsReport } from 'uniswap/src/features/positions/hooks/usePoolsPositionsReport'
 import { usePoolsTabVisibility } from 'uniswap/src/features/positions/hooks/usePoolsTabVisibility'
 import { WalletEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
@@ -109,6 +110,14 @@ function HomeScreenPortfolioContent({ setIsLayoutReady }: HomeScreenPortfolioPro
     skip: !shouldLoadPools,
   })
   const poolsHasErrorWithoutData = poolsListRenderData.hasErrorWithoutData
+
+  usePoolsPositionsReport({
+    positions: poolsListRenderData.positions,
+    pagesLoaded: poolsListRenderData.pagesLoaded,
+    hasMore: poolsListRenderData.hasNextPage,
+    isLoading: poolsListRenderData.isLoadingFirstPage,
+    enabled: activeKey === HomeTab.Pools,
+  })
 
   useEffect(() => {
     if (!shouldLoadNfts) {

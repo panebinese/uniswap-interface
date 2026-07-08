@@ -5,9 +5,8 @@ import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, RefreshButton, Text, useIsDarkMode } from 'ui/src'
 import { spacing } from 'ui/src/theme'
-import AnimatedNumber, {
-  BALANCE_CHANGE_INDICATION_DURATION,
-} from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
+import AnimatedNumber from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
+import { BALANCE_CHANGE_INDICATION_DURATION } from 'uniswap/src/components/AnimatedNumber/animationConfig'
 import { PollingInterval } from 'uniswap/src/constants/misc'
 import {
   getUnavailableCategories,

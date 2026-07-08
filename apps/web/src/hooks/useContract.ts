@@ -1,8 +1,5 @@
 import { Contract } from '@ethersproject/contracts'
-import { MULTICALL_ADDRESSES } from '@uniswap/sdk-core'
-import UniswapInterfaceMulticallJson from '@uniswap/v3-periphery/artifacts/contracts/lens/UniswapInterfaceMulticall.sol/UniswapInterfaceMulticall.json'
 import { useMemo } from 'react'
-import { UniswapInterfaceMulticall } from 'uniswap/src/abis/types/v3'
 import { WRAPPED_NATIVE_CURRENCY } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { getContract } from 'utilities/src/contracts/getContract'
@@ -10,8 +7,6 @@ import { logger } from 'utilities/src/logger/logger'
 import { type ChainContract, createContract, erc20Abi, getAddress, wethAbi, type WethAbi } from '~/chains'
 import { useAccount } from '~/hooks/useAccount'
 import { useEthersProvider, useEthersWeb3Provider } from '~/hooks/useEthersProvider'
-
-const { abi: MulticallABI } = UniswapInterfaceMulticallJson
 
 // returns null on errors
 export function useContract<T extends Contract = Contract>({
@@ -131,15 +126,4 @@ export function useWETHContract({
     }
     return createContract({ address, abi: wethAbi, provider })
   }, [wethAddress, withSignerIfPossible, account.address, walletProvider, readProvider])
-}
-
-export function useInterfaceMulticall(chainId?: UniverseChainId) {
-  const account = useAccount()
-  const chain = chainId ?? account.chainId
-  return useContract<UniswapInterfaceMulticall>({
-    address: chain ? MULTICALL_ADDRESSES[chain] : undefined,
-    ABI: MulticallABI,
-    withSignerIfPossible: false,
-    chainId: chain,
-  }) as UniswapInterfaceMulticall
 }

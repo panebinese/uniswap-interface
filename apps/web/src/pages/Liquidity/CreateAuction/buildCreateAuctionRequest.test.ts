@@ -156,6 +156,33 @@ describe('buildCreateAuctionRequest', () => {
     expect(request?.auction?.returnedSupply).toBeUndefined()
   })
 
+  describe('existing-token source validity', () => {
+    it('suppresses the request in existing mode when no token is resolved', () => {
+      // An unresolved existing token serializes the oneof as `{ existing: {} }` (empty tokenAddress
+      // is dropped from JSON), which the backend rejects with
+      // "token_info.source must be new_token or existing". The builder must suppress instead of send.
+      const store = existingTokenStore('1000')
+      store.getState().actions.setTokenForm({
+        mode: TokenMode.EXISTING,
+        existingTokenCurrencyInfo: undefined,
+        description: '',
+        xProfile: '',
+        websiteLink: '',
+        totalSupply: undefined,
+      })
+      expect(build(store)).toBeUndefined()
+    })
+
+    it('emits a non-empty existing oneof when the token is resolved', () => {
+      const request = build(existingTokenStore('1000'))
+      expect(request?.tokenInfo?.source?.case).toBe('existing')
+      if (request?.tokenInfo?.source?.case === 'existing') {
+        expect(request.tokenInfo.source.value.tokenAddress).toBe(UNI_ADDRESS)
+        expect(request.tokenInfo.source.value.tokenAddress).not.toBe('')
+      }
+    })
+  })
+
   it('maps a new token into the newToken source with carried metadata defaults', () => {
     const request = build(buildableStore())
     expect(request?.tokenInfo?.source?.case).toBe('newToken')

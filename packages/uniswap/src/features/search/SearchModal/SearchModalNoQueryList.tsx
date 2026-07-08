@@ -27,7 +27,7 @@ interface SearchModalNoQueryListProps {
   onSelect?: SearchModalListProps['onSelect']
   renderedInModal: boolean
   contentContainerStyle?: ContentStyle
-  wrapTokenRow?: SearchModalListProps['wrapTokenRow']
+  rowWrapper?: SearchModalListProps['rowWrapper']
 }
 
 export const SearchModalNoQueryList = memo(function SearchModalNoQueryListInner({
@@ -36,7 +36,7 @@ export const SearchModalNoQueryList = memo(function SearchModalNoQueryListInner(
   onSelect,
   renderedInModal,
   contentContainerStyle,
-  wrapTokenRow,
+  rowWrapper,
 }: SearchModalNoQueryListProps): JSX.Element {
   const { t } = useTranslation()
 
@@ -73,7 +73,7 @@ export const SearchModalNoQueryList = memo(function SearchModalNoQueryListInner(
       renderedInModal={renderedInModal}
       contentContainerStyle={contentContainerStyle}
       emptyElement={getEmptyElementComponent()}
-      wrapTokenRow={wrapTokenRow}
+      rowWrapper={rowWrapper}
       rwaIssuerCurrencyInfos={rwaIssuerCurrencyInfos}
       onSelect={onSelect}
     />

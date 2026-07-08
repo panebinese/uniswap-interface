@@ -30,6 +30,7 @@ import {
   hasShiftedGasToken,
   hasSufficientFundsIncludingShiftedGasToken,
 } from 'uniswap/src/features/gas/shiftedGasToken'
+import type { GasFeeOverrides } from 'uniswap/src/features/gas/types'
 import { createEthersProviderFactory } from 'uniswap/src/features/providers/createEthersProvider'
 import { defaultResolveRpcConfig } from 'uniswap/src/features/providers/resolveRpcConfig'
 import { getCurrencyAmount, ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
@@ -307,4 +308,14 @@ const GAS_BUFFER_DENOMINATOR = BigInt(10)
 
 export function applyGasBuffer(gas: bigint): bigint {
   return (gas * GAS_BUFFER_NUMERATOR) / GAS_BUFFER_DENOMINATOR
+}
+
+/** True when the user has saved at least one per-tx gas override. */
+export function hasGasOverrides(gasOverrides: GasFeeOverrides | undefined): boolean {
+  return Boolean(
+    gasOverrides &&
+    (gasOverrides.maxBaseFeeGwei !== undefined ||
+      gasOverrides.priorityFeeGwei !== undefined ||
+      gasOverrides.gasLimit !== undefined),
+  )
 }

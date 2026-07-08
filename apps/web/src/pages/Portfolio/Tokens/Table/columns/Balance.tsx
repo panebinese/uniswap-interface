@@ -6,7 +6,7 @@ import { EllipsisText } from '~/components/Table/shared/TableText'
 import { EmptyTableCell } from '~/pages/Portfolio/EmptyTableCell'
 import type { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
 
-export const Balance = memo(function Balance({
+function BalanceInner({
   color,
   balance,
 }: {
@@ -32,6 +32,14 @@ export const Balance = memo(function Balance({
       </Text>{' '}
       {balance.symbol}
     </EllipsisText>
+  )
+}
+
+export const Balance = memo(BalanceInner, (prev, next) => {
+  return (
+    prev.balance.quantity === next.balance.quantity &&
+    prev.balance.symbol === next.balance.symbol &&
+    prev.color === next.color
   )
 })
 Balance.displayName = 'Balance'

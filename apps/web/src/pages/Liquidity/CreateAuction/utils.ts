@@ -150,6 +150,11 @@ export function formatCompactNumberDisplay(value: number): string {
   return formatted.replace(/k$/, 'K').replace(/m$/, 'M').replace(/b$/, 'B').replace(/t$/, 'T')
 }
 
+/** Ellipsizes a token symbol for compact display next to an amount (e.g. "SUPERLONGTOKEN" -> "SUPERLON…"). */
+export function truncateSymbol(symbol: string, maxLength = 8): string {
+  return symbol.length > maxLength ? `${symbol.slice(0, maxLength)}…` : symbol
+}
+
 export function expandCompactNumberInput(input: string): string | null {
   const trimmed = input.trim().toLowerCase()
   if (!trimmed) {

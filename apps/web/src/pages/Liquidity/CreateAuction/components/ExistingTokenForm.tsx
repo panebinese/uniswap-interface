@@ -14,6 +14,8 @@ import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { logger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import { ToucanGeoRestrictionCard } from '~/components/GeoRestriction/ToucanGeoRestrictionCard'
+import { useToucanGeoRestriction } from '~/components/GeoRestriction/useToucanGeoRestriction'
 import { CurrencySearchModal } from '~/components/SearchModal/CurrencySearchModal'
 import { useActiveAddress } from '~/features/accounts/store/hooks'
 import { useTotalSupply } from '~/hooks/useTotalSupply'
@@ -50,6 +52,7 @@ export function ExistingTokenForm({ existing }: { existing: ExistingTokenFormSta
   const selectedCurrency = selectedCurrencyInfo?.currency
   const { totalSupply, isLoading: totalSupplyLoading, isError: totalSupplyError } = useTotalSupply(selectedCurrency)
   const projectMetadata = useExistingTokenProjectMetadata(selectedCurrencyInfo)
+  const { isGeoRestricted, isGeoRestrictionPending, unavailableLabel } = useToucanGeoRestriction(selectedCurrency)
 
   const hasFetchError = (!!currencyError && !!lookupCurrencyId) || (totalSupplyError && !!selectedCurrencyInfo)
   const canContinue =
@@ -57,6 +60,9 @@ export function ExistingTokenForm({ existing }: { existing: ExistingTokenFormSta
     !totalSupplyLoading &&
     !projectMetadata.loading &&
     !hasFetchError
+  // Fail closed while the geo-restriction check is pending: keep the CTA disabled until the token is
+  // confirmed clean, so a restricted token never briefly shows an enabled Continue button.
+  const continueDisabled = !canContinue || isGeoRestricted || isGeoRestrictionPending
 
   const handleDisabledContinuePress = useCallback(() => {
     setShowCurrencySearch(true)
@@ -214,15 +220,17 @@ export function ExistingTokenForm({ existing }: { existing: ExistingTokenFormSta
             size="large"
             emphasis="primary"
             onPress={handleContinue}
-            isDisabled={!canContinue}
-            onDisabledPress={canContinue ? undefined : handleDisabledContinuePress}
+            isDisabled={continueDisabled}
+            onDisabledPress={continueDisabled ? handleDisabledContinuePress : undefined}
             fill
-            backgroundColor={canContinue ? tokenColor : undefined}
+            backgroundColor={continueDisabled ? undefined : tokenColor}
           >
-            {t('common.button.continue')}
+            {isGeoRestricted ? unavailableLabel : t('common.button.continue')}
           </Button>
         </Trace>
       </Flex>
+
+      {isGeoRestricted && <ToucanGeoRestrictionCard tokenSymbol={selectedCurrency?.symbol} />}
 
       <CurrencySearchModal
         isOpen={showCurrencySearch}

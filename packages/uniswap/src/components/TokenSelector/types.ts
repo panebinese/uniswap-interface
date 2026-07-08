@@ -18,6 +18,7 @@ export type OnSelectRwaToken = (option: RwaTokenOption) => void
 export type TokenSectionsHookProps = {
   addresses: AddressGroup
   chainFilter: UniverseChainId | null
+  chainIds?: UniverseChainId[]
   oppositeSelectedToken?: TradeableAsset
   variation: TokenSelectorVariation
 }

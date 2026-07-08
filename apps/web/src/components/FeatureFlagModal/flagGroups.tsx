@@ -21,6 +21,7 @@ export function buildFlagGroups(extras: {
   extensionDropdown: ReactNode
   networkRequestsConfig: ReactNode
   layerOptions: ReactNode
+  complianceOverrides: ReactNode
 }): FlagGroupDef[] {
   return [
     {
@@ -184,17 +185,7 @@ export function buildFlagGroups(extras: {
         { flag: FeatureFlags.RWATdpSiblings, label: 'Enable RWA TDP More Ways to Trade (Siblings)' },
         { flag: FeatureFlags.RWAUX, label: 'Enable RWA UX' },
         { flag: FeatureFlags.RWAUXExplore, label: 'Enable RWA UX Explore (table)' },
-        { flag: FeatureFlags.RWAUXExploreCarousel, label: 'Enable RWA UX Explore (carousel)' },
-        { flag: FeatureFlags.RwaUxTokenSelector, label: 'Enable Stocks section in Token Selector' },
-        {
-          flag: FeatureFlags.RwaUxTokenSelectorCategoryLabels,
-          label: 'Show category labels (e.g. Stocks) on token rows in Token Selector',
-        },
         { flag: FeatureFlags.RwaUxSearch, label: 'Enable Stocks in Search' },
-        {
-          flag: FeatureFlags.RwaUxSearchTop24hSection,
-          label: 'Enable "Stocks by 24H volume" search section (requires Stocks in Search)',
-        },
       ],
     },
     { name: 'Experiments', flags: [] },
@@ -202,6 +193,11 @@ export function buildFlagGroups(extras: {
       name: 'Layers',
       flags: [],
       extra: extras.layerOptions,
+    },
+    {
+      name: 'Compliance / Geo',
+      flags: [],
+      extra: extras.complianceOverrides,
     },
   ]
 }

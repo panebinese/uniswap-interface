@@ -1,6 +1,7 @@
 import { GraphQLApi } from '@universe/api'
 import { UTCTimestamp } from 'lightweight-charts'
-import { useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer, useRef } from 'react'
+import { PollingInterval } from 'uniswap/src/constants/misc'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { currencyIdToContractInput } from 'uniswap/src/features/dataApi/utils/currencyIdToContractInput'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
@@ -14,6 +15,7 @@ import {
   getCurrentUTCTimestamp,
   PriceChartType,
 } from '~/components/Charts/utils'
+import { usePageVisibility } from '~/lib/hooks/usePageVisibility'
 
 export type TokenPriceChartQueryVariables = {
   chain: GraphQLApi.Chain
@@ -76,11 +78,18 @@ export function useTokenPriceChartData({
   // Project markets do not provide OHLC, so RWA charts always render as line charts even if stale UI state says candle.
   const effectivePriceChartType = preferProjectMarketData ? PriceChartType.LINE : priceChartType
 
+  const isVisible = usePageVisibility()
+
   // For candlestick charts, use subgraph OHLC data (required, not available in CoinGecko)
   // For line charts when fallback is needed, fetch both CoinGecko and subgraph data
-  const { data: subgraphData, loading: subgraphLoading } = GraphQLApi.useTokenPriceQuery({
+  const {
+    data: subgraphData,
+    loading: subgraphLoading,
+    refetch: refetchSubgraph,
+  } = GraphQLApi.useTokenPriceQuery({
     variables: { ...variables, fallback },
     skip,
+    pollInterval: isVisible ? PollingInterval.KindaFast : 0,
   })
 
   // Fetch CoinGecko data for line charts to prefer its priceHistory
@@ -112,6 +121,14 @@ export function useTokenPriceChartData({
     // causing them to re-emit, which triggers re-renders, which re-executes this query → infinite loop.
     fetchPolicy: 'no-cache',
   })
+
+  const prevVisibleRef = useRef(isVisible)
+  useEffect(() => {
+    if (isVisible && !prevVisibleRef.current && !skip) {
+      refetchSubgraph().catch(() => {})
+    }
+    prevVisibleRef.current = isVisible
+  }, [isVisible, skip, refetchSubgraph])
 
   const loading = subgraphLoading || (shouldFetchCoinGeckoHistory && coinGeckoLoading)
 

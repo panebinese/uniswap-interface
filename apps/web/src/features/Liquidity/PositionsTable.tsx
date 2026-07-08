@@ -11,7 +11,10 @@ import { Table } from '~/components/Table'
 import { Cell } from '~/components/Table/Cell'
 import { HeaderCell } from '~/components/Table/styled'
 import { getColumnLabel, type ColumnId, type SortKey } from '~/features/Liquidity/PositionsTableColumns'
-import { PositionsTableControlBar } from '~/features/Liquidity/PositionsTableControlBar'
+import {
+  PositionsTableControlBar,
+  type PositionsTableControlBarProps,
+} from '~/features/Liquidity/PositionsTableControlBar'
 import {
   AprCellContent,
   CreatedCellContent,
@@ -33,7 +36,7 @@ interface PositionRow {
   link: string
 }
 
-interface PositionsTableProps {
+interface PositionsTableProps extends PositionsTableControlBarProps {
   visiblePositions: PositionInfo[]
   hiddenPositions: PositionInfo[]
   hasNextPage: boolean
@@ -169,11 +172,13 @@ function PositionsTableBase({
   hiddenData,
   loading,
   isPlaceholderData,
+  controlBarProps,
 }: {
   data: PositionRow[]
   hiddenData: PositionRow[]
   loading: boolean
   isPlaceholderData: boolean
+  controlBarProps: PositionsTableControlBarProps
 }): JSX.Element {
   const { t } = useTranslation()
   const columns = usePositionsTableColumns(loading)
@@ -181,7 +186,7 @@ function PositionsTableBase({
 
   return (
     <Flex gap="$gap16" opacity={isPlaceholderData ? 0.6 : 1}>
-      <PositionsTableControlBar />
+      <PositionsTableControlBar {...controlBarProps} />
       <Table
         columns={columns}
         data={data}
@@ -209,6 +214,13 @@ export function PositionsTable({
   hiddenPositions,
   isPlaceholderData,
   entryPoint,
+  statusFilter,
+  setStatusFilter,
+  versionFilter,
+  toggleVersion,
+  chainFilter,
+  setChainFilter,
+  showNetworkFilter,
 }: PositionsTableProps): JSX.Element {
   const data = useMemo<PositionRow[]>(
     () =>
@@ -231,10 +243,24 @@ export function PositionsTable({
   )
 
   return (
-    <PositionsTableBase data={data} hiddenData={hiddenData} loading={false} isPlaceholderData={isPlaceholderData} />
+    <PositionsTableBase
+      data={data}
+      hiddenData={hiddenData}
+      loading={false}
+      isPlaceholderData={isPlaceholderData}
+      controlBarProps={{
+        statusFilter,
+        setStatusFilter,
+        versionFilter,
+        toggleVersion,
+        chainFilter,
+        setChainFilter,
+        showNetworkFilter,
+      }}
+    />
   )
 }
 
-export function PositionsTableLoader(): JSX.Element {
-  return <PositionsTableBase data={[]} hiddenData={[]} loading isPlaceholderData={false} />
+export function PositionsTableLoader(props: PositionsTableControlBarProps): JSX.Element {
+  return <PositionsTableBase data={[]} hiddenData={[]} loading isPlaceholderData={false} controlBarProps={props} />
 }

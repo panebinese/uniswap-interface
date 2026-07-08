@@ -1,5 +1,6 @@
 import { isMobileApp, isWebApp } from '@universe/environment'
 import { useMemo } from 'react'
+import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { usePoolSearchResultsToPoolOptions } from 'uniswap/src/components/lists/items/pools/usePoolSearchResultsToPoolOptions'
 import {
@@ -77,7 +78,17 @@ export function useRecentlySearchedOptions({
   activeTab: SearchTab
   numberOfRecentSearchResults: number
 }): SearchModalOption[] {
-  const recentHistory = useSelector(selectSearchHistory)
+  // Snapshot the search history when the modal opens to prevent a layout shift due to modifier-clicks (web only).
+  const liveHistory = useSelector(selectSearchHistory)
+  const [snapshot, setSnapshot] = useState(liveHistory)
+
+  if (liveHistory.length === 0 && snapshot.length > 0) {
+    setSnapshot(liveHistory)
+  }
+
+  const history = isWebApp ? snapshot : liveHistory
+
+  const recentHistory = history
     .filter((searchResult) => {
       switch (activeTab) {
         case SearchTab.Tokens:

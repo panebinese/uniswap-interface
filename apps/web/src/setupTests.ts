@@ -472,6 +472,7 @@ vi.mock('@universe/gating', async (importOriginal) => {
     ...(await importOriginal()),
     useFeatureFlag: vi.fn(),
     useFeatureFlagWithLoading: vi.fn(),
+    useFeatureFlagWithExposureLoggingDisabled: vi.fn(),
     getFeatureFlag: vi.fn(),
     getFeatureFlagWithExposureLoggingDisabled: vi.fn(),
     useExperimentGroupNameWithLoading: vi.fn(),

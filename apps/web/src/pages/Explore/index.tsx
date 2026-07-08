@@ -1,4 +1,5 @@
 import { SharedEventName } from '@uniswap/analytics-events'
+import { GatedFeature, useIsFeatureGated } from '@universe/compliance'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { NamedExoticComponent, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -12,6 +13,7 @@ import { isSVMChain } from 'uniswap/src/features/platforms/utils/chains'
 import { ElementName, InterfacePageName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { getTokenExploreURL } from '~/appGraphql/data/util'
+import { useFilteredChainIds } from '~/components/NetworkFilter/useFilteredChains'
 import { PoolNotFoundModal } from '~/components/NotFoundModal/PoolNotFoundModal'
 import { TokenNotFoundModal } from '~/components/NotFoundModal/TokenNotFoundModal'
 import { MAX_WIDTH_MEDIA_BREAKPOINT } from '~/constants/breakpoints'
@@ -27,6 +29,7 @@ import {
 } from '~/pages/Explore/categories/useExploreCategory'
 import { ExploreAssetShelfSection, ExploreCategoryTablesOrPage } from '~/pages/Explore/ExploreAssetsIntegration'
 import { ExploreStatsSection } from '~/pages/Explore/ExploreStatsSection'
+import { useExploreHeartbeatCoordinator } from '~/pages/Explore/hooks/useExploreHeartbeatCoordinator'
 import { TableNetworkFilter } from '~/pages/Explore/NetworkFilter'
 import { ProtocolFilter } from '~/pages/Explore/ProtocolFilter'
 import { useExploreParams } from '~/pages/Explore/redirects'
@@ -141,7 +144,8 @@ const Explore = ({ initialTab }: { initialTab?: ExploreTab }) => {
   }, [initialTab, Pages])
 
   const isExploreTableEnabled = useFeatureFlag(FeatureFlags.RWAUXExplore)
-  const isExploreCarouselEnabled = useFeatureFlag(FeatureFlags.RWAUXExploreCarousel)
+  // Featured RWA carousel renders unless the caller's region blocks RWA.
+  const isExploreCarouselEnabled = !useIsFeatureGated(GatedFeature.ISSUER_SPECIFIC_RWA)
 
   // scroll to tab navbar on initial page mount only
   // skip when the asset shelf is shown — the shelf is the hero content and shouldn't be scrolled past
@@ -174,6 +178,8 @@ const Explore = ({ initialTab }: { initialTab?: ExploreTab }) => {
 
   const [currentTab, setCurrentTab] = useState(initialKey)
   const { component: Page, key: currentKey } = Pages[currentTab] || {}
+
+  useExploreHeartbeatCoordinator({ tab: currentKey, enabled: true })
 
   // to allow backward navigation between tabs
   const { tab: tabName } = useExploreParams()
@@ -211,6 +217,15 @@ const Explore = ({ initialTab }: { initialTab?: ExploreTab }) => {
 
     useManualChainOutageStore.getState().reset()
   }, [tab, Pages])
+
+  const filteredChainIds = useFilteredChainIds()
+  const tabSupportedNetworks = useMemo(() => {
+    // No SVM support for transactions or pools
+    if (currentKey === ExploreTab.Pools || currentKey === ExploreTab.Transactions) {
+      return filteredChainIds.filter((chainId) => !isSVMChain(chainId))
+    }
+    return filteredChainIds
+  }, [filteredChainIds, currentKey])
 
   return (
     <Trace
@@ -316,7 +331,7 @@ const Explore = ({ initialTab }: { initialTab?: ExploreTab }) => {
                       </Button>
                     </Flex>
                   )}
-                  {currentKey !== ExploreTab.Toucan && <TableNetworkFilter />}
+                  {currentKey !== ExploreTab.Toucan && <TableNetworkFilter networks={tabSupportedNetworks} />}
                   {currentKey === ExploreTab.Tokens && <VolumeTimeFrameSelector />}
                   {currentKey === ExploreTab.Pools && <ProtocolFilter />}
                   {currentKey !== ExploreTab.Toucan && <SearchBar tab={currentKey} />}

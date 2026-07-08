@@ -90,6 +90,22 @@ export function createPrepareAndSignSwapSaga(dependencies: TransactionSagaDepend
         return undefined
       }
 
+      // SWAP-2471: record the nonce assigned to each pre-signed sibling (approval/permit/swap) so the
+      // back-to-back N / N+1 / N+2 sequence on delegated accounts is reconstructable from prod data.
+      const logSignedNonce = (kind: 'approve' | 'permit' | 'swap'): void => {
+        dependencies.logger.info('prepareAndSignSwapSaga', 'prepareAndSignSwapTransaction', 'Swap nonce assigned', {
+          kind,
+          chainId,
+          address: account.address,
+          assignedNonce: getCurrentNonce(),
+          baseNonce: calculatedNonce?.nonce,
+          nonceIncrement,
+          includesDelegation: swapTxContext.includesDelegation,
+          submitViaPrivateRpc,
+          timestampMs: Date.now(),
+        })
+      }
+
       let signedApproveTx: SignedTransactionRequest | undefined
       let signedPermitTx: SignedTransactionRequest | undefined
 
@@ -103,6 +119,7 @@ export function createPrepareAndSignSwapSaga(dependencies: TransactionSagaDepend
           submitViaPrivateRpc,
         })
         signedApproveTx = approvalResult.signedTransaction
+        logSignedNonce('approve')
         nonceIncrement = nonceIncrement + 1
       }
 
@@ -116,6 +133,7 @@ export function createPrepareAndSignSwapSaga(dependencies: TransactionSagaDepend
           submitViaPrivateRpc,
         })
         signedPermitTx = permitResult.signedTransaction
+        logSignedNonce('permit')
         nonceIncrement = nonceIncrement + 1
       }
 
@@ -162,6 +180,7 @@ export function createPrepareAndSignSwapSaga(dependencies: TransactionSagaDepend
           nonce: getCurrentNonce(),
           submitViaPrivateRpc,
         })
+        logSignedNonce('swap')
 
         preSignedSwapTx = {
           signedApproveTx,

@@ -1,11 +1,11 @@
-import { CurrencyAmount, TradeType } from '@uniswap/sdk-core'
-import type { ClassicQuoteResponse, GasFeeResult, WrapQuoteResponse } from '@universe/api'
+import { CurrencyAmount } from '@uniswap/sdk-core'
+import type { ClassicQuoteResponse } from '@universe/api'
 import { FeeType, TradingApi } from '@universe/api'
 import { FeatureFlags, getFeatureFlag } from '@universe/gating'
-import type { providers } from 'ethers/lib/ethers'
 import { DAI, USDC } from 'uniswap/src/constants/tokens'
 import { DEFAULT_GAS_STRATEGY } from 'uniswap/src/features/gas/consts'
 import type { TransactionSettingsState } from 'uniswap/src/features/transactions/components/settings/types'
+import { GasSponsorshipNotAppliedError } from 'uniswap/src/features/transactions/swap/errors'
 import { UnknownSimulationError } from 'uniswap/src/features/transactions/swap/review/services/swapTxAndGasInfoService/constants'
 import type { SwapData } from 'uniswap/src/features/transactions/swap/review/services/swapTxAndGasInfoService/evm/evmSwapRepository'
 import {
@@ -13,22 +13,13 @@ import {
   createProcessSwapResponse,
   getShouldSkipSwapRequest,
   getSimulationError,
-  getWrapTxAndGasInfo,
-  processWrapResponse,
 } from 'uniswap/src/features/transactions/swap/review/services/swapTxAndGasInfoService/utils'
 import type { DerivedSwapInfo } from 'uniswap/src/features/transactions/swap/types/derivedSwapInfo'
-import { isValidSwapTxContext } from 'uniswap/src/features/transactions/swap/types/swapTxAndGasInfo'
-import {
-  createWrapTrade,
-  type TokenApprovalInfo,
-  type TradeWithStatus,
-} from 'uniswap/src/features/transactions/swap/types/trade'
+import { type TokenApprovalInfo, type TradeWithStatus } from 'uniswap/src/features/transactions/swap/types/trade'
 import { ApprovalAction } from 'uniswap/src/features/transactions/swap/types/trade'
 import { DEFAULT_PROTOCOL_OPTIONS } from 'uniswap/src/features/transactions/swap/utils/protocols'
 import { WrapType } from 'uniswap/src/features/transactions/types/wrap'
-import { ETH, WETH } from 'uniswap/src/test/fixtures/lib/sdk'
 import { CurrencyField } from 'uniswap/src/types/currency'
-import type { RpcUserOperation } from 'viem/account-abstraction'
 
 // Mock the gating layer so we can drive the GasFeeOverrides flag per test
 vi.mock('@universe/gating', async (importOriginal) => {
@@ -40,94 +31,6 @@ vi.mock('@universe/gating', async (importOriginal) => {
 })
 
 const mockPermitData = { fakePermitField: 'hi' } as unknown as TradingApi.NullablePermit
-
-describe('processWrapResponse', () => {
-  it('should process wrap response with gas fee result', () => {
-    // Given
-    const gasFeeResult: GasFeeResult = {
-      value: '1000',
-      displayValue: '0.001',
-      isLoading: false,
-      error: null,
-      params: {
-        gasLimit: '21000',
-        maxFeePerGas: '100000000000',
-        maxPriorityFeePerGas: '1000000000',
-      },
-    }
-    const wrapTxRequest = {
-      to: '0x123',
-      value: '1000000',
-    } as providers.TransactionRequest
-
-    // When
-    const result = processWrapResponse({ gasFeeResult, wrapTxRequest })
-
-    // Then
-    expect(result.gasFeeResult).toEqual(gasFeeResult)
-    expect(result.txRequests?.[0]).toEqual({
-      to: '0x123',
-      value: '1000000',
-      gasLimit: '21000',
-      maxFeePerGas: '100000000000',
-      maxPriorityFeePerGas: '1000000000',
-    })
-    expect(result.gasEstimate.wrapEstimate).toBe(gasFeeResult.gasEstimate)
-    expect(result.swapRequestArgs).toBeUndefined()
-  })
-})
-
-describe('processWrapResponse (smart contract unwrap fallback)', () => {
-  it('should fallback to hardcoded gas limit when gas params are missing for a smart contract unwrap', async () => {
-    // Reset modules to allow re-mocking
-    vi.resetModules()
-
-    // Mock the platform module before importing
-    vi.doMock('@universe/environment', async () => {
-      const actual = await vi.importActual<typeof import('@universe/environment')>('@universe/environment')
-      return {
-        ...actual,
-        isWebApp: true,
-      }
-    })
-
-    // Use dynamic imports to get modules with the mock applied
-    const { processWrapResponse: mockedProcessWrapResponse } =
-      await import('uniswap/src/features/transactions/swap/review/services/swapTxAndGasInfoService/utils')
-
-    const { WRAP_FALLBACK_GAS_LIMIT_IN_GWEI } =
-      await import('uniswap/src/features/transactions/swap/review/services/swapTxAndGasInfoService/constants')
-
-    const gasFeeResult: GasFeeResult = {
-      value: '1000',
-      displayValue: '0.001',
-      isLoading: false,
-      error: null,
-      params: undefined,
-    }
-
-    const wrapTxRequest = {
-      to: '0x123',
-      value: '1000000',
-    } as providers.TransactionRequest
-
-    const expectedGasLimit = WRAP_FALLBACK_GAS_LIMIT_IN_GWEI * 10e9
-
-    const fallbackGasParams = { gasLimit: expectedGasLimit }
-
-    const result = mockedProcessWrapResponse({
-      gasFeeResult,
-      wrapTxRequest,
-      fallbackGasParams,
-    })
-
-    expect(result.txRequests?.[0]).toEqual(expect.objectContaining({ gasLimit: expectedGasLimit }))
-
-    // Clean up by resetting mocks
-    vi.resetModules()
-    vi.doUnmock('@universe/environment')
-  })
-})
 
 describe('createPrepareSwapRequestParams', () => {
   const swapQuoteResponse = {
@@ -457,6 +360,52 @@ describe('createProcessSwapResponse', () => {
 
     // Then
     expect(result.gasFeeResult.error).toBeInstanceOf(UnknownSimulationError)
+  })
+
+  it('surfaces a sponsorship error when the quote promised sponsorship but the swap did not deliver it', () => {
+    const swapQuote = { gasFee: '1000', route: [] } as TradingApi.ClassicQuote
+
+    const response = {
+      requestId: '123',
+      transactions: [{ to: '0x123', data: '0x456', from: '0x123', value: '0', chainId: 1 }],
+      requestUniswapGasSponsorship: false,
+    } as const satisfies SwapData
+
+    const result = processSwapResponse({
+      response,
+      error: null,
+      swapQuote,
+      isSwapLoading: false,
+      permitData: undefined,
+      swapRequestParams: { quote: swapQuote },
+      isRevokeNeeded: false,
+      sponsorshipExpected: true,
+    })
+
+    expect(result.gasFeeResult.error).toBeInstanceOf(GasSponsorshipNotAppliedError)
+  })
+
+  it('does not surface a sponsorship error when the quote promised sponsorship and the swap delivered it', () => {
+    const swapQuote = { gasFee: '1000', route: [] } as TradingApi.ClassicQuote
+
+    const response = {
+      requestId: '123',
+      transactions: [{ to: '0x123', data: '0x456', from: '0x123', value: '0', chainId: 1 }],
+      requestUniswapGasSponsorship: true,
+    } as const satisfies SwapData
+
+    const result = processSwapResponse({
+      response,
+      error: null,
+      swapQuote,
+      isSwapLoading: false,
+      permitData: undefined,
+      swapRequestParams: { quote: swapQuote },
+      isRevokeNeeded: false,
+      sponsorshipExpected: true,
+    })
+
+    expect(result.gasFeeResult.error).toBeNull()
   })
 
   // The `hasOverrides` branch determines whether `displayValue` backs out the

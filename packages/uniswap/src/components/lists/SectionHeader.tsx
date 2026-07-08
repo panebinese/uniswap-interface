@@ -5,6 +5,7 @@ import { ElementAfterText, Flex } from 'ui/src'
 import { Briefcase } from 'ui/src/components/icons/Briefcase'
 import { Clock } from 'ui/src/components/icons/Clock'
 import { Coins } from 'ui/src/components/icons/Coins'
+import { EarnSparkle } from 'ui/src/components/icons/EarnSparkle'
 import { Heart } from 'ui/src/components/icons/Heart'
 import { Person } from 'ui/src/components/icons/Person'
 import { Pools } from 'ui/src/components/icons/Pools'
@@ -86,6 +87,8 @@ function useSectionTitle(section: OnchainItemSectionName): string {
       return t('tokens.selector.section.favorite')
     case OnchainItemSectionName.SearchResults:
       return t('tokens.selector.section.search')
+    case OnchainItemSectionName.Earn:
+      return t('explore.earn.title')
     case OnchainItemSectionName.Tokens:
       return t('common.tokens')
     case OnchainItemSectionName.Pools:
@@ -122,6 +125,8 @@ function getSectionIcon(section: OnchainItemSectionName): JSX.Element | null {
       return <Search color="$neutral2" size="$icon.16" />
     case OnchainItemSectionName.FavoriteTokens:
       return <Coins color="$neutral2" size="$icon.16" />
+    case OnchainItemSectionName.Earn:
+      return <EarnSparkle color="$neutral2" size="$icon.16" />
     case OnchainItemSectionName.Pools:
       return <Pools color="$neutral2" size="$icon.16" />
     case OnchainItemSectionName.Wallets:

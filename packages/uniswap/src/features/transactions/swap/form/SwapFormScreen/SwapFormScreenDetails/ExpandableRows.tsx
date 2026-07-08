@@ -63,6 +63,8 @@ export function ExpandableRows(): JSX.Element | null {
   const inputCurrencyChainId = trade.trade.inputAmount.currency.chainId
   const isUniswapXTrade = isUniswapX({ routing: trade.trade.routing })
 
+  const sponsorshipInfo = 'sponsorshipInfo' in trade.trade.quote ? trade.trade.quote.sponsorshipInfo : undefined
+
   // Only render the tappable row when the user has opted into custom entry
   // AND the trade is EVM. UniswapX has no editable EVM tx (txRequests is
   // forced to undefined above), so the editor would open without a recommended
@@ -92,9 +94,7 @@ export function ExpandableRows(): JSX.Element | null {
           outputCurrency={trade.trade.outputAmount.currency}
           transactionUSDValue={derivedSwapInfo.currencyAmountsUSDValue[CurrencyField.OUTPUT]}
           uniswapXGasBreakdown={gasFeeBreakdown}
-          sponsorMetadata={
-            'sponsorshipInfo' in trade.trade.quote ? trade.trade.quote.sponsorshipInfo?.sponsorMetadata : undefined
-          }
+          sponsorshipInfo={sponsorshipInfo}
           RateInfo={
             showPriceImpactWarning ? (
               <Flex row alignItems="center" justifyContent="space-between">

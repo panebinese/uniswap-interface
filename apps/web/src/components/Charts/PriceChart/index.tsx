@@ -1,5 +1,4 @@
 import { GraphQLApi } from '@universe/api'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import {
   AreaData,
   AreaSeriesPartialOptions,
@@ -13,28 +12,20 @@ import {
   PriceLineOptions,
   UTCTimestamp,
 } from 'lightweight-charts'
-import { ReactElement, ReactNode, useMemo } from 'react'
-import { Flex } from 'ui/src'
 import { opacify } from 'ui/src/theme'
-import { isLowVarianceRange } from 'uniswap/src/components/charts/utils'
-import { NumberType } from 'utilities/src/format/types'
-import { ChartHeader } from '~/components/Charts/ChartHeader'
+import { getLowVarianceAxisDecimals, isLowVarianceRange } from 'uniswap/src/components/charts/utils'
 import {
-  Chart,
-  ChartHoverCoordinates,
   ChartHoverData,
   ChartModel,
   ChartModelParams,
   DEFAULT_BOTTOM_PRICE_SCALE_MARGIN,
   DEFAULT_TOP_PRICE_SCALE_MARGIN,
 } from '~/components/Charts/ChartModel'
-import { CandlestickTooltip } from '~/components/Charts/PriceChart/CandlestickTooltip'
-import { PriceChartDelta } from '~/components/Charts/PriceChart/PriceChartDelta'
 import {
   RoundedCandleSeries,
   RoundedCandleSeriesOptions,
 } from '~/components/Charts/PriceChart/RoundedCandlestickSeries/rounded-candles-series'
-import { getCandlestickPriceBounds } from '~/components/Charts/PriceChart/utils'
+import { formatPriceAxisLabel, getCandlestickPriceBounds } from '~/components/Charts/PriceChart/utils'
 import { PriceChartType } from '~/components/Charts/utils'
 
 export type PriceChartData = CandlestickData<UTCTimestamp> & AreaData<UTCTimestamp>
@@ -57,6 +48,7 @@ export class PriceChartModel extends ChartModel<PriceChartData> {
   protected series: ISeriesApi<'Area'> | ISeriesApi<'Custom'>
   private originalData: PriceChartData[]
   private lowPriceRangeScaleFactor = 1
+  private priceAxisDecimals: number | undefined
   private type: PriceChartType
   private timePeriod?: GraphQLApi.HistoryDuration
   private minPriceLine: IPriceLine | undefined
@@ -128,11 +120,14 @@ export class PriceChartModel extends ChartModel<PriceChartData> {
     super(chartDiv, params)
     this.originalData = this.data
 
-    const { adjustedData, lowPriceRangeScaleFactor, min, max } = PriceChartModel.getAdjustedPrices(params.data)
+    const { adjustedData, lowPriceRangeScaleFactor, min, max, priceAxisDecimals } = PriceChartModel.getAdjustedPrices(
+      params.data,
+    )
     this.data = adjustedData
     this.lowPriceRangeScaleFactor = lowPriceRangeScaleFactor
     this.min = min
     this.max = max
+    this.priceAxisDecimals = priceAxisDecimals
 
     this.type = params.type
     this.timePeriod = params.timePeriod
@@ -159,6 +154,9 @@ export class PriceChartModel extends ChartModel<PriceChartData> {
     let adjustedData = data
     let { min, max } = getCandlestickPriceBounds(data)
 
+    // Derived from the original bounds — the axis formatter receives unscaled prices.
+    const priceAxisDecimals = getLowVarianceAxisDecimals(min, max)
+
     // Lightweight-charts shows few price-axis points for low-value/volatility tokens,
     // so we workaround by "scaling" the prices, causing more price-axis points to be shown
     if (max - min < LOW_PRICE_RANGE_THRESHOLD) {
@@ -168,7 +166,7 @@ export class PriceChartModel extends ChartModel<PriceChartData> {
       max = max * lowPriceRangeScaleFactor
     }
 
-    return { adjustedData, lowPriceRangeScaleFactor, min, max }
+    return { adjustedData, lowPriceRangeScaleFactor, min, max, priceAxisDecimals }
   }
 
   updateOptions(params: PriceChartModelParams) {
@@ -225,23 +223,16 @@ export class PriceChartModel extends ChartModel<PriceChartData> {
       ...crosshairOverride,
       localization: {
         locale,
-        priceFormatter: (price: BarPrice) => {
-          // Transform price back to original value if it was scaled
-          const originalPrice = Number(price) / this.lowPriceRangeScaleFactor
-
-          // Use custom y-axis formatter if provided
-          if (yAxisFormatter) {
-            return yAxisFormatter(originalPrice)
-          }
-
-          if (tokenFormatType) {
-            return format.formatNumberOrString({
-              value: originalPrice,
-              type: tokenFormatType,
-            })
-          }
-          return format.convertFiatAmountFormatted(originalPrice, NumberType.FiatTokenPrice)
-        },
+        priceFormatter: (price: BarPrice) =>
+          formatPriceAxisLabel({
+            scaledPrice: Number(price),
+            scaleFactor: this.lowPriceRangeScaleFactor,
+            decimals: this.priceAxisDecimals,
+            format,
+            locale,
+            yAxisFormatter,
+            tokenFormatType,
+          }),
       },
       rightPriceScale: {
         borderVisible: false,
@@ -265,11 +256,13 @@ export class PriceChartModel extends ChartModel<PriceChartData> {
     if (this.originalData !== data) {
       this.originalData = data
       // oxlint-disable-next-line no-shadow
-      const { adjustedData, lowPriceRangeScaleFactor, min, max } = PriceChartModel.getAdjustedPrices(data)
+      const { adjustedData, lowPriceRangeScaleFactor, min, max, priceAxisDecimals } =
+        PriceChartModel.getAdjustedPrices(data)
       this.data = adjustedData
       this.lowPriceRangeScaleFactor = lowPriceRangeScaleFactor
       this.min = min
       this.max = max
+      this.priceAxisDecimals = priceAxisDecimals
 
       this.series.setData(this.data)
       this.fitContent()
@@ -335,162 +328,5 @@ export class PriceChartModel extends ChartModel<PriceChartData> {
   }
 }
 
-interface PriceChartBodyProps {
-  type: PriceChartType
-  height: number
-  data: PriceChartData[]
-  stale: boolean
-  timePeriod?: GraphQLApi.HistoryDuration
-  overrideColor?: string
-  hideYAxis?: boolean
-  hideXAxis?: boolean
-  yAxisFormatter?: (price: number) => string
-  sparkline?: boolean
-  hideMinMaxLines?: boolean
-  onCrosshairChange?: (crosshairData?: PriceChartData) => void
-  /** Optional overlay render prop with access to the chart's crosshair data, hover pixel coordinates, and plot right edge. */
-  children?: (crosshairData?: PriceChartData, hover?: ChartHoverCoordinates | null) => ReactElement | null
-}
-
-export function PriceChartBody({
-  data,
-  height,
-  type,
-  stale,
-  timePeriod,
-  overrideColor,
-  hideYAxis,
-  hideXAxis,
-  yAxisFormatter,
-  sparkline,
-  hideMinMaxLines,
-  onCrosshairChange,
-  children,
-}: PriceChartBodyProps) {
-  const isDataLivelinessEnabled = useFeatureFlag(FeatureFlags.DataLivelinessUI)
-  const v2HoverStyles = !sparkline && type === PriceChartType.LINE && isDataLivelinessEnabled
-
-  return (
-    <Chart
-      Model={PriceChartModel}
-      params={useMemo(
-        () => ({
-          data,
-          type,
-          stale,
-          timePeriod,
-          hideYAxis,
-          hideXAxis,
-          yAxisFormatter,
-          sparkline,
-          hideMinMaxLines,
-          v2HoverStyles,
-        }),
-        [
-          data,
-          stale,
-          type,
-          timePeriod,
-          hideYAxis,
-          hideXAxis,
-          yAxisFormatter,
-          sparkline,
-          hideMinMaxLines,
-          v2HoverStyles,
-        ],
-      )}
-      height={height}
-      overrideColor={overrideColor}
-      TooltipBody={type === PriceChartType.CANDLESTICK ? CandlestickTooltip : undefined}
-      onCrosshairChange={onCrosshairChange}
-      showDottedBackground={true}
-      showLeftFadeOverlay={type === PriceChartType.LINE}
-      v2HoverStyles={v2HoverStyles}
-      disableScrubbing={sparkline}
-    >
-      {children}
-    </Chart>
-  )
-}
-
-interface PriceChartProps {
-  type: PriceChartType
-  height: number
-  data: PriceChartData[]
-  stale: boolean
-  timePeriod?: GraphQLApi.HistoryDuration
-  pricePercentChange?: number
-  overrideColor?: string
-  headerTotalValueOverride?: number
-  hideYAxis?: boolean
-  hidePercentDelta?: boolean
-  yAxisFormatter?: (price: number) => string
-  /** Additional content rendered next to the price delta in the chart header.
-   *  Can be a ReactNode or a render function receiving { isHovering }. */
-  additionalHeaderContent?: ReactNode | (({ isHovering }: { isHovering: boolean }) => ReactNode)
-}
-
-export function PriceChart({
-  data,
-  height,
-  type,
-  stale,
-  timePeriod,
-  pricePercentChange,
-  overrideColor,
-  headerTotalValueOverride,
-  hideYAxis,
-  yAxisFormatter,
-  additionalHeaderContent,
-  hidePercentDelta,
-}: PriceChartProps) {
-  const startingPrice = data[0]
-  const lastPrice = data[data.length - 1]
-  const { min, max } = getCandlestickPriceBounds(data)
-  const shouldTreatAsStablecoin = isLowVarianceRange({
-    min,
-    max,
-    duration: timePeriod,
-  })
-
-  return (
-    <PriceChartBody
-      data={data}
-      height={height}
-      type={type}
-      stale={stale}
-      timePeriod={timePeriod}
-      overrideColor={overrideColor}
-      hideYAxis={hideYAxis}
-      yAxisFormatter={yAxisFormatter}
-    >
-      {(crosshairData) => {
-        const headerValue = crosshairData ? crosshairData.value : (headerTotalValueOverride ?? lastPrice.value)
-
-        return (
-          <ChartHeader
-            value={headerValue}
-            additionalFields={
-              <Flex row gap="$gap8" alignItems="center">
-                <PriceChartDelta
-                  startingPrice={startingPrice.close}
-                  endingPrice={(crosshairData ?? lastPrice).close}
-                  shouldIncludeFiatDelta
-                  shouldTreatAsStablecoin={shouldTreatAsStablecoin}
-                  pricePercentChange={pricePercentChange}
-                  isHovering={!!crosshairData}
-                  hidePercent={hidePercentDelta}
-                />
-                {typeof additionalHeaderContent === 'function'
-                  ? additionalHeaderContent({ isHovering: !!crosshairData })
-                  : additionalHeaderContent}
-              </Flex>
-            }
-            valueFormatterType={NumberType.FiatTokenPrice}
-            time={crosshairData?.time}
-          />
-        )
-      }}
-    </PriceChartBody>
-  )
-}
+export { PriceChartBody } from '~/components/Charts/PriceChart/PriceChartBody'
+export { PriceChart } from '~/components/Charts/PriceChart/PriceChart'

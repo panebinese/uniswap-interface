@@ -10,7 +10,7 @@ export function useTotalBalancesUsdForAnalytics(): number | undefined {
   const { data } = usePortfolioTotalValue({
     evmAddress: evmAccount?.address,
     svmAddress: svmAccount?.address,
-    enabled: false, // ensures we only read from cache
+    cacheOnly: true,
   })
   return data?.balanceUSD
 }

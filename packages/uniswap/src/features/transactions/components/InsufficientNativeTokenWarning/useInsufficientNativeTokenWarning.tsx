@@ -25,9 +25,12 @@ import { NumberType } from 'utilities/src/format/types'
 import { logger } from 'utilities/src/logger/logger'
 
 /**
- * Shows a warning in 2 different cases:
- * 1. When the user doesn't have enough funds to cover the transaction's network cost.
- * 2. When the user is trying to swap a native token and they don't have enough of that token.
+ * Shows a warning when the user doesn't have enough funds to cover the transaction's network cost.
+ *
+ * Note: a general `InsufficientFunds` warning (input amount exceeds balance) is intentionally not
+ * surfaced here — the gas-themed copy in this banner/modal is misleading when the user simply
+ * doesn't have enough of the token they're swapping. That case is handled by the generic
+ * insufficient-balance warning on the form / CTA instead.
  */
 export function useInsufficientNativeTokenWarning({
   flow,
@@ -47,16 +50,9 @@ export function useInsufficientNativeTokenWarning({
   const { defaultChainId, isTestnetModeEnabled } = useEnabledChains()
   const { convertFiatAmountFormatted } = useLocalizationContext()
 
-  const insufficientGasFundsWarning = warnings.find((w) => w.type === WarningLabel.InsufficientGasFunds)
+  const warning = warnings.find((w) => w.type === WarningLabel.InsufficientGasFunds)
 
-  const insufficientFundsWarning: Warning | undefined =
-    flow === 'swap' ? warnings.find((w) => w.type === WarningLabel.InsufficientFunds) : undefined
-
-  const warning = insufficientGasFundsWarning ?? insufficientFundsWarning
-
-  const shouldShowWarning =
-    warning?.type === WarningLabel.InsufficientGasFunds ||
-    (warning?.type === WarningLabel.InsufficientFunds && warning.currency?.isNative)
+  const shouldShowWarning = warning?.type === WarningLabel.InsufficientGasFunds
 
   const nativeCurrency = warning?.currency
   const chainId = nativeCurrency?.chainId ?? defaultChainId
@@ -94,7 +90,7 @@ export function useInsufficientNativeTokenWarning({
     return null
   }
 
-  if (warning.type === WarningLabel.InsufficientGasFunds && !gasAmount) {
+  if (!gasAmount) {
     logger.warn(
       'useInsufficientNativeTokenWarning',
       'useInsufficientNativeTokenWarning',
@@ -133,54 +129,25 @@ export function useInsufficientNativeTokenWarning({
     const warningValues = {
       networkName,
       tokenSymbol: nativeCurrency.symbol,
-      tokenAmount: gasAmount ? gasAmount.toSignificant(2) : '',
+      tokenAmount: gasAmount.toSignificant(2),
     }
 
-    if (warning.type === WarningLabel.InsufficientGasFunds) {
-      if (isTestnetModeEnabled) {
-        return (
-          <Trans
-            components={warningComponents}
-            i18nKey="transaction.warning.insufficientGas.modal.message.noAction"
-            values={warningValues}
-          />
-        )
-      } else {
-        return (
-          <Trans
-            components={warningComponents}
-            i18nKey="transaction.warning.insufficientGas.modal.message"
-            values={warningValues}
-          />
-        )
-      }
-    } else {
-      // When the user is trying to swap a native token and they don't have enough of that token.
-      const values = {
-        networkName,
-        tokenSymbol: nativeCurrency.symbol,
-      }
-
-      // Use the amount-less copy when we have no `gasAmount` to display. Otherwise the
-      // message renders a broken "~ {{tokenSymbol}} (-)" (e.g. on newly launched chains
-      // like Robinhood where no quote/gas estimate or USD price is available yet).
-      if (isTestnetModeEnabled || !gasAmount) {
-        return (
-          <Trans
-            i18nKey="transaction.warning.insufficientGas.modal.messageSwapWithoutTokenAmount.noAction"
-            values={values}
-          />
-        )
-      } else {
-        return (
-          <Trans
-            components={warningComponents}
-            i18nKey="transaction.warning.insufficientGas.modal.messageSwapWithoutTokenAmount"
-            values={warningValues}
-          />
-        )
-      }
+    if (isTestnetModeEnabled) {
+      return (
+        <Trans
+          components={warningComponents}
+          i18nKey="transaction.warning.insufficientGas.modal.message.noAction"
+          values={warningValues}
+        />
+      )
     }
+    return (
+      <Trans
+        components={warningComponents}
+        i18nKey="transaction.warning.insufficientGas.modal.message"
+        values={warningValues}
+      />
+    )
   }
 
   return {

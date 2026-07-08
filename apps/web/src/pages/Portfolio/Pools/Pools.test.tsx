@@ -44,13 +44,22 @@ vi.mock('@universe/gating', async (importOriginal) => ({
   useFeatureFlag: vi.fn(),
 }))
 
-vi.mock('uniswap/src/features/telemetry/Trace', () => ({
-  default: ({ children, element, logPress }: { children: ReactNode; element?: ElementName; logPress?: boolean }) => (
+vi.mock('uniswap/src/features/telemetry/Trace', () => {
+  const Trace = ({
+    children,
+    element,
+    logPress,
+  }: {
+    children: ReactNode
+    element?: ElementName
+    logPress?: boolean
+  }) => (
     <div data-element-name={element} data-log-press={logPress}>
       {children}
     </div>
-  ),
-}))
+  )
+  return { default: Trace, Trace }
+})
 
 vi.mock('~/pages/Portfolio/Header/hooks/usePortfolioRoutes', () => ({
   usePortfolioRoutes: vi.fn(),
@@ -162,6 +171,7 @@ function createWalletPositionsResult(
     hasErrorWithoutData: false,
     refetch: vi.fn(),
     loadMorePositions: vi.fn(),
+    pagesLoaded: 1,
     ...overrides,
   }
 }

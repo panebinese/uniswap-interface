@@ -20,6 +20,8 @@ export enum SectionName {
   PortfolioOverviewTab = 'portfolio-overview-tab',
   PortfolioTokensTab = 'portfolio-tokens-tab',
   PortfolioPoolsTab = 'portfolio-pools-tab',
+  PortfolioPoolsFeesCard = 'portfolio-pools-fees-card',
+  PositionsList = 'positions-list',
   ProfileActivityTab = 'profile-activity-tab',
   ProfileNftsTab = 'profile-nfts-tab',
   ProfileTokensTab = 'profile-tokens-tab',
@@ -41,5 +43,6 @@ export enum SectionName {
   CreatePositionDepositStep = 'create-position-deposit-step',
   CreatePositionPriceRangeStep = 'create-position-price-range-step',
   CreatePositionSelectTokensStep = 'create-position-select-tokens-step',
+  ExploreRecentTransactions = 'explore-recent-transactions',
   // alphabetize additional values.
 }

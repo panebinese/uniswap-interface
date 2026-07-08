@@ -11,6 +11,8 @@ import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useAppFiatCurrency } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { SectionName } from 'uniswap/src/features/telemetry/constants'
+import { Trace } from 'uniswap/src/features/telemetry/Trace'
 import { ExplorerDataType, getExplorerLink } from 'uniswap/src/utils/linking'
 import { shortenAddress } from 'utilities/src/addresses'
 import { NumberType } from 'utilities/src/format/types'
@@ -271,14 +273,17 @@ export const RecentTransactionsTable = memo(function RecentTransactions() {
   ])
 
   return (
-    <Table
-      columns={columns}
-      data={filteredTransactionsWithFiat}
-      loading={allDataStillLoading}
-      error={combinedError}
-      loadMore={loadMore}
-      maxWidth={1200}
-      defaultPinnedColumns={['timestamp', 'swap-type']}
-    />
+    <Trace section={SectionName.ExploreRecentTransactions}>
+      <Table
+        columns={columns}
+        data={filteredTransactionsWithFiat}
+        loading={allDataStillLoading}
+        error={combinedError}
+        loadMore={loadMore}
+        maxWidth={1200}
+        defaultPinnedColumns={['timestamp', 'swap-type']}
+        getRowId={(row) => row.id}
+      />
+    </Trace>
   )
 })

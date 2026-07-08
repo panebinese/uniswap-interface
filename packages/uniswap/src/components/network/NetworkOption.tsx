@@ -21,6 +21,7 @@ export function NetworkOption({
   isNew,
   borderRadius = '$rounded8',
   trailingElement,
+  forceAllNetworksLabel,
 }: {
   chainId: UniverseChainId | null
   chainIds?: UniverseChainId[]
@@ -28,6 +29,7 @@ export function NetworkOption({
   isNew: boolean
   borderRadius?: FlexProps['borderRadius']
   trailingElement?: ReactNode
+  forceAllNetworksLabel?: boolean
 }): JSX.Element {
   const { t } = useTranslation()
   const info = chainId && getChainInfo(chainId)
@@ -42,7 +44,7 @@ export function NetworkOption({
             <NetworkLogo chainId={null} size={NETWORK_OPTION_ICON_SIZE} />
           )}
           <Text color="$neutral1" variant="body2">
-            {chainIds?.length
+            {chainIds?.length && !forceAllNetworksLabel
               ? t('explore.tokens.table.networks', { count: chainIds.length })
               : t('transaction.network.all')}
           </Text>
@@ -57,7 +59,7 @@ export function NetworkOption({
           />
         </Flex>
       ),
-    [chainId, chainIds, info?.label, isNew, t],
+    [chainId, chainIds, info?.label, isNew, t, forceAllNetworksLabel],
   )
 
   return (

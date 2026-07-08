@@ -33,6 +33,8 @@ interface LaunchAuctionReviewModalProps {
   endTime?: Date
   feeTierDisplay: string
   raiseCurrencySymbol: string
+  /** Formatted launch-threshold amount (raise currency); shown in the post-auction info box. */
+  launchThresholdAmount?: string
   tokenColor?: TokenAccentHex
   progressSteps: LaunchProgressStep[]
   currentProgressStepIndex: number
@@ -73,6 +75,7 @@ export function LaunchAuctionReviewModal({
   endTime,
   feeTierDisplay,
   raiseCurrencySymbol,
+  launchThresholdAmount,
   tokenColor,
   progressSteps,
   currentProgressStepIndex,
@@ -198,6 +201,14 @@ export function LaunchAuctionReviewModal({
                     raiseCurrency: raiseCurrencySymbol,
                   })}
                 </Text>
+                {launchThresholdAmount ? (
+                  <Text variant="body3" color="$neutral1">
+                    {t('toucan.createAuction.reviewModal.launchThresholdDescription', {
+                      thresholdAmount: launchThresholdAmount,
+                      raiseCurrency: raiseCurrencySymbol,
+                    })}
+                  </Text>
+                ) : null}
               </Flex>
             </>
           )}

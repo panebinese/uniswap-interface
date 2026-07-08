@@ -42,7 +42,7 @@ export function PositionDetailsScreen({ route }: AppStackScreenProp<MobileScreen
   const positionInfo = useMemo(() => parseRestPosition(data?.position), [data?.position])
 
   return (
-    <Trace logImpression screen={MobileScreens.PositionDetails}>
+    <Trace directFromPage logImpression screen={MobileScreens.PositionDetails}>
       <ScreenWithHeader rightElement={positionInfo ? <PositionDetailsMenu positionInfo={positionInfo} /> : undefined}>
         {positionInfo ? (
           <PositionDetailsContent positionInfo={positionInfo} bottomInset={insets.bottom} />

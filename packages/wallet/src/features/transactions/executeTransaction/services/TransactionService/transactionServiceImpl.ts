@@ -1,9 +1,12 @@
+/* oxlint-disable max-lines */
 import type { BaseProvider, Provider } from '@ethersproject/providers'
 import { utils } from 'ethers'
 import { type AccountMeta } from 'uniswap/src/features/accounts/types'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { getChainLabel } from 'uniswap/src/features/chains/utils'
 import { FlashbotsRpcProvider } from 'uniswap/src/features/providers/FlashbotsRpcProvider'
+import { WalletEventName } from 'uniswap/src/features/telemetry/constants'
+import { GasSponsorshipNotAppliedError } from 'uniswap/src/features/transactions/swap/errors'
 import { validateTransactionRequest } from 'uniswap/src/features/transactions/swap/utils/trade'
 import {
   TransactionStatus,
@@ -35,7 +38,8 @@ import type { CalculatedNonce } from 'wallet/src/features/transactions/executeTr
 import { SignedTransactionRequest } from 'wallet/src/features/transactions/executeTransaction/types'
 import { createGetUpdatedTransactionDetails } from 'wallet/src/features/transactions/executeTransaction/utils/createGetUpdatedTransactionDetails'
 import { createUnsubmittedTransactionDetails } from 'wallet/src/features/transactions/executeTransaction/utils/createUnsubmittedTransactionDetails'
-import { processTransactionReceipt } from 'wallet/src/features/transactions/utils'
+import { buildNonceCalculatedProperties } from 'wallet/src/features/transactions/telemetry/nonceTelemetry'
+import { getRPCErrorCategory, processTransactionReceipt } from 'wallet/src/features/transactions/utils'
 
 /**
  * Result of transaction submission containing the information needed to update the transaction
@@ -90,23 +94,43 @@ export function createTransactionService(ctx: {
     const usePrivate = ctx.configService.shouldUsePrivateRpc({ chainId, submitViaPrivateRpc })
 
     // Get the transaction count from the provider
-    const nonce = await provider.getTransactionCount(account.address, 'pending')
+    const onChainPendingNonce = await provider.getTransactionCount(account.address, 'pending')
+    const privateRpcSupported = isPrivateRpcSupportedOnChain(chainId)
 
-    // If using Flashbots with auth, it will already account for pending private transactions
-    // Otherwise, add the local pending private transactions
-    if (!usePrivate && isPrivateRpcSupportedOnChain(chainId)) {
-      const pendingPrivateTransactionCount = await transactionRepository.getPendingPrivateTransactionCount({
-        address: account.address,
-        chainId,
-      })
+    // If using Flashbots with auth, it already accounts for pending private transactions.
+    // Otherwise (non-private on a private-supported chain), add the local pending private count.
+    const shouldAddLocalPendingPrivateCount = !usePrivate && privateRpcSupported
+    const pendingPrivateTxCount = shouldAddLocalPendingPrivateCount
+      ? await transactionRepository.getPendingPrivateTransactionCount({ address: account.address, chainId })
+      : 0
+    // SWAP-2471: when the local count inflated the nonce, capture WHICH txs did it so the inflation
+    // reservoir can later be linked to a gapped-nonce rejection at a higher nonce.
+    const inflatingTxs =
+      pendingPrivateTxCount > 0
+        ? await transactionRepository.getPendingPrivateTransactionDetails({ address: account.address, chainId })
+        : []
 
-      return {
-        nonce: nonce + pendingPrivateTransactionCount,
-        pendingPrivateTxCount: pendingPrivateTransactionCount,
-      }
+    const nonceProperties = buildNonceCalculatedProperties({
+      chainId,
+      address: account.address,
+      submitViaPrivateRpc: Boolean(submitViaPrivateRpc),
+      onChainPendingNonce,
+      pendingPrivateTxCount,
+      privateRpcSupported,
+      inflatingTxs,
+      nowMs: Date.now(),
+    })
+    // Datadog (session-sampled) on every decision for the distribution; Amplitude (unsampled) only
+    // for inflation cases, to bound event volume.
+    logger.info('TransactionService', 'getNextNonce', WalletEventName.NonceCalculated, nonceProperties)
+    if (pendingPrivateTxCount > 0) {
+      analyticsService.trackTransactionEvent(WalletEventName.NonceCalculated, nonceProperties)
     }
 
-    return { nonce }
+    // Preserve the original return shape exactly: pendingPrivateTxCount is omitted when unused.
+    return shouldAddLocalPendingPrivateCount
+      ? { nonce: onChainPendingNonce + pendingPrivateTxCount, pendingPrivateTxCount }
+      : { nonce: onChainPendingNonce }
   }
 
   /**
@@ -165,6 +189,7 @@ export function createTransactionService(ctx: {
           options,
           methodName,
           transactionRepository,
+          analyticsService,
           logger,
         })
         // This line is unreachable since handleTransactionError always throws
@@ -300,45 +325,79 @@ export function createTransactionService(ctx: {
       const timestampBeforeSign = request.timestampBeforeSign
       const provider = await ctx.getProvider()
 
-      logger.debug('TransactionService', 'submitTransactionSync', 'Calling sendTransactionSync...')
-
-      // Send the transaction using the sync method via the transaction signer service
-      const ethersReceipt = await ctx.transactionSigner.sendTransactionSync({ signedTx: request.signedRequest })
-
-      logger.debug('TransactionService', 'submitTransactionSync', 'Sync tx completed with receipt:', {
-        transactionHash: ethersReceipt.transactionHash,
-        blockNumber: ethersReceipt.blockNumber,
-        gasUsed: ethersReceipt.gasUsed.toString(),
-        status: ethersReceipt.status,
-      })
-
-      // Get the current block number
       const baseProvider = provider as BaseProvider
-
       const getUpdatedTransactionDetails = createGetUpdatedTransactionDetails({
         // Fetches the blockNumber, but will reuse any result that is less than 1000ms old
         getBlockNumber: () => baseProvider._getInternalBlockNumber(ONE_SECOND_MS),
         isPrivateRpc: isPrivateRpc(provider),
       })
 
-      // Update the transaction with the hash and populated request
-      let updatedTransaction = await getUpdatedTransactionDetails({
-        transaction: unsubmittedTransaction,
-        hash: ethersReceipt.transactionHash,
-        timestampBeforeSign,
-        timestampBeforeSend,
-        populatedRequest: request.request,
-      })
+      logger.debug('TransactionService', 'submitTransactionSync', 'Calling sendTransactionSync...')
 
-      // Process the transaction receipt to get the final transaction details
-      updatedTransaction = processTransactionReceipt({
-        ethersReceipt,
-        transaction: updatedTransaction,
-      })
+      try {
+        // Send the transaction using the sync method via the transaction signer service
+        const ethersReceipt = await ctx.transactionSigner.sendTransactionSync({ signedTx: request.signedRequest })
 
-      return {
-        updatedTransaction,
-        skipProcessing: true,
+        logger.debug('TransactionService', 'submitTransactionSync', 'Sync tx completed with receipt:', {
+          transactionHash: ethersReceipt.transactionHash,
+          blockNumber: ethersReceipt.blockNumber,
+          gasUsed: ethersReceipt.gasUsed.toString(),
+          status: ethersReceipt.status,
+        })
+
+        // Update the transaction with the hash and populated request
+        let updatedTransaction = await getUpdatedTransactionDetails({
+          transaction: unsubmittedTransaction,
+          hash: ethersReceipt.transactionHash,
+          timestampBeforeSign,
+          timestampBeforeSend,
+          populatedRequest: request.request,
+        })
+
+        // Process the transaction receipt to get the final transaction details
+        updatedTransaction = processTransactionReceipt({
+          ethersReceipt,
+          transaction: updatedTransaction,
+        })
+
+        return {
+          updatedTransaction,
+          skipProcessing: true,
+        }
+      } catch (error) {
+        // eth_sendRawTransactionSync can land the tx on-chain yet still surface a "nonce too low" /
+        // "already known" error when an internal retry re-sends the raw tx and the node rejects the
+        // duplicate. The deterministic hash being known on-chain is the source of truth: recover as
+        // Pending and let the watcher resolve the real status. Otherwise our tx isn't on-chain (a
+        // different tx took the nonce, or it never landed) — rethrow to finalize Failed.
+        const hash = utils.keccak256(request.signedRequest)
+        const knownOnChainTx = await baseProvider.getTransaction(hash).catch(() => null)
+        if (!knownOnChainTx) {
+          throw error
+        }
+
+        logger.warn(
+          'TransactionService',
+          'submitTransactionSync',
+          'Sync submit errored but tx is known on-chain; treating as pending and deferring to watcher',
+          {
+            category: error instanceof Error ? getRPCErrorCategory(error) : 'unknown',
+            errorMessage: error instanceof Error ? error.message : String(error),
+          },
+        )
+
+        const submittedTransaction = await getUpdatedTransactionDetails({
+          transaction: unsubmittedTransaction,
+          hash,
+          timestampBeforeSign,
+          timestampBeforeSend,
+          populatedRequest: request.request,
+        })
+
+        return {
+          updatedTransaction: submittedTransaction,
+          skipProcessing: false,
+        }
       }
     }
 
@@ -414,6 +473,10 @@ export function createTransactionService(ctx: {
             paymasterServiceContext,
             chainId,
           })
+
+          if (!userOpReadyToSign.paymaster) {
+            throw new GasSponsorshipNotAppliedError('sponsored userOp returned without paymaster fields')
+          }
         }
 
         // Step 2: Sign (EIP-712 + Calibur encoding). The 7702 auth is bundled into the 4337

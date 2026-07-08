@@ -1,3 +1,4 @@
+import { SharedEventName } from '@uniswap/analytics-events'
 import { PositionStatus, ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useCallback, useMemo, useState } from 'react'
@@ -9,6 +10,9 @@ import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { StatusIndicatorCircle } from 'ui/src/components/icons/StatusIndicatorCircle'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { lpStatusConfig } from 'uniswap/src/features/positions/lpStatusConfig'
+import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { Dropdown } from '~/components/Dropdowns/Dropdown'
 import { LP_POSITION_PROTOCOL_VERSIONS, LP_POSITION_STATUS_FILTER_OPTIONS } from '~/features/Liquidity/constants'
 import {
@@ -64,6 +68,7 @@ export function PositionsHeader({
 }: PositionsHeaderProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const trace = useTrace()
   const media = useMedia()
   const isAddLiquidityRevamp = useFeatureFlag(FeatureFlags.AddLiquidityRevamp)
   const shouldStackControlsAtMd = stackControlsAt === 'md'
@@ -82,12 +87,17 @@ export function PositionsHeader({
 
   const navigateToCreatePosition = useCallback(
     (protocolVersion?: CreatePositionProtocolVersion) => {
+      sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
+        element: ElementName.CreatePositionButton,
+        protocol_version: protocolVersion ?? 'v4',
+        ...trace,
+      })
       const result = navigate(getCreatePositionHref(protocolVersion))
       if (result) {
         result.catch(() => undefined)
       }
     },
-    [getCreatePositionHref, navigate],
+    [getCreatePositionHref, navigate, trace],
   )
 
   const statusFilterOptions = useMemo(() => {

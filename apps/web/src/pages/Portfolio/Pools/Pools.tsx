@@ -1,5 +1,5 @@
 import { PositionStatus, ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { FeatureFlags, useFeatureFlag, useFeatureFlagWithExposureLoggingDisabled } from '@universe/gating'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Anchor, Flex, Text, TouchableArea, useMedia } from 'ui/src'
@@ -7,7 +7,10 @@ import { Pools } from 'ui/src/components/icons/Pools'
 import { BaseCard } from 'uniswap/src/components/BaseCard/BaseCard'
 import { PortfolioBalancePart } from 'uniswap/src/data/rest/getWalletBalances/getWalletBalances'
 import { usePortfolioBalancePart } from 'uniswap/src/features/dataApi/balances/usePortfolioBalancePart'
+import { PoolsDataIssueBanner } from 'uniswap/src/features/portfolio/pools/PoolsDataIssueBanner'
+import { usePoolsOutageBanner } from 'uniswap/src/features/portfolio/pools/usePoolsOutageBanner'
 import { PortfolioBalance } from 'uniswap/src/features/portfolio/PortfolioBalance/PortfolioBalance'
+import { usePoolsPositionsReport } from 'uniswap/src/features/positions/hooks/usePoolsPositionsReport'
 import type { PositionInfo } from 'uniswap/src/features/positions/types'
 import { sortPositionsByStatusClosedLast } from 'uniswap/src/features/positions/utils'
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants'
@@ -75,6 +78,8 @@ export function PortfolioPools() {
   const { evmAddress: resolvedEvmAddress, svmAddress: resolvedSvmAddress } = useResolvedAddresses()
   const { chainId, externalAddress } = usePortfolioRoutes()
   const isLpIncentivesEnabled = useFeatureFlag(FeatureFlags.LpIncentives)
+  const portfolioPoolsBalancesEnabled = useFeatureFlagWithExposureLoggingDisabled(FeatureFlags.PortfolioPoolsBalances)
+  const outageBanner = usePoolsOutageBanner({ evmAddress, chainId, enabled: portfolioPoolsBalancesEnabled })
   const media = useMedia()
   const { ref: positionsListRef, height: positionStackHeight } = useResizeObserver<HTMLElement>()
   const twoColumnFeeCardMaxHeight = positionStackHeight
@@ -113,11 +118,20 @@ export function PortfolioPools() {
     hasErrorWithoutData,
     refetch,
     loadMorePositions,
+    pagesLoaded,
   } = useWalletPositionsWeb({
     address: evmAddress,
     chainFilter: chainId ?? null,
     versionFilter: LP_POSITION_PROTOCOL_VERSIONS,
     statusFilter: LP_POSITION_STATUS_FILTER_OPTIONS,
+  })
+
+  usePoolsPositionsReport({
+    positions: visiblePositions,
+    pagesLoaded,
+    hasMore: hasNextPage,
+    isLoading: isLoadingPositions,
+    enabled: !!evmAddress,
   })
 
   const { data: poolsBalance } = usePortfolioBalancePart({
@@ -258,6 +272,11 @@ export function PortfolioPools() {
         </Flex>
         <Flex row gap="$spacing24" alignItems="flex-start" $xl={{ flexDirection: 'column-reverse' }}>
           <Flex grow shrink width="100%" maxWidth={POSITIONS_LIST_MAX_WIDTH} $xl={{ maxWidth: '100%' }}>
+            {outageBanner.isVisible && (
+              <Flex mb="$spacing16">
+                <PoolsDataIssueBanner message={outageBanner.message} onDismiss={outageBanner.onDismiss} />
+              </Flex>
+            )}
             <Flex ref={positionsListRef}>{renderListContent()}</Flex>
             {!isExternalWallet && (
               <Flex

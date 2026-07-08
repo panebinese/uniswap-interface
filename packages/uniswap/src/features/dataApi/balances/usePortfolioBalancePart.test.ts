@@ -54,6 +54,8 @@ vi.mock('uniswap/src/utils/usePlatformBasedFetchPolicy', () => ({
 vi.mock('@universe/gating', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@universe/gating')>()),
   useFeatureFlag: mockUseFeatureFlag,
+  // useWalletBalancesIncludeCategories reads the pools flag via the exposure-disabled variant.
+  useFeatureFlagWithExposureLoggingDisabled: mockUseFeatureFlag,
 }))
 
 // `useGetWalletBalancesQuery` returns a shape compatible with `UseQueryResult`. The hook reads
@@ -101,6 +103,7 @@ describe(usePortfolioBalancePart, () => {
           total: { valueUsd: 1300, percentChange1d: 3, absoluteChange1d: 100 },
           tokens: { valueUsd: 1000, percentChange1d: 2, absoluteChange1d: 50 },
           pools: { valueUsd: 300, percentChange1d: 5, absoluteChange1d: 50 },
+          failedChainIds: [],
         },
       }
       return makeQueryResult(select ? select(rawResponse) : rawResponse)
@@ -190,6 +193,7 @@ describe(usePortfolioBalancePart, () => {
           total: { valueUsd: 1300, percentChange1d: 3, absoluteChange1d: 100 },
           tokens: { valueUsd: 1000, percentChange1d: 2, absoluteChange1d: 50 },
           pools: { valueUsd: 300, percentChange1d: 5, absoluteChange1d: 50 },
+          failedChainIds: [],
         },
       }
       let lastSelect: ((data: unknown) => unknown) | undefined
@@ -318,6 +322,18 @@ describe(usePortfolioBalancePart, () => {
       expect(mockUseGetWalletBalancesQuery).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false }))
     })
 
+    it('forwards cacheOnly so readers can watch the cache without fetching', () => {
+      renderHookWithProviders(() =>
+        usePortfolioBalancePart({
+          part: PortfolioBalancePart.Total,
+          evmAddress: '0x123',
+          cacheOnly: true,
+        }),
+      )
+
+      expect(mockUseGetWalletBalancesQuery).toHaveBeenLastCalledWith(expect.objectContaining({ cacheOnly: true }))
+    })
+
     it('still forwards the modifier when the query is disabled', () => {
       // All observers for an address share one query (modifier is excluded from the key), so a disabled
       // observer must keep forwarding the modifier or it clobbers the shared queryFn for the others.
@@ -413,6 +429,7 @@ describe(usePortfolioBalanceBreakdown, () => {
           total: { valueUsd: 1300, percentChange1d: 3, absoluteChange1d: 100 },
           tokens: { valueUsd: 1000, percentChange1d: 2, absoluteChange1d: 50 },
           pools: { valueUsd: 300, percentChange1d: 5, absoluteChange1d: 50 },
+          failedChainIds: [],
         },
       }
       return makeQueryResult(select ? select(rawResponse) : rawResponse)
@@ -423,6 +440,7 @@ describe(usePortfolioBalanceBreakdown, () => {
     total: { balanceUSD: 1300, percentChange: 3, absoluteChangeUSD: 100 },
     tokens: { balanceUSD: 1000, percentChange: 2, absoluteChangeUSD: 50 },
     pools: { balanceUSD: 300, percentChange: 5, absoluteChangeUSD: 50 },
+    failedChainIds: [],
   }
 
   it('enables the query and returns the full breakdown with [POOLS] in requestedCategories when the flag is on', () => {

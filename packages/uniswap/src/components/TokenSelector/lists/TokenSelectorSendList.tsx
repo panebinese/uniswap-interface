@@ -16,6 +16,7 @@ import { OnSelectCurrency, TokenSectionsHookProps } from 'uniswap/src/components
 function useTokenSectionsForSend({
   addresses,
   chainFilter,
+  chainIds,
 }: Omit<TokenSectionsHookProps, 'variation'>): GqlResult<OnchainItemSection<TokenOption>[]> {
   const { t } = useTranslation()
   const portfolioData = usePortfolioBalancesForAddressById(addresses)
@@ -25,7 +26,7 @@ function useTokenSectionsForSend({
     error: portfolioTokenOptionsError,
     refetch: refetchPortfolioTokenOptions,
     loading: portfolioTokenOptionsLoading,
-  } = usePortfolioTokenOptions({ chainFilter, includeHidden: true, portfolioData })
+  } = usePortfolioTokenOptions({ chainFilter, chainIds, includeHidden: true, portfolioData })
   const [hiddenTokensExpanded, setHiddenTokensExpanded] = useState(false)
   const expandoElement = useMemo(() => {
     const hiddenTokensCount = hiddenPortfolioTokenOptions?.length ?? 0
@@ -115,6 +116,7 @@ function EmptyList({ onEmptyActionPress }: { onEmptyActionPress?: () => void }):
 function TokenSelectorSendListInner({
   addresses,
   chainFilter,
+  chainIds,
   onSelectCurrency,
   onEmptyActionPress,
   renderedInModal,
@@ -131,6 +133,7 @@ function TokenSelectorSendListInner({
   } = useTokenSectionsForSend({
     addresses,
     chainFilter,
+    chainIds,
   })
   const emptyElement = useMemo(() => <EmptyList onEmptyActionPress={onEmptyActionPress} />, [onEmptyActionPress])
 

@@ -34,10 +34,13 @@ vi.mock('uniswap/src/features/dataApi/balances/balancesRest', async (importOrigi
 
 vi.mock('@universe/gating', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@universe/gating')>()
+  const readPoolsFlag = (flag: FeatureFlags): boolean =>
+    flag === FeatureFlags.PortfolioPoolsBalances ? mockPoolsFlagEnabled.value : false
   return {
     ...actual,
-    useFeatureFlag: (flag: FeatureFlags) =>
-      flag === FeatureFlags.PortfolioPoolsBalances ? mockPoolsFlagEnabled.value : false,
+    useFeatureFlag: readPoolsFlag,
+    // useWalletBalancesIncludeCategories reads the pools flag via the exposure-disabled variant.
+    useFeatureFlagWithExposureLoggingDisabled: readPoolsFlag,
   }
 })
 

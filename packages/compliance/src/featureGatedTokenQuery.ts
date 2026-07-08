@@ -5,6 +5,7 @@ import {
   fetchFeatureGatedToken,
   setTokenAcknowledgement,
 } from '@universe/compliance/src/client'
+import { useTokenReasonsOverride } from '@universe/compliance/src/devComplianceOverride'
 import { useComplianceClient } from '@universe/compliance/src/useComplianceClient'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { ONE_MINUTE_MS } from 'utilities/src/time/time'
@@ -22,11 +23,17 @@ export function useTokenComplianceStatus(token: ComplianceTokenInput | undefined
   isLoading: boolean
 } {
   const client = useComplianceClient()
+  // Dev-only override (see devComplianceOverride); no-op in prod.
+  const override = useTokenReasonsOverride()
+  const isOverridden = token !== undefined && override !== undefined
   const { data, isLoading } = useQuery({
     queryKey: [ReactQueryCacheKey.Compliance, 'featureGatedToken', token?.chainId, token?.address],
-    queryFn: token ? () => fetchFeatureGatedToken(client, token) : skipToken,
+    queryFn: token && !isOverridden ? () => fetchFeatureGatedToken(client, token) : skipToken,
     staleTime: FIVE_MINUTES_MS,
   })
+  if (isOverridden) {
+    return { reasons: override, isLoading: false }
+  }
   return {
     reasons: data?.reasons ?? [],
     isLoading,

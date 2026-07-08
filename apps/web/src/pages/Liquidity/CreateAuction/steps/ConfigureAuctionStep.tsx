@@ -17,6 +17,7 @@ import { AuctionAdvancedSettings } from '~/pages/Liquidity/CreateAuction/compone
 import { AuctionDistributionSection } from '~/pages/Liquidity/CreateAuction/components/AuctionDistributionSection'
 import { AuctionSupplySection } from '~/pages/Liquidity/CreateAuction/components/AuctionSupplySection'
 import { DurationSection, type DurationSectionHandle } from '~/pages/Liquidity/CreateAuction/components/DurationSection'
+import { LaunchThresholdSection } from '~/pages/Liquidity/CreateAuction/components/LaunchThresholdSection'
 import { PostAuctionLiquiditySection } from '~/pages/Liquidity/CreateAuction/components/PostAuctionLiquiditySection'
 import {
   PriceSettingsSection,
@@ -50,6 +51,10 @@ import {
   percentOfAmount,
 } from '~/pages/Liquidity/CreateAuction/utils'
 import { getMinAuctionStartTimeToProceed } from '~/pages/Liquidity/CreateAuction/utils/duration'
+import {
+  EmissionScheduleError,
+  getAuctionEmissionScheduleError,
+} from '~/pages/Liquidity/CreateAuction/utils/emissionSchedule'
 
 const AUCTION_DISTRIBUTION_TOKEN_LOGO_SIZE = 24
 
@@ -72,6 +77,7 @@ export function ConfigureAuctionStep() {
     addPostAuctionLiquidityTier,
     removePostAuctionLiquidityTier,
     setAuctionConfig,
+    setNewTokenTotalSupply,
     setSinglePostAuctionLiquidityPercent,
     setStartTime,
     setEndTime,
@@ -255,6 +261,25 @@ export function ConfigureAuctionStep() {
   // Floor for the deposit: below this the sold/LP split rounds a leg to zero base units.
   const minAuctionSupplyAmount = minimumAuctionSupplyDeposit(totalSupply.currency, postAuctionLiquidityAllocation)
 
+  // Mirror the backend's emission-schedule derivation: the chosen window is converted to a block span
+  // using the chain's block time, and a too-short window (or one whose per-block rounding overshoots
+  // the supply budget) is rejected with "Emission schedule overshot the supply target" /
+  // "Auction window is too short". Catch both before submit and surface them on the duration picker.
+  const emissionScheduleError = getAuctionEmissionScheduleError({
+    startTime,
+    endTime,
+    chainId: totalSupply.currency.chainId,
+  })
+  const emissionScheduleErrorMessage =
+    emissionScheduleError === EmissionScheduleError.Overshoot
+      ? t('toucan.createAuction.step.configureAuction.duration.emissionOvershoot.error')
+      : emissionScheduleError === EmissionScheduleError.WindowTooShort
+        ? t('toucan.createAuction.step.configureAuction.duration.windowTooShort.error')
+        : undefined
+
+  // Block advancing when the chosen window can't produce a valid emission schedule.
+  const continueDisabled = isNextStepDisabled || emissionScheduleError !== undefined
+
   return (
     <Flex gap="$spacing16">
       <TokenSummaryCard {...tokenSummaryCardProps} onEdit={goToPreviousStep} />
@@ -276,6 +301,7 @@ export function ConfigureAuctionStep() {
             ref={durationSectionRef}
             startTime={startTime}
             endTime={endTime}
+            scheduleError={emissionScheduleErrorMessage}
             onChange={handleDurationChange}
           />
 
@@ -285,8 +311,10 @@ export function ConfigureAuctionStep() {
             maxAuctionSupplyAmount={maxAuctionSupplyAmount ?? totalSupply}
             minAuctionSupplyAmount={minAuctionSupplyAmount}
             tokenSymbol={tokenSymbol}
+            isNewToken={!isExistingToken}
             onSelectAuctionSupplyPercent={handleAuctionSupplyPercentChange}
             onAuctionSupplyAmountChange={handleAuctionSupplyAmountChange}
+            onTotalSupplyChange={setNewTokenTotalSupply}
           />
 
           <PriceSettingsSection
@@ -332,6 +360,16 @@ export function ConfigureAuctionStep() {
               tokenLogoNode={auctionDistributionTokenLogo}
             />
           )}
+
+          {postAuctionLiquidityAllocation.type === PostAuctionLiquidityAllocationType.SINGLE && (
+            <LaunchThresholdSection
+              floorPrice={floorPrice}
+              raiseCurrency={raiseCurrency}
+              chainId={totalSupply.currency.chainId}
+              auctionSupplyAmount={auctionSupplyAmount}
+              postAuctionLiquidityAmount={committed.postAuctionLiquidityAmount}
+            />
+          )}
         </Flex>
         <AuctionAdvancedSettings />
       </Flex>
@@ -346,10 +384,10 @@ export function ConfigureAuctionStep() {
             size="medium"
             emphasis="primary"
             onPress={handleContinue}
-            isDisabled={isNextStepDisabled}
+            isDisabled={continueDisabled}
             onDisabledPress={isNextStepDisabled ? handleDisabledContinue : undefined}
             fill
-            backgroundColor={isNextStepDisabled ? undefined : tokenColor}
+            backgroundColor={continueDisabled ? undefined : tokenColor}
           >
             {t('common.button.continue')}
           </Button>

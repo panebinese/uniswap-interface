@@ -3,7 +3,7 @@ import { Flex, Text, TouchableArea } from 'ui/src'
 import { AlertTriangleFilled } from 'ui/src/components/icons/AlertTriangleFilled'
 import { Gas } from 'ui/src/components/icons/Gas'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
-import { SponsoredFee, UniswapXFee } from 'uniswap/src/components/gas/NetworkFee'
+import { SponsoredFeeWithModal, UniswapXFee } from 'uniswap/src/components/gas/NetworkFee'
 import { useGasOverridesWarningState } from 'uniswap/src/features/gas/components/NetworkCostEditor/useGasOverridesWarningState'
 import { useTransactionSettingsStore } from 'uniswap/src/features/transactions/components/settings/stores/transactionSettingsStore/useTransactionSettingsStore'
 import type { GasInfo } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormScreenDetails/SwapFormScreenFooter/GasAndWarningRows/types'
@@ -105,7 +105,7 @@ function CustomGasChip({
   const isGasFeeFree = gasInfo.gasFee.value !== undefined && isZero(gasInfo.gasFee.value)
 
   // Do not render custom gas tap handler for sponsored swaps
-  if (gasInfo.sponsorMetadata) {
+  if (gasInfo.sponsorshipInfo?.sponsorMetadata) {
     return (
       <Flex
         centered
@@ -115,7 +115,11 @@ function CustomGasChip({
         enterStyle={{ opacity: 0 }}
         opacity={gasInfo.isLoading ? 0.6 : 1}
       >
-        <SponsoredFee sponsorMetadata={gasInfo.sponsorMetadata} preSavingsGasFee={gasInfo.fiatPriceFormatted} />
+        <SponsoredFeeWithModal
+          sponsorMetadata={gasInfo.sponsorshipInfo.sponsorMetadata}
+          campaign={gasInfo.sponsorshipInfo.campaign}
+          preSavingsGasFee={gasInfo.fiatPriceFormatted}
+        />
       </Flex>
     )
   }

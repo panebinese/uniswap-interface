@@ -19,7 +19,9 @@ import { BalanceSummary } from '~/pages/TokenDetails/components/balances/Balance
 import { ChartSection } from '~/pages/TokenDetails/components/chart/ChartSection'
 import { TokenDetailsEarnBanner } from '~/pages/TokenDetails/components/earn/TokenDetailsEarnBanner'
 import { TokenDetailsEarnSection } from '~/pages/TokenDetails/components/earn/TokenDetailsEarnSection'
+import { TokenDetailsVaultShareBanner } from '~/pages/TokenDetails/components/earn/TokenDetailsVaultShareBanner'
 import { useTokenDetailsEarnData } from '~/pages/TokenDetails/components/earn/useTokenDetailsEarnData'
+import { useTokenDetailsVaultShareData } from '~/pages/TokenDetails/components/earn/useTokenDetailsVaultShareData'
 import { TDPBreadcrumb } from '~/pages/TokenDetails/components/header/TDPBreadcrumb'
 import { TokenDetailsHeader } from '~/pages/TokenDetails/components/header/TokenDetailsHeader'
 import { BridgedAssetSection } from '~/pages/TokenDetails/components/info/BridgedAssetSection'
@@ -67,6 +69,7 @@ export function TokenDetailsContent({ isCompact }: { isCompact: boolean }) {
   const showEarn = isEarnEnabled && !isTestnetModeEnabled
 
   const earnData = useTokenDetailsEarnData({ enabled: showEarn, tokenQueryData })
+  const vaultShareData = useTokenDetailsVaultShareData({ enabled: showEarn, tokenQueryData })
   const showRightTokenInfo = isDesktop && (showTokenInfo || earnData.userHasEarnPosition)
 
   const chainLabel = getChainLabel(chainId)
@@ -96,6 +99,7 @@ export function TokenDetailsContent({ isCompact }: { isCompact: boolean }) {
       <StickyCollapsibleHeader isCompact={isCompact}>
         <TokenDetailsHeader isCompact={isCompact} />
       </StickyCollapsibleHeader>
+      {showEarn && <TokenDetailsVaultShareBanner vaultShareData={vaultShareData} />}
       <TokenDetailsLayout>
         <LeftPanel gap="$spacing40" $lg={{ gap: '$gap32' }}>
           <ChartSection />

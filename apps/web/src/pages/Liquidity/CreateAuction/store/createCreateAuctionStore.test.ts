@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { tryParseCurrencyAmount } from '~/lib/utils/tryParseCurrencyAmount'
 import { getCustomPriceRangeLiquidityTotal } from '~/pages/Liquidity/CreateAuction/customPriceRanges'
 import { createCreateAuctionStore } from '~/pages/Liquidity/CreateAuction/store/createCreateAuctionStore'
 import {
@@ -9,6 +10,7 @@ import {
   MAX_POST_AUCTION_LIQUIDITY_TIERS,
   PostAuctionLiquidityAllocationType,
   PriceRangeStrategy,
+  TokenMode,
 } from '~/pages/Liquidity/CreateAuction/types'
 import { percentOfSoldToLiquidityFromDepositAndLiquidityAmount } from '~/pages/Liquidity/CreateAuction/utils'
 
@@ -22,6 +24,29 @@ describe('createCreateAuctionStore', () => {
       throw new Error('expected single allocation')
     }
     expect(allocation.percent).toBe(100)
+  })
+
+  it('setNewTokenTotalSupply rescales committed amounts, preserving the deposit fraction', () => {
+    const store = createCreateAuctionStore()
+    const { actions } = store.getState()
+    actions.commitTokenFormAndAdvance()
+
+    const initial = store.getState().configureAuction.committed!
+    expect(initial.totalSupply.toExact()).toBe('1000000000')
+    const currency = initial.totalSupply.currency
+
+    // Deposit 50% of supply (500M of 1B).
+    actions.setAuctionConfig({ auctionSupplyAmount: tryParseCurrencyAmount('500000000', currency)! })
+
+    // Bump total supply to 10B; the 50% deposit fraction is preserved (-> 5B).
+    actions.setNewTokenTotalSupply(tryParseCurrencyAmount('10000000000', currency)!)
+
+    const committed = store.getState().configureAuction.committed!
+    expect(committed.totalSupply.toExact()).toBe('10000000000')
+    expect(committed.auctionSupplyAmount.toExact()).toBe('5000000000')
+
+    const tokenForm = store.getState().tokenForm
+    expect(tokenForm.mode === TokenMode.CREATE_NEW && tokenForm.totalSupply.toExact()).toBe('10000000000')
   })
 
   it('persists the user-entered floor price display value with the canonical floor price', () => {

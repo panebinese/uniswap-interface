@@ -20,12 +20,14 @@ import { isWSOL } from 'uniswap/src/utils/isWSOL'
 export function useTokenSectionsForSearchResults({
   addresses,
   chainFilter,
+  chainIds,
   searchFilter,
   isBalancesOnlySearch,
   input,
 }: {
   addresses: AddressGroup
   chainFilter: UniverseChainId | null
+  chainIds: UniverseChainId[]
   searchFilter: string | null
   isBalancesOnlySearch: boolean
   input?: TradeableAsset
@@ -45,7 +47,7 @@ export function useTokenSectionsForSearchResults({
     error: portfolioTokenOptionsError,
     refetch: refetchPortfolioTokenOptions,
     loading: portfolioTokenOptionsLoading,
-  } = usePortfolioTokenOptions({ chainFilter, searchFilter: searchFilter ?? undefined, portfolioData })
+  } = usePortfolioTokenOptions({ chainFilter, chainIds, searchFilter: searchFilter ?? undefined, portfolioData })
 
   // Bridging tokens are only shown if input is provided
   const {
@@ -53,7 +55,7 @@ export function useTokenSectionsForSearchResults({
     error: bridgingTokenOptionsError,
     refetch: refetchBridgingTokenOptions,
     loading: bridgingTokenOptionsLoading,
-  } = useBridgingTokensOptions({ oppositeSelectedToken: input, chainFilter, portfolioData })
+  } = useBridgingTokensOptions({ oppositeSelectedToken: input, chainFilter, chainIds, portfolioData })
 
   // Only call search endpoint if isBalancesOnlySearch is false
   const {
@@ -64,6 +66,7 @@ export function useTokenSectionsForSearchResults({
   } = useMultichainSearchTokens({
     searchQuery: searchFilter,
     chainFilter,
+    chainIds,
     skip: isBalancesOnlySearch,
   })
 

@@ -146,7 +146,7 @@ export const PortfolioTokens = memo(function PortfolioTokens() {
   const hasFilteredTokens = (filteredTokenData?.length ?? 0) > 0 || filteredHiddenTokenData.length > 0
 
   return (
-    <RemoveScroll enabled={loading}>
+    <RemoveScroll enabled={loading && !refetching}>
       <Trace logImpression page={InterfacePageName.PortfolioTokensPage} properties={{ isExternal: isExternalWallet }}>
         <Flex flexDirection="column" gap="$spacing16">
           <Flex

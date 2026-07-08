@@ -16,10 +16,13 @@ const mockPortfolioBreakdown = vi.hoisted(
 vi.mock('@universe/gating', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@universe/gating')>()
 
+  const readPoolsFlag = (flag: FeatureFlags): boolean =>
+    flag === FeatureFlags.PortfolioPoolsBalances ? mockPortfolioPoolsBalancesEnabled.value : false
   return {
     ...actual,
-    useFeatureFlag: (flag: FeatureFlags) =>
-      flag === FeatureFlags.PortfolioPoolsBalances ? mockPortfolioPoolsBalancesEnabled.value : false,
+    useFeatureFlag: readPoolsFlag,
+    // useWalletBalancesIncludeCategories reads the pools flag via the exposure-disabled variant.
+    useFeatureFlagWithExposureLoggingDisabled: readPoolsFlag,
   }
 })
 
@@ -150,6 +153,7 @@ describe('PortfolioOverview', () => {
       total: { balanceUSD: 15741.99, percentChange: 3.72, absoluteChangeUSD: 564.23 },
       tokens: { balanceUSD: 8368.94, percentChange: -6.09, absoluteChangeUSD: -510 },
       pools: { balanceUSD: 7373.05, percentChange: 1.02, absoluteChangeUSD: 75 },
+      failedChainIds: [],
     }
 
     render(<PortfolioOverview />)

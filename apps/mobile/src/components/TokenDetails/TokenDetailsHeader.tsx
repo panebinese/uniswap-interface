@@ -1,6 +1,7 @@
 import { FeatureFlags } from '@universe/gating'
 import React, { memo } from 'react'
 import { useSelector } from 'react-redux'
+import { getRWAHeaderIdentity } from 'src/components/TokenDetails/getRWAHeaderIdentity'
 import { RWAIssuerHeaderDetails } from 'src/components/TokenDetails/rwa/RWAIssuerHeaderDetails'
 import { useTokenDetailsContext } from 'src/components/TokenDetails/TokenDetailsContext'
 import { useFeatureFlaggedProjectTokens } from 'src/components/TokenDetails/useFeatureFlaggedProjectTokens'
@@ -42,8 +43,11 @@ export const TokenDetailsHeader = memo(function TokenDetailsHeaderInner(): JSX.E
   // until the project fragment confirms — otherwise we briefly show the chain-specific name (e.g. "USDC.e")
   // before swapping to the canonical project name.
   const shouldWaitForProject = initialIsMultichainAsset && !projectTokensLoaded
-  const tokenName = rwaMatch ? rwaMatch.asset.name || rwaMatch.asset.symbol : token.name
-  const logoUrl = rwaMatch?.asset.icon ?? project?.logoUrl ?? undefined
+  const { name: tokenName, logoUrl } = getRWAHeaderIdentity({
+    rwaMatch,
+    fallbackName: token.name ?? undefined,
+    logoUrl: project?.logoUrl ?? undefined,
+  })
 
   const handleCopyAddress = async (): Promise<void> => {
     if (!token.address) {

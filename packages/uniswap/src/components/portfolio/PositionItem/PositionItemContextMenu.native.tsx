@@ -8,7 +8,10 @@ import { borderRadii } from 'ui/src/theme'
 import type { PositionItemContextMenuProps } from 'uniswap/src/components/portfolio/PositionItem/PositionItemContextMenu'
 import { useReportPositionAction } from 'uniswap/src/features/positions/hooks/useReportPositionAction'
 import { useTogglePositionVisibility } from 'uniswap/src/features/positions/hooks/useTogglePositionVisibility'
+import { ElementName, SectionName, UniswapEventName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { noop } from 'utilities/src/react/noop'
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 
 type NativeMenuAction = {
   label: string
@@ -25,6 +28,7 @@ export function PositionItemContextMenu({
   onRowPress,
 }: PropsWithChildren<PositionItemContextMenuProps>): JSX.Element {
   const { t } = useTranslation()
+  const trace = useTrace()
   const reportPosition = useReportPositionAction({ onSuccess: onReportSuccess, showReportedNotification: true })
   const togglePositionVisibility = useTogglePositionVisibility()
 
@@ -60,9 +64,21 @@ export function PositionItemContextMenu({
 
   const onContextMenuPress = useCallback(
     (e: { nativeEvent: ContextMenuOnPressNativeEvent }): void => {
-      menuActions[e.nativeEvent.index]?.onPress()
+      const index = e.nativeEvent.index
+      const action = menuActions[index]
+      if (!action) {
+        return
+      }
+      sendAnalyticsEvent(UniswapEventName.ContextMenuItemClicked, {
+        element: ElementName.LiquidityPositionContextMenu,
+        section: SectionName.PortfolioPoolsTab,
+        menu_item: action.label,
+        menu_item_index: index,
+        ...trace,
+      })
+      action.onPress()
     },
-    [menuActions],
+    [menuActions, trace],
   )
 
   const style = useMemo(() => ({ borderRadius: borderRadii.rounded16 }), [])

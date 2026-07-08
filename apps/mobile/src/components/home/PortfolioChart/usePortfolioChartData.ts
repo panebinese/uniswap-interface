@@ -1,10 +1,11 @@
 import { type PlainMessage } from '@bufbuild/protobuf'
-import { ChartPeriod, type ChartPoint } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { ChartPeriod, type ChartPoint, WalletBalanceCategory } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { useEffect, useMemo } from 'react'
 import { type ChartData } from 'src/components/home/PortfolioChart/SparklineChart'
 import { useSporeColors } from 'ui/src'
 import { useGetPortfolioHistoricalValueChartQuery } from 'uniswap/src/data/rest/getPortfolioChart'
 import { useWalletBalancesIncludeCategories } from 'uniswap/src/data/rest/getWalletBalances/getWalletBalances'
+import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/useRestPortfolioValueModifier'
 import { logger } from 'utilities/src/logger/logger'
 
 // API returns timestamps as bigint in seconds.
@@ -35,6 +36,7 @@ export function usePortfolioChartData({
 } {
   const colors = useSporeColors()
   const includeCategories = useWalletBalancesIncludeCategories()
+  const portfolioValueModifier = useRestPortfolioValueModifier(evmAddress)
 
   const {
     data: chartResponse,
@@ -47,6 +49,10 @@ export function usePortfolioChartData({
       chartPeriod,
       chainIds,
       includeCategories,
+      ...(includeCategories.includes(WalletBalanceCategory.POOLS) && {
+        poolIncludeOverrides: portfolioValueModifier?.poolIncludeOverrides,
+        poolExcludeOverrides: portfolioValueModifier?.poolExcludeOverrides,
+      }),
     },
     enabled: enabled && !!evmAddress,
   })

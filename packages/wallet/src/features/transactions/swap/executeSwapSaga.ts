@@ -6,7 +6,7 @@ import { CAIP25Session } from 'uniswap/src/features/capabilities/caip25/types'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
-import { SwapEventName } from 'uniswap/src/features/telemetry/constants'
+import { SwapEventName, WalletEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { type SwapTradeBaseProperties } from 'uniswap/src/features/telemetry/types'
 import { transactionActions } from 'uniswap/src/features/transactions/slice'
@@ -252,6 +252,16 @@ export function createExecuteSwapSaga(
 ) {
   return function* executeSwap(params: SwapParams) {
     const userSubmissionTimestampMs = Date.now()
+    // SWAP-2471: always-on window marker for the concurrency-race signature (H4). executeSwap is dispatched
+    // serially, so two executeSwap runs can't overlap; this only surfaces overlaps involving executePlan
+    // (which runs in parallel). chainId is not yet known here.
+    yield* call(sendAnalyticsEvent, WalletEventName.SwapExecutionWindow, {
+      saga: 'executeSwap',
+      phase: 'start',
+      address: params.address,
+      tx_id: params.txId,
+      timestamp_ms: Date.now(),
+    })
     try {
       const { address, txId, analytics, onSuccess, onFailure, onPending, swapTxContext } = params
 
@@ -461,6 +471,14 @@ export function createExecuteSwapSaga(
       dependencies.logger.error(error, {
         tags: { file: 'executeSwapSaga', function: 'executeSwap' },
         extra: { analytics: params.analytics },
+      })
+    } finally {
+      yield* call(sendAnalyticsEvent, WalletEventName.SwapExecutionWindow, {
+        saga: 'executeSwap',
+        phase: 'end',
+        address: params.address,
+        tx_id: params.txId,
+        timestamp_ms: Date.now(),
       })
     }
   }

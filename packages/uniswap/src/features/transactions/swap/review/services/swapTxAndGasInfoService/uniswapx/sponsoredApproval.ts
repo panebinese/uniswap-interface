@@ -2,7 +2,10 @@ import { TradingApi } from '@universe/api'
 import { FeatureFlags, getFeatureFlag } from '@universe/gating'
 import { TradingApiClient } from 'uniswap/src/data/apiClients/tradingApi/TradingApiClient'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
-import type { SwapDelegationInfo } from 'uniswap/src/features/smartWallet/delegation/types'
+import type {
+  SignDelegationAuthorizationFn,
+  SwapDelegationInfo,
+} from 'uniswap/src/features/smartWallet/delegation/types'
 import { transformTradingApiUserOpToRpcUserOp } from 'uniswap/src/features/smartWallet/userOp/transformTradingApiUserOp'
 import { SponsoredApprovalRejectedError } from 'uniswap/src/features/transactions/errors'
 import type { ApprovalTxInfo } from 'uniswap/src/features/transactions/swap/review/hooks/useTokenApprovalInfo'
@@ -76,9 +79,11 @@ function createWebUniswapXSponsoredApprovalStrategy(ctx: {
 // Wallet (4337): gate on delegation up front, then ask check_approval_4337 for a sponsored approval UserOp.
 function createWalletUniswapXSponsoredApprovalStrategy(ctx: {
   getSwapDelegationInfo?: (chainId: UniverseChainId | undefined) => SwapDelegationInfo
+  signDelegationAuthorization?: SignDelegationAuthorizationFn
 }): FetchUniswapXSponsoredApproval {
   return async ({ trade, approvalTxInfo }) => {
     const chainId = trade.inputAmount.currency.chainId
+    const sender = trade.quote.quote.orderInfo.swapper
 
     // Gate 1 (capability)
     const sponsorshipInfo = trade.quote.sponsorshipInfo
@@ -92,16 +97,29 @@ function createWalletUniswapXSponsoredApprovalStrategy(ctx: {
 
     // Capable → we attempt sponsorship. From here, any failure to obtain a grant is `rejected`, never a silent on-chain downgrade.
     try {
-      // TODO(review): CheckApproval4337Request not yet in the OpenAPI spec (BE-owned); fields mirror ApprovalRequest. Cast until the schema lands.
+      // When this approval activates the delegation (first sponsored tx on an undelegated
+      // account), sign the 7702 authorization up front so the backend's paymaster + bundler
+      // simulation runs against a delegated account. The signed auth round-trips back on the
+      // returned UserOp, so the later signUserOp step reuses it. Already-delegated accounts
+      // need no auth (the code is on-chain), so we only sign on delegationInclusion.
+      const eip7702Auth =
+        delegationInfo?.delegationInclusion && delegationInfo.delegationAddress
+          ? await ctx.signDelegationAuthorization?.({
+              chainId,
+              sender,
+              delegationAddress: delegationInfo.delegationAddress,
+            })
+          : undefined
+
       const response = await TradingApiClient.fetchCheckApproval4337({
-        sender: trade.quote.quote.orderInfo.swapper,
+        sender,
         token: trade.inputAmount.currency.wrapped.address,
         amount: trade.inputAmount.quotient.toString(),
         chainId,
         tokenOut: trade.outputAmount.currency.wrapped.address,
         tokenOutChainId: trade.outputAmount.currency.chainId,
         sponsorshipInfo,
-        // TODO(SWAP-2460): eip7702Auth should be attached BEFORE the paymaster call
+        eip7702Auth,
       })
 
       if (!response.userOperation) {
@@ -133,6 +151,7 @@ function createWalletUniswapXSponsoredApprovalStrategy(ctx: {
 export function createUniswapXSponsoredApprovalStrategy(ctx: {
   getCanBatchTransactions?: (chainId: UniverseChainId | undefined) => boolean
   getSwapDelegationInfo?: (chainId: UniverseChainId | undefined) => SwapDelegationInfo
+  signDelegationAuthorization?: SignDelegationAuthorizationFn
   gasOverrides?: TradingApi.UrgencyOverrides
 }): FetchUniswapXSponsoredApproval {
   const web = createWebUniswapXSponsoredApprovalStrategy(ctx)

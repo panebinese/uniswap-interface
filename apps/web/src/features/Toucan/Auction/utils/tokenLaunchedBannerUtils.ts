@@ -46,6 +46,23 @@ export function isTokenLaunchTradeAvailable({
   )
 }
 
+interface IsTokenLaunchTradeLiveParams {
+  // Whether the auction status (graduation / LBP migration / claim block) permits trading.
+  isTradeAvailableFromStatus: boolean
+  // Whether a live market price exists for the launched token, i.e. a pool with liquidity is
+  // actually trading. Status can report "tradeable" while no pool exists — e.g. a graduated
+  // auction that committed 0% to LP never creates a pool — so a live price is required before
+  // we surface "Trade now" and link out to the (otherwise un-tradeable) token page.
+  hasLiveMarketPrice: boolean
+}
+
+export function isTokenLaunchTradeLive({
+  isTradeAvailableFromStatus,
+  hasLiveMarketPrice,
+}: IsTokenLaunchTradeLiveParams): boolean {
+  return isTradeAvailableFromStatus && hasLiveMarketPrice
+}
+
 interface GetTokenLaunchTradeAvailabilityBlockParams {
   claimBlock: string | undefined
   hasLbpStrategyAddress: boolean

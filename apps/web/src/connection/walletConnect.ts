@@ -2,6 +2,7 @@ import { isWebAndroid, isWebIOS } from '@universe/environment'
 import { zIndexes } from 'ui/src/theme'
 import { type CreateConnectorFn, createConnector } from 'wagmi'
 import { walletConnect } from 'wagmi/connectors'
+import UNIWALLET_ICON from '~/assets/wallets/uniswap-wallet-icon.png'
 import { getConfig } from '~/config'
 import { instrumentWalletConnectRpc } from '~/connection/instrumentWalletConnectRpc'
 
@@ -52,6 +53,9 @@ export function uniswapWalletConnect(): CreateConnectorFn {
       const wc = walletConnect({
         ...WC_PARAMS,
         showQrModal: false,
+        // Clients sharing the default storage namespace share a relay identity, and the
+        // relay then misroutes responses between them; keep this client isolated.
+        customStoragePrefix: 'uniswapWallet',
       })(config)
 
       config.emitter.on('message', ({ type, data }) => {
@@ -76,7 +80,8 @@ export function uniswapWalletConnect(): CreateConnectorFn {
         id: 'uniswapWalletConnect',
         type: 'uniswapWalletConnect',
         name: 'Uniswap Wallet',
-        icon: 'https://app.uniswap.org/favicon.png',
+        // Branded icon for connected-state UIs (the modal uses its own UniswapBrandedIcon).
+        icon: UNIWALLET_ICON,
       }
     }),
   )

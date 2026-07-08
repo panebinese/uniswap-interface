@@ -1,6 +1,6 @@
 import { isWebApp, isWebPlatform } from '@universe/environment'
 import { memo, ReactNode, useCallback } from 'react'
-import { Flex, FlexProps, Text, TextProps, TouchableArea } from 'ui/src'
+import { Flex, FlexProps, type ModifierPressProps, Text, TextProps, TouchableArea } from 'ui/src'
 import { dismissNativeKeyboard } from 'utilities/src/device/keyboard/dismissNativeKeyboard'
 import { KeyAction } from 'utilities/src/device/keyboard/types'
 import { useIsKeyboardOpen } from 'utilities/src/device/keyboard/useIsKeyboardOpen'
@@ -15,7 +15,7 @@ export interface FocusedRowControl {
   setFocusedRowIndex: (index: number | undefined) => void
 }
 
-export interface OptionItemProps {
+export interface OptionItemProps extends ModifierPressProps {
   image: JSX.Element
   title: string | JSX.Element
   subtitle?: JSX.Element
@@ -54,6 +54,8 @@ function OptionItemInner({
   testID,
   modalInfo,
   focusedRowControl,
+  modifierPressHref,
+  onModifierPress,
 }: OptionItemProps): JSX.Element {
   const isKeyboardOpen = useIsKeyboardOpen()
 
@@ -111,8 +113,10 @@ function OptionItemInner({
         opacity={disabled ? 0.5 : 1}
         width="100%"
         px="$spacing12"
+        modifierPressHref={modifierPressHref}
         onPress={onPressOption}
         onLongPress={onLongPress}
+        onModifierPress={onModifierPress}
       >
         <Flex
           row

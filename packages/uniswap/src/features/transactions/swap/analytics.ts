@@ -390,6 +390,31 @@ export function useSwapAnalytics(derivedSwapInfo: DerivedSwapInfo): void {
   }, [quoteId])
 }
 
+/**
+ * Gas-sponsorship analytics derived from the quote's `sponsorshipInfo`.
+ *
+ * `is_sponsored` mirrors the quote's sponsorship offer, which is how the funnel tracks it:
+ * swap_4337 quotes are always sponsored, and swap_5792 quotes are sponsored when the backend
+ * returns a paymaster. `sponsorship_rejection_reason` is populated when sponsorship was not
+ * granted, and `sponsorship_campaign_id` carries the machine-readable campaign name.
+ */
+export function getSponsorshipAnalyticsProperties(
+  trade: Trade | null | undefined,
+): Pick<SwapTradeBaseProperties, 'is_sponsored' | 'sponsorship_rejection_reason' | 'sponsorship_campaign_id'> {
+  const quote = trade?.quote
+  const sponsorshipInfo = quote && 'sponsorshipInfo' in quote ? quote.sponsorshipInfo : undefined
+
+  if (!sponsorshipInfo) {
+    return {}
+  }
+
+  return {
+    is_sponsored: sponsorshipInfo.sponsored,
+    sponsorship_rejection_reason: sponsorshipInfo.rejectionReason,
+    sponsorship_campaign_id: sponsorshipInfo.campaign?.name,
+  }
+}
+
 // Typing is improved by using the actual return type instead of narrowing to `SwapTradeBaseProperties`
 // oxlint-disable-next-line typescript/explicit-function-return-type
 export function getBaseTradeAnalyticsProperties({
@@ -492,6 +517,7 @@ export function getBaseTradeAnalyticsProperties({
     included_permit_transaction_step: includedPermitTransactionStep,
     includes_delegation: includesDelegation,
     is_smart_wallet_transaction: isSmartWalletTransaction,
+    ...getSponsorshipAnalyticsProperties(trade),
     swap_start_timestamp: swapStartTimestamp,
     is_final_step: isFinalStep,
     is_cross_chain_swap: isNonBridgeCrossChainSwap(trade),
@@ -556,6 +582,7 @@ export function getBaseTradeAnalyticsPropertiesFromSwapInfo({
       input: getTokenProtectionWarning(derivedSwapInfo.currencies.input),
       output: getTokenProtectionWarning(derivedSwapInfo.currencies.output),
     },
+    ...getSponsorshipAnalyticsProperties(trade),
   }
 }
 

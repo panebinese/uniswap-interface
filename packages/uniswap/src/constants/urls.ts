@@ -40,6 +40,7 @@ export const UniswapHelpUrls = {
       '25811698471565-Connecting-Uniswap-Extension-Beta-to-other-dapps',
     ),
     feeOnTransferHelp: createHelpArticleUrl('18673568523789-What-is-a-token-fee-'),
+    gasSponsorship: createHelpArticleUrl('47061440677133'),
     geoRestriction: createHelpArticleUrl('46373846019981'),
     howToSwapTokens: createHelpArticleUrl('8370549680909-How-to-swap-tokens-'),
     hiddenTokenInfo: createHelpArticleUrl('30432674756749-How-to-hide-and-unhide-tokens-in-the-Uniswap-Wallet'),

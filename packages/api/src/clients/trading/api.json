@@ -3441,11 +3441,53 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Display name of the campaign."
+            "description": "Machine-readable campaign identifier."
           },
           "description": {
             "type": "string",
-            "description": "Description of the campaign."
+            "description": "Subheader text for the campaign."
+          },
+          "headline": {
+            "type": "string",
+            "description": "Human-readable headline for the campaign."
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "description": "URL of the campaign's thumbnail image."
+          },
+          "allowances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CampaignAllowance"
+            },
+            "description": "Per-wallet caps and utilization, one entry per dimension (free-swap count and/or cost)."
+          },
+          "eligibleChains": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Chain IDs the campaign covers, for the eligible-chains modal."
+          }
+        }
+      },
+      "CampaignAllowance": {
+        "type": "object",
+        "description": "A per-wallet cap and remaining utilization, e.g. \"5 of 5 free swaps remaining\".",
+        "x-internal": true,
+        "properties": {
+          "unit": {
+            "type": "string",
+            "enum": ["FREE_SWAPS", "USD_CENT"],
+            "description": "Unit the allowance is denominated in."
+          },
+          "total": {
+            "type": "string",
+            "description": "Total per-wallet allowance."
+          },
+          "remaining": {
+            "type": "string",
+            "description": "Allowance still available to this wallet."
           }
         }
       },
@@ -6598,15 +6640,6 @@
           "UNISWAPX_LATEST"
         ],
         "description": "The protocol to use for the swap/order. Use `UNISWAPX_LATEST` to route through the latest UniswapX protocol supported on the request chain."
-      },
-      "ProtocolItemsAmm": {
-        "type": "string",
-        "enum": [
-          "V2",
-          "V3",
-          "V4"
-        ],
-        "description": "The protocol of the pool."
       },
       "ProtocolItemsAmm": {
         "type": "string",

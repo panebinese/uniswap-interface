@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { ChartPeriod, WalletBalanceCategory } from '@uniswap/client-data-api/dist/data/v1/api_pb'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { FeatureFlags, useFeatureFlagWithExposureLoggingDisabled } from '@universe/gating'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PortfolioChart } from 'src/components/home/PortfolioChart/PortfolioChart'
@@ -24,7 +24,10 @@ import { AccountIcon } from 'uniswap/src/features/accounts/AccountIcon'
 import { AccountType } from 'uniswap/src/features/accounts/types'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { usePortfolioBalanceBreakdown } from 'uniswap/src/features/dataApi/balances/balancesRest'
+import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/useRestPortfolioValueModifier'
 import { CHART_PERIOD_OPTIONS } from 'uniswap/src/features/portfolio/chartPeriod'
+import { PoolsDataIssueBanner } from 'uniswap/src/features/portfolio/pools/PoolsDataIssueBanner'
+import { usePoolsOutageBanner } from 'uniswap/src/features/portfolio/pools/usePoolsOutageBanner'
 import { PortfolioBalance } from 'uniswap/src/features/portfolio/PortfolioBalance/PortfolioBalance'
 import { getPortfolioChartPercentChange } from 'uniswap/src/features/portfolio/portfolioChartPercentChange'
 import { usePortfolioChartBalanceMismatch } from 'uniswap/src/features/portfolio/usePortfolioChartBalanceMismatch'
@@ -40,8 +43,10 @@ export function PortfolioChartDetailsScreen(): JSX.Element {
   const insets = useAppInsets()
   const queryClient = useQueryClient()
   const [chartPeriod, setChartPeriod] = useState(ChartPeriod.DAY)
-  const portfolioPoolsBalancesEnabled = useFeatureFlag(FeatureFlags.PortfolioPoolsBalances)
+  // Read without logging; the pools exposure is logged only where the feature is actually shown (see usePoolsTabVisibility).
+  const portfolioPoolsBalancesEnabled = useFeatureFlagWithExposureLoggingDisabled(FeatureFlags.PortfolioPoolsBalances)
   const includeCategories = useWalletBalancesIncludeCategories()
+  const portfolioValueModifier = useRestPortfolioValueModifier(activeAccount.address)
 
   const {
     data: chartData,
@@ -85,6 +90,11 @@ export function PortfolioChartDetailsScreen(): JSX.Element {
     () => getUnavailableCategories({ breakdown, requestedCategories }).includes(WalletBalanceCategory.POOLS),
     [breakdown, requestedCategories],
   )
+
+  const outageBanner = usePoolsOutageBanner({
+    evmAddress: activeAccount.address,
+    enabled: portfolioPoolsBalancesEnabled,
+  })
 
   const { isTotalValueMatch } = usePortfolioChartBalanceMismatch({
     lastChartValue,
@@ -131,12 +141,21 @@ export function PortfolioChartDetailsScreen(): JSX.Element {
       queryClient
         .prefetchQuery(
           getPortfolioHistoricalValueChartQuery({
-            input: { evmAddress: activeAccount.address, chartPeriod: period, chainIds: chains, includeCategories },
+            input: {
+              evmAddress: activeAccount.address,
+              chartPeriod: period,
+              chainIds: chains,
+              includeCategories,
+              ...(includeCategories.includes(WalletBalanceCategory.POOLS) && {
+                poolIncludeOverrides: portfolioValueModifier?.poolIncludeOverrides,
+                poolExcludeOverrides: portfolioValueModifier?.poolExcludeOverrides,
+              }),
+            },
           }),
         )
         .catch(() => undefined)
     }
-  }, [activeAccount.address, chartPeriod, chains, includeCategories, queryClient])
+  }, [activeAccount.address, chartPeriod, chains, includeCategories, portfolioValueModifier, queryClient])
 
   const centerElement = useMemo(
     () => (
@@ -179,6 +198,9 @@ export function PortfolioChartDetailsScreen(): JSX.Element {
               {t('pool.balances.unavailable')}
             </Text>
           </Flex>
+        )}
+        {!poolsUnavailable && outageBanner.isVisible && (
+          <PoolsDataIssueBanner fullWidth message={outageBanner.message} onDismiss={outageBanner.onDismiss} />
         )}
         <Flex
           gap={breakdownCardProps ? '$spacing4' : '$spacing24'}

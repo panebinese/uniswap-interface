@@ -80,6 +80,7 @@ function WalletUniswapProviderInner({ children }: PropsWithChildren): JSX.Elemen
     navigateToReceive,
     navigateToExternalProfile,
     navigateToPoolDetails,
+    navigateToEarnVault,
     handleShareToken,
     navigateToAdvancedSettings,
   } = useWalletNavigation()
@@ -150,6 +151,7 @@ function WalletUniswapProviderInner({ children }: PropsWithChildren): JSX.Elemen
       navigateToExternalProfile={navigateToExternalProfile}
       navigateToNftDetails={navigateToNftDetails}
       navigateToPoolDetails={navigateToPoolDetails}
+      navigateToEarnVault={navigateToEarnVault}
       handleShareToken={handleShareToken}
       navigateToAdvancedSettings={navigateToAdvancedSettings}
       signer={signer}
@@ -159,6 +161,8 @@ function WalletUniswapProviderInner({ children }: PropsWithChildren): JSX.Elemen
       getCanSignPermits={getCanSignPermits}
       getSwapDelegationInfo={getSwapDelegationInfo}
       signDelegationAuthorization={signDelegationAuthorization}
+      // Mobile/extension execute sponsored delegated swaps as 4337 userOps (executeUserOpSwapSaga).
+      supportsUserOpSwaps={true}
       useAccountsStoreContextHook={useAccountsStoreContext}
       onSwapChainsChanged={showSwapNetworkNotification}
     >

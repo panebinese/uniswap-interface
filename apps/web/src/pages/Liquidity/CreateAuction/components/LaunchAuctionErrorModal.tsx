@@ -7,6 +7,7 @@ import { getCreateAuctionErrorMessage } from '~/pages/Liquidity/CreateAuction/ge
 import {
   AuctionInsufficientBalanceError,
   AuctionStartTimePassedError,
+  AuctionWindowTooShortError,
 } from '~/pages/Liquidity/CreateAuction/hooks/useCreateAuctionSubmit'
 
 interface LaunchAuctionErrorModalProps {
@@ -37,9 +38,11 @@ export function LaunchAuctionErrorModal({
       ? t('toucan.createAuction.launchError.startTimePassed', { tokenSymbol })
       : error instanceof AuctionInsufficientBalanceError
         ? t('toucan.createAuction.launchError.insufficientBalance', { tokenSymbol })
-        : validationReason
-          ? t('toucan.createAuction.launchError.withReason', { tokenSymbol, reason: validationReason })
-          : t('toucan.createAuction.launchError.description', { tokenSymbol, reason: genericReason })
+        : error instanceof AuctionWindowTooShortError
+          ? t('toucan.createAuction.launchError.windowTooShort', { tokenSymbol })
+          : validationReason
+            ? t('toucan.createAuction.launchError.withReason', { tokenSymbol, reason: validationReason })
+            : t('toucan.createAuction.launchError.description', { tokenSymbol, reason: genericReason })
 
   return (
     <Dialog

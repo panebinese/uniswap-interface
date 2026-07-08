@@ -596,11 +596,16 @@ export function getSwapTransactionInfo({
   transactedUSDValue?: number
   rwaAnalytics?: RwaSwapAnalytics
 }): SwapInfo | BridgeTransactionInfo {
+  const isSponsored = 'sponsorshipInfo' in trade.quote ? trade.quote.sponsorshipInfo?.sponsored : undefined
+  const sponsorshipCampaignId =
+    'sponsorshipInfo' in trade.quote ? trade.quote.sponsorshipInfo?.campaign?.name : undefined
   const commonAttributes = {
     inputCurrencyId: currencyId(trade.inputAmount.currency),
     outputCurrencyId: currencyId(trade.outputAmount.currency),
     swapStartTimestamp,
     transactedUSDValue,
+    isSponsored,
+    sponsorshipCampaignId,
     ...rwaAnalytics,
     ...planAnalytics,
   }

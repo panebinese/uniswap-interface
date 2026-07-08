@@ -29,6 +29,13 @@ export const EXPANDABLE_ASSET_TABLE_SHELL_PADDING_PX = spacing.spacing4
 /** Gap between the parent metrics row and the inner issuer block inside the same container. */
 export const EXPANDABLE_ASSET_SHELL_HEADER_GAP_PX = spacing.spacing8
 
+/** Horizontal inset (each side) from the search-variant expanded row's outer edge to the shell's border box — keep in sync with `ExpandableSearchRow.tsx`'s expanded-shell `px={7}` + `borderWidth="$spacing1"`. */
+export const EXPANDABLE_ASSET_SEARCH_SHELL_INSET_X_PX = spacing.spacing8
+
+/** Total horizontal inset (each side) from the search modal's row slot to an expanded issuer sub-row's content edge — keep in sync with `ExpandableSearchRow`/`ExpandableIssuerPanelContainer`/`ExpandableIssuerRows`. */
+export const EXPANDABLE_ASSET_SEARCH_ISSUER_ROW_RIGHT_INSET_PX =
+  spacing.spacing12 + EXPANDABLE_ASSET_SEARCH_SHELL_INSET_X_PX + spacing.spacing1 + spacing.spacing8
+
 /**
  * Height of the inner issuer list (surface1 block only).
  * Keep in sync with `ExpandableIssuerPanelContainer` / `ExpandableIssuerRows` in `ExpandableIssuerPanel.tsx`.

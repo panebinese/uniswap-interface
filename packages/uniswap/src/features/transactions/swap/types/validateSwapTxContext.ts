@@ -29,6 +29,20 @@ import {
 import { PopulatedTransactionRequestArray } from 'uniswap/src/features/transactions/types/transactionRequests'
 import type { RpcUserOperation } from 'viem/account-abstraction'
 
+function isGasSponsorshipPromisedButUndelivered(swapTxContext: SwapTxAndGasInfo): boolean {
+  if (!isClassic(swapTxContext) && !isBridge(swapTxContext) && !isWrap(swapTxContext)) {
+    return false
+  }
+
+  const sponsored = swapTxContext.trade?.quote.sponsorshipInfo?.sponsored
+  if (!sponsored) {
+    return false
+  }
+
+  const delivered = swapTxContext.requestUniswapGasSponsorship === true || Boolean(swapTxContext.paymasterService?.url)
+  return !delivered
+}
+
 export function validateSwapTxContext(swapTxContext: SwapTxAndGasInfo): ValidatedSwapTxContext | undefined {
   if (!swapTxContext.trade) {
     return undefined
@@ -36,6 +50,10 @@ export function validateSwapTxContext(swapTxContext: SwapTxAndGasInfo): Validate
 
   const gasFee = validateGasFeeResult(swapTxContext.gasFee)
   if (!gasFee) {
+    return undefined
+  }
+
+  if (isGasSponsorshipPromisedButUndelivered(swapTxContext)) {
     return undefined
   }
 

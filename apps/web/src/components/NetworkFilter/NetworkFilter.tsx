@@ -107,6 +107,7 @@ export function NetworkFilter({
   positionFixed,
   showSearch = false,
   tieredOptions,
+  forceAllNetworksLabel = false,
 }: {
   showMultichainOption?: boolean
   showDisplayName?: boolean
@@ -125,6 +126,7 @@ export function NetworkFilter({
   positionFixed?: boolean
   showSearch?: boolean
   tieredOptions?: TieredNetworkOptions
+  forceAllNetworksLabel?: boolean
 }) {
   const { t } = useTranslation()
   const media = useMedia()
@@ -213,6 +215,7 @@ export function NetworkFilter({
                 }
                 selectedChain={currentChainId ?? null}
                 tieredOptions={tieredOptions}
+                forceAllNetworksLabel={forceAllNetworksLabel}
                 onPressChain={(chainId) => {
                   onPress(chainId ?? undefined)
                   toggleMenu(false)
@@ -224,6 +227,7 @@ export function NetworkFilter({
               <Flex p="$spacing8">
                 {showMultichainOption && (
                   <TableNetworkItem
+                    forceAllNetworksLabel={forceAllNetworksLabel}
                     chainInfo={null}
                     chainIds={allNetworksDisplayChainIds}
                     tab={tab}
@@ -252,6 +256,7 @@ const TableNetworkItem = memo(function TableNetworkItem({
   unsupported,
   onPress,
   currentChainId,
+  forceAllNetworksLabel,
 }: {
   chainInfo: UniverseChainInfo | null
   chainIds?: UniverseChainId[]
@@ -261,6 +266,7 @@ const TableNetworkItem = memo(function TableNetworkItem({
   onPress: (chainId: UniverseChainId | undefined) => void
   unsupported?: boolean
   currentChainId?: UniverseChainId | undefined
+  forceAllNetworksLabel?: boolean
 }) {
   const { t } = useTranslation()
   const currentChainInfo = currentChainId ? getChainInfo(currentChainId) : undefined
@@ -307,6 +313,7 @@ const TableNetworkItem = memo(function TableNetworkItem({
           chainIds={chainId === null ? chainIds : undefined}
           currentlySelected={isCurrentChain}
           isNew={isNew}
+          forceAllNetworksLabel={forceAllNetworksLabel}
           trailingElement={unsupported ? <Badge fontSize={10}>{t('settings.setting.beta.tooltip')}</Badge> : undefined}
         />
       </Flex>

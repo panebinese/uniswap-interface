@@ -1,12 +1,11 @@
 import { isWebPlatform } from '@universe/environment'
-import React, { useMemo, useRef, useState } from 'react'
+import React, { useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
-import { AnimateTransition, Flex } from 'ui/src'
+import { Flex } from 'ui/src'
 import { CopyAlt } from 'ui/src/components/icons/CopyAlt'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import {
-  COPY_CLOSE_DELAY,
   TokenContextMenuAction,
   useSearchTokenMenuItems,
 } from 'uniswap/src/components/lists/items/tokens/useSearchTokenMenuItems'
@@ -15,8 +14,10 @@ import type { MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
 import { MenuContent } from 'uniswap/src/components/menus/ContextMenuContent'
 import { ContextMenuTriggerButton } from 'uniswap/src/components/menus/ContextMenuTriggerButton'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
-import { MultichainContextMenuAddressSubview } from 'uniswap/src/components/MultichainTokenDetails/MultichainContextMenuAddressSubview'
+import { MultichainAddressTransitionPanel } from 'uniswap/src/components/MultichainTokenDetails/MultichainAddressTransitionPanel'
+import { useMultichainAddressViewState } from 'uniswap/src/components/MultichainTokenDetails/useMultichainAddressViewState'
 import type { MultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
+import { COPY_CLOSE_DELAY } from 'uniswap/src/constants/misc'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
@@ -29,8 +30,6 @@ import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
-
-type ViewState = 'actions' | 'addresses'
 
 // Primary-chain action set for a multichain RWA issuer's … — Copy is rendered separately (with the fan-out
 // chevron), so it is intentionally NOT in this list, and Favorite is omitted. A dedicated const, rather than a
@@ -67,8 +66,7 @@ function RwaMultichainCopyButtonInner({
   const trace = useTrace()
 
   const { value: isOpen, setTrue: openMenu, setFalse: rawCloseMenu } = useBooleanState(false)
-  const [viewState, setViewState] = useState<ViewState>('actions')
-  const [animationType, setAnimationType] = useState<'forward' | 'backward'>('forward')
+  const { viewIndex, animationType, goToAddresses, goBack, resetView } = useMultichainAddressViewState()
   // Copy on a multichain issuer flips to the addresses panel; skipNextClose holds the menu open across the single
   // handleCloseMenu the Copy MenuOptionItem fires during that flip.
   const skipNextClose = useRef(false)
@@ -79,7 +77,7 @@ function RwaMultichainCopyButtonInner({
   const handleCloseMenu = useEvent(() => {
     clearTimeout(timerRef.current)
     rawCloseMenu()
-    setViewState('actions')
+    resetView()
   })
 
   useDelayedMenuClose({ isVisible, isOpen, closeMenu: handleCloseMenu })
@@ -95,8 +93,7 @@ function RwaMultichainCopyButtonInner({
   // RWAs are always multichain here (caller gates orderedEntries.length > 1) → Copy always fans out.
   const onCopyAddressPress = useEvent((): void => {
     skipNextClose.current = true
-    setAnimationType('forward')
-    setViewState('addresses')
+    goToAddresses()
   })
 
   const onCopyMultichainAddress = useEvent(async (address: string, chainId: UniverseChainId): Promise<void> => {
@@ -135,17 +132,17 @@ function RwaMultichainCopyButtonInner({
     return [copyItem, ...actionItems]
   }, [onCopyAddressPress, t, actionItems])
 
-  const handleBack = useEvent(() => {
-    setAnimationType('backward')
-    setViewState('actions')
-  })
-
-  const viewIndex = viewState === 'actions' ? 0 : 1
-
   // contentOverride bypasses ContextMenu's default MenuContent, so analytics props go on MenuContent directly.
   const contentOverride = useMemo(
     () => (
-      <AnimateTransition currentIndex={viewIndex} animationType={animationType} animation="200ms">
+      <MultichainAddressTransitionPanel
+        viewIndex={viewIndex}
+        animationType={animationType}
+        orderedEntries={orderedEntries}
+        title={t('common.copy.address')}
+        onCopyAddress={onCopyMultichainAddress}
+        onBack={goBack}
+      >
         <MenuContent
           trackItemClicks
           items={allMenuItems}
@@ -153,27 +150,12 @@ function RwaMultichainCopyButtonInner({
           elementName={ElementName.SearchTokenContextMenu}
           sectionName={SectionName.NavbarSearch}
         />
-        <MultichainContextMenuAddressSubview
-          orderedEntries={orderedEntries}
-          title={t('common.copy.address')}
-          onCopyAddress={onCopyMultichainAddress}
-          onBack={handleBack}
-        />
-      </AnimateTransition>
+      </MultichainAddressTransitionPanel>
     ),
-    [
-      viewIndex,
-      animationType,
-      allMenuItems,
-      handleContentClose,
-      orderedEntries,
-      onCopyMultichainAddress,
-      handleBack,
-      t,
-    ],
+    [viewIndex, animationType, allMenuItems, handleContentClose, orderedEntries, onCopyMultichainAddress, goBack, t],
   )
 
-  // Web-only: MultichainContextMenuAddressSubview uses a <div> (crashes on native). Native uses MultichainAddressSheet.
+  // Web-only: MultichainContextMenuAddressSubview (via MultichainAddressTransitionPanel) uses a <div> (crashes on native). Native uses MultichainAddressSheet.
   if (!isWebPlatform) {
     return null
   }

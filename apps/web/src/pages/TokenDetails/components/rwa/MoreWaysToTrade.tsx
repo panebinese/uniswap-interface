@@ -50,7 +50,7 @@ export function MoreWaysToTrade(): JSX.Element | null {
       {useExpando && (
         <ExpandoRow
           isExpanded={isExpanded}
-          label={t('tdp.rwa.moreTokensCount', { count: hiddenCount })}
+          label={isExpanded ? t('common.button.showLess') : t('tdp.rwa.moreTokensCount', { count: hiddenCount })}
           onPress={() => setIsExpanded((prev) => !prev)}
         />
       )}

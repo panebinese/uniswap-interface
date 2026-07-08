@@ -1,5 +1,8 @@
 import { Page } from '@playwright/test'
-import { listTransactions } from '@uniswap/client-data-api/dist/data/v1/api-DataApiService_connectquery'
+import {
+  getWalletBalances,
+  listTransactions,
+} from '@uniswap/client-data-api/dist/data/v1/api-DataApiService_connectquery'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { expect, getTest } from '~/playwright/fixtures'
@@ -47,15 +50,11 @@ async function goToPortfolioOverview({
     waits.push(page.waitForResponse((res) => res.url().includes('ListTransactions')))
   }
 
-  const path = externalAddress ? `/portfolio/${externalAddress}` : '/portfolio'
-  const query = externalAddress ? 'eagerlyConnect=false' : `eagerlyConnectAddress=${HAYDEN_ADDRESS}`
-  await page.goto(`${path}?${query}`)
+  // Always navigate as external wallet (address in URL path) so isExternalWallet=true and the
+  // demo overlay (pointer-events:none) never blocks interactions, regardless of wallet connect timing.
+  const address = externalAddress ?? HAYDEN_ADDRESS
+  await page.goto(`/portfolio/${address}?eagerlyConnect=false`)
   await Promise.all(waits)
-
-  if (!externalAddress) {
-    // Demo view wraps content in a pointer-blocking overlay; wait for wallet auto-connect before interacting.
-    await expect(page.getByTestId(TestID.DemoWalletDisplay)).not.toBeVisible()
-  }
 }
 
 test.describe(
@@ -96,21 +95,24 @@ test.describe(
     })
 
     test.describe('Action Tiles - Connected Wallet', () => {
-      test.beforeEach(async ({ page, dataApi }) => {
-        await goToPortfolioOverview({ page, dataApi, waitForListTransactions: false })
+      test.beforeEach(async ({ page }) => {
+        // Navigate with eagerlyConnectAddress (not in path) so isExternalWallet=false.
+        // Wallet connect is async, so explicitly wait for the demo overlay to leave the DOM.
+        await page.goto(`/portfolio?eagerlyConnectAddress=${HAYDEN_ADDRESS}`)
+        await expect(page.getByTestId(TestID.DemoWalletDisplay)).not.toBeVisible()
       })
 
-      test('should display all action tiles for connected wallet', async ({ page }) => {
+      test('should display connected wallet action tiles', async ({ page }) => {
         const actionTiles = page.getByTestId(TestID.PortfolioActionTiles)
-        await expect(actionTiles.getByTestId(TestID.PortfolioActionTileSend)).toBeVisible()
-        await expect(actionTiles.getByTestId(TestID.PortfolioActionTileReceive)).toBeVisible()
         await expect(actionTiles.getByTestId(TestID.PortfolioActionTileBuy)).toBeVisible()
         await expect(actionTiles.getByTestId(TestID.PortfolioActionTileMore)).toBeVisible()
       })
 
-      test('should navigate to buy page when clicking Buy tile', async ({ page }) => {
-        await page.getByTestId(TestID.PortfolioActionTiles).getByTestId(TestID.PortfolioActionTileBuy).click()
-        await expect(page).toHaveURL(/\/buy/)
+      test('should not show CopyAddress or Share tiles for connected wallet', async ({ page }) => {
+        const actionTiles = page.getByTestId(TestID.PortfolioActionTiles)
+        await expect(actionTiles.getByTestId(TestID.PortfolioActionTileBuy)).toBeVisible()
+        await expect(page.getByTestId(TestID.PortfolioActionTileCopyAddress)).not.toBeVisible()
+        await expect(page.getByTestId(TestID.PortfolioShareButton)).not.toBeVisible()
       })
     })
 
@@ -161,7 +163,7 @@ test.describe(
 
       test('should navigate to tokens tab when clicking View all tokens', async ({ page }) => {
         await page.getByTestId(TestID.PortfolioOverviewViewAllTokens).click()
-        await expect(page).toHaveURL(/\/portfolio\/tokens/)
+        await expect(page).toHaveURL(/\/portfolio\/.+\/tokens/)
       })
 
       test('should navigate to token details when clicking a token row', async ({ page }) => {
@@ -190,13 +192,15 @@ test.describe(
 
       test('should navigate to activity tab when clicking View all activity', async ({ page }) => {
         await page.getByTestId(TestID.PortfolioOverviewViewAllActivity).click()
-        await expect(page).toHaveURL(/\/portfolio\/activity/)
+        await expect(page).toHaveURL(/\/portfolio\/.+\/activity/)
       })
     })
 
     test.describe('Empty Portfolio State', () => {
-      test.beforeEach(async ({ page }) => {
-        // No dataApi: useActivityData is skipped when isPortfolioZero, so ListTransactions is never called.
+      test.beforeEach(async ({ page, dataApi }) => {
+        // useIsPortfolioZero reads GetWalletBalances (not GetPortfolio), so mock both to zero.
+        // useActivityData is skipped when isPortfolioZero, so ListTransactions is never called.
+        await dataApi.intercept(getWalletBalances, Mocks.DataApiService.get_wallet_balances_empty)
         await goToPortfolioOverview({
           page,
           getPortfolioMock: Mocks.DataApiService.get_portfolio_empty,
@@ -287,7 +291,7 @@ test.describe(
         )
         await viewAllTokensButton.click()
         await expect(page).toHaveURL(/chain=ethereum/)
-        await expect(page).toHaveURL(/\/portfolio\/tokens/)
+        await expect(page).toHaveURL(/\/portfolio\/.+\/tokens/)
       })
     })
 
@@ -306,7 +310,7 @@ test.describe(
 
       test('should display action tiles on mobile', async ({ page }) => {
         const actionTiles = page.getByTestId(TestID.PortfolioActionTiles)
-        await expect(actionTiles.getByTestId(TestID.PortfolioActionTileBuy)).toBeVisible()
+        await expect(actionTiles.getByTestId(TestID.PortfolioActionTileSend)).toBeVisible()
       })
 
       test('should display tokens table on mobile', async ({ page }) => {

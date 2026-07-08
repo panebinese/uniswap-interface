@@ -250,7 +250,7 @@ describe('PortfolioBalanceHeader', () => {
       />,
     )
 
-    expect(screen.getByText('-')).toBeInTheDocument()
+    expect(screen.getByText('$00.00')).toBeInTheDocument()
   })
 
   it('does not render the BalanceBreakdownPopover when only one side has a balance', () => {

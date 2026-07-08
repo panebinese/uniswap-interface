@@ -62,6 +62,14 @@ export function sendSearchOptionItemClickedAnalytics({
       sendTokenAnalyticsEvent({ searchContext, currency })
       return
     }
+    case OnchainItemListOptionType.EarnVault: {
+      // Earn row routes to the underlying asset's TDP — report that token.
+      const currency = item.underlyingCurrencyInfo?.currency
+      if (currency) {
+        sendTokenAnalyticsEvent({ searchContext, currency })
+      }
+      return
+    }
     case OnchainItemListOptionType.RwaCollection: {
       // Tokenized-stock collection: route through the shared (platform-aware) token path. The tapped issuer's
       // chain + address are resolved and validated by the caller (selectIssuer) and threaded via rwaSelection.

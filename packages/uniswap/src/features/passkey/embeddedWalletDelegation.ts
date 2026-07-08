@@ -1,3 +1,4 @@
+import { TradingApi } from '@universe/api'
 import { HexString, isValidHexString } from '@universe/encoding'
 import { checkWalletDelegation, TradingApiClient } from 'uniswap/src/data/apiClients/tradingApi/TradingApiClient'
 import { fetchGasFeeQuery } from 'uniswap/src/data/apiClients/uniswapApi/useGasFeeQuery'
@@ -23,6 +24,53 @@ export type DelegationResult =
     }
 
 /**
+ * Pure derivation of embedded-wallet delegation status from Trading API delegation
+ * details for a single address/chain. Shared by the execution path
+ * (`checkEmbeddedWalletDelegation`) and the web swap-review delegation source
+ * (`useGetSwapDelegationInfo`) so the displayed routing/gas matches what executes.
+ *
+ * Returns null when delegation is not applicable: no details, a non-Uniswap
+ * delegation, or a needed delegation with no target contract address.
+ */
+export function deriveEmbeddedWalletDelegationResult(
+  details: TradingApi.DelegationDetails | undefined,
+): DelegationResult | null {
+  if (!details) {
+    return null
+  }
+  // Non-Uniswap delegation — skip
+  if (details.currentDelegationAddress && !details.isWalletDelegatedToUniswap) {
+    return null
+  }
+  // Fresh delegation (no current, but latest exists) or upgrade (current != latest)
+  const isFresh = !details.currentDelegationAddress && !!details.latestDelegationAddress
+  const isUpgrade =
+    !!details.isWalletDelegatedToUniswap &&
+    !!details.latestDelegationAddress &&
+    details.latestDelegationAddress !== details.currentDelegationAddress
+  const contractAddress = details.latestDelegationAddress
+  const needsDelegation = isFresh || isUpgrade
+  if (needsDelegation) {
+    if (!contractAddress) {
+      // Delegation indicated but no target address — treat as not applicable.
+      return null
+    }
+    return {
+      needsDelegation: true,
+      contractAddress,
+      currentDelegationAddress: details.currentDelegationAddress ?? undefined,
+      isWalletDelegatedToUniswap: details.isWalletDelegatedToUniswap,
+    }
+  }
+  return {
+    needsDelegation: false,
+    contractAddress,
+    currentDelegationAddress: details.currentDelegationAddress ?? undefined,
+    isWalletDelegatedToUniswap: details.isWalletDelegatedToUniswap,
+  }
+}
+
+/**
  * Checks delegation status for an address on a given chain via the Trading API.
  * Returns null if delegation is not applicable (no details or non-Uniswap delegation).
  */
@@ -32,39 +80,7 @@ export async function checkEmbeddedWalletDelegation(
 ): Promise<DelegationResult | null> {
   try {
     const response = await checkWalletDelegation({ walletAddresses: [address], chainIds: [Number(chainId)] })
-    const details = response.delegationDetails[address]?.[chainId]
-    if (!details) {
-      return null
-    }
-    // Non-Uniswap delegation — skip
-    if (details.currentDelegationAddress && !details.isWalletDelegatedToUniswap) {
-      return null
-    }
-    // Fresh delegation (no current, but latest exists) or upgrade (current != latest)
-    const isFresh = !details.currentDelegationAddress && !!details.latestDelegationAddress
-    const isUpgrade =
-      details.isWalletDelegatedToUniswap &&
-      !!details.latestDelegationAddress &&
-      details.latestDelegationAddress !== details.currentDelegationAddress
-    const contractAddress = details.latestDelegationAddress
-    const delegation = isFresh || isUpgrade
-    if (delegation) {
-      if (!contractAddress) {
-        throw new Error('Delegation required but no contract address available')
-      }
-      return {
-        needsDelegation: true,
-        contractAddress,
-        currentDelegationAddress: details.currentDelegationAddress ?? undefined,
-        isWalletDelegatedToUniswap: details.isWalletDelegatedToUniswap,
-      }
-    }
-    return {
-      needsDelegation: false,
-      contractAddress,
-      currentDelegationAddress: details.currentDelegationAddress ?? undefined,
-      isWalletDelegatedToUniswap: details.isWalletDelegatedToUniswap,
-    }
+    return deriveEmbeddedWalletDelegationResult(response.delegationDetails[address]?.[chainId])
   } catch (error) {
     // Intentional: return null so the caller falls back to sendStandardTransaction.
     // A transient API error shouldn't block a simple transfer — it just skips delegation.

@@ -8,5 +8,5 @@ export type GasInfo = {
   isHighRelativeToValue: boolean
   isLoading: boolean
   chainId: UniverseChainId
-  sponsorMetadata?: TradingApi.SponsorMetadata
+  sponsorshipInfo?: TradingApi.SponsorshipInfo
 }

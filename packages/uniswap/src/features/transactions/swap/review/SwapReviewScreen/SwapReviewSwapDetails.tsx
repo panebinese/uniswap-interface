@@ -13,7 +13,7 @@ import {
   useSwapReviewWarningStore,
 } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewWarningStore/useSwapReviewWarningStore'
 import { SwapDetails } from 'uniswap/src/features/transactions/swap/review/SwapDetails/SwapDetails'
-import { resolveSponsorMetadata } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/resolveSponsorMetadata'
+import { resolveSponsorshipInfo } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/resolveSponsorshipInfo'
 import { ReviewNetworkCostRowSlot } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/ReviewNetworkCostRowSlot'
 import { getEVMTxRequest } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { CurrencyField } from 'uniswap/src/types/currency'
@@ -74,7 +74,8 @@ export const SwapReviewSwapDetails = memo(function SwapReviewSwapDetails(): JSX.
   // derivation. Returns undefined for UniswapX / Jupiter, which is what we
   // want — those routings have no editable EVM gas.
   const txRequest = getEVMTxRequest(swapTxContext)
-  const sponsorMetadata = resolveSponsorMetadata(swapTxContext)
+  const sponsorshipInfo = resolveSponsorshipInfo(swapTxContext)
+  const sponsorMetadata = sponsorshipInfo?.sponsorMetadata
 
   const NetworkCostRowSlot =
     !sponsorMetadata &&
@@ -107,7 +108,7 @@ export const SwapReviewSwapDetails = memo(function SwapReviewSwapDetails(): JSX.
       txSimulationErrors={txSimulationErrors}
       includesDelegation={stableIncludesDelegation}
       NetworkCostRowSlot={NetworkCostRowSlot}
-      sponsorMetadata={sponsorMetadata}
+      sponsorshipInfo={sponsorshipInfo}
       onAcceptTrade={onAcceptTrade}
       onShowWarning={onShowWarning}
     />

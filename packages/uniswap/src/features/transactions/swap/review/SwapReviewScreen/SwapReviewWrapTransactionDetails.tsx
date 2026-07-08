@@ -3,7 +3,7 @@ import { memo, useEffect, useState } from 'react'
 import { useEnableCustomGasFeeEntry } from 'uniswap/src/features/gas/hooks/useEnableCustomGasFeeEntry'
 import { useSwapReviewCallbacksStore } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewCallbacksStore/useSwapReviewCallbacksStore'
 import { useSwapReviewTransactionStore } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewTransactionStore/useSwapReviewTransactionStore'
-import { resolveSponsorMetadata } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/resolveSponsorMetadata'
+import { resolveSponsorshipInfo } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/resolveSponsorshipInfo'
 import { ReviewNetworkCostRowSlot } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/ReviewNetworkCostRowSlot'
 import { getEVMTxRequest } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { TransactionDetails } from 'uniswap/src/features/transactions/TransactionDetails/TransactionDetails'
@@ -47,7 +47,8 @@ export const SwapReviewWrapTransactionDetails = memo(function SwapReviewWrapTran
   }
 
   const txRequest = getEVMTxRequest(swapTxContext)
-  const sponsorMetadata = resolveSponsorMetadata(swapTxContext)
+  const sponsorshipInfo = resolveSponsorshipInfo(swapTxContext)
+  const sponsorMetadata = sponsorshipInfo?.sponsorMetadata
 
   const NetworkCostRowSlot =
     !sponsorMetadata && isGasFeeOverridesEnabled && enableCustomGasFeeEntry ? (
@@ -68,7 +69,7 @@ export const SwapReviewWrapTransactionDetails = memo(function SwapReviewWrapTran
       routingType={routing}
       includesDelegation={stableIncludesDelegation}
       NetworkCostRowSlot={NetworkCostRowSlot}
-      sponsorMetadata={sponsorMetadata}
+      sponsorshipInfo={sponsorshipInfo}
       onShowWarning={onShowWarning}
     />
   )

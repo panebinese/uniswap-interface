@@ -97,7 +97,7 @@ export const PositionItemContextMenu = memo(function PositionItemContextMenu({
       isOpen={isOpen}
       openMenu={openMenu}
       closeMenu={closeMenu}
-      elementName={ElementName.PortfolioPoolContextMenu}
+      elementName={ElementName.LiquidityPositionContextMenu}
       sectionName={SectionName.PortfolioPoolsTab}
     >
       {/* oxlint-disable-next-line react/forbid-elements -- needed for cursor + onContextMenu */}

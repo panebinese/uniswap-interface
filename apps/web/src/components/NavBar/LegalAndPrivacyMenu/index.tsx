@@ -1,16 +1,14 @@
-import { isMobileWeb } from '@universe/environment'
-import { Fragment, useCallback } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Anchor, AnchorProps, Flex, Text, TouchableArea } from 'ui/src'
+import { Anchor, AnchorProps, Flex, Text } from 'ui/src'
 import { spacing } from 'ui/src/theme'
 import { UniswapStaticUrls } from 'uniswap/src/constants/urls'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { Expand } from '~/components/Expand'
 import { PrivacyOptions } from '~/components/Icons/PrivacyOptions'
+import { MobileTouchableArea } from '~/components/MobileTouchableArea'
 import { useModalState } from '~/hooks/useModalState'
-
-const MobileTouchableArea = isMobileWeb ? TouchableArea : Fragment
 
 const MenuLink = ({ children, ...rest }: AnchorProps) => (
   <Anchor textDecorationLine="none" cursor="pointer" group {...rest}>

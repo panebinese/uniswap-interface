@@ -1,6 +1,7 @@
 import { RwaCategory } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { ExploreStatsResponse, PoolStats } from '@uniswap/client-explore/dist/uniswap/explore/v1/service_pb'
 import { ALL_NETWORKS_ARG, GqlResult } from '@universe/api'
+import { GatedFeature, useIsFeatureGated } from '@universe/compliance'
 import { isMobileApp, isWebApp, isWebPlatform } from '@universe/environment'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
@@ -46,10 +47,10 @@ export function useSectionsForNoQuerySearch({
 }): GqlResult<OnchainItemSection<SearchModalOption>[]> {
   const { t } = useTranslation()
   const rwaEnabled = useFeatureFlag(FeatureFlags.RwaUxSearch)
-  // The "Stocks by 24H volume" section is gated by its own child flag, AND-ed with the parent
-  // `rwa_ux_search` flag — it only renders when both are on. Grouping/recents-tagging stay on the parent.
-  const topRwaSectionEnabled = useFeatureFlag(FeatureFlags.RwaUxSearchTop24hSection)
-  const stocksSectionEnabled = rwaEnabled && topRwaSectionEnabled
+  // The "Stocks by 24H volume" section renders when the parent `rwa_ux_search` flag is on and the
+  // caller's region isn't RWA-blocked. Grouping/recents-tagging stay on the parent.
+  const isRwaRegionBlocked = useIsFeatureGated(GatedFeature.ISSUER_SPECIFIC_RWA)
+  const stocksSectionEnabled = rwaEnabled && !isRwaRegionBlocked
   const rwaIndex = useRwaSearchIndex()
 
   const recentlySearchedOptions: SearchModalOption[] = useRecentlySearchedOptions({
@@ -93,7 +94,7 @@ export function useSectionsForNoQuerySearch({
     error: flatTokensError,
     refetch: refetchFlatTokens,
     loading: flatTokensLoading,
-  } = useTrendingTokensCurrencyInfos(chainFilter, skipTrendingTokensQuery || isMultichainPath)
+  } = useTrendingTokensCurrencyInfos(chainFilter, { skip: skipTrendingTokensQuery || isMultichainPath })
 
   const {
     data: multichainResults,

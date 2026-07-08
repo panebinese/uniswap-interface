@@ -38,6 +38,8 @@ export type GetPortfolioInput<TSelectData = PlainMessage<GetPortfolioResponse>> 
     svmAddress?: string
   }
   enabled?: boolean
+  /** Cache-only read: never fetches, but still re-renders when another observer updates the cached data. */
+  cacheOnly?: boolean
   refetchInterval?: number | false
   select?: (data: PlainMessage<GetPortfolioResponse> | undefined) => TSelectData
 }
@@ -87,6 +89,7 @@ type GetPortfolioQuery<TSelectData = PlainMessage<GetPortfolioResponse>> = Query
 export const getPortfolioQuery = <TSelectData = PlainMessage<GetPortfolioResponse>>({
   input,
   enabled = true,
+  cacheOnly = false,
   refetchInterval,
   select,
 }: GetPortfolioInput<TSelectData>): GetPortfolioQuery<TSelectData> => {
@@ -97,9 +100,10 @@ export const getPortfolioQuery = <TSelectData = PlainMessage<GetPortfolioRespons
   // the spread below. Covered by a test in `persistenceMigration.integration.test.ts`.
   return queryOptions({
     ...baseOptions,
-    enabled,
+    enabled: enabled && !cacheOnly,
     refetchInterval,
-    subscribed: !!enabled,
+    subscribed: cacheOnly || !!enabled,
+    notifyOnChangeProps: cacheOnly ? ['data'] : undefined,
     select,
     queryFn: async (): Promise<PlainMessage<GetPortfolioResponse> | undefined> => {
       // Run the override/merge logic against real Messages, then convert once at the

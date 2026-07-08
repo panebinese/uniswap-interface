@@ -34,8 +34,10 @@ const baseData: PoolsListRenderData = {
   isFetching: false,
   isFetchingNextPage: false,
   isFetchingFirstPage: false,
+  isLoadingFirstPage: false,
   hasErrorWithoutData: false,
   hasNextPage: false,
+  pagesLoaded: 1,
   refetch: noop,
   onListEndReached: noop,
 }
@@ -54,6 +56,7 @@ const renderTab = (
 ): void => {
   render(
     <HomeScreenPoolsTab
+      owner="0x0000000000000000000000000000000000000001"
       bodyOffsetY={0}
       poolsListRenderData={{ ...baseData, ...overrides }}
       statusFilter={statusFilter}
@@ -73,7 +76,7 @@ describe('HomeScreenPoolsTab', () => {
   })
 
   it('renders the loading skeleton while the first page loads (no data)', () => {
-    renderTab({ isFetchingFirstPage: true, hasData: false })
+    renderTab({ isLoadingFirstPage: true })
 
     expect(screen.getByTestId('pools-loading-skeleton')).toBeDefined()
     expect(screen.queryByTestId('position-pool-a')).toBeNull()
@@ -97,7 +100,7 @@ describe('HomeScreenPoolsTab', () => {
   })
 
   it('shows the loading skeleton instead of the error view while a retry re-drives the list', () => {
-    renderTab({ isFetchingFirstPage: true, hasData: false })
+    renderTab({ isLoadingFirstPage: true })
 
     expect(screen.getByTestId('pools-loading-skeleton')).toBeDefined()
     expect(screen.queryByText('Pools balances currently unavailable')).toBeNull()

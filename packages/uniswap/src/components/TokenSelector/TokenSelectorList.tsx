@@ -1,5 +1,5 @@
 import { RwaCategory } from '@uniswap/client-data-api/dist/data/v1/api_pb'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { GatedFeature, useIsFeatureGated } from '@universe/compliance'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { Flex, Text } from 'ui/src'
@@ -248,8 +248,9 @@ function TokenSelectorListInner({
   const wrapTokenRow = useTokenSelectorHoverConfig()
 
   // Tag tokenized-stock (RWA) rows so the inner row renders the category tag. `useRwaIndex` returns an empty
-  // index (and skips the fetch) when the flag is off, so this is a no-op pass-through.
-  const rwaIndex = useRwaIndex(useFeatureFlag(FeatureFlags.RwaUxTokenSelectorCategoryLabels))
+  // index (and skips the fetch) for RWA-blocked regions, so this is a no-op pass-through there.
+  const isRwaRegionBlocked = useIsFeatureGated(GatedFeature.ISSUER_SPECIFIC_RWA)
+  const rwaIndex = useRwaIndex(!isRwaRegionBlocked)
   const taggedSections = useMemo(() => tagRwaTokenSelectorSections({ sections, rwaIndex }), [sections, rwaIndex])
 
   usePerformanceLogger(DDRumManualTiming.TokenSelectorListRender, [chainFilter])

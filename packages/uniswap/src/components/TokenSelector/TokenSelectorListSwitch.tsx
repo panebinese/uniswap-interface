@@ -18,6 +18,7 @@ interface TokenSelectorListSwitchProps {
   variation: TokenSelectorVariation
   addresses: AddressGroup
   chainFilter: UniverseChainId | null
+  chainIds: UniverseChainId[]
   input: TradeableAsset | undefined
   output: TradeableAsset | undefined
   renderedInModal: boolean
@@ -41,6 +42,7 @@ export const TokenSelectorListSwitch = memo(function _TokenSelectorListSwitch({
   variation,
   addresses,
   chainFilter,
+  chainIds,
   input,
   output,
   renderedInModal,
@@ -56,6 +58,7 @@ export const TokenSelectorListSwitch = memo(function _TokenSelectorListSwitch({
       <TokenSelectorEmptySearchList
         addresses={addresses}
         chainFilter={chainFilter}
+        chainIds={chainIds}
         renderedInModal={renderedInModal}
         onSelectCurrency={onSelectCurrency}
       />
@@ -67,6 +70,7 @@ export const TokenSelectorListSwitch = memo(function _TokenSelectorListSwitch({
       <TokenSelectorSearchResultsList
         addresses={addresses}
         chainFilter={chainFilter}
+        chainIds={chainIds}
         debouncedParsedSearchFilter={debouncedParsedSearchFilter}
         debouncedSearchFilter={debouncedSearchFilter}
         isBalancesOnlySearch={variation === TokenSelectorVariation.BalancesOnly}
@@ -85,6 +89,7 @@ export const TokenSelectorListSwitch = memo(function _TokenSelectorListSwitch({
         <TokenSelectorSendList
           addresses={addresses}
           chainFilter={chainFilter}
+          chainIds={chainIds}
           renderedInModal={renderedInModal}
           onEmptyActionPress={onSendEmptyActionPress}
           onSelectCurrency={onSelectCurrency}
@@ -96,6 +101,7 @@ export const TokenSelectorListSwitch = memo(function _TokenSelectorListSwitch({
           oppositeSelectedToken={output}
           addresses={addresses}
           chainFilter={chainFilter}
+          chainIds={chainIds}
           renderedInModal={renderedInModal}
           variation={variation}
           onSelectCurrency={onSelectCurrency}
@@ -108,6 +114,7 @@ export const TokenSelectorListSwitch = memo(function _TokenSelectorListSwitch({
           oppositeSelectedToken={input}
           addresses={addresses}
           chainFilter={chainFilter}
+          chainIds={chainIds}
           renderedInModal={renderedInModal}
           variation={variation}
           onSelectCurrency={onSelectCurrency}

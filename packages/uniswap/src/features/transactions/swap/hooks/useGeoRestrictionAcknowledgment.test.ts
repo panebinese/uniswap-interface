@@ -1,6 +1,12 @@
 import { act } from '@testing-library/react-native'
 import { type Currency } from '@uniswap/sdk-core'
-import { RestrictionReason, useSetTokenAcknowledgement, useTokenComplianceStatus } from '@universe/compliance'
+import {
+  RestrictionReason,
+  useIsFeatureGated,
+  useSetTokenAcknowledgement,
+  useTokenComplianceStatus,
+} from '@universe/compliance'
+import { useIsRWAToken } from 'uniswap/src/features/rwa/useIsRWAToken'
 import {
   useGeoRestrictionAcknowledgment,
   useNeedsGeoAcknowledgment,
@@ -15,6 +21,11 @@ vi.mock('@universe/compliance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@universe/compliance')>()),
   useTokenComplianceStatus: vi.fn(),
   useSetTokenAcknowledgement: vi.fn(),
+  useIsFeatureGated: vi.fn(),
+}))
+
+vi.mock('uniswap/src/features/rwa/useIsRWAToken', () => ({
+  useIsRWAToken: vi.fn(),
 }))
 
 vi.mock('uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore', () => ({
@@ -26,6 +37,8 @@ type DerivedSwapInfoSelector<T> = (s: { currencies: Record<string, { currency?: 
 
 const mockUseTokenComplianceStatus = useTokenComplianceStatus as Mock
 const mockUseSetTokenAcknowledgement = useSetTokenAcknowledgement as Mock
+const mockUseIsFeatureGated = useIsFeatureGated as Mock
+const mockUseIsRWAToken = useIsRWAToken as Mock
 const mockUseSwapFormStoreDerivedSwapInfo = useSwapFormStoreDerivedSwapInfo as Mock
 
 const INPUT_CURRENCY = { chainId: 1, isNative: false, address: '0xINPUT' } as unknown as Currency
@@ -49,6 +62,8 @@ describe(useGeoRestrictionAcknowledgment, () => {
       selector({ currencies: { input: { currency: INPUT_CURRENCY }, output: { currency: OUTPUT_CURRENCY } } }),
     )
     setReasonsByAddress({})
+    mockUseIsFeatureGated.mockReturnValue(false)
+    mockUseIsRWAToken.mockReturnValue(false)
   })
 
   it('is not acknowledged while a token still requires acknowledgement', () => {

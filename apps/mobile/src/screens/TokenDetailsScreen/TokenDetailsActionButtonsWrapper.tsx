@@ -1,3 +1,4 @@
+import { GatedFeature, useIsFeatureGated } from '@universe/compliance'
 import { FeatureFlags } from '@universe/gating'
 import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -24,7 +25,6 @@ import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledCh
 import { type PortfolioBalance, TokenList } from 'uniswap/src/features/dataApi/types'
 import { useIsSupportedFiatOnRampCurrency } from 'uniswap/src/features/fiatOnRamp/hooks'
 import { useChainGasToken } from 'uniswap/src/features/gas/hooks/useChainGasToken'
-import { useIsRWAGeoBlocked } from 'uniswap/src/features/rwa/useIsRWAGeoBlocked'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
 import { CurrencyField } from 'uniswap/src/types/currency'
@@ -176,9 +176,10 @@ export const TokenDetailsActionButtonsWrapper = memo(
 
     // Trading is geo-restricted for whitelisted RWA stocks in blocked regions; the swap flow
     // already enforces this, so surface it on the CTA instead of letting users tap into a dead end.
-    const rwaMatch = useGatedTokenDetailsRWAMatch(FeatureFlags.RwaGeoblocked)
-    const isRWAGeoBlocked = useIsRWAGeoBlocked(currencyInfo?.currency)
-    const isRWATradeBlocked = Boolean(rwaMatch) && isRWAGeoBlocked
+    // Region comes from compliance v2 (ISSUER_SPECIFIC_RWA); the RWA-token check is the whitelist match.
+    const rwaMatch = useGatedTokenDetailsRWAMatch(FeatureFlags.RWATdp)
+    const isRWARegionBlocked = useIsFeatureGated(GatedFeature.ISSUER_SPECIFIC_RWA)
+    const isRWATradeBlocked = Boolean(rwaMatch) && isRWARegionBlocked
 
     const multichainActionMenuOptions: MenuOptionItem[] = useMemo(() => {
       const actions: MenuOptionItem[] = []

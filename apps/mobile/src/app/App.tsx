@@ -83,7 +83,7 @@ import {
   setI18NUserDefaults,
 } from 'src/features/widgets/widgets'
 import { SystemBannerPortalProvider } from 'src/notification-service/notification-renderer/SystemBannerPortal'
-import { initDynamicIntlPolyfills } from 'src/polyfills/intl-delayed'
+import { initDynamicIntlPolyfills, loadIntlPolyfillsForLocale } from 'src/polyfills/intl-delayed'
 import { useDatadogUserAttributesTracking } from 'src/screens/HomeScreen/useDatadogUserAttributesTracking'
 import { useAppStateTrigger } from 'src/utils/useAppStateTrigger'
 import { flexStyles, ImageSettingsProvider, useIsDarkMode } from 'ui/src'
@@ -279,7 +279,11 @@ function ApplyPersistedLanguage(): null {
   const currentLanguage = useSelector(selectCurrentLanguage)
 
   useEffect(() => {
-    changeLanguage(mapLanguageToLocale[currentLanguage]).catch(() => undefined)
+    const locale = mapLanguageToLocale[currentLanguage]
+    // Ensure the Intl locale data for the persisted language is loaded (it may differ
+    // from the device locale loaded at startup) so number formatting is localized correctly.
+    loadIntlPolyfillsForLocale(locale)
+    changeLanguage(locale).catch(() => undefined)
   }, [currentLanguage])
 
   return null

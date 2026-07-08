@@ -62,7 +62,6 @@ export const ChainBalanceRow = memo(function ChainBalanceRowInner({
       <AnimatedNumber
         alignRight
         numericValue={valueUsd}
-        loadingPlaceholderText="$0.00"
         textVariant="$body3"
         value={convertFiatAmountFormatted(valueUsd, NumberType.FiatTokenQuantity)}
         disableAnimations={!isDataLivelinessEnabled}

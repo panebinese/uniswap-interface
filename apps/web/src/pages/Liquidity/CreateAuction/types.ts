@@ -1,3 +1,4 @@
+import { MIN_LP_ALLOCATION_PERCENT, NEW_TOKEN_DECIMALS } from '@uniswap/liquidity-launcher-sdk'
 import { type Currency, CurrencyAmount, Percent, Token } from '@uniswap/sdk-core'
 import { FeeAmount, TICK_SPACINGS } from '@uniswap/v3-sdk'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -10,8 +11,21 @@ import type { TokenAccentHex } from '~/pages/Liquidity/CreateAuction/tokenAccent
  * Must not be ZERO_ADDRESS (native token). Do not use for API lookups or pool fetches.
  */
 export const NEW_TOKEN_PLACEHOLDER_ADDRESS = '0x0000000000000000000000000000000000000001'
-export const NEW_TOKEN_DECIMALS = 18
-const NEW_TOKEN_TOTAL_SUPPLY = 1_000_000_000
+// Sourced from the launcher SDK (the factory mints new tokens at this decimals); re-exported so
+// existing importers keep working off a single source of truth.
+export { NEW_TOKEN_DECIMALS }
+/** Customizable total-supply bounds for new tokens, in whole tokens (pre-decimals). LP-960. */
+export const NEW_TOKEN_MIN_TOTAL_SUPPLY = 1_000_000
+export const NEW_TOKEN_MAX_TOTAL_SUPPLY = 100_000_000_000
+export const NEW_TOKEN_DEFAULT_TOTAL_SUPPLY_VALUE = 1_000_000_000
+/** Quick-select presets for the total-supply input, in whole tokens. */
+export const NEW_TOKEN_TOTAL_SUPPLY_PRESETS = [10_000_000, 100_000_000, 1_000_000_000, 10_000_000_000] as const
+
+/**
+ * Max ticker length enforced in the UI. The token factory stores `symbol` as an unbounded `string`
+ * (no on-chain cap), so this is a product limit; 32 mirrors the legacy bytes32 symbol representation.
+ */
+export const NEW_TOKEN_SYMBOL_MAX_LENGTH = 32
 const NEW_TOKEN_PLACEHOLDER = new Token(
   UniverseChainId.Unichain,
   NEW_TOKEN_PLACEHOLDER_ADDRESS,
@@ -21,7 +35,7 @@ const NEW_TOKEN_PLACEHOLDER = new Token(
 )
 const NEW_TOKEN_DEFAULT_TOTAL_SUPPLY = CurrencyAmount.fromRawAmount(
   NEW_TOKEN_PLACEHOLDER,
-  `${NEW_TOKEN_TOTAL_SUPPLY}${'0'.repeat(NEW_TOKEN_DECIMALS)}`,
+  `${NEW_TOKEN_DEFAULT_TOTAL_SUPPLY_VALUE}${'0'.repeat(NEW_TOKEN_DECIMALS)}`,
 )
 
 export enum CreateAuctionStep {
@@ -94,9 +108,14 @@ export enum PostAuctionLiquidityAllocationType {
   TIERED = 'tiered',
 }
 
-export const MIN_POST_AUCTION_LIQUIDITY_PERCENT = 25
+// Floor per LP bracket (single schedule or every tier), sourced from the launcher SDK.
+export const MIN_POST_AUCTION_LIQUIDITY_PERCENT = MIN_LP_ALLOCATION_PERCENT
 export const MAX_POST_AUCTION_LIQUIDITY_PERCENT = 100
 export const MAX_POST_AUCTION_LIQUIDITY_TIERS = 32
+
+// Max token description length (chars). Matches the backend cap (liquidity CreateAuction +
+// data-api ingest) so a description entered here is never rejected or silently truncated.
+export const MAX_TOKEN_DESCRIPTION_LENGTH = 2000
 export const DEFAULT_POST_AUCTION_LIQUIDITY_TIER_INITIAL_MILESTONE = 100_000
 export const UNBOUNDED_TIER_ID = 'tier-unbounded'
 export const DEFAULT_POST_AUCTION_LIQUIDITY_PERCENT = 100
@@ -304,6 +323,8 @@ interface CreateAuctionStoreActions {
   ) => void
   removePostAuctionLiquidityTier: (tierId: string) => void
   setAuctionConfig: (config: { auctionSupplyAmount: CurrencyAmount<Currency> }) => void
+  /** New-token only: set a custom total supply and rebase the committed auction amounts (LP-960). */
+  setNewTokenTotalSupply: (totalSupply: CurrencyAmount<Currency>) => void
   setStartTime: (startTime: Date | undefined) => void
   setEndTime: (endTime: Date | undefined) => void
   setRaiseCurrency: (currency: RaiseCurrency) => void

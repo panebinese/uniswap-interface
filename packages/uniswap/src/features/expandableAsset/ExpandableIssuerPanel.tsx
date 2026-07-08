@@ -67,6 +67,8 @@ type ExpandableIssuerRowsProps = {
    *  built-in TouchableArea. Must not add vertical extent (the row is fixed-height + overflow:hidden). Expanded
    *  sub-rows pass `isRowFocused=false` and rely on the row's own hover tracking for the `…` reveal. */
   renderIssuerRow?: (args: RenderIssuerRowArgs) => ReactNode
+  getIssuerHref?: (issuer: IssuerToken) => string | undefined
+  onIssuerModifierPress?: (issuer: IssuerToken) => void
 }
 
 /** Issuer sub-rows inside the inner `$surface1` container (nested under `$surface2`). */
@@ -76,6 +78,8 @@ export function ExpandableIssuerRows({
   variant,
   onIssuerPress,
   renderIssuerRow,
+  getIssuerHref,
+  onIssuerModifierPress,
 }: ExpandableIssuerRowsProps): JSX.Element {
   return (
     <ExpandableIssuerPanelContainer variant={variant}>
@@ -84,6 +88,7 @@ export function ExpandableIssuerRows({
           <ExpandableIssuerIdentity asset={asset} issuer={issuer} enabledChainIds={enabledChainIds} variant={variant} />
         )
         const onPress = (): void => onIssuerPress?.(issuer)
+        const onModifierPress = (): void => onIssuerModifierPress?.(issuer)
         // Scope by ticker so a common issuer slug (e.g. "ondo") doesn't collide across collections.
         const issuerTestID =
           variant === 'search' ? `${TestID.SearchRwaIssuerPrefix}${asset.symbol}-${issuer.issuer}` : undefined
@@ -115,7 +120,15 @@ export function ExpandableIssuerRows({
             {renderIssuerRow ? (
               // Expanded sub-row: the row owns the single TouchableArea (tap=navigate, long-press=menu on native), so
               // pass ownsTouchable=true and let it render in place of the built-in TouchableArea. No nesting.
-              renderIssuerRow({ issuer, isRowFocused: false, onPress, ownsTouchable: true, children: issuerRow })
+              renderIssuerRow({
+                issuer,
+                isRowFocused: false,
+                onPress,
+                ownsTouchable: true,
+                children: issuerRow,
+                modifierPressHref: getIssuerHref?.(issuer),
+                onModifierPress,
+              })
             ) : onIssuerPress ? (
               <TouchableArea
                 width="100%"
@@ -126,6 +139,8 @@ export function ExpandableIssuerRows({
                       testID: issuerTestID,
                     }
                   : {})}
+                modifierPressHref={getIssuerHref?.(issuer)}
+                onModifierPress={onModifierPress}
                 onPress={(event) => {
                   event.stopPropagation()
                   onIssuerPress(issuer)

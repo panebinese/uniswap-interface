@@ -154,13 +154,7 @@ const StatDisplay = memo(({ data, isLoading, isHoverable }: StatDisplayProps) =>
       <Text variant="body4" color="$neutral2" $group-hover={{ color: isHoverable ? '$neutral2Hovered' : '$neutral2' }}>
         {data.label}
       </Text>
-      <AnimatedNumber
-        numericValue={data.balance}
-        loading={isLoading}
-        loadingPlaceholderText="$0.00"
-        textVariant="$subheading1"
-        value={data.value}
-      />
+      <AnimatedNumber numericValue={data.balance} loading={isLoading} textVariant="$subheading1" value={data.value} />
       <Flex row alignItems="center" gap="$spacing2" style={{ fontSize: 12 }} minHeight="$spacing16">
         {isLoading ? (
           <LoadingBubble height="12px" width="60px" />

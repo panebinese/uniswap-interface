@@ -1,6 +1,6 @@
 import { createPromiseClient, type PromiseClient, type Transport } from '@connectrpc/connect'
 import { compliancev2Service } from '@uniswap/client-compliancev2/dist/uniswap/compliance/v1/api_connect'
-import { ChainId, TokenRef } from '@uniswap/client-compliancev2/dist/uniswap/compliance/v1/api_pb'
+import { ChainId, type GatedFeature, TokenRef } from '@uniswap/client-compliancev2/dist/uniswap/compliance/v1/api_pb'
 
 export type ComplianceV2Client = PromiseClient<typeof compliancev2Service>
 
@@ -56,4 +56,18 @@ export async function setTokenAcknowledgement(
   await client.setTokenAcknowledgement({
     token: new TokenRef({ chainId: chainId as ChainId, address }),
   })
+}
+
+/**
+ * Returns the product features geo-blocked for the caller's region. The region
+ * is resolved server-side from the Entry Gateway request context (GeoIP); no
+ * region input is sent. We pass an empty filter to fetch every blocked feature
+ * in one call, so a single cache entry serves every `useIsFeatureGated` reader.
+ *
+ * Like the token surface, this fails open: an unauthenticated caller (no Entry
+ * Gateway session) gets an empty list, which reads as "nothing gated".
+ */
+export async function fetchGatedFeatures(client: ComplianceV2Client): Promise<GatedFeature[]> {
+  const response = await client.gatedFeatures({})
+  return response.features
 }

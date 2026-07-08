@@ -80,11 +80,6 @@ export function PortfolioPoolsRewardsCard({
     setTokenRewards(effectivelyClaimed ? '0' : (rewardsData?.totalUnclaimedAmountUni ?? '0'))
   }, [effectivelyClaimed, rewardsData?.totalUnclaimedAmountUni, setTokenRewards])
 
-  const handleCollectPress = useCallback(() => {
-    sendAnalyticsEvent(UniswapEventName.LpIncentiveCollectRewardsButtonClicked)
-    openModal()
-  }, [openModal])
-
   const handleClaimSuccess = useCallback(() => {
     sendAnalyticsEvent(UniswapEventName.LpIncentiveCollectRewardsSuccess, {
       token_rewards: tokenRewards,
@@ -154,15 +149,17 @@ export function PortfolioPoolsRewardsCard({
             </Flex>
           )}
           {!isZero && !showSkeleton && !isExternalWallet && (
-            <Button
-              size="xsmall"
-              emphasis="secondary"
-              fill={false}
-              isDisabled={hasError || isPendingTransaction}
-              onPress={handleCollectPress}
-            >
-              {t('common.collect.button')}
-            </Button>
+            <Trace logPress eventOnTrigger={UniswapEventName.LpIncentiveCollectRewardsButtonClicked}>
+              <Button
+                size="xsmall"
+                emphasis="secondary"
+                fill={false}
+                isDisabled={hasError || isPendingTransaction}
+                onPress={openModal}
+              >
+                {t('common.collect.button')}
+              </Button>
+            </Trace>
           )}
         </Flex>
       </PortfolioPoolsSidebarCard>

@@ -70,11 +70,13 @@ function useSwapConfig(): {
   getCanBatchTransactions?: (chainId: UniverseChainId | undefined) => boolean
   getSwapDelegationInfo?: (chainId: UniverseChainId | undefined) => SwapDelegationInfo
   signDelegationAuthorization?: SignDelegationAuthorizationFn
+  supportsUserOpSwaps?: boolean
 } {
   const chainId = useSwapFormStoreDerivedSwapInfo((s) => s.chainId)
   const gasStrategy = useActiveGasStrategy(chainId, 'general')
   const v4SwapEnabled = useV4SwapEnabled(chainId)
-  const { getCanBatchTransactions, getSwapDelegationInfo, signDelegationAuthorization } = useUniswapContext()
+  const { getCanBatchTransactions, getSwapDelegationInfo, signDelegationAuthorization, supportsUserOpSwaps } =
+    useUniswapContext()
   return useMemo(
     () => ({
       v4SwapEnabled,
@@ -82,8 +84,16 @@ function useSwapConfig(): {
       getCanBatchTransactions,
       getSwapDelegationInfo,
       signDelegationAuthorization,
+      supportsUserOpSwaps,
     }),
-    [v4SwapEnabled, gasStrategy, getCanBatchTransactions, getSwapDelegationInfo, signDelegationAuthorization],
+    [
+      v4SwapEnabled,
+      gasStrategy,
+      getCanBatchTransactions,
+      getSwapDelegationInfo,
+      signDelegationAuthorization,
+      supportsUserOpSwaps,
+    ],
   )
 }
 
@@ -133,10 +143,16 @@ export function useSwapTxAndGasInfoService(): SwapTxAndGasInfoService {
       fetchSponsoredApproval: createUniswapXSponsoredApprovalStrategy({
         getCanBatchTransactions: swapConfig.getCanBatchTransactions,
         getSwapDelegationInfo: swapConfig.getSwapDelegationInfo,
+        signDelegationAuthorization: swapConfig.signDelegationAuthorization,
         gasOverrides,
       }),
     })
-  }, [swapConfig.getCanBatchTransactions, swapConfig.getSwapDelegationInfo, gasOverrides])
+  }, [
+    swapConfig.getCanBatchTransactions,
+    swapConfig.getSwapDelegationInfo,
+    swapConfig.signDelegationAuthorization,
+    gasOverrides,
+  ])
 
   const chainedSwapTxInfoService = useMemo(() => {
     return createChainedActionSwapTxAndGasInfoService({

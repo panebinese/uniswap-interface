@@ -164,6 +164,7 @@ export function VolumeByNetworkPopover({
         px="$spacing8"
         minWidth={POPOVER_MIN_WIDTH}
         onPress={(e) => e.stopPropagation()}
+        onOpenAutoFocus={(e) => e.preventDefault()}
         {...shadowProps}
       >
         <Flex gap="$spacing8" width="100%">

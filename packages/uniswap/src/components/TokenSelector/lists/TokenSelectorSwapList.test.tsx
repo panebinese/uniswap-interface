@@ -12,11 +12,13 @@ import { renderHook } from 'uniswap/src/test/test-utils'
 
 const {
   mockUseFeatureFlag,
+  mockUseIsFeatureGated,
   mockUseRwaTokenOptions,
   mockUseCommonTokensOptionsWithFallback,
   mockUseBridgingTokensOptions,
 } = vi.hoisted(() => ({
   mockUseFeatureFlag: vi.fn(),
+  mockUseIsFeatureGated: vi.fn(),
   mockUseRwaTokenOptions: vi.fn(),
   mockUseCommonTokensOptionsWithFallback: vi.fn(),
   mockUseBridgingTokensOptions: vi.fn(),
@@ -25,6 +27,10 @@ const {
 vi.mock('@universe/gating', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@universe/gating')>()),
   useFeatureFlag: (flag: FeatureFlags) => mockUseFeatureFlag(flag),
+}))
+vi.mock('@universe/compliance', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@universe/compliance')>()),
+  useIsFeatureGated: () => mockUseIsFeatureGated(),
 }))
 vi.mock('uniswap/src/components/TokenSelector/hooks/useRwaTokenOptions', () => ({
   useRwaTokenOptions: mockUseRwaTokenOptions,
@@ -73,7 +79,8 @@ function hasStocksSection(sections: ReturnType<typeof useTokenSectionsForSwap>['
 describe('useTokenSectionsForSwap Stocks section', () => {
   beforeEach(() => {
     mockUseRwaTokenOptions.mockReturnValue([stock])
-    mockUseFeatureFlag.mockImplementation((flag: FeatureFlags) => flag === FeatureFlags.RwaUxTokenSelector)
+    mockUseFeatureFlag.mockReturnValue(false)
+    mockUseIsFeatureGated.mockReturnValue(false)
     mockUseCommonTokensOptionsWithFallback.mockReturnValue({
       data: undefined,
       error: undefined,
@@ -89,7 +96,7 @@ describe('useTokenSectionsForSwap Stocks section', () => {
     })
   })
 
-  it('includes the Stocks section on SwapOutput when the flag is on', () => {
+  it('includes the Stocks section on SwapOutput when the region is not RWA-blocked', () => {
     const { data } = renderSwapSections(TokenSelectorVariation.SwapOutput)
     expect(hasStocksSection(data)).toBe(true)
   })
@@ -99,8 +106,8 @@ describe('useTokenSectionsForSwap Stocks section', () => {
     expect(hasStocksSection(data)).toBe(false)
   })
 
-  it('does NOT include Stocks when the flag is off', () => {
-    mockUseFeatureFlag.mockReturnValue(false)
+  it('does NOT include Stocks when the region is RWA-blocked', () => {
+    mockUseIsFeatureGated.mockReturnValue(true)
     const { data } = renderSwapSections(TokenSelectorVariation.SwapOutput)
     expect(hasStocksSection(data)).toBe(false)
   })

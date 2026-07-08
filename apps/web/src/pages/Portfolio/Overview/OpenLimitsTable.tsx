@@ -156,9 +156,11 @@ export const OpenLimitsTable = memo(function OpenLimitsTable({
     return openLimitOrders.slice(0, maxLimits)
   }, [openLimitOrders, maxLimits])
 
+  // Only show skeleton on initial load — background refetches should be silent.
+  const showLoadingSkeleton = loading && openLimitOrders.length === 0
+
   const columns = useMemo(() => {
     const columnHelper = createColumnHelper<UniswapXOrderDetails>()
-    const showLoadingSkeleton = loading
 
     return [
       // Left Column - Limit Info
@@ -200,7 +202,7 @@ export const OpenLimitsTable = memo(function OpenLimitsTable({
         },
       }),
     ]
-  }, [t, loading])
+  }, [t, showLoadingSkeleton])
 
   const rowWrapper = useCallback(
     (row: Row<UniswapXOrderDetails>, content: JSX.Element) => {

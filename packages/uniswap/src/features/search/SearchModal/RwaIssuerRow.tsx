@@ -41,6 +41,8 @@ export function RwaIssuerRow({
   issuerChainTokens,
   menuControl,
   children,
+  modifierPressHref,
+  onModifierPress,
 }: RwaIssuerRowProps): JSX.Element {
   const { value: internalIsOpen, setTrue: openInternalMenu, setFalse: closeInternalMenu } = useBooleanState(false)
   // A SECOND boolean state for the per-chain address sheet (mobile). Independent of the menu's open-state
@@ -106,7 +108,13 @@ export function RwaIssuerRow({
 
   if (!currencyInfo) {
     // No menu: expanded sub-row still needs its own tap target; collapsed row's tap is the shell's.
-    return ownsTouchable ? <TouchableArea onPress={onPress}>{children}</TouchableArea> : <>{children}</>
+    return ownsTouchable ? (
+      <TouchableArea modifierPressHref={modifierPressHref} onModifierPress={onModifierPress} onPress={onPress}>
+        {children}
+      </TouchableArea>
+    ) : (
+      <>{children}</>
+    )
   }
 
   // Reveal via the hover signal (the repo-wide isVisible||isOpen contract), which also works on the collapsed shelf
@@ -163,12 +171,23 @@ export function RwaIssuerRow({
               openMenu()
             }}
           >
-            {ownsTouchable ? <TouchableArea onPress={onPress}>{body}</TouchableArea> : body}
+            {ownsTouchable ? (
+              <TouchableArea modifierPressHref={modifierPressHref} onModifierPress={onModifierPress} onPress={onPress}>
+                {body}
+              </TouchableArea>
+            ) : (
+              body
+            )}
           </div>
         ) : ownsTouchable ? (
           // native expanded sub-row: ONE TouchableArea, tap + long-press (no nesting, no `…` since !isHoverable).
           // openMenuNative adds keyboard-dismiss + haptic.
-          <TouchableArea onPress={onPress} onLongPress={openMenuNative}>
+          <TouchableArea
+            modifierPressHref={modifierPressHref}
+            onModifierPress={onModifierPress}
+            onPress={onPress}
+            onLongPress={openMenuNative}
+          >
             {body}
           </TouchableArea>
         ) : (

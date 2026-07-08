@@ -11,7 +11,16 @@ import { logger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'
 import { getAuctionCreateFailedDiagnostics } from '~/pages/Liquidity/CreateAuction/analytics'
 import { buildCreateAuctionRequest } from '~/pages/Liquidity/CreateAuction/buildCreateAuctionRequest'
-import { ConfigureAuctionFormState, CustomizePoolState, TokenFormState } from '~/pages/Liquidity/CreateAuction/types'
+import {
+  ConfigureAuctionFormState,
+  CustomizePoolState,
+  TokenFormState,
+  TokenMode,
+} from '~/pages/Liquidity/CreateAuction/types'
+import {
+  EmissionScheduleError,
+  getAuctionEmissionScheduleError,
+} from '~/pages/Liquidity/CreateAuction/utils/emissionSchedule'
 
 /**
  * Thrown at launch time when the chosen start time has already passed — possible when the user
@@ -35,6 +44,21 @@ export class AuctionInsufficientBalanceError extends Error {
   constructor() {
     super('Wallet token balance is insufficient to fund the auction')
     this.name = 'AuctionInsufficientBalanceError'
+  }
+}
+
+/**
+ * Thrown at launch time when the chosen window no longer produces a valid emission schedule —
+ * possible when a window that was valid at the Configure step goes stale because `now` advanced
+ * (so start/end round to the same/adjacent block). The backend derives a convex emission schedule
+ * from the block span and rejects a too-short window or one whose per-block rounding overshoots the
+ * supply target ("Emission schedule overshot the supply target"). Caught pre-submission and mapped to
+ * actionable copy in `LaunchAuctionErrorModal`.
+ */
+export class AuctionWindowTooShortError extends Error {
+  constructor() {
+    super('Auction window is too short for a valid emission schedule')
+    this.name = 'AuctionWindowTooShortError'
   }
 }
 
@@ -143,9 +167,14 @@ export function useCreateAuctionSubmit(params: UseCreateAuctionSubmitParams): Us
   const createAuctionMutation = useCreateAuctionMutation()
   const [error, setError] = useState<Error | undefined>(undefined)
 
+  // Existing mode needs a resolved token; without it the request builder suppresses the request
+  // (an empty `existing` source is rejected by the backend), so keep the launch button disabled.
+  const hasResolvedToken = tokenForm.mode === TokenMode.CREATE_NEW || tokenForm.existingTokenCurrencyInfo !== undefined
+
   const canBuild = Boolean(
     walletAddress &&
     currencyAddress &&
+    hasResolvedToken &&
     configureAuction.committed &&
     configureAuction.startTime &&
     configureAuction.endTime,
@@ -180,6 +209,21 @@ export function useCreateAuctionSubmit(params: UseCreateAuctionSubmitParams): Us
       BigInt(configureAuction.committed.auctionSupplyAmount.quotient.toString()) > existingTokenWalletBalanceRaw
     ) {
       const err = new AuctionInsufficientBalanceError()
+      setError(err)
+      reportAuctionCreateFailed({ getCreateFailedProperties, failedStep: 'build_request', error: err, diagnostics })
+      return undefined
+    }
+
+    // Re-check the emission schedule against `now`: a window valid at Configure can go stale if the
+    // user lingers, leaving too few blocks for the backend's schedule (it would reject the request).
+    if (
+      getAuctionEmissionScheduleError({
+        startTime: configureAuction.startTime,
+        endTime: configureAuction.endTime,
+        chainId: configureAuction.committed?.totalSupply.currency.chainId,
+      }) === EmissionScheduleError.WindowTooShort
+    ) {
+      const err = new AuctionWindowTooShortError()
       setError(err)
       reportAuctionCreateFailed({ getCreateFailedProperties, failedStep: 'build_request', error: err, diagnostics })
       return undefined

@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { ChartPeriod } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { ChartPeriod, WalletBalanceCategory } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Flex, Separator, styled, useMedia } from 'ui/src'
@@ -14,6 +14,7 @@ import {
   usePortfolioBalanceBreakdown,
   usePortfolioTotalValue,
 } from 'uniswap/src/features/dataApi/balances/balancesRest'
+import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/useRestPortfolioValueModifier'
 import { usePortfolioChartBalanceMismatch } from 'uniswap/src/features/portfolio/usePortfolioChartBalanceMismatch'
 import { ElementName, InterfacePageName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import { Trace } from 'uniswap/src/features/telemetry/Trace'
@@ -68,6 +69,27 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const filterChainIds = useMemo(() => (chainId ? [chainId] : allChainIds), [chainId, allChainIds])
 
   const includeCategories = useWalletBalancesIncludeCategories()
+  const portfolioValueModifier = useRestPortfolioValueModifier(portfolioAddresses.evmAddress)
+
+  const chartInput = useMemo(
+    () => ({
+      evmAddress: portfolioAddresses.evmAddress,
+      svmAddress: portfolioAddresses.svmAddress,
+      chainIds: filterChainIds,
+      includeCategories,
+      ...(includeCategories.includes(WalletBalanceCategory.POOLS) && {
+        poolIncludeOverrides: portfolioValueModifier?.poolIncludeOverrides,
+        poolExcludeOverrides: portfolioValueModifier?.poolExcludeOverrides,
+      }),
+    }),
+    [
+      portfolioAddresses.evmAddress,
+      portfolioAddresses.svmAddress,
+      filterChainIds,
+      includeCategories,
+      portfolioValueModifier,
+    ],
+  )
 
   const { data: portfolioData } = usePortfolioTotalValue({
     evmAddress: portfolioAddresses.evmAddress,
@@ -89,13 +111,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
     isPending: isChartPending,
     error: chartError,
   } = useGetPortfolioHistoricalValueChartQuery({
-    input: {
-      evmAddress: portfolioAddresses.evmAddress,
-      svmAddress: portfolioAddresses.svmAddress,
-      chainIds: filterChainIds,
-      chartPeriod: selectedPeriod,
-      includeCategories,
-    },
+    input: { ...chartInput, chartPeriod: selectedPeriod },
     enabled: !!(portfolioAddresses.evmAddress || portfolioAddresses.svmAddress),
   })
 
@@ -156,13 +172,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
         return
       }
       const periodQuery = getPortfolioHistoricalValueChartQuery({
-        input: {
-          evmAddress: portfolioAddresses.evmAddress,
-          svmAddress: portfolioAddresses.svmAddress,
-          chainIds: filterChainIds,
-          chartPeriod: period,
-          includeCategories,
-        },
+        input: { ...chartInput, chartPeriod: period },
       })
       const existingPeriodQueryState = queryClient.getQueryState(periodQuery.queryKey)
       if (existingPeriodQueryState?.fetchStatus === 'fetching' || existingPeriodQueryState?.status === 'success') {
@@ -170,14 +180,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
       }
       queryClient.prefetchQuery(periodQuery).catch(() => undefined)
     },
-    [
-      queryClient,
-      portfolioAddresses.evmAddress,
-      portfolioAddresses.svmAddress,
-      filterChainIds,
-      selectedPeriod,
-      includeCategories,
-    ],
+    [queryClient, portfolioAddresses.evmAddress, portfolioAddresses.svmAddress, selectedPeriod, chartInput],
   )
 
   // Fetch activity data once at the top level to share across the overview tables

@@ -23,7 +23,6 @@ import { ConfirmModalState } from '~/pages/Swap/Limit/ConfirmLimitOrderModal/sta
 import { useConfirmModalState } from '~/pages/Swap/Limit/ConfirmLimitOrderModal/useConfirmModalState'
 import { LimitOrderDetails } from '~/pages/Swap/Limit/LimitOrderDetails'
 import { LimitOrderPreview } from '~/pages/Swap/Limit/LimitOrderPreview'
-import { useLimitOrderTransactionStatus } from '~/pages/Swap/Limit/useLimitOrderCallback'
 import { useSuppressPopups } from '~/state/application/hooks'
 import { PopupType } from '~/state/popups/types'
 import { InterfaceTrade } from '~/state/routing/types'
@@ -159,7 +158,6 @@ function ConfirmLimitOrderModalBodyPanel({
               displayedModalErrorType !== undefined &&
               displayedModalErrorType !== PendingModalError.XV2_HARD_QUOTE_ERROR
             }
-            limitOrderResult={limitOrderResult}
             errorType={displayedModalErrorType}
             onRetry={() => {
               const typeForRetry = displayedModalErrorType
@@ -224,17 +222,14 @@ export function ConfirmLimitOrderModal({
     },
   })
 
-  const swapStatus = useLimitOrderTransactionStatus(limitOrderResult)
   const uniswapXOrder = useUniswapXOrderByOrderHash(
     isUniswapXTradeType(limitOrderResult?.type) ? limitOrderResult.response.orderHash : '',
   )
 
-  const swapConfirmed = swapStatus === TransactionStatus.Success || uniswapXOrder?.status === TransactionStatus.Success
+  const swapConfirmed = uniswapXOrder?.status === TransactionStatus.Success
   const limitPlaced = isLimitTrade(trade) && uniswapXOrder?.status === TransactionStatus.Pending
 
-  const localSwapFailure = Boolean(limitOrderError) && !didUserReject(limitOrderError)
-  const swapReverted = swapStatus === TransactionStatus.Failed
-  const orderFlowFailed = localSwapFailure || swapReverted
+  const orderFlowFailed = Boolean(limitOrderError) && !didUserReject(limitOrderError)
   const errorType = useMemo(() => {
     if (approvalError) {
       return approvalError

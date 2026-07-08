@@ -19,6 +19,8 @@ const { mockUseFeatureFlag, mockUsePortfolioBalancePart } = vi.hoisted(() => ({
 vi.mock('@universe/gating', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@universe/gating')>()),
   useFeatureFlag: mockUseFeatureFlag,
+  // usePoolsBalanceCoachmarkVisibility reads the pools flag via the exposure-disabled variant.
+  useFeatureFlagWithExposureLoggingDisabled: mockUseFeatureFlag,
 }))
 
 vi.mock('uniswap/src/features/dataApi/balances/balancesRest', () => ({
@@ -116,14 +118,14 @@ describe(usePoolsBalanceCoachmarkVisibility, () => {
     expect(result.current.shouldShow).toBe(true)
   })
 
-  it('reads from the cache without triggering a fetch (passes enabled: false to the data hook)', () => {
+  it('reads from the cache without triggering a fetch (passes cacheOnly to the data hook)', () => {
     renderHookWithProviders(() => usePoolsBalanceCoachmarkVisibility({ evmAddress: WALLET_A }), {
       preloadedState: asExistingUser(),
     })
 
     expect(mockUsePortfolioBalancePart).toHaveBeenCalledWith(
       expect.objectContaining({
-        enabled: false,
+        cacheOnly: true,
       }),
     )
   })

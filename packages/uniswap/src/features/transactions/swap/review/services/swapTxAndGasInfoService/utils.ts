@@ -23,6 +23,7 @@ import { SwapEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import type { TransactionSettings } from 'uniswap/src/features/transactions/components/settings/types'
 import { getBaseTradeAnalyticsPropertiesFromSwapInfo } from 'uniswap/src/features/transactions/swap/analytics'
+import { GasSponsorshipNotAppliedError } from 'uniswap/src/features/transactions/swap/errors'
 import type { ApprovalTxInfo } from 'uniswap/src/features/transactions/swap/review/hooks/useTokenApprovalInfo'
 import {
   SlippageTooLowError,
@@ -82,31 +83,6 @@ export type TransactionRequestInfo = {
       unsignedUserOperation?: never
     }
 )
-
-export function processWrapResponse({
-  gasFeeResult,
-  wrapTxRequest,
-  fallbackGasParams,
-}: {
-  gasFeeResult: GasFeeResult
-  wrapTxRequest: providers.TransactionRequest | undefined
-  fallbackGasParams?: providers.TransactionRequest
-}): TransactionRequestInfo {
-  const gasParams = gasFeeResult.params ?? fallbackGasParams ?? {}
-
-  const wrapTxRequestWithGasFee = { ...wrapTxRequest, ...gasParams }
-
-  const gasEstimate: SwapGasFeeEstimation = {
-    wrapEstimate: gasFeeResult.gasEstimate,
-  }
-
-  return {
-    gasFeeResult,
-    txRequests: [wrapTxRequestWithGasFee],
-    gasEstimate,
-    swapRequestArgs: undefined,
-  }
-}
 
 export function createPrepareSwapRequestParams({
   gasStrategy,
@@ -248,6 +224,7 @@ export function createProcessSwapResponse({
     swapRequestParams,
     isRevokeNeeded,
     permitsDontNeedSignature,
+    sponsorshipExpected,
   }: {
     response: SwapData | undefined
     error: Error | null
@@ -257,6 +234,7 @@ export function createProcessSwapResponse({
     swapRequestParams: TradingApi.CreateSwapRequest | undefined
     isRevokeNeeded: boolean
     permitsDontNeedSignature?: boolean
+    sponsorshipExpected?: boolean
   }): TransactionRequestInfo {
     // Read the same tx the editor pre-fills from (`transactions[0]`); with
     // overrides applied, show its max cost (`maxFeePerGas × gasLimit`) so the row
@@ -276,7 +254,12 @@ export function createProcessSwapResponse({
     // This is a case where simulation fails on backend, meaning txn is expected to fail
     const simulationError = getSimulationError({ swapQuote, isRevokeNeeded })
 
-    const gasEstimateError = simulationError ?? error
+    const sponsorshipDelivered =
+      response?.requestUniswapGasSponsorship === true || Boolean(response?.paymasterService?.url)
+    const sponsorshipError =
+      sponsorshipExpected && response && !sponsorshipDelivered ? new GasSponsorshipNotAppliedError() : null
+
+    const gasEstimateError = simulationError ?? error ?? sponsorshipError
 
     const gasFeeResult = {
       value: swapGasFee.value,

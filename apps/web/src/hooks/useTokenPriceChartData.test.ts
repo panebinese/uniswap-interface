@@ -1,4 +1,5 @@
 import { GraphQLApi } from '@universe/api'
+import { PollingInterval } from 'uniswap/src/constants/misc'
 import { TimePeriod } from '~/appGraphql/data/util'
 import type { PriceChartData } from '~/components/Charts/PriceChart'
 import { ChartType, DataQuality, PriceChartType } from '~/components/Charts/utils'
@@ -8,7 +9,7 @@ import {
   toStrictlyAscendingByTime,
   useTokenPriceChartData,
 } from '~/hooks/useTokenPriceChartData'
-import { renderHook } from '~/test-utils/render'
+import { act, renderHook } from '~/test-utils/render'
 
 const { mockUseTokenPriceQuery, mockUseTokenPriceHistoryQuery } = vi.hoisted(() => {
   const mockUseTokenPriceQuery = vi.fn()
@@ -77,6 +78,7 @@ function makeSubgraphResult(priceHistory: typeof SUBGRAPH_PRICE_HISTORY, ohlc: t
   return {
     data: { token: { market: { priceHistory, ohlc, price: { value: 12 } } } },
     loading: false,
+    refetch: vi.fn().mockResolvedValue(undefined),
   }
 }
 
@@ -101,6 +103,10 @@ describe('useTokenPriceChartData', () => {
   beforeEach(() => {
     mockUseTokenPriceQuery.mockReturnValue(makeSubgraphResult(SUBGRAPH_PRICE_HISTORY))
     mockUseTokenPriceHistoryQuery.mockReturnValue(makeCoinGeckoResult(COINGECKO_PRICE_HISTORY))
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    })
   })
 
   it('uses CoinGecko price history when it returns data', () => {
@@ -245,6 +251,97 @@ describe('useTokenPriceChartData', () => {
     expect(result.current.loading).toBe(false)
     expect(result.current.dataQuality).toBe(DataQuality.VALID)
     expect(result.current.entries[0].value).toBe(9)
+  })
+
+  it('pauses price polling when tab is hidden', () => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    })
+
+    renderHook(() =>
+      useTokenPriceChartData({
+        variables: BASE_VARIABLES,
+        skip: false,
+        priceChartType: PriceChartType.LINE,
+      }),
+    )
+
+    expect(mockUseTokenPriceQuery).toHaveBeenLastCalledWith(expect.objectContaining({ pollInterval: 0 }))
+  })
+
+  it('polls at the normal rate when tab is visible', () => {
+    renderHook(() =>
+      useTokenPriceChartData({
+        variables: BASE_VARIABLES,
+        skip: false,
+        priceChartType: PriceChartType.LINE,
+      }),
+    )
+
+    expect(mockUseTokenPriceQuery).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pollInterval: PollingInterval.KindaFast }),
+    )
+  })
+
+  it('fires an immediate refetch when the tab becomes visible after being hidden', async () => {
+    const mockRefetch = vi.fn().mockResolvedValue(undefined)
+    mockUseTokenPriceQuery.mockReturnValue({ ...makeSubgraphResult(SUBGRAPH_PRICE_HISTORY), refetch: mockRefetch })
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    })
+
+    renderHook(() =>
+      useTokenPriceChartData({
+        variables: BASE_VARIABLES,
+        skip: false,
+        priceChartType: PriceChartType.LINE,
+      }),
+    )
+
+    expect(mockRefetch).not.toHaveBeenCalled()
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    })
+
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+
+    expect(mockRefetch).toHaveBeenCalledOnce()
+  })
+
+  it('does not refetch when skip is true and tab becomes visible', async () => {
+    const mockRefetch = vi.fn().mockResolvedValue(undefined)
+    mockUseTokenPriceQuery.mockReturnValue({ ...makeSubgraphResult(SUBGRAPH_PRICE_HISTORY), refetch: mockRefetch })
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    })
+
+    renderHook(() =>
+      useTokenPriceChartData({
+        variables: BASE_VARIABLES,
+        skip: true,
+        priceChartType: PriceChartType.LINE,
+      }),
+    )
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    })
+
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+
+    expect(mockRefetch).not.toHaveBeenCalled()
   })
 
   it('produces strictly ascending timestamps when CoinGecko returns a duplicate trailing timestamp', () => {

@@ -8,6 +8,7 @@ import {
   applyNativeTokenPercentageBuffer,
   getActiveGasStrategy,
   hasGasEstimationFailed,
+  hasGasOverrides,
   hasSufficientFundsIncludingGas,
   hasSufficientGasBalance,
 } from 'uniswap/src/features/gas/utils'
@@ -282,5 +283,18 @@ describe(hasGasEstimationFailed, () => {
 
   it('returns true when the query settled with an error', () => {
     expect(hasGasEstimationFailed(true, erroredResult)).toBe(true)
+  })
+})
+
+describe(hasGasOverrides, () => {
+  it('returns false when no overrides are saved', () => {
+    expect(hasGasOverrides(undefined)).toBe(false)
+    expect(hasGasOverrides({})).toBe(false)
+  })
+
+  it('returns true when any override field is set', () => {
+    expect(hasGasOverrides({ maxBaseFeeGwei: '10' })).toBe(true)
+    expect(hasGasOverrides({ priorityFeeGwei: '1' })).toBe(true)
+    expect(hasGasOverrides({ gasLimit: '21000' })).toBe(true)
   })
 })

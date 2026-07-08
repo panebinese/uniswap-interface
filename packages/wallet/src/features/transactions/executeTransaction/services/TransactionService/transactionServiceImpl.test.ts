@@ -6,6 +6,7 @@ import { AssetType } from 'uniswap/src/entities/assets'
 import { AccountMeta, AccountType, SignerMnemonicAccountMeta } from 'uniswap/src/features/accounts/types'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { getChainLabel } from 'uniswap/src/features/chains/utils'
+import { WalletEventName } from 'uniswap/src/features/telemetry/constants'
 import {
   TransactionOriginType,
   TransactionStatus,
@@ -62,6 +63,7 @@ describe('TransactionService', () => {
     updateTransaction: jest.fn(),
     finalizeTransaction: jest.fn(),
     getPendingPrivateTransactionCount: jest.fn(),
+    getPendingPrivateTransactionDetails: jest.fn(),
     getTransactionsByAddress: jest.fn(),
   }
 
@@ -89,10 +91,12 @@ describe('TransactionService', () => {
   // Create a properly mocked provider with proper jest function mocks
   const mockGetTransactionCount = jest.fn().mockImplementation(() => Promise.resolve(42))
   const mockGetInternalBlockNumber = jest.fn().mockImplementation(() => Promise.resolve(123456))
+  const mockGetTransaction = jest.fn().mockResolvedValue(null)
 
   const mockBaseProvider = {
     _getInternalBlockNumber: mockGetInternalBlockNumber,
     getTransactionCount: mockGetTransactionCount,
+    getTransaction: mockGetTransaction,
   } as unknown as BaseProvider & Provider
 
   const mockLogger = {
@@ -114,6 +118,8 @@ describe('TransactionService', () => {
 
     // Reset the mocks with their default implementations
     mockGetTransactionCount.mockImplementation(() => Promise.resolve(42))
+    mockGetTransaction.mockResolvedValue(null)
+    mockTransactionRepository.getPendingPrivateTransactionDetails.mockResolvedValue([])
 
     // Setup default mock for private RPC support check
     const mockIsPrivateRpcSupportedOnChain = isPrivateRpcSupportedOnChain as jest.Mock
@@ -1007,6 +1013,68 @@ describe('TransactionService', () => {
       expect(mockLogger.error).toHaveBeenCalled()
     })
 
+    it('treats an already-submitted sync error as Pending and defers to the watcher when the tx is known on-chain', async () => {
+      // INC-320: node already knows our hash → recover as Pending, don't fail.
+      const params = createTestParams()
+      const syncService = createTestServiceWithJsonRpc()
+
+      // Distinct from receipt hash to prove the lookup keys off keccak256(signedRequest).
+      const signedTxHash = '0x1111111111111111111111111111111111111111111111111111111111111111'
+      const mockKeccak256 = utils.keccak256 as jest.Mock
+      mockKeccak256.mockReturnValue(signedTxHash)
+
+      mockTransactionSigner.sendTransactionSync.mockRejectedValue(new Error('nonce too low: next nonce 6, tx nonce 5'))
+      // The node already knows our deterministic tx hash → it landed.
+      mockGetTransaction.mockResolvedValue({ hash: signedTxHash })
+
+      const result = await syncService.submitTransactionSync(params)
+
+      // Looked up the hash derived from the signed request, not the receipt hash.
+      expect(mockGetTransaction).toHaveBeenCalledWith(signedTxHash)
+      // Recovered as Pending and handed to the watcher (skipProcessing:false) — NOT finalized Failed.
+      expect(mockTransactionRepository.updateTransaction).toHaveBeenCalledWith({
+        transaction: expect.objectContaining({
+          hash: signedTxHash,
+          status: TransactionStatus.Pending,
+        }),
+        skipProcessing: false,
+      })
+      expect(mockTransactionRepository.finalizeTransaction).not.toHaveBeenCalled()
+      expect(result).toEqual(expect.objectContaining({ hash: signedTxHash, status: TransactionStatus.Pending }))
+    })
+
+    it('finalizes Failed when an already-submitted error fires but the tx is NOT known on-chain (different tx took the nonce)', async () => {
+      const params = createTestParams()
+      const syncService = createTestServiceWithJsonRpc()
+
+      mockTransactionSigner.sendTransactionSync.mockRejectedValue(new Error('nonce too low: next nonce 6, tx nonce 5'))
+      // A different tx (RBF/concurrent send) consumed the nonce → our hash never lands.
+      mockGetTransaction.mockResolvedValue(null)
+
+      await expect(syncService.submitTransactionSync(params)).rejects.toThrow('Failed to send transaction:')
+
+      expect(mockTransactionRepository.finalizeTransaction).toHaveBeenCalledWith({
+        transaction: expect.anything(),
+        status: TransactionStatus.Failed,
+      })
+      expect(mockTransactionRepository.updateTransaction).not.toHaveBeenCalled()
+    })
+
+    it('finalizes Failed when the on-chain lookup itself throws (treated as not known)', async () => {
+      const params = createTestParams()
+      const syncService = createTestServiceWithJsonRpc()
+
+      mockTransactionSigner.sendTransactionSync.mockRejectedValue(new Error('already known'))
+      mockGetTransaction.mockRejectedValue(new Error('RPC unavailable'))
+
+      await expect(syncService.submitTransactionSync(params)).rejects.toThrow('Failed to send transaction:')
+
+      expect(mockTransactionRepository.finalizeTransaction).toHaveBeenCalledWith({
+        transaction: expect.anything(),
+        status: TransactionStatus.Failed,
+      })
+    })
+
     it('should handle bridge transactions with analytics', async () => {
       const validatedRequest = {
         to: '0xabcdef1234567890123456789012345678901234',
@@ -1521,6 +1589,55 @@ describe('TransactionService', () => {
         chainId: UniverseChainId.Mainnet,
       })
       expect(result).toEqual({ nonce: 8, pendingPrivateTxCount: 3 }) // 5 + 3 = 8
+    })
+
+    it('emits a NonceCalculated analytics event with inflating-tx detail when count > 0', async () => {
+      const service = createTestService()
+      const mockAccount: AccountMeta = {
+        address: '0x1234567890123456789012345678901234567890',
+        type: AccountType.SignerMnemonic,
+      }
+      mockGetTransactionCount.mockReturnValue(5)
+      mockConfigService.shouldUsePrivateRpc.mockReturnValue(false)
+      mockTransactionRepository.getPendingPrivateTransactionCount.mockResolvedValue(2)
+      mockTransactionRepository.getPendingPrivateTransactionDetails.mockResolvedValue([
+        { id: 'stuck1', hash: '0xaaa', nonce: 5, addedTime: 1234567000, status: 'pending' },
+        { id: 'stuck2', hash: '0xbbb', nonce: 6, addedTime: 1234567100, status: 'pending' },
+      ])
+      ;(isPrivateRpcSupportedOnChain as jest.Mock).mockReturnValue(true)
+
+      await service.getNextNonce({ account: mockAccount, chainId: UniverseChainId.Mainnet })
+
+      expect(mockTransactionRepository.getPendingPrivateTransactionDetails).toHaveBeenCalledWith({
+        address: mockAccount.address,
+        chainId: UniverseChainId.Mainnet,
+      })
+      expect(mockAnalyticsService.trackTransactionEvent as jest.Mock).toHaveBeenCalledWith(
+        WalletEventName.NonceCalculated,
+        expect.objectContaining({
+          final_nonce: 7,
+          on_chain_pending_nonce: 5,
+          pending_private_tx_count: 2,
+          inflating_tx_ids: ['stuck1', 'stuck2'],
+        }),
+      )
+    })
+
+    it('does NOT emit a NonceCalculated analytics event when count is 0', async () => {
+      const service = createTestService()
+      const mockAccount: AccountMeta = {
+        address: '0x1234567890123456789012345678901234567890',
+        type: AccountType.SignerMnemonic,
+      }
+      mockGetTransactionCount.mockReturnValue(5)
+      mockConfigService.shouldUsePrivateRpc.mockReturnValue(false)
+      mockTransactionRepository.getPendingPrivateTransactionCount.mockResolvedValue(0)
+      ;(isPrivateRpcSupportedOnChain as jest.Mock).mockReturnValue(true)
+
+      await service.getNextNonce({ account: mockAccount, chainId: UniverseChainId.Mainnet })
+
+      expect(mockTransactionRepository.getPendingPrivateTransactionDetails).not.toHaveBeenCalled()
+      expect(mockAnalyticsService.trackTransactionEvent as jest.Mock).not.toHaveBeenCalled()
     })
   })
 
@@ -2122,6 +2239,23 @@ describe('TransactionService', () => {
         }),
         analytics,
       )
+    })
+
+    it('should fail without submitting when sponsorship was requested but the userOp comes back unsponsored', async () => {
+      const service = createUserOpService()
+      mockSponsorUniswapUserOp.mockImplementation(({ initialUserOp }: { initialUserOp: RpcUserOperation<'0.8'> }) =>
+        Promise.resolve({ ...initialUserOp }),
+      )
+
+      await expect(
+        service.executeUserOp(createExecuteUserOpParams({ requestUniswapGasSponsorship: true })),
+      ).rejects.toThrow()
+
+      expect(mockSendUserOp).not.toHaveBeenCalled()
+      expect(mockTransactionRepository.finalizeTransaction).toHaveBeenCalledWith({
+        transaction: expect.anything(),
+        status: TransactionStatus.Failed,
+      })
     })
   })
 })

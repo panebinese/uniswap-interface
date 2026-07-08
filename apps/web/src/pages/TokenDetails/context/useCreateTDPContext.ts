@@ -17,7 +17,10 @@ import type { LoadedTDPContext, MultiChainMap, PendingTDPContext } from '~/pages
 import { getNativeTokenDBAddress } from '~/utils/nativeTokens'
 import { useChainIdFromUrlParam } from '~/utils/params/chainParams'
 
-export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
+export function useCreateTDPContext(): {
+  state: PendingTDPContext | LoadedTDPContext
+  balancesRefetch: () => void
+} {
   const { tokenAddress } = useParams<{ tokenAddress: string; chainName: string }>()
   if (!tokenAddress) {
     throw new Error('Invalid token details route: token address URL param is undefined')
@@ -66,7 +69,7 @@ export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
     return undefined
   }, [tokenProjectQuery.data?.token, isNative, currencyChainInfo.id])
 
-  const { multiChainMap, balanceError } = useMultiChainMap(tokenProjectQuery)
+  const { multiChainMap, balanceError, balancesRefetch } = useMultiChainMap(tokenProjectQuery)
 
   // Extract color for page usage
   const colors = useSporeColors()
@@ -80,7 +83,7 @@ export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
       backgroundColor: colors.surface2.val,
     }).tokenColor ?? undefined
 
-  return useMemo(() => {
+  const state = useMemo(() => {
     return {
       currency,
       currencyChain: currencyChainInfo.backendChain.chain,
@@ -105,18 +108,25 @@ export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
     balanceError,
     tokenColor,
   ])
+
+  return { state, balancesRefetch }
 }
 
 /** Returns a map to store addresses and balances of the TDP token on other chains */
 function useMultiChainMap(tokenProjectQuery: ReturnType<typeof GraphQLApi.useTokenProjectWebQuery>): {
   multiChainMap: MultiChainMap
   balanceError?: Error
+  balancesRefetch: () => void
 } {
   const activeAddresses = useActiveAddresses()
   const evmAddress = activeAddresses.evmAddress
   const svmAddress = activeAddresses.svmAddress
 
-  const { data: balancesById, error: balanceError } = usePortfolioBalances({
+  const {
+    data: balancesById,
+    error: balanceError,
+    refetch: balancesRefetch,
+  } = usePortfolioBalances({
     evmAddress,
     svmAddress,
     skip: !evmAddress && !svmAddress,
@@ -155,5 +165,5 @@ function useMultiChainMap(tokenProjectQuery: ReturnType<typeof GraphQLApi.useTok
     }, {})
   }, [balancesById, tokenProjectQuery.data?.token?.project?.tokens])
 
-  return { multiChainMap, balanceError }
+  return { multiChainMap, balanceError, balancesRefetch }
 }

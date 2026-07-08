@@ -1,7 +1,7 @@
 import { isMobileApp, isMobileWeb, isWebApp, isWebPlatform } from '@universe/environment'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, Text, TouchableArea } from 'ui/src'
+import { Flex, type ModifierPressProps, Text, TouchableArea } from 'ui/src'
 import { Check } from 'ui/src/components/icons/Check'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { FocusedRowControl, OptionItem, OptionItemProps } from 'uniswap/src/components/lists/items/OptionItem'
@@ -230,7 +230,7 @@ export interface MultichainData {
   primaryCurrencyInfo: CurrencyInfo
 }
 
-export interface TokenOptionItemProps {
+export interface TokenOptionItemProps extends ModifierPressProps {
   option: TokenOption
   onPress: () => void
   showTokenAddress?: boolean
@@ -275,6 +275,8 @@ const BaseTokenOptionItem = memo(function BaseTokenOptionItemInner(
     openContextMenu,
     displayName,
     issuerLabel,
+    modifierPressHref,
+    onModifierPress,
   } = props
   const { currencyInfo } = option
   const { currency } = currencyInfo
@@ -341,11 +343,13 @@ const BaseTokenOptionItem = memo(function BaseTokenOptionItemInner(
       testID={`token-option-${currency.chainId}-${currency.symbol}`}
       modalInfo={modalInfo}
       focusedRowControl={focusedRowControl}
+      modifierPressHref={modifierPressHref}
       onPress={onPress}
       onLongPress={() => {
         dismissNativeKeyboard()
         openContextMenu?.()
       }}
+      onModifierPress={onModifierPress}
     />
   )
 })

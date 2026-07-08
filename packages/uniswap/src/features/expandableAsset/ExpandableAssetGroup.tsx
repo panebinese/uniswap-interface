@@ -41,6 +41,10 @@ type ExpandableAssetGroupProps = {
    *  latches the controlled menu open while the row is still menu-less, so it pops open on its own when the batched
    *  query lands. Only meaningful alongside `renderIssuerRow`; if omitted, the collapsed long-press stays disabled. */
   isIssuerMenuReady?: (issuer: IssuerToken) => boolean
+  /** Returns URL for an issuer (collapsed single-issuer shell + expanded sub-rows) */
+  getIssuerHref?: (issuer: IssuerToken) => string | undefined
+  /** Modifier-click callback of an issuer */
+  onIssuerModifierPress?: (issuer: IssuerToken) => void
 }
 
 export function ExpandableAssetGroup({
@@ -50,11 +54,13 @@ export function ExpandableAssetGroup({
   onToggle,
   onIssuerPress,
   onParentPress,
+  onIssuerModifierPress,
   showCategoryTag = true,
   focusedRowControl,
   testID,
   renderIssuerRow,
   isIssuerMenuReady,
+  getIssuerHref,
 }: ExpandableAssetGroupProps): ReactNode {
   const issuerCount = getIssuerCount(asset)
   const canExpand = issuerCount > 1
@@ -86,6 +92,7 @@ export function ExpandableAssetGroup({
   // A non-expandable (single-issuer) collection renders the issuer identity (issuer label + symbol + address) so
   // the row matches the issuer it navigates to; multi-issuer rows render the parent ticker identity.
   const soleIssuer = canExpand ? undefined : asset.issuerTokens[0]
+  const parentHref = soleIssuer ? getIssuerHref?.(soleIssuer) : undefined
   const usesMenuRow = Boolean(soleIssuer && renderIssuerRow)
   const soleIssuerIdentity = soleIssuer ? (
     <ExpandableIssuerIdentity asset={asset} issuer={soleIssuer} enabledChainIds={enabledChainIds} variant="search" />
@@ -144,12 +151,15 @@ export function ExpandableAssetGroup({
           enabledChainIds={enabledChainIds}
           variant="search"
           renderIssuerRow={renderIssuerRow}
+          getIssuerHref={getIssuerHref}
           onIssuerPress={onIssuerPress}
+          onIssuerModifierPress={onIssuerModifierPress}
         />
       }
       issuerPanelHeightPx={getExpandableIssuerPanelHeightPx({ issuerCount, variant: 'search' })}
       focusedRowControl={focusedRowControl}
       testID={testID}
+      parentHref={parentHref}
       onToggle={onToggle}
       onParentPress={onParentPress}
       onParentLongPress={

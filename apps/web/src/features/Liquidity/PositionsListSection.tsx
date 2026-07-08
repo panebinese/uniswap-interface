@@ -8,6 +8,8 @@ import { getPositionUrl } from 'uniswap/src/features/positions/getPositionUrl'
 import type { PositionInfo } from 'uniswap/src/features/positions/types'
 import { getPositionKey } from 'uniswap/src/features/positions/utils'
 import { getPoolDetailsURL } from 'uniswap/src/utils/linking'
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import { logPositionCardClick } from '~/features/Liquidity/analytics'
 import { LiquidityPositionCard } from '~/features/Liquidity/LiquidityPositionCard'
 
 function getPositionCardLinkTarget({
@@ -99,6 +101,7 @@ function VirtualizedPositionsList({
 }) {
   const { t } = useTranslation()
   const media = useMedia()
+  const trace = useTrace()
 
   const positionItemHeight = useMemo(() => {
     return media.sm ? 366 : media.md ? 284 : 184
@@ -147,6 +150,7 @@ function VirtualizedPositionsList({
               <Link
                 style={{ textDecoration: 'none' }}
                 to={getPositionCardLinkTarget({ position, readOnly, entryPoint })}
+                onClick={() => logPositionCardClick(position, trace)}
               >
                 <LiquidityPositionCard
                   showVisibilityOption
@@ -191,6 +195,7 @@ function HiddenPositions({
   readOnly,
 }: HiddenPositionsProps) {
   const { t } = useTranslation()
+  const trace = useTrace()
 
   if (hiddenPositions.length === 0) {
     return null
@@ -212,6 +217,7 @@ function HiddenPositions({
                   key={getPositionKey(position)}
                   style={{ textDecoration: 'none' }}
                   to={getPositionCardLinkTarget({ position, readOnly, entryPoint })}
+                  onClick={() => logPositionCardClick(position, trace)}
                 >
                   <LiquidityPositionCard
                     showVisibilityOption

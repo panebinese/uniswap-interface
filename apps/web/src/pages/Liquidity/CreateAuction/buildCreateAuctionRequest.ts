@@ -1,10 +1,8 @@
 import { type PartialMessage } from '@bufbuild/protobuf'
 import type { CreateAuctionRequest } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/auction_pb'
-import {
-  PriceRangeStrategy as ProtoPriceRangeStrategy,
-  TokenStandard,
-} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/auction_pb'
+import { PriceRangeStrategy as ProtoPriceRangeStrategy } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/auction_pb'
 import { ChainId } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
+import { UNBOUNDED_PERCENT } from '@uniswap/liquidity-launcher-sdk'
 import { isAddress, zeroAddress } from '~/chains'
 import {
   type ConfigureAuctionFormState,
@@ -22,12 +20,6 @@ import {
   isUnboundedTier,
   parseCompactNumberInput,
 } from '~/pages/Liquidity/CreateAuction/utils'
-
-/**
- * Sentinel percent that the backend interprets as an unbounded (+Infinity) upper price.
- * Mirrors `UNBOUNDED_PERCENT` in the liquidity service's translation layer.
- */
-const UNBOUNDED_PERCENT_FROM_CLEARING = 1e9
 
 export interface BuildCreateAuctionRequestParams {
   tokenForm: TokenFormState
@@ -70,20 +62,31 @@ function toCanonicalDecimalString(value: string): string {
   return withIntegerPart.endsWith('.') ? withIntegerPart.slice(0, -1) : withIntegerPart
 }
 
-function toProtoPriceRangeStrategy(strategy: PriceRangeStrategy): ProtoPriceRangeStrategy {
+/**
+ * Maps each FE strategy to its proto enum value. Exhaustive and strict: a strategy that isn't
+ * explicitly mapped returns `undefined` so the caller suppresses the request (treated as incomplete
+ * config) instead of silently coercing to a value the backend may reject.
+ *
+ * No `default → CONCENTRATED_FULL_RANGE` fallthrough: the deployed liquidity `CreateAuction` RPC
+ * rejects any unmapped/unspecified strategy with "Unsupported price range strategy"
+ * (CreateAuctionBL.toPriceRangeKind throws on `PRICE_RANGE_STRATEGY_UNSPECIFIED`). A silent fallback
+ * would mask a future unmapped `PriceRangeStrategy` member by sending CONCENTRATED in its place.
+ */
+function toProtoPriceRangeStrategy(strategy: PriceRangeStrategy): ProtoPriceRangeStrategy | undefined {
   switch (strategy) {
+    case PriceRangeStrategy.CONCENTRATED_FULL_RANGE:
+      return ProtoPriceRangeStrategy.CONCENTRATED_FULL_RANGE
     case PriceRangeStrategy.FULL_RANGE:
       return ProtoPriceRangeStrategy.FULL_RANGE
     case PriceRangeStrategy.CUSTOM_RANGE:
       return ProtoPriceRangeStrategy.CUSTOM_RANGE
-    case PriceRangeStrategy.CONCENTRATED_FULL_RANGE:
     default:
-      return ProtoPriceRangeStrategy.CONCENTRATED_FULL_RANGE
+      return undefined
   }
 }
 
 function toPercentString(value: CustomPriceRangeValue): string {
-  return value === CUSTOM_PRICE_RANGE_POSITIVE_INFINITY ? String(UNBOUNDED_PERCENT_FROM_CLEARING) : String(value)
+  return value === CUSTOM_PRICE_RANGE_POSITIVE_INFINITY ? String(UNBOUNDED_PERCENT) : String(value)
 }
 
 function toCustomRanges(customizePool: CustomizePoolState): Array<{
@@ -142,6 +145,58 @@ function toLpAllocation(
   return { kind: { case: 'singlePercent', value: allocation.percent } }
 }
 
+/** One day in seconds; the timelock unlock is `auction end + duration days`. */
+const SECONDS_PER_DAY = 86_400n
+
+/**
+ * Buyback-burn floor as a fraction of the LP token reserve (`reservedSupplyForLp`): 0.1% (10 bps).
+ * Scales the per-buyback minimum with pool size so a keeper can't grind dust-sized buyback-burns.
+ */
+const MIN_TOKEN_BURN_BPS = 10n
+
+/**
+ * Maps the pool's lock settings into the proto `liquidity_lock` oneof. Returns `undefined` when the
+ * timelock is off. Every mode is timelocked, so `unlock_time_unix` (auction end + duration) is a
+ * common field; the oneof variant carries only that mode's parameters. Buyback-burn and
+ * fees-forwarder are mutually exclusive in the store, mirroring the proto oneof. The backend derives
+ * operator / positionManager / token / currency / salt server-side, so only the mode params are sent.
+ */
+function toLiquidityLock(
+  customizePool: CustomizePoolState,
+  configureAuction: ConfigureAuctionFormState,
+): NonNullable<PartialMessage<CreateAuctionRequest>['pool']>['liquidityLock'] {
+  const { committed, endTime } = configureAuction
+  if (!customizePool.timeLockEnabled || !endTime || !committed) {
+    return undefined
+  }
+  const unlockTimeUnix =
+    toUnixSeconds(endTime) + BigInt(Math.round(customizePool.timeLockDurationDays)) * SECONDS_PER_DAY
+
+  if (customizePool.buybackAndBurnEnabled) {
+    // 0.1% of the tokens seeded into the LP — the same reserve sent as `reservedSupplyForLp`.
+    const reservedForLpRaw = BigInt(committed.postAuctionLiquidityAmount.quotient.toString())
+    const scaledFloor = (reservedForLpRaw * MIN_TOKEN_BURN_BPS) / 10_000n
+    // Clamp to a non-zero minimum: for tiny / low-decimal reserves the 0.1% integer-divides to 0,
+    // which the backend reads as "no floor" — the exact dust-grind case this minimum exists to prevent.
+    // 1 base unit is the smallest value that can never exceed the reserve itself.
+    const minTokenBurnAmount = scaledFloor > 0n ? scaledFloor : 1n
+    return {
+      unlockTimeUnix,
+      mode: {
+        case: 'buybackBurn',
+        value: { minTokenBurnAmount: minTokenBurnAmount.toString() },
+      },
+    }
+  }
+  if (customizePool.sendFeesEnabled) {
+    return {
+      unlockTimeUnix,
+      mode: { case: 'feesForwarder', value: { feeRecipient: customizePool.feesRecipientAddress } },
+    }
+  }
+  return { unlockTimeUnix, mode: { case: 'timelock', value: {} } }
+}
+
 /**
  * Maps the CreateAuction wizard state into the wizard-level `CreateAuctionRequest` the
  * liquidity service expects. The backend translates these into contract-native params.
@@ -174,6 +229,24 @@ export function buildCreateAuctionRequest(
     return undefined
   }
 
+  // An unmapped price-range strategy is incomplete config, not something to silently coerce to a
+  // (possibly backend-rejected) value — suppress the request so the launch button stays disabled.
+  const protoPriceRangeStrategy = toProtoPriceRangeStrategy(customizePool.priceRangeStrategy)
+  if (protoPriceRangeStrategy === undefined) {
+    return undefined
+  }
+
+  // Existing mode requires a resolved on-chain address. When the token isn't selected/resolved the
+  // address is missing/empty, which protobuf-es serializes as `{ existing: {} }` (empty scalars are
+  // omitted from JSON) — the backend reads that as an unset source and rejects with
+  // "token_info.source must be new_token or existing". Treat the config as incomplete instead of
+  // emitting an `existing` oneof without a real address.
+  const existingTokenAddress =
+    tokenForm.mode === TokenMode.EXISTING ? tokenForm.existingTokenCurrencyInfo?.currency.wrapped.address : undefined
+  if (tokenForm.mode === TokenMode.EXISTING && !(existingTokenAddress && isAddress(existingTokenAddress))) {
+    return undefined
+  }
+
   // `auctionSupply` is everything deposited into the auction contract: sold + reservedSupplyForLp +
   // returnedSupply. A new token deposits its full mint and returns the un-auctioned remainder
   // (totalSupply − auctioned slice) to the creator after settlement; an existing token deposits only
@@ -187,7 +260,8 @@ export function buildCreateAuctionRequest(
           source: {
             case: 'newToken',
             value: {
-              standard: TokenStandard.UERC20,
+              // Token standard is chain-driven on the backend (NewTokenConfig.standard was removed /
+              // reserved in proto 1.3.3), so it is no longer sent from the client.
               name: tokenForm.name,
               symbol: tokenForm.symbol,
               // A new token mints its full configured supply; all of it is deposited into the auction
@@ -208,8 +282,9 @@ export function buildCreateAuctionRequest(
             case: 'existing',
             value: {
               // No supply field for existing tokens: the launch amount is auction.auctionSupply,
-              // pulled from the wallet (which keeps whatever it does not deposit).
-              tokenAddress: tokenForm.existingTokenCurrencyInfo?.currency.wrapped.address ?? '',
+              // pulled from the wallet (which keeps whatever it does not deposit). Guaranteed
+              // non-empty/valid by the existing-mode guard above.
+              tokenAddress: existingTokenAddress ?? '',
             },
           },
         }
@@ -236,11 +311,12 @@ export function buildCreateAuctionRequest(
     pool: {
       fee: customizePool.fee.feeAmount,
       dynamicFee: customizePool.fee.isDynamic,
-      priceRangeStrategy: toProtoPriceRangeStrategy(customizePool.priceRangeStrategy),
+      priceRangeStrategy: protoPriceRangeStrategy,
       customRanges: toCustomRanges(customizePool),
       reservedSupplyForLp: reservedForLpRaw.toString(),
       lpAllocation: toLpAllocation(customizePool, configureAuction),
       poolOwner: isAddress(customizePool.poolOwner) ? customizePool.poolOwner : walletAddress,
+      liquidityLock: toLiquidityLock(customizePool, configureAuction),
     },
   }
 }

@@ -16,7 +16,7 @@ import { useHorizontalSnapCarousel } from '~/pages/Explore/rwa/shelf/useHorizont
 import { ExploreTab } from '~/types/explore'
 import { useChainIdFromUrlParam } from '~/utils/params/chainParams'
 
-/** Featured asset shelf on Explore root (gated by `FeatureFlags.RWAUXExploreCarousel`). */
+/** Featured asset shelf on Explore root (region-gated via `GatedFeature.ISSUER_SPECIFIC_RWA`). */
 export function AssetShelf(): JSX.Element | null {
   const chainId = useChainIdFromUrlParam()
   const chainIds = useMemo(() => (chainId ? [chainId] : []), [chainId])

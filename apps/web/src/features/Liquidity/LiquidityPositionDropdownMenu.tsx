@@ -39,7 +39,7 @@ export const LiquidityPositionDropdownMenu = memo(function LiquidityPositionDrop
       isOpen={isOpen}
       openMenu={openMenu}
       closeMenu={closeMenu}
-      elementName={ElementName.PortfolioPoolContextMenu}
+      elementName={ElementName.LiquidityPositionContextMenu}
       sectionName={SectionName.PortfolioPoolsTab}
     >
       {/* oxlint-disable-next-line react/forbid-elements -- raw div needed for onContextMenu */}

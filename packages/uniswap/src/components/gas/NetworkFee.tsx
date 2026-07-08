@@ -14,6 +14,7 @@ import {
   useGasFeeFormattedDisplayAmounts,
   useGasFeeHighRelativeToValue,
 } from 'uniswap/src/features/gas/hooks'
+import { SponsorshipCampaignInfo } from 'uniswap/src/features/transactions/swap/components/SponsorshipCampaignModal/SponsorshipCampaignModal'
 import { UniswapXGasBreakdown } from 'uniswap/src/features/transactions/swap/types/swapTxAndGasInfo'
 import { isZero } from 'uniswap/src/utils/number'
 
@@ -25,7 +26,7 @@ export function NetworkFee({
   indicative,
   includesDelegation,
   showNetworkLogo = true,
-  sponsorMetadata,
+  sponsorshipInfo,
 }: {
   chainId: UniverseChainId
   gasFee: GasFeeResult
@@ -34,10 +35,11 @@ export function NetworkFee({
   indicative?: boolean
   includesDelegation?: boolean
   showNetworkLogo?: boolean
-  /** When present, the gas amount is replaced with the sponsor icon + "Free". */
-  sponsorMetadata?: TradingApi.SponsorMetadata
+  sponsorshipInfo?: TradingApi.SponsorshipInfo
 }): JSX.Element {
   const { t } = useTranslation()
+  const sponsorMetadata = sponsorshipInfo?.sponsorMetadata
+  const campaign = sponsorshipInfo?.campaign
 
   const { gasFeeFormatted, gasFeeUSD } = useGasFeeFormattedDisplayAmounts({
     gasFee,
@@ -68,7 +70,11 @@ export function NetworkFee({
         <IndicativeLoadingWrapper loading={indicative || (!gasFee.value && gasFee.isLoading)}>
           <Flex row alignItems="center" gap={uniswapXGasBreakdown ? '$spacing4' : '$spacing8'}>
             {sponsorMetadata ? (
-              <SponsoredFee sponsorMetadata={sponsorMetadata} preSavingsGasFee={gasFeeFormatted} />
+              <SponsoredFeeWithModal
+                sponsorMetadata={sponsorMetadata}
+                campaign={campaign}
+                preSavingsGasFee={gasFeeFormatted}
+              />
             ) : (
               <>
                 {(!uniswapXGasBreakdown || gasFee.error) && showNetworkLogo && (
@@ -147,6 +153,30 @@ export function SponsoredFee({
       </Text>
     </Flex>
   )
+}
+
+/**
+ * "Free" tag that opens the sponsorship campaign modal on press when a campaign
+ * is present. Falls back to a static tag otherwise.
+ */
+export function SponsoredFeeWithModal({
+  sponsorMetadata,
+  campaign,
+  preSavingsGasFee,
+  smaller,
+}: {
+  sponsorMetadata: TradingApi.SponsorMetadata
+  campaign?: TradingApi.CampaignDetails
+  preSavingsGasFee?: string
+  smaller?: boolean
+}): JSX.Element {
+  const tag = <SponsoredFee sponsorMetadata={sponsorMetadata} preSavingsGasFee={preSavingsGasFee} smaller={smaller} />
+
+  if (!campaign) {
+    return tag
+  }
+
+  return <SponsorshipCampaignInfo campaign={campaign} sponsorMetadata={sponsorMetadata} trigger={tag} />
 }
 
 type UniswapXFeeProps = {

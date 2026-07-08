@@ -39,7 +39,7 @@ import type { CurrencyState } from '~/features/Swap/state/types'
 import { useSwapAndLimitContext } from '~/features/Swap/state/useSwapContext'
 import { ArrowContainer, ArrowWrapper, SwapSection } from '~/features/Swap/styled'
 import { useAccount } from '~/hooks/useAccount'
-import { usePermit2Allowance, AllowanceState } from '~/hooks/usePermit2Allowance'
+import { usePermit2Allowance } from '~/hooks/usePermit2Allowance'
 import { ConfirmLimitOrderModal } from '~/pages/Swap/Limit/ConfirmLimitOrderModal'
 import { LimitExpirySection } from '~/pages/Swap/Limit/LimitExpirySection'
 import { LimitOrdersNotSupportedBanner } from '~/pages/Swap/Limit/LimitOrdersNotSupportedBanner'
@@ -357,7 +357,6 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
     trade: limitOrderTrade,
     fiatValues,
     allowedSlippage: ZERO_PERCENT,
-    permitSignature: allowance.state === AllowanceState.ALLOWED ? allowance.permitSignature : undefined,
   })
 
   const handleSubmit = useCallback(async () => {

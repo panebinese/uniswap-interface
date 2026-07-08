@@ -1,3 +1,4 @@
+import { FeatureFlags, useFeatureFlagWithExposureLoggingDisabled } from '@universe/gating'
 import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ViewStyle } from 'react-native'
@@ -11,6 +12,8 @@ import { Flex, Loader } from 'ui/src'
 import { AlertTriangleFilled } from 'ui/src/components/icons/AlertTriangleFilled'
 import { BaseCard } from 'uniswap/src/components/BaseCard/BaseCard'
 import { ExpandoRow } from 'uniswap/src/components/ExpandoRow/ExpandoRow'
+import { PoolsDataIssueBanner } from 'uniswap/src/features/portfolio/pools/PoolsDataIssueBanner'
+import { usePoolsOutageBanner } from 'uniswap/src/features/portfolio/pools/usePoolsOutageBanner'
 import { PositionsEmptyFilterView } from 'uniswap/src/features/positions/components/PositionsEmptyFilterView'
 import {
   POSITION_STATUS_FILTER_TO_STATUSES,
@@ -28,6 +31,7 @@ const poolPlaceholderStyle: ViewStyle = { height: POOL_POSITION_ROW_HEIGHT, widt
 
 interface HomeScreenPoolsTabProps {
   testID?: string
+  owner: string
   shouldLoadPools: boolean
   poolsListRenderData: PoolsTabRenderData
   onHeightChange: (height: number) => void
@@ -43,6 +47,7 @@ interface HomeScreenPoolsTabProps {
 
 export const HomeScreenPoolsTab = memo(function HomeScreenPoolsTabInner({
   testID,
+  owner,
   shouldLoadPools,
   poolsListRenderData,
   onHeightChange,
@@ -53,9 +58,13 @@ export const HomeScreenPoolsTab = memo(function HomeScreenPoolsTabInner({
   bodyOffsetY,
 }: HomeScreenPoolsTabProps): JSX.Element {
   const { t } = useTranslation()
-  const { positions, hiddenPositions, hasData, isFetchingNextPage, isFetchingFirstPage, hasErrorWithoutData, refetch } =
+  const portfolioPoolsBalancesEnabled = useFeatureFlagWithExposureLoggingDisabled(FeatureFlags.PortfolioPoolsBalances)
+  const outageBanner = usePoolsOutageBanner({
+    evmAddress: owner,
+    enabled: portfolioPoolsBalancesEnabled,
+  })
+  const { positions, hiddenPositions, isFetchingNextPage, isLoadingFirstPage, hasErrorWithoutData, refetch } =
     poolsListRenderData
-  const isLoadingFirstPage = isFetchingFirstPage && !hasData
   const { value: hiddenExpanded, toggle: toggleHidden } = useBooleanState(false)
 
   // Filter client-side (the query fetches every status) and keep closed positions last.
@@ -116,6 +125,11 @@ export const HomeScreenPoolsTab = memo(function HomeScreenPoolsTabInner({
 
   return (
     <TabMeasuredLayout testID={testID} onHeightChange={onHeightChange}>
+      {outageBanner.isVisible && (
+        <Flex px="$spacing20" pb="$spacing4">
+          <PoolsDataIssueBanner message={outageBanner.message} onDismiss={outageBanner.onDismiss} />
+        </Flex>
+      )}
       {visiblePositions.length === 0 ? (
         <PositionsEmptyFilterView
           statusFilter={statusFilter}

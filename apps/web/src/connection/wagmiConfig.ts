@@ -28,7 +28,7 @@ import { PLAYWRIGHT_CONNECT_ADDRESS } from '~/connection/constants'
 import { embeddedWallet } from '~/connection/EmbeddedWalletConnector'
 import { instrumentWalletConnectRpc } from '~/connection/instrumentWalletConnectRpc'
 import { createRejectableMockConnector } from '~/connection/rejectableConnector'
-import { WC_PARAMS } from '~/connection/walletConnect'
+import { uniswapWalletConnect, WC_PARAMS } from '~/connection/walletConnect'
 
 // Only accept Safe Apps SDK messages from the canonical Safe web app.
 // Tested against bypass patterns in wagmiConfig.test.ts.
@@ -87,7 +87,17 @@ function createWagmiConnectors(params: {
     getBinanceConnector(),
     // There are no unit tests that expect WalletConnect to be included here,
     // so we can disable it to reduce log noise.
-    ...(isTestEnv() && !isE2eTestEnv() ? [] : [instrumentWalletConnectRpc(walletConnect(WC_PARAMS))]),
+    // Isolated WC storage namespace so it doesn't share a relay identity (clientId) with any other
+    // WC SignClient: sharing lets a second client's orphaned-subscription cleanup unsubscribe this
+    // one's active session (dropping the swap's tx confirmation) and cross-deliver pairing messages.
+    // The Uniswap connector is registered here (not created lazily on click) so reconnectOnMount
+    // restores its session after a refresh; its own namespace keeps it safe alongside this one.
+    ...(isTestEnv() && !isE2eTestEnv()
+      ? []
+      : [
+          instrumentWalletConnectRpc(walletConnect({ ...WC_PARAMS, customStoragePrefix: 'interfaceWalletConnect' })),
+          uniswapWalletConnect(),
+        ]),
     embeddedWallet(),
     coinbaseWallet({
       appName: 'Uniswap',

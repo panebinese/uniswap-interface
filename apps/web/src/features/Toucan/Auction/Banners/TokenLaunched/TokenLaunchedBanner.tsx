@@ -17,6 +17,7 @@ import { useBidTokenInfo } from '~/features/Toucan/Auction/hooks/useBidTokenInfo
 import { useDurationRemaining } from '~/features/Toucan/Auction/hooks/useDurationRemaining'
 import { useAuctionStore } from '~/features/Toucan/Auction/store/useAuctionStore'
 import { getClearingPrice } from '~/features/Toucan/Auction/utils/clearingPrice'
+import { isTokenLaunchTradeLive } from '~/features/Toucan/Auction/utils/tokenLaunchedBannerUtils'
 import { getAuctionMetadata } from '~/features/Toucan/Config/config'
 
 interface TokenLaunchedBannerProps {
@@ -24,7 +25,9 @@ interface TokenLaunchedBannerProps {
   tokenColor?: string
   totalSupply?: string
   auctionTokenDecimals?: number
-  isTradeAvailable: boolean
+  // Whether the auction status permits trading. The banner additionally requires a live market
+  // price before showing "Trade now" — see isTokenLaunchTradeLive.
+  isTradeAvailableFromStatus: boolean
   tradeAvailabilityBlock: number | undefined
 }
 
@@ -39,7 +42,7 @@ export function TokenLaunchedBanner({
   tokenColor,
   totalSupply,
   auctionTokenDecimals = 18,
-  isTradeAvailable,
+  isTradeAvailableFromStatus,
   tradeAvailabilityBlock,
 }: TokenLaunchedBannerProps) {
   const colors = useSporeColors()
@@ -57,7 +60,7 @@ export function TokenLaunchedBanner({
   const auctionAddress = auctionDetails?.address
   const tradeAvailabilityDurationRemaining = useDurationRemaining(
     chainId,
-    isTradeAvailable ? undefined : tradeAvailabilityBlock,
+    isTradeAvailableFromStatus ? undefined : tradeAvailabilityBlock,
   )
 
   const tradingRestrictedUntilTge = Boolean(
@@ -85,6 +88,7 @@ export function TokenLaunchedBanner({
     data: priceData,
     loading: priceLoading,
     error: priceError,
+    hasMarketPrice,
   } = useTokenLaunchedBannerPriceData({
     tokenAddress: priceTokenAddress,
     chainId,
@@ -159,6 +163,15 @@ export function TokenLaunchedBanner({
   const effectivePriceData = priceData ?? fallbackPriceData
   const effectiveChartSeries = priceData?.priceSeries ?? fallbackChartSeries
 
+  // "Trade now" requires both the auction status to permit trading AND a live market price (a pool
+  // with liquidity). Without the market-price gate, a graduated auction that committed 0% to LP —
+  // which never creates a pool — would advertise "Trade now" and link to an un-tradeable token page.
+  // The clearing-price fallback still drives the FDV, so such auctions fall back to "available soon".
+  const isTradeAvailable = isTokenLaunchTradeLive({
+    isTradeAvailableFromStatus,
+    hasLiveMarketPrice: hasMarketPrice,
+  })
+
   // Show failure state if auction didn't graduate
   if (!isGraduated) {
     // Show skeleton while waiting for auction details to load
@@ -186,7 +199,7 @@ export function TokenLaunchedBanner({
   // Don't render a tradeable banner if no data is available (neither primary nor fallback).
   // Pre-trade banners should still render because their purpose is status, not price discovery.
   // Redeem banners also always render — they carry the real token's FDV + link, not a price chart.
-  if (isTradeAvailable && !effectivePriceData && !isRedeemable) {
+  if (isTradeAvailableFromStatus && !effectivePriceData && !isRedeemable) {
     logger.warn('TokenLaunchedBanner', 'TokenLaunchedBanner', 'No price data available (primary or fallback)', {
       hasPriceData: !!priceData,
       hasFallbackPriceData: !!fallbackPriceData,

@@ -106,6 +106,13 @@ export function logTransactionEvent(actionData: ReturnType<typeof transactionAct
     const isOnChainTransaction = 'options' in payload
     const includesDelegation = isOnChainTransaction ? payload.options.includesDelegation : undefined
     const isSmartWalletTransaction = isOnChainTransaction ? payload.options.isSmartWalletTransaction : undefined
+    const userSubmissionTimestampMs = isOnChainTransaction ? payload.options.userSubmissionTimestampMs : undefined
+    // Submission-to-inclusion latency (epoch ms). For 4337 userOps the completion event fires on bundler
+    // success, before the on-chain receipt lands, so `confirmedTime` is usually absent — fall back to
+    // finalization time as the inclusion timestamp. Null unless we know when the user submitted.
+    const inclusionTimestampMs = confirmedTime ?? Date.now()
+    const timeToInclusionMs =
+      userSubmissionTimestampMs !== undefined ? inclusionTimestampMs - userSubmissionTimestampMs : undefined
 
     const { quoteId, gasUseEstimate, inputCurrencyId, outputCurrencyId, transactedUSDValue } = typeInfo
 
@@ -131,6 +138,9 @@ export function logTransactionEvent(actionData: ReturnType<typeof transactionAct
       routing: tradeRoutingToFillType({ routing: payload.routing, indicative: false }),
       id: payload.id,
       hash: payload.hash,
+      // For 4337 swaps the bundler returns a UserOp hash; the wallet controls the bundler so this is reliable here.
+      user_op_hash: payload.userOpHash,
+      time_to_inclusion_ms: timeToInclusionMs,
       transactionOriginType,
       address: from,
       chain_id: chainId,
@@ -145,6 +155,9 @@ export function logTransactionEvent(actionData: ReturnType<typeof transactionAct
       submitViaPrivateRpc: isUniswapX(payload) ? false : payload.options.submitViaPrivateRpc,
       transactedUSDValue,
       swap_start_timestamp: typeInfo.swapStartTimestamp,
+      // Gas sponsorship captured at submit (see getSponsorshipAnalyticsProperties)
+      is_sponsored: typeInfo.isSponsored,
+      sponsorship_campaign_id: typeInfo.sponsorshipCampaignId,
       // RWA analytics captured at submit (see getRwaSwapAnalyticsProperties)
       market_closed: typeInfo.marketClosed,
       price_warning: typeInfo.priceWarning,

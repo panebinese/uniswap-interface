@@ -89,6 +89,7 @@
     "@react-native/dev-middleware": "Pinning previous version because of excessive logging thats not fixed until RN 0.79 https://github.com/facebook/hermes/commit/c615b115dfa471c108256982ce07f10adee63667",
     "@tamagui/portal@1.136.1": "Fixes issue with not rendering content in sheets on mweb (e.g. Selecting a token on swap flow) on web production builds via PortalHostWeb mounted-state guard + useEffect-deferred host registration. Also force-disables USE_NATIVE_PORTAL on iOS — required to avoid RN 0.81 crash 'NSInternalInconsistencyException: This method must not be called before the JS thread is created' (RCTBridge dispatches a JS-to-native call before the JS thread is created when using iOS native createPortal). Tradeoff: bottom sheets render their content one render cycle late on iOS (visible blank-then-fills); the better fix is to pre-mount PortalHost early in the app tree (before any sheet can open) so registerHost completes before any portal item dispatches — investigate before next merge attempt.",
     "@tamagui/static@1.136.1": "Fixes applying styles (e.g. with hoverStyle) for buttons on web production builds.",
+    "@tamagui/web@1.136.1": "Resets the internal lastInteractionWasKeyboard flag on window blur. Cmd/Alt+Tab app-switching fires a keydown that flips the flag to keyboard mode; on window refocus onFocus re-applies focusVisibleStyle, painting a spurious focus ring on mouse-focused elements until clicked (CONS-2055). Web-only (inside the isWeb guard). TODO: upstream to Tamagui and drop once merged.",
     "@expo/config-plugins@54.0.2": "Allows overriding Xcode build configuration via EXPO_BUILD_CONFIGURATION env var for 'expo start' interactive mode. Fixes bundle ID resolution when using variable substitution ($(BUNDLE_ID_SUFFIX)) in Xcode project.",
     "@expo/cli@54.0.16": "Fixes issue with not launching the correct activity on android, so we pass EXPO_ANDROID_LAUNCH_ACTIVITY env var.",
     "@expo/metro-config@54.0.9": "Fixes 'TypeError: Invalid URL' on every Fast Refresh in HMR serializer fork (build/serializer/fork/hmrJSBundle.js). Expo's fork calls 'new URL(options.clientUrl)' where clientUrl is a legacy Node url.Url object (from url.parse); Url doesn't override toString, so WHATWG URL coerces it to '[object Object]' and throws. Upstream Metro avoids this by passing url.format(options.clientUrl). Patch round-trips via node:url format() at both call sites (also fixes a sibling .toString() in prepareModule that was silently producing '[object Object]' sourceUrls in dev source maps). Should be upstreamed.",
@@ -119,6 +120,12 @@
     "@uniswap/router-sdk": "2.7.1",
     "@uniswap/sdk-core": "7.17.0",
     "@uniswap/v2-sdk": "4.19.1",
+    "@walletconnect/core": "2.23.9",
+    "@walletconnect/ethereum-provider": "2.23.9",
+    "@walletconnect/sign-client": "2.23.9",
+    "@walletconnect/types": "2.23.9",
+    "@walletconnect/universal-provider": "2.23.9",
+    "@walletconnect/utils": "2.23.9",
     "@wxt-dev/browser": "0.1.4",
     "@xmldom/xmldom": "0.7.7",
     "braces": "3.0.3",
@@ -282,6 +289,7 @@
     "@manypkg/get-packages@1.1.3": "patches/@manypkg%2Fget-packages@1.1.3.patch",
     "@ethersproject/providers@5.7.2": "patches/@ethersproject%2Fproviders@5.7.2.patch",
     "nx@22.5.4": "patches/nx@22.5.4.patch",
-    "@expo/metro-config@54.0.9": "patches/@expo%2Fmetro-config@54.0.9.patch"
+    "@expo/metro-config@54.0.9": "patches/@expo%2Fmetro-config@54.0.9.patch",
+    "@tamagui/web@1.136.1": "patches/@tamagui%2Fweb@1.136.1.patch"
   }
 }

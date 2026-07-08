@@ -8,16 +8,10 @@ export const Allocation = memo(function Allocation({ value }: { value: number })
 
   return (
     <Flex row alignItems="center" gap="$spacing8">
-      <AnimatedNumber shouldFadeDecimals value={formatPercent(value, 1)} textVariant="$body3" />
+      <AnimatedNumber shouldFadeDecimals value={formatPercent(value, 1)} numericValue={value} textVariant="$body3" />
       <Flex width={52} height="$spacing8" borderRadius="$roundedFull" backgroundColor="$surface3">
-        <Progress
-          key={`${value}`}
-          height="$spacing4"
-          margin="$spacing2"
-          backgroundColor="$transparent"
-          value={Math.round(value)}
-        >
-          <Progress.Indicator backgroundColor="$neutral1" borderRadius="$roundedFull" animation="bouncy" />
+        <Progress height="$spacing4" margin="$spacing2" backgroundColor="$transparent" value={Math.round(value)}>
+          <Progress.Indicator backgroundColor="$neutral1" borderRadius="$roundedFull" animation="quick" />
         </Progress>
       </Flex>
     </Flex>

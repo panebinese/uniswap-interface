@@ -43,6 +43,11 @@ export function tradeToTransactionInfo({
 }): ExactInputSwapTransactionInfo | ExactOutputSwapTransactionInfo | BridgeTransactionInfo | WrapTransactionInfo {
   const { quote, slippageTolerance } = trade
   const { quoteId, gasUseEstimate, routeString } = getClassicQuoteFromResponse(quote) ?? {}
+  // Whether gas was sponsored, derived from the quote's offer and persisted so the finalization-time
+  // Completed/Failed event can report it. Deriving here (rather than threading from callers) ensures every
+  // typeInfo builder — including the 4337 userOp swap path — captures it. See getSponsorshipAnalyticsProperties.
+  const isSponsored = 'sponsorshipInfo' in quote ? quote.sponsorshipInfo?.sponsored : undefined
+  const sponsorshipCampaignId = 'sponsorshipInfo' in quote ? quote.sponsorshipInfo?.campaign?.name : undefined
 
   const inputCurrency = trade.inputAmount.currency
   const outputCurrency = trade.outputAmount.currency
@@ -61,6 +66,8 @@ export function tradeToTransactionInfo({
       gasEstimate,
       swapStartTimestamp,
       isFinalStep,
+      isSponsored,
+      sponsorshipCampaignId,
       ...rwaAnalytics,
     }
   }
@@ -88,6 +95,8 @@ export function tradeToTransactionInfo({
     gasEstimate,
     swapStartTimestamp,
     isFinalStep,
+    isSponsored,
+    sponsorshipCampaignId,
     ...rwaAnalytics,
   }
 

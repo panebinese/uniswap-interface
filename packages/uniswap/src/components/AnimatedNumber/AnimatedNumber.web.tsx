@@ -1,18 +1,17 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Flex, Shine, Text, TextLoaderWrapper, useSporeColors } from 'ui/src'
 import { getTextVariantKey, type TextVariantKey } from 'ui/src/theme'
 import type { AnimatedNumberProps } from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
-import { useBalanceChangeIndication } from 'uniswap/src/components/AnimatedNumber/hooks/useBalanceChangeIndication'
+import { BALANCE_CHANGE_INDICATION_DURATION } from 'uniswap/src/components/AnimatedNumber/animationConfig'
+import { useAnimatedNumberAnimation } from 'uniswap/src/components/AnimatedNumber/hooks/useAnimatedNumberAnimation'
+import { useAnimatedNumberChars } from 'uniswap/src/components/AnimatedNumber/hooks/useAnimatedNumberChars'
 import { useResolvedAnimatedNumberColors } from 'uniswap/src/components/AnimatedNumber/hooks/useResolvedAnimatedNumberColors'
 import { AnimatedNumberDirection } from 'uniswap/src/components/AnimatedNumber/types'
 import { getAnimatedNumberCharKey } from 'uniswap/src/components/AnimatedNumber/utils/getAnimatedNumberCharKey'
 import { getAnimatedNumberVariantMetrics } from 'uniswap/src/components/AnimatedNumber/utils/getAnimatedNumberVariantMetrics'
 import { CUSTOM_COLOR_FADED_DECIMAL_OPACITY } from 'uniswap/src/components/AnimatedNumber/utils/getCharDisplayColor'
-import { splitValueIntoChars } from 'uniswap/src/components/AnimatedNumber/utils/splitValueIntoChars'
-import { STAGGER_MS } from 'uniswap/src/components/AnimatedNumber/web/animationConfig'
 import { CharCell } from 'uniswap/src/components/AnimatedNumber/web/CharCell'
-import { computeCharStaggerDelays } from 'uniswap/src/components/AnimatedNumber/web/computeCharStaggerDelays'
 import {
   ANIMATED_NUMBER_CSS_RULE_ID,
   ANIMATED_NUMBER_KEYFRAMES_CSS,
@@ -20,11 +19,7 @@ import {
 import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import i18next from 'uniswap/src/i18n'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
-import { usePrevious } from 'utilities/src/react/hooks'
 import { useInjectSingleStylesheet } from 'utilities/src/react/useInjectSingleStylesheet'
-import { ONE_SECOND_MS } from 'utilities/src/time/time'
-
-export const BALANCE_CHANGE_INDICATION_DURATION = ONE_SECOND_MS / 2
 
 const ICON_LEFT_MARGIN = 4
 const HEADING_TEXT_VARIANT_KEYS = new Set<TextVariantKey>(['heading1', 'heading2'])
@@ -32,7 +27,7 @@ const HEADING_TEXT_VARIANT_KEYS = new Set<TextVariantKey>(['heading1', 'heading2
 function AnimatedNumberFallback({
   value,
   loading = false,
-  loadingPlaceholderText = '-',
+  loadingPlaceholderText = '$00.00',
   shouldFadeDecimals = false,
   warmLoading = false,
   textVariant = '$heading2',
@@ -115,7 +110,7 @@ export function AnimatedNumberCore({
   value,
   numericValue,
   loading = false,
-  loadingPlaceholderText = '-',
+  loadingPlaceholderText = '$00.00',
   shouldFadeDecimals = false,
   warmLoading = false,
   colorIndicationDuration = BALANCE_CHANGE_INDICATION_DURATION,
@@ -126,17 +121,16 @@ export function AnimatedNumberCore({
   alignRight = false,
   EndElement,
   endElementGap,
+  disableAnimations = false,
+  ellipsis = false,
+  forceDirection,
 }: AnimatedNumberProps): JSX.Element {
   useInjectSingleStylesheet({ id: ANIMATED_NUMBER_CSS_RULE_ID, css: ANIMATED_NUMBER_KEYFRAMES_CSS })
 
   const isRightToLeft = isRightToLeftProp ?? i18next.dir() === 'rtl'
   const currency = useAppFiatCurrencyInfo()
   const colors = useSporeColors()
-  const prevValue = usePrevious(value)
-  const prevBalance = usePrevious(numericValue)
   const [reduceMotion, setReduceMotion] = useState(false)
-  const [animateGen, setAnimateGen] = useState(0)
-  const dirRef = useRef<AnimatedNumberDirection>(AnimatedNumberDirection.NONE)
 
   const textVariantKey = getTextVariantKey(textVariant)
   const { variantFont, digitHeight, maxDigitWidthScaled } = useMemo(
@@ -144,27 +138,25 @@ export function AnimatedNumberCore({
     [textVariant],
   )
   const compact = !HEADING_TEXT_VARIANT_KEYS.has(textVariantKey)
-  const { nextColor, commonPrefixLength } = useBalanceChangeIndication({
-    balance: numericValue,
+
+  const { animateGen, dirRef, isHoverRelease, nextColor, commonPrefixLength } = useAnimatedNumberAnimation({
     value,
-    prevValue,
-    prevBalance,
+    numericValue,
+    disableAnimations,
     colorIndicationDuration,
     statusSuccessColor: colors.statusSuccess.val,
     neutral2Color: colors.neutral2.val,
-    onDirectionChange: (direction) => {
-      dirRef.current = direction
-    },
-    onAnimate: () => {
-      setAnimateGen((generation) => generation + 1)
-    },
+    forceDirection,
   })
+
   const { baseColor, decimalPartColor, balanceChangeColor } = useResolvedAnimatedNumberColors({
     colors,
     color,
     shouldFadeDecimals,
     nextColor,
   })
+
+  const { chars, charDelays, charShouldAnimate } = useAnimatedNumberChars({ value, commonPrefixLength, isRightToLeft })
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -178,19 +170,6 @@ export function AnimatedNumberCore({
     return () => mq.removeEventListener('change', handler)
   }, [])
 
-  const chars = useMemo(() => splitValueIntoChars(value), [value])
-
-  const { charDelays, charShouldAnimate } = useMemo(
-    () =>
-      computeCharStaggerDelays({
-        chars,
-        commonPrefixLength,
-        isRightToLeft,
-        staggerMs: STAGGER_MS,
-      }),
-    [chars, commonPrefixLength, isRightToLeft],
-  )
-
   if (loading) {
     return (
       <TextLoaderWrapper loadingShimmer={loading !== 'no-shimmer'}>
@@ -201,6 +180,34 @@ export function AnimatedNumberCore({
         </Flex>
       </TextLoaderWrapper>
     )
+  }
+
+  // Render Fallback inside Core to preserve animateGen/stagger state across disableAnimations transitions
+  if (disableAnimations) {
+    return (
+      <AnimatedNumberFallback
+        value={value}
+        numericValue={numericValue}
+        loading={loading}
+        loadingPlaceholderText={loadingPlaceholderText}
+        shouldFadeDecimals={shouldFadeDecimals}
+        warmLoading={warmLoading}
+        textVariant={textVariant}
+        color={color}
+        containerTestID={containerTestID}
+        alignRight={alignRight}
+        EndElement={EndElement}
+        endElementGap={endElementGap}
+        ellipsis={ellipsis}
+        disableAnimations={disableAnimations}
+      />
+    )
+  }
+
+  // DigitSlot guards on dirRef !== NONE; clear stale direction on hover-release so CharCells
+  // don't stagger-animate on mount unless a real price change follows
+  if (isHoverRelease) {
+    dirRef.current = AnimatedNumberDirection.NONE
   }
 
   return (
@@ -255,7 +262,7 @@ export function AnimatedNumberCore({
 const AnimatedNumber = (props: AnimatedNumberProps): JSX.Element => {
   const isDataLivelinessEnabled = useFeatureFlag(FeatureFlags.DataLivelinessUI)
 
-  if (!isDataLivelinessEnabled || props.disableAnimations) {
+  if (!isDataLivelinessEnabled) {
     return <AnimatedNumberFallback {...props} />
   }
 

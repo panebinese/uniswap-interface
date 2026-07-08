@@ -36,7 +36,11 @@ import { useCreateAuctionTokenColor } from '~/pages/Liquidity/CreateAuction/hook
 import { useIsStepValid } from '~/pages/Liquidity/CreateAuction/hooks/useIsStepValid'
 import { useReconcileCreateNewTokenNetwork } from '~/pages/Liquidity/CreateAuction/hooks/useReconcileCreateNewTokenNetwork'
 import { useTokenImageUpload } from '~/pages/Liquidity/CreateAuction/hooks/useTokenImageUpload'
-import { CreateAuctionStep, type CreateNewTokenFormState } from '~/pages/Liquidity/CreateAuction/types'
+import {
+  CreateAuctionStep,
+  type CreateNewTokenFormState,
+  NEW_TOKEN_SYMBOL_MAX_LENGTH,
+} from '~/pages/Liquidity/CreateAuction/types'
 import { resolveCreateNewTokenDisplayImageSrc } from '~/pages/Liquidity/CreateAuction/utils/resolveCreateNewTokenDisplayImageSrc'
 
 function NetworkSelector({
@@ -282,6 +286,7 @@ export function CreateNewTokenForm({ createNew }: { createNew: CreateNewTokenFor
                   flex={1}
                   value={createNew.symbol}
                   onChangeText={(text) => updateCreateNewTokenField('symbol', text)}
+                  maxLength={NEW_TOKEN_SYMBOL_MAX_LENGTH}
                   placeholder={t('toucan.createAuction.step.tokenInfo.tickerPlaceholder')}
                   unstyled
                   outlineStyle="none"

@@ -193,7 +193,7 @@ function ToucanTokenContent({ isModalOpen, onCloseModal }: { isModalOpen: boolea
             tokenColor={tokenColor}
             totalSupply={auctionDetails.tokenTotalSupply}
             auctionTokenDecimals={auctionDetails.token?.currency.decimals}
-            isTradeAvailable={isTradeAvailable}
+            isTradeAvailableFromStatus={isTradeAvailable}
             tradeAvailabilityBlock={tradeAvailabilityBlock}
           />
         )}

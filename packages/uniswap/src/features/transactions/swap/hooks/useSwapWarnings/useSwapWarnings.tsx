@@ -20,7 +20,10 @@ import { getBalanceWarning } from 'uniswap/src/features/transactions/swap/hooks/
 import { getFormIncompleteWarning } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/getFormIncompleteWarning'
 import { getGeoRestrictionWarning } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/getGeoRestrictionWarning'
 import { getPriceImpactWarning } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/getPriceImpactWarning'
-import { getSwapWarningFromError } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/getSwapWarningFromError'
+import {
+  getSwapWarningFromError,
+  isGasSponsorshipFailureError,
+} from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/getSwapWarningFromError'
 import { getTokenBlockedWarning } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/getTokenBlockedWarning'
 import { useParsedActivePlanWarnings } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/useParsedActivePlanWarnings'
 import { activePlanStore } from 'uniswap/src/features/transactions/swap/review/stores/activePlan/activePlanStore'
@@ -119,6 +122,7 @@ function useSwapWarnings(derivedSwapInfo: DerivedSwapInfo): Warning[] {
 }
 
 function useParsedSwapFormWarnings(): ParsedWarnings {
+  const { t } = useTranslation()
   const derivedSwapInfo = useSwapFormStore((s) => s.derivedSwapInfo)
 
   const accountAddress = useActiveAddress(derivedSwapInfo.chainId)
@@ -135,9 +139,17 @@ function useParsedSwapFormWarnings(): ParsedWarnings {
     isGasSponsored,
   })
 
+  const sponsorshipWarning = useMemo(
+    () =>
+      gasFee.error && isGasSponsorshipFailureError(gasFee.error)
+        ? getSwapWarningFromError({ error: gasFee.error, t, derivedSwapInfo })
+        : undefined,
+    [gasFee.error, t, derivedSwapInfo],
+  )
+
   const allWarnings = useMemo(() => {
-    return !gasWarning ? swapWarnings : [...swapWarnings, gasWarning]
-  }, [gasWarning, swapWarnings])
+    return [...swapWarnings, gasWarning, sponsorshipWarning].filter((w): w is Warning => !!w)
+  }, [gasWarning, swapWarnings, sponsorshipWarning])
 
   return useFormattedWarnings(allWarnings)
 }

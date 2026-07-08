@@ -53,8 +53,10 @@ export enum TokenColumns {
   Actions = 'actions',
 }
 
+const EMPTY_HIDDEN_COLUMNS: TokenColumns[] = []
+
 export function useTokenColumns({
-  hiddenColumns = [],
+  hiddenColumns = EMPTY_HIDDEN_COLUMNS,
   showLoadingSkeleton,
   showUnrealizedPnlPercent = false,
   columnSortEnabled = true,

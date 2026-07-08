@@ -1,20 +1,22 @@
+import { SharedEventName } from '@uniswap/analytics-events'
 import type { Currency } from '@uniswap/sdk-core'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Flex, Loader, styled, Text, TouchableArea, useShadowPropsShort, useSporeColors } from 'ui/src'
 import { ArrowsExpand } from 'ui/src/components/icons/ArrowsExpand'
 import { iconSizes } from 'ui/src/theme'
+import AnimatedNumber from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
 import { CopyHelper } from 'uniswap/src/components/CopyHelper/CopyHelper'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
+import { getChainLabel, toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { FORMAT_DATE_MONTH_DAY_TIME, useLocalizedDayjs } from 'uniswap/src/features/language/localizedDayjs'
 import { CopyNotificationType } from 'uniswap/src/features/notifications/slice/types'
-import { ElementName } from 'uniswap/src/features/telemetry/constants'
-import { useSwapFormStoreDerivedSwapInfo } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
+import { ElementName, InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { CurrencyField } from 'uniswap/src/types/currency'
-import { SwapTab } from 'uniswap/src/types/screens/interface'
 import { NumberType } from 'utilities/src/format/types'
 import { TimePeriod, toHistoryDuration } from '~/appGraphql/data/util'
+import { ChartUnavailableOverlay } from '~/components/Charts/ChartUnavailableOverlay'
 import { useChartAnimatedColor } from '~/components/Charts/hooks/useChartAnimatedColor'
 import { ChartSkeleton } from '~/components/Charts/LoadingState'
 import type { PriceChartData } from '~/components/Charts/PriceChart'
@@ -27,6 +29,7 @@ import { useColor } from '~/hooks/useColor'
 import type { TokenPriceChartQueryVariables } from '~/hooks/useTokenPriceChartData'
 import { useTokenPriceChartPanel } from '~/hooks/useTokenPriceChartPanel'
 import { useNavigateToTokenDetails } from '~/pages/Portfolio/Tokens/hooks/useNavigateToTokenDetails'
+import { useSlideoutChartCardCurrencies } from '~/pages/Swap/Swap/SlideoutChartCard/useSlideoutChartCardCurrencies'
 import { getNativeTokenDBAddress } from '~/utils/nativeTokens'
 
 const TIME_OPTIONS = [
@@ -53,7 +56,7 @@ const CardShell = styled(Flex, {
 })
 
 interface SlideoutChartCardContentProps {
-  selectedCurrency: Currency | undefined
+  selectedCurrency: Currency
   timePeriod: TimePeriod
   onTimePeriodChange: (period: TimePeriod) => void
   crosshairData: PriceChartData | undefined
@@ -79,37 +82,17 @@ function SlideoutChartCardContent({
 
   return (
     <CardShell {...shadowProps}>
-      {selectedCurrency ? (
-        <SlideoutChartCardBody
-          selectedCurrency={selectedCurrency}
-          timePeriod={timePeriod}
-          onTimePeriodChange={onTimePeriodChange}
-          crosshairData={crosshairData}
-          onCrosshairChange={onCrosshairChange}
-          inputCurrency={inputCurrency}
-          outputCurrency={outputCurrency}
-          selectedField={selectedField}
-          onSelectedFieldChange={onSelectedFieldChange}
-        />
-      ) : (
-        <>
-          <Flex row alignItems="center" px="$spacing8">
-            <Text variant="body2" color="$neutral2">
-              —
-            </Text>
-          </Flex>
-          <Flex height={SWAP_CHART_AREA_HEIGHT}>
-            <ChartSkeleton
-              type={ChartType.PRICE}
-              height={SWAP_CHART_AREA_HEIGHT}
-              hidePriceIndicators
-              hideXAxis
-              hideYAxis
-              chartTransform="translate(5, -70)"
-            />
-          </Flex>
-        </>
-      )}
+      <SlideoutChartCardBody
+        selectedCurrency={selectedCurrency}
+        timePeriod={timePeriod}
+        onTimePeriodChange={onTimePeriodChange}
+        crosshairData={crosshairData}
+        onCrosshairChange={onCrosshairChange}
+        inputCurrency={inputCurrency}
+        outputCurrency={outputCurrency}
+        selectedField={selectedField}
+        onSelectedFieldChange={onSelectedFieldChange}
+      />
     </CardShell>
   )
 }
@@ -138,6 +121,18 @@ function SlideoutChartCardBody({
   onSelectedFieldChange,
 }: SlideoutChartCardBodyProps): JSX.Element {
   const { convertFiatAmountFormatted } = useLocalizationContext()
+  const { currentTab } = useSwapAndLimitContext()
+
+  const handleCopyAddress = useCallback(() => {
+    sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
+      element: ElementName.SlideoutChartCardCopyAddress,
+      token_symbol: selectedCurrency.symbol,
+      chain_id: selectedCurrency.chainId,
+      chain_name: getChainLabel(selectedCurrency.chainId as UniverseChainId),
+      token_address: selectedCurrency.isToken ? selectedCurrency.address : undefined,
+      tab: currentTab,
+    })
+  }, [selectedCurrency, currentTab])
   const localizedDayjs = useLocalizedDayjs()
   const navigateToTokenDetails = useNavigateToTokenDetails()
   const sporeColors = useSporeColors()
@@ -161,6 +156,10 @@ function SlideoutChartCardBody({
   const firstEntry = entries.at(0)
   const displayPrice = crosshairData?.value ?? lastEntry?.value
   const showTokenToggle = !!inputCurrency && !!outputCurrency
+  // Distinguishes the initial fetch (no data yet) from a background refetch/poll — once we've
+  // determined price/chart data is unavailable, keep showing that state (shimmer-free) instead of
+  // reverting to a loading skeleton.
+  const isInitialLoad = loading && entries.length === 0
 
   const targetChartColor = crosshairData
     ? crosshairData.value >= (firstEntry?.value ?? crosshairData.value)
@@ -188,11 +187,22 @@ function SlideoutChartCardBody({
                 iconColor="$neutral2"
                 iconPosition="left"
                 copyNotificationType={CopyNotificationType.ContractAddress}
-                analyticsElement={ElementName.CopyAddress}
+                onCopy={handleCopyAddress}
               />
             </Flex>
           )}
-          <TouchableArea onPress={() => navigateToTokenDetails(selectedCurrency)}>
+          <TouchableArea
+            onPress={() => {
+              sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
+                element: ElementName.SlideoutChartCardExpand,
+                token_symbol: selectedCurrency.symbol,
+                chain_id: selectedCurrency.chainId,
+                chain_name: getChainLabel(selectedCurrency.chainId as UniverseChainId),
+                tab: currentTab,
+              })
+              navigateToTokenDetails(selectedCurrency)
+            }}
+          >
             <Flex centered width={28} height={28} borderRadius="$rounded6">
               <ArrowsExpand color="$neutral2" size={iconSizes.icon12} />
             </Flex>
@@ -200,19 +210,22 @@ function SlideoutChartCardBody({
         </Flex>
       </Flex>
 
-      {/* Price + delta */}
+      {/* Price + delta — shown whenever a price is known, independent of chart data availability or refetch state */}
       <Flex gap="$spacing4" px="$spacing8">
-        {showInvalidSkeleton ? (
+        {displayPrice === undefined ? (
           <>
-            <Loader.Box height={28} width={120} borderRadius="$rounded8" />
-            <Loader.Box height={16} width={80} borderRadius="$rounded8" />
+            <Loader.Box height={28} width={120} borderRadius="$rounded8" disableShimmer={!isInitialLoad} />
+            <Loader.Box height={16} width={80} borderRadius="$rounded8" disableShimmer={!isInitialLoad} />
           </>
         ) : (
           <>
-            <Text variant="heading3">
-              {displayPrice !== undefined ? convertFiatAmountFormatted(displayPrice, NumberType.FiatTokenPrice) : '—'}
-            </Text>
-            {firstEntry !== undefined && displayPrice !== undefined && (
+            <AnimatedNumber
+              numericValue={displayPrice}
+              value={convertFiatAmountFormatted(displayPrice, NumberType.FiatTokenPrice)}
+              textVariant="$heading3"
+              disableAnimations={!!crosshairData}
+            />
+            {firstEntry !== undefined && (
               <Flex row alignItems="center" gap="$spacing8">
                 <PriceChartDelta
                   startingPrice={firstEntry.value}
@@ -235,15 +248,18 @@ function SlideoutChartCardBody({
       {/* Chart — fixed height so lightweight-charts always receives a non-zero height */}
       <Flex grow height={SWAP_CHART_AREA_HEIGHT}>
         {showInvalidSkeleton ? (
-          <ChartSkeleton
-            type={ChartType.PRICE}
-            height={SWAP_CHART_AREA_HEIGHT}
-            errorText={loading ? undefined : 'No chart data'}
-            hidePriceIndicators
-            hideXAxis
-            hideYAxis
-            chartTransform="translate(5, -70)"
-          />
+          isInitialLoad ? (
+            <ChartSkeleton
+              type={ChartType.PRICE}
+              height={SWAP_CHART_AREA_HEIGHT}
+              hidePriceIndicators
+              hideXAxis
+              hideYAxis
+              chartTransform="translate(5, -70)"
+            />
+          ) : (
+            <ChartUnavailableOverlay height={SWAP_CHART_AREA_HEIGHT} chartTransform="translate(5, -70)" />
+          )
         ) : (
           <PriceChartBody
             data={entries}
@@ -277,6 +293,13 @@ function SlideoutChartCardBody({
               <TouchableArea
                 key={value}
                 onPress={() => {
+                  sendAnalyticsEvent(InterfaceEventName.SlideoutChartCardTimePeriodSelected, {
+                    time_period: value,
+                    token_symbol: selectedCurrency.symbol,
+                    chain_id: selectedCurrency.chainId,
+                    chain_name: getChainLabel(selectedCurrency.chainId as UniverseChainId),
+                    tab: currentTab,
+                  })
                   onTimePeriodChange(period)
                   onCrosshairChange(undefined)
                 }}
@@ -313,6 +336,13 @@ function SlideoutChartCardBody({
                 <TouchableArea
                   key={field}
                   onPress={() => {
+                    sendAnalyticsEvent(InterfaceEventName.SlideoutChartCardTokenToggled, {
+                      token_field: field,
+                      token_symbol: currency.symbol,
+                      chain_id: currency.chainId,
+                      chain_name: getChainLabel(currency.chainId as UniverseChainId),
+                      tab: currentTab,
+                    })
                     onSelectedFieldChange(field)
                     onCrosshairChange(undefined)
                   }}
@@ -337,21 +367,34 @@ function SlideoutChartCardBody({
   )
 }
 
-export function SlideoutChartCard(): JSX.Element {
+export function SlideoutChartCard({ isChartOpen }: { isChartOpen: boolean }): JSX.Element | null {
   const [timePeriod, setTimePeriod] = useState(TimePeriod.DAY)
   const [crosshairData, setCrosshairData] = useState<PriceChartData | undefined>()
 
-  const { currentTab, currencyState } = useSwapAndLimitContext()
-  const isLimitTab = currentTab === SwapTab.Limit
-
-  const swapInputCurrency = useSwapFormStoreDerivedSwapInfo((s) => s.currencies[CurrencyField.INPUT]?.currency)
-  const swapOutputCurrency = useSwapFormStoreDerivedSwapInfo((s) => s.currencies[CurrencyField.OUTPUT]?.currency)
-
-  const inputCurrency = isLimitTab ? currencyState.inputCurrency : swapInputCurrency
-  const outputCurrency = isLimitTab ? currencyState.outputCurrency : swapOutputCurrency
+  const { inputCurrency, outputCurrency } = useSlideoutChartCardCurrencies()
+  const { currentTab } = useSwapAndLimitContext()
 
   const [selectedField, setSelectedField] = useState<CurrencyField>(CurrencyField.INPUT)
-  const selectedCurrency = selectedField === CurrencyField.INPUT ? inputCurrency : outputCurrency
+  const selectedCurrency =
+    (selectedField === CurrencyField.INPUT ? inputCurrency : outputCurrency) ?? inputCurrency ?? outputCurrency
+
+  useEffect(() => {
+    if (!selectedCurrency) {
+      return
+    }
+    sendAnalyticsEvent(InterfaceEventName.SlideoutChartCardTokenSelected, {
+      token_symbol: selectedCurrency.symbol,
+      chain_id: selectedCurrency.chainId,
+      chain_name: getChainLabel(selectedCurrency.chainId as UniverseChainId),
+      token_address: selectedCurrency.isToken ? selectedCurrency.address : undefined,
+      tab: currentTab,
+      is_chart_open: isChartOpen,
+    })
+  }, [isChartOpen, selectedCurrency, currentTab])
+
+  if (!selectedCurrency) {
+    return null
+  }
 
   return (
     <SlideoutChartCardContent

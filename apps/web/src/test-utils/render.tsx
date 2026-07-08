@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { queries } from '@testing-library/dom'
 import { RenderHookOptions, RenderOptions, render, renderHook } from '@testing-library/react'
 import { SharedQueryClient } from '@universe/api'
+import { ComplianceClientProvider, type ComplianceV2Client } from '@universe/compliance'
 import { PriceServiceProvider } from '@universe/prices'
 import { ComponentType, PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { HelmetProvider } from 'react-helmet-async/lib/index'
@@ -23,6 +24,15 @@ import { ThemeProvider } from '~/theme'
 import { TamaguiProvider } from '~/theme/tamaguiProvider'
 
 const queryClient = new QueryClient()
+
+// Mirrors the ComplianceClientProvider mounted at the web root (index.tsx) so components that read
+// useIsFeatureGated / useTokenComplianceStatus (e.g. the swap token selector) render in tests. The stub
+// fails open (nothing gated) and makes no network calls.
+const complianceClientStub = {
+  gatedFeatures: async () => ({ features: [] }),
+  featureGatedTokens: async () => ({ tokens: [] }),
+  setTokenAcknowledgement: async () => ({}),
+} as unknown as ComplianceV2Client
 
 const BLOCK_NUMBER_CONTEXT = { fastForward: () => {}, block: 1234, mainnetBlock: 1234 }
 function MockedBlockNumberProvider({ children }: PropsWithChildren) {
@@ -47,22 +57,24 @@ function MockedMismatchProvider({ children }: PropsWithChildren) {
 
 function CommonTestProviders({ children }: PropsWithChildren) {
   return (
-    <MockedProvider showWarnings={false}>
-      <TransactionWatcherProvider>
-        <ReactRouterUrlProvider>
-          <MockedBlockNumberProvider>
-            <ThemeProvider>
-              <TamaguiProvider>
-                <PriceServiceProvider queryClient={SharedQueryClient}>
-                  <WebAccountsStoreUpdater />
-                  <MockedMismatchProvider>{children}</MockedMismatchProvider>
-                </PriceServiceProvider>
-              </TamaguiProvider>
-            </ThemeProvider>
-          </MockedBlockNumberProvider>
-        </ReactRouterUrlProvider>
-      </TransactionWatcherProvider>
-    </MockedProvider>
+    <ComplianceClientProvider client={complianceClientStub}>
+      <MockedProvider showWarnings={false}>
+        <TransactionWatcherProvider>
+          <ReactRouterUrlProvider>
+            <MockedBlockNumberProvider>
+              <ThemeProvider>
+                <TamaguiProvider>
+                  <PriceServiceProvider queryClient={SharedQueryClient}>
+                    <WebAccountsStoreUpdater />
+                    <MockedMismatchProvider>{children}</MockedMismatchProvider>
+                  </PriceServiceProvider>
+                </TamaguiProvider>
+              </ThemeProvider>
+            </MockedBlockNumberProvider>
+          </ReactRouterUrlProvider>
+        </TransactionWatcherProvider>
+      </MockedProvider>
+    </ComplianceClientProvider>
   )
 }
 

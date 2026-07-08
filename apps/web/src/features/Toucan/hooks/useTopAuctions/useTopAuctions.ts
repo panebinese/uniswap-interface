@@ -22,14 +22,6 @@ import { useChainIdFromUrlParam } from '~/utils/params/chainParams'
 
 export const AUCTION_LIST_API_PAGE_SIZE = 200
 
-// TEMP frontend stopgap: hide abandoned auctions from the Explore "top auctions" list until the
-// backend excludes them from ListTopAuctions. Direct auction links still resolve. Ids use the same
-// `${chainId}_${checksummedAuctionAddress}` form as DEFAULT_VERIFIED_AUCTION_IDS and are matched
-// exactly against the backend auctionId (mirrors the verified check). Remove once the backend ships.
-const HIDDEN_AUCTION_IDS = new Set<string>([
-  '1_0xD9E8355f9f57185928347a5BdDEe164006b16e58', // Abandoned Interfold (FOLD) auction, superseded by 0x687Cc3...
-])
-
 export function auctionCommittedVolumeComparator(a: EnrichedAuction, b: EnrichedAuction): number {
   // Use USD values for cross-currency comparison (follows portfolio balances pattern)
   if (a.auction?.totalBidVolumeUsd === undefined) {
@@ -259,11 +251,6 @@ export function useTopAuctions(): {
         }
       })
       .filter((auctionWithInfo) => {
-        // TEMP: hide abandoned auctions (see HIDDEN_AUCTION_IDS) pending backend ListTopAuctions exclusion
-        const auctionId = auctionWithInfo.auction?.auctionId
-        if (auctionId && HIDDEN_AUCTION_IDS.has(auctionId)) {
-          return false
-        }
         // Filter out testnet chains when testnet mode is not enabled
         // oxlint-disable-next-line no-shadow
         const chainId = auctionWithInfo.auction?.chainId

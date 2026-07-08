@@ -1,6 +1,5 @@
 //! tamagui-ignore
 // tamagui-ignore
-import { KycVerificationStatus } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -19,10 +18,12 @@ import { useEvent } from 'utilities/src/react/hooks'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { zeroAddress } from '~/chains'
 import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
+import { useToucanGeoRestriction } from '~/components/GeoRestriction/useToucanGeoRestriction'
 import { useActiveAddress } from '~/features/accounts/store/hooks'
 import { getAuctionBidInputtedAnalyticsProperties } from '~/features/Toucan/Auction/analytics'
 import { AuctionAccessIndicators } from '~/features/Toucan/Auction/BidForm/AuctionAccessIndicators'
 import { BidBudgetInput } from '~/features/Toucan/Auction/BidForm/BidBudgetInput'
+import { BidFormActionButton } from '~/features/Toucan/Auction/BidForm/BidFormActionButton'
 import { BidFormWarningBanner } from '~/features/Toucan/Auction/BidForm/BidFormWarningBanner'
 import { BidMaxValuationInputV2 } from '~/features/Toucan/Auction/BidForm/BidMaxValuationInputV2'
 import { BidReceiveOutput } from '~/features/Toucan/Auction/BidForm/BidReceiveOutput'
@@ -38,8 +39,6 @@ import { AuctionProgressState } from '~/features/Toucan/Auction/store/types'
 import { useAuctionStore } from '~/features/Toucan/Auction/store/useAuctionStore'
 import { getRequiredTestnetMode } from '~/features/Toucan/Shared/getRequiredTestnetMode'
 import { InlineAlertBanner } from '~/features/Toucan/Shared/InlineAlertBanner'
-import { KycActionButton } from '~/features/Toucan/Shared/KycActionButton'
-import { ToucanActionButton } from '~/features/Toucan/Shared/ToucanActionButton'
 
 const VerticalLineContainer = styled(Flex, {
   width: '100%',
@@ -68,6 +67,7 @@ export function BidForm({ onInputChange, onBidSubmitted }: BidFormProps): JSX.El
   const currency = useAuctionStore((state) => state.auctionDetails?.currency)
   const userBids = useAuctionStore((state) => state.userBids)
   const token = useAuctionStore((state) => state.auctionDetails?.token)
+  const { isGeoRestricted, unavailableLabel } = useToucanGeoRestriction(token?.currency)
   const auctionTokenName = useAuctionStore((state) => state.auctionDetails?.token?.currency.name)
   const { tokenColor, effectiveTokenColor } = useAuctionTokenColor()
   const auctionAddress = useAuctionStore((state) => state.auctionAddress)
@@ -163,6 +163,9 @@ export function BidForm({ onInputChange, onBidSubmitted }: BidFormProps): JSX.El
   }
 
   const buttonLabel = (() => {
+    if (isGeoRestricted) {
+      return unavailableLabel
+    }
     if (!isWalletConnected) {
       return t('common.connectWallet.button')
     }
@@ -177,9 +180,10 @@ export function BidForm({ onInputChange, onBidSubmitted }: BidFormProps): JSX.El
   // The testnet-mode-switch CTA stays tappable regardless of the bid inputs, since switching mode is
   // always a valid action and is a prerequisite to bidding at all.
   const buttonDisabled =
-    isWalletConnected && !needsTestnetModeSwitch
+    isGeoRestricted ||
+    (isWalletConnected && !needsTestnetModeSwitch
       ? submitState.isDisabled || !isAuctionInProgress || shouldDisableBidForm || kycStatus.kycButtonDisabled
-      : false
+      : false)
 
   const shouldShowSwapBanner =
     isWalletConnected &&
@@ -302,23 +306,18 @@ export function BidForm({ onInputChange, onBidSubmitted }: BidFormProps): JSX.El
           {shouldShowTokenWarning && token && (
             <TokenWarningCard currencyInfo={token} onPress={() => setShowTokenWarningModal(true)} />
           )}
-          {!needsTestnetModeSwitch && isWalletConnected && (kycStatus.kycButtonLabel || kycStatus.whitelistLabel) ? (
-            <KycActionButton
-              kycStatus={kycStatus}
-              onPress={() =>
-                kycStatus.status === KycVerificationStatus.VERIFICATION_STATUS_REJECTED
-                  ? setIsKycFailedModalOpen(true)
-                  : setIsKycInterstitialModalOpen(true)
-              }
-            />
-          ) : (
-            <ToucanActionButton
-              label={buttonLabel}
-              isDisabled={buttonDisabled}
-              onPress={handleButtonPress}
-              shouldUseSoftBranded={!isWalletConnected}
-            />
-          )}
+          <BidFormActionButton
+            isGeoRestricted={isGeoRestricted}
+            geoTokenSymbol={token?.currency.symbol}
+            needsTestnetModeSwitch={needsTestnetModeSwitch}
+            isWalletConnected={isWalletConnected}
+            kycStatus={kycStatus}
+            buttonLabel={buttonLabel}
+            buttonDisabled={buttonDisabled}
+            onButtonPress={handleButtonPress}
+            onKycRejected={() => setIsKycFailedModalOpen(true)}
+            onKycInterstitial={() => setIsKycInterstitialModalOpen(true)}
+          />
         </Flex>
       </Flex>
       <BidReviewModal

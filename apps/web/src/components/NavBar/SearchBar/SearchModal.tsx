@@ -7,7 +7,9 @@ import { useUpdateScrollLock } from 'uniswap/src/components/modals/ScrollLock'
 import { NetworkFilter } from 'uniswap/src/components/network/NetworkFilter'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import type { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import { EXPANDABLE_ASSET_SEARCH_ISSUER_ROW_RIGHT_INSET_PX } from 'uniswap/src/features/expandableAsset/expandableAssetLayout'
 import { useFilterCallbacks } from 'uniswap/src/features/search/SearchModal/hooks/useFilterCallbacks'
+import type { SearchModalRowVariant } from 'uniswap/src/features/search/SearchModal/SearchModalList'
 import { SearchModalNoQueryList } from 'uniswap/src/features/search/SearchModal/SearchModalNoQueryList'
 import { SearchModalResultsList } from 'uniswap/src/features/search/SearchModal/SearchModalResultsList'
 import { SearchTab, WEB_SEARCH_TABS } from 'uniswap/src/features/search/SearchModal/types'
@@ -26,6 +28,35 @@ const SEARCH_MODAL_WIDTH = {
 }
 
 const TOKEN_HOVER_CARD_OFFSET = 8
+
+// Compensates for the RWA issuer sub-row's extra nesting; imported (not hardcoded) to stay in sync with its layout.
+const RWA_ISSUER_ROW_HOVER_CARD_OFFSET = TOKEN_HOVER_CARD_OFFSET + EXPANDABLE_ASSET_SEARCH_ISSUER_ROW_RIGHT_INSET_PX
+
+function useHoverCardWrapper({ containerWidth, onNavigate }: { containerWidth: number; onNavigate: () => void }) {
+  return useCallback(
+    ({
+      element,
+      currencyInfo,
+      variant,
+    }: {
+      element: JSX.Element
+      currencyInfo: CurrencyInfo
+      variant: SearchModalRowVariant
+    }): JSX.Element => (
+      <TokenHoverCard
+        currencyInfo={currencyInfo}
+        placement="right-start"
+        offset={variant === 'rwaIssuerChild' ? RWA_ISSUER_ROW_HOVER_CARD_OFFSET : TOKEN_HOVER_CARD_OFFSET}
+        widthOffset={TOKEN_HOVER_CARD_OFFSET}
+        containerWidth={containerWidth}
+        onNavigate={onNavigate}
+      >
+        {element}
+      </TokenHoverCard>
+    ),
+    [containerWidth, onNavigate],
+  )
+}
 
 export const SearchModal = memo(function SearchModalInner(): JSX.Element {
   const colors = useSporeColors()
@@ -79,21 +110,8 @@ export const SearchModal = memo(function SearchModalInner(): JSX.Element {
   const searchModalWidth =
     isDataLivelinessUIEnabled && media.xxl ? SEARCH_MODAL_WIDTH.small : SEARCH_MODAL_WIDTH.default
 
-  const wrapWithTokenHoverCard = useCallback(
-    (element: JSX.Element, currencyInfo: CurrencyInfo): JSX.Element => (
-      <TokenHoverCard
-        currencyInfo={currencyInfo}
-        placement="right-start"
-        offset={TOKEN_HOVER_CARD_OFFSET}
-        containerWidth={searchModalWidth}
-        onNavigate={onSelect}
-      >
-        {element}
-      </TokenHoverCard>
-    ),
-    [searchModalWidth, onSelect],
-  )
-  const wrapTokenRow = isDataLivelinessUIEnabled && !media.xl ? wrapWithTokenHoverCard : undefined
+  const wrapWithHoverCard = useHoverCardWrapper({ containerWidth: searchModalWidth, onNavigate: onSelect })
+  const rowWrapper = isDataLivelinessUIEnabled && !media.xl ? wrapWithHoverCard : undefined
 
   // Tamagui Dialog/Sheets should remove background scroll by default but does not work to disable ArrowUp/Down key scrolling
   useUpdateScrollLock({ isModalOpen })
@@ -181,7 +199,7 @@ export const SearchModal = memo(function SearchModalInner(): JSX.Element {
               activeTab={activeTab}
               onSelect={onSelect}
               renderedInModal={false}
-              wrapTokenRow={wrapTokenRow}
+              rowWrapper={rowWrapper}
             />
           ) : (
             <SearchModalNoQueryList
@@ -189,7 +207,7 @@ export const SearchModal = memo(function SearchModalInner(): JSX.Element {
               activeTab={activeTab}
               onSelect={onSelect}
               renderedInModal
-              wrapTokenRow={wrapTokenRow}
+              rowWrapper={rowWrapper}
             />
           )}
         </Flex>

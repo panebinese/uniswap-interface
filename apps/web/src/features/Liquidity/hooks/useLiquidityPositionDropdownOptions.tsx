@@ -18,6 +18,8 @@ import { PositionInfo } from 'uniswap/src/features/positions/types'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { setPositionVisibility } from 'uniswap/src/features/visibility/slice'
 import { getPoolDetailsURL } from 'uniswap/src/utils/linking'
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import { logCollectFeesClick } from '~/features/Liquidity/analytics'
 import { useReportPositionHandler } from '~/features/Liquidity/hooks/useReportPositionHandler'
 import { useAccount } from '~/hooks/useAccount'
 import { useSelectChain } from '~/hooks/useSelectChain'
@@ -37,6 +39,7 @@ export function useLiquidityPositionDropdownOptions({
   readOnly?: boolean
 }): MenuOptionItem[] {
   const { t } = useTranslation()
+  const trace = useTrace()
   const isOpenLiquidityPosition = liquidityPosition.status !== PositionStatus.CLOSED
 
   const dispatch = useAppDispatch()
@@ -76,6 +79,7 @@ export function useLiquidityPositionDropdownOptions({
     if (!isV2Position && isOpenLiquidityPosition && hasFees) {
       options.push({
         onPress: () => {
+          logCollectFeesClick(liquidityPosition, trace)
           dispatch(
             setOpenModal({
               name: ModalName.ClaimFee,
@@ -184,5 +188,6 @@ export function useLiquidityPositionDropdownOptions({
     selectChain,
     updatePoolBalancesCache,
     t,
+    trace,
   ])
 }

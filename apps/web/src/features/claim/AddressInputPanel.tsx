@@ -6,10 +6,10 @@ import { ExplorerDataType, getExplorerLink } from 'uniswap/src/utils/linking'
 import { useAccount } from '~/hooks/useAccount'
 import { deprecatedStyled } from '~/lib/deprecated-styled'
 import { ExternalLink } from '~/theme/components/Links'
-import { flexColumnNoWrap } from '~/theme/styles'
 
 const InputPanel = deprecatedStyled.div`
-  ${flexColumnNoWrap};
+  display: flex;
+  flex-flow: column nowrap;
   position: relative;
   border-radius: 1.25rem;
   background-color: ${({ theme }) => theme.surface1};

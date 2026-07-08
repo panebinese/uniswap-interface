@@ -1,15 +1,31 @@
+import { PositionStatus, ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { useTranslation } from 'react-i18next'
 import { Flex, Switch, Text, TouchableArea } from 'ui/src'
 import { Search } from 'ui/src/components/icons/Search'
+import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { ProtocolFilterDropdown, PositionsNetworkFilter } from '~/features/Liquidity/positionsFilters'
 import { PositionsStatusChips } from '~/features/Liquidity/PositionsStatusChips'
 import { warnNotImplemented } from '~/features/Liquidity/positionsV2Stub'
-import { usePositionFilters } from '~/pages/Positions/hooks/usePositionFilters'
 
-export function PositionsTableControlBar(): JSX.Element {
-  const { chainFilter, setChainFilter, statusFilter, setStatusFilter, versionFilter, toggleVersion } =
-    usePositionFilters()
+export interface PositionsTableControlBarProps {
+  statusFilter: PositionStatus[]
+  setStatusFilter: (statuses: PositionStatus[]) => void
+  versionFilter: ProtocolVersion[]
+  toggleVersion: (version: ProtocolVersion) => void
+  chainFilter: UniverseChainId | null
+  setChainFilter: (chain: UniverseChainId | null) => void
+  showNetworkFilter?: boolean
+}
 
+export function PositionsTableControlBar({
+  statusFilter,
+  setStatusFilter,
+  versionFilter,
+  toggleVersion,
+  chainFilter,
+  setChainFilter,
+  showNetworkFilter = true,
+}: PositionsTableControlBarProps): JSX.Element {
   return (
     <Flex
       row
@@ -21,7 +37,7 @@ export function PositionsTableControlBar(): JSX.Element {
       <PositionsStatusChips statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
       <Flex row alignItems="center" gap="$spacing8">
         <GroupByPoolToggle />
-        <PositionsNetworkFilter selectedChain={chainFilter} onChainChange={setChainFilter} />
+        {showNetworkFilter && <PositionsNetworkFilter selectedChain={chainFilter} onChainChange={setChainFilter} />}
         <ProtocolFilterDropdown selectedVersions={versionFilter} onToggleVersion={toggleVersion} />
         <SearchButton onPress={() => warnNotImplemented('search')} />
       </Flex>

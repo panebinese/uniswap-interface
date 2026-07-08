@@ -14,6 +14,8 @@ import type { TokenPriceChartQueryVariables } from '~/hooks/useTokenPriceChartDa
 
 export type TDPChartQueryVariables = TokenPriceChartQueryVariables
 
+export const TDP_CHART_APOLLO_QUERY_NAMES = ['TokenHistoricalVolumes', 'TokenHistoricalTvls'] as const
+
 export function useTDPVolumeChartData({
   variables,
   skip,

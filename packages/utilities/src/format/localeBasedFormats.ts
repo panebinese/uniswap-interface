@@ -30,6 +30,20 @@ function getNumberFormat({
   return format
 }
 
+/**
+ * Clears the cached Intl.NumberFormat instances.
+ *
+ * Needed on mobile where Intl locale data is loaded lazily (see the mobile
+ * `intl-delayed` polyfill): a formatter created before its locale data was
+ * available is cached using the English fallback, so once new locale data is
+ * loaded the cache must be invalidated to pick up the correct separators.
+ */
+export function clearNumberFormatCache(): void {
+  for (const key of Object.keys(numberFormatCache)) {
+    delete numberFormatCache[key]
+  }
+}
+
 export const StandardCurrency: FormatCreator = {
   createFormat(locale, currencyCode) {
     return getNumberFormat({

@@ -1,13 +1,7 @@
 import type { Currency } from '@uniswap/sdk-core'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useListRwasQuery } from 'uniswap/src/data/rest/listRwas'
-import { useIsRWAGeoBlocked } from 'uniswap/src/features/rwa/useIsRWAGeoBlocked'
+import { useIsRWAToken } from 'uniswap/src/features/rwa/useIsRWAToken'
 import { renderHook } from 'uniswap/src/test/test-utils'
-
-vi.mock('@universe/gating', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@universe/gating')>()),
-  useFeatureFlag: vi.fn(),
-}))
 
 vi.mock('uniswap/src/data/rest/listRwas', () => ({
   useListRwasQuery: vi.fn(),
@@ -19,7 +13,6 @@ const TSLA_MAINNET_ADDRESS = '0xf6b1117ec07684D3958caD8BEb1b302bfD21103f'
 const TSLA_BNB_ADDRESS = '0x2494b603319d4d9f9715c9f4496d9e0364b59d93'
 const OTHER_BNB_ADDRESS = '0x1111111111111111111111111111111111111111'
 
-const mockUseFeatureFlag = vi.mocked(useFeatureFlag)
 const mockUseListRwasQuery = vi.mocked(useListRwasQuery)
 
 function currency(chainId: number, address: string): Currency {
@@ -47,34 +40,36 @@ function mockRwaData(): void {
   } as never)
 }
 
-describe(useIsRWAGeoBlocked, () => {
+describe(useIsRWAToken, () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockUseFeatureFlag.mockReturnValue(false)
     mockRwaData()
   })
 
-  it('returns false when the geoblock flag is off', () => {
-    const { result } = renderHook(() => useIsRWAGeoBlocked(currency(BNB_CHAIN_ID, TSLA_BNB_ADDRESS)))
+  it('does not fetch and returns false when disabled', () => {
+    const { result } = renderHook(() => useIsRWAToken(currency(BNB_CHAIN_ID, TSLA_BNB_ADDRESS), { enabled: false }))
 
     expect(mockUseListRwasQuery).toHaveBeenCalledWith({ chainIds: [BNB_CHAIN_ID], enabled: false })
     expect(result.current).toBe(false)
   })
 
-  it('matches non-preferred chain RWA tokens from the raw listRwas response', () => {
-    mockUseFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.RwaGeoblocked)
-
-    const { result } = renderHook(() => useIsRWAGeoBlocked(currency(BNB_CHAIN_ID, TSLA_BNB_ADDRESS)))
+  it('matches non-preferred chain RWA tokens from the raw listRwas response when enabled', () => {
+    const { result } = renderHook(() => useIsRWAToken(currency(BNB_CHAIN_ID, TSLA_BNB_ADDRESS), { enabled: true }))
 
     expect(mockUseListRwasQuery).toHaveBeenCalledWith({ chainIds: [BNB_CHAIN_ID], enabled: true })
     expect(result.current).toBe(true)
   })
 
   it('returns false when the selected token is not in the raw listRwas response', () => {
-    mockUseFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.RwaGeoblocked)
-
-    const { result } = renderHook(() => useIsRWAGeoBlocked(currency(BNB_CHAIN_ID, OTHER_BNB_ADDRESS)))
+    const { result } = renderHook(() => useIsRWAToken(currency(BNB_CHAIN_ID, OTHER_BNB_ADDRESS), { enabled: true }))
 
     expect(result.current).toBe(false)
+  })
+
+  it('defaults to enabled when no options are passed', () => {
+    const { result } = renderHook(() => useIsRWAToken(currency(BNB_CHAIN_ID, TSLA_BNB_ADDRESS)))
+
+    expect(mockUseListRwasQuery).toHaveBeenCalledWith({ chainIds: [BNB_CHAIN_ID], enabled: true })
+    expect(result.current).toBe(true)
   })
 })

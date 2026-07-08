@@ -52,6 +52,7 @@ export enum WarningLabel {
   BlockedToken = 'blocked_token',
   GeoRestricted = 'geo_restricted',
   NoQuotesFound = 'no_quotes_found',
+  GasSponsorshipFailed = 'gas_sponsorship_failed',
 }
 
 export interface Warning {

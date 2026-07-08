@@ -6,6 +6,7 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { zeroAddress } from '~/chains'
 import { stripZeroPercentCustomPriceRangeEntries } from '~/pages/Liquidity/CreateAuction/customPriceRanges'
+import { applyNewTokenTotalSupply } from '~/pages/Liquidity/CreateAuction/store/applyNewTokenTotalSupply'
 import {
   buildAuctionAmountsFromLiquidityPreview,
   getPostAuctionLiquidityAmountFromAllocation,
@@ -258,6 +259,7 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
               }
             })
           },
+          setNewTokenTotalSupply: (totalSupply) => set(applyNewTokenTotalSupply(totalSupply)),
           setStartTime: (startTime) => {
             set((state) => ({
               configureAuction: { ...state.configureAuction, startTime },
@@ -426,16 +428,14 @@ export const createCreateAuctionStore = (): CreateAuctionStore =>
             })
           },
           setBuybackAndBurnEnabled: (buybackAndBurnEnabled: boolean) => {
-            set((state) => {
-              const { customizePool } = state
-              return {
-                customizePool: {
-                  ...customizePool,
-                  buybackAndBurnEnabled,
-                  ...(buybackAndBurnEnabled ? { feesRecipientAddress: '', sendFeesEnabled: false } : {}),
-                },
-              }
-            })
+            // Buyback and fee-forwarding are mutually exclusive (proto oneof); clear the other side's state.
+            set((state) => ({
+              customizePool: {
+                ...state.customizePool,
+                buybackAndBurnEnabled,
+                ...(buybackAndBurnEnabled ? { feesRecipientAddress: '', sendFeesEnabled: false } : {}),
+              },
+            }))
           },
           commitTokenFormAndAdvance: () => {
             set((state) => {

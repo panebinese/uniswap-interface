@@ -46,6 +46,7 @@ export const Mocks = {
   DataApiService: {
     get_portfolio: path.resolve(__dirname, '../mocks/dataApiService/get_portfolio.json'),
     get_portfolio_empty: path.resolve(__dirname, '../mocks/dataApiService/get_portfolio_empty.json'),
+    get_wallet_balances_empty: path.resolve(__dirname, '../mocks/dataApiService/get_wallet_balances_empty.json'),
     get_rewards: path.resolve(__dirname, '../mocks/dataApiService/get_rewards.json'),
     get_rewards_empty: path.resolve(__dirname, '../mocks/dataApiService/get_rewards_empty.json'),
     list_transactions: path.resolve(__dirname, '../mocks/dataApiService/list_transactions.json'),

@@ -18,6 +18,7 @@ import {
   inputExceedsCurrencyPrecision,
   isAllowedCompactNumberInput,
   percentOfAmount,
+  truncateSymbol,
 } from '~/pages/Liquidity/CreateAuction/utils'
 import {
   formatLocalizedNumber,
@@ -49,6 +50,8 @@ interface AuctionSupplySelectorProps {
   /** Smallest deposit whose sold/LP split keeps both legs at >= 1 base unit; clamped to on blur. */
   minAuctionSupplyAmount: CurrencyAmount<Currency>
   tokenSymbol: string
+  /** Show the "Total supply: X" subtitle. Hidden for new tokens — a dedicated Total supply input sits above. LP-960. */
+  showTotalSupply?: boolean
   onSelectPercent: (percent: number) => void
   onAmountChange: (amount: CurrencyAmount<Currency>) => void
 }
@@ -59,6 +62,7 @@ export function AuctionSupplySelector({
   maxAuctionSupplyAmount,
   minAuctionSupplyAmount,
   tokenSymbol,
+  showTotalSupply = true,
   onSelectPercent,
   onAmountChange,
 }: AuctionSupplySelectorProps) {
@@ -179,54 +183,50 @@ export function AuctionSupplySelector({
         {t('toucan.createAuction.step.configureAuction.depositAmount')}
       </Text>
 
-      {/* Amount input — always takes the full row */}
-      <Flex row alignItems="center" flexWrap="wrap" gap="$spacing4" minWidth={0}>
-        {isFocused ? (
-          <Trace logFocus element={ElementName.AuctionSupplyAmount}>
-            <Input
-              ref={inputRef}
-              autoFocus
-              unstyled
-              outlineStyle="none"
-              $platform-web={{
-                fieldSizing: 'content',
-                minWidth: '1ch',
-                maxWidth: '100%',
-              }}
-              value={focusedDisplay}
-              onChangeText={handleChange}
-              onBlur={handleBlur}
-              placeholder="0"
-              placeholderTextColor="$neutral3"
-              fontFamily="$heading"
-              fontSize={fonts.heading3.fontSize}
-              lineHeight={fonts.heading3.lineHeight}
-              fontWeight={fonts.heading3.fontWeight}
-              color={exceedsMax ? '$statusCritical' : '$neutral1'}
-              backgroundColor="$transparent"
-            />
-          </Trace>
-        ) : (
-          <Text variant="heading3" color="$neutral1" cursor="text" onPress={handleFocus}>
-            {displayUnfocused}
-          </Text>
-        )}
-        <Text flexShrink={0} variant="heading3" color="$neutral3">
-          {tokenSymbol}
-        </Text>
-      </Flex>
-
-      {/* Total supply + preset pills: same row when wide, stacked when narrow */}
+      {/* Input Row: amount (left) + preset pills (right), vertically centered — stacks when narrow */}
       <Flex
         row={!stackPresetPills}
         alignItems={stackPresetPills ? 'stretch' : 'center'}
-        justifyContent={stackPresetPills ? 'flex-start' : 'space-between'}
+        justifyContent="space-between"
         gap="$spacing8"
         width="100%"
       >
-        <Text variant="body4" color="$neutral2">
-          {t('toucan.auction.totalSupply')}: {totalSupplyFormatted} {tokenSymbol}
-        </Text>
+        <Flex row alignItems="center" gap="$spacing4" flex={1} minWidth={0} overflow="hidden">
+          {isFocused ? (
+            <Trace logFocus element={ElementName.AuctionSupplyAmount}>
+              <Input
+                ref={inputRef}
+                autoFocus
+                unstyled
+                outlineStyle="none"
+                minWidth={0}
+                flexShrink={1}
+                $platform-web={{
+                  fieldSizing: 'content',
+                  maxWidth: '100%',
+                }}
+                value={focusedDisplay}
+                onChangeText={handleChange}
+                onBlur={handleBlur}
+                placeholder="0"
+                placeholderTextColor="$neutral3"
+                fontFamily="$heading"
+                fontSize={fonts.heading3.fontSize}
+                lineHeight={fonts.heading3.lineHeight}
+                fontWeight={fonts.heading3.fontWeight}
+                color={exceedsMax ? '$statusCritical' : '$neutral1'}
+                backgroundColor="$transparent"
+              />
+            </Trace>
+          ) : (
+            <Text variant="heading3" color="$neutral1" cursor="text" onPress={handleFocus}>
+              {displayUnfocused}
+            </Text>
+          )}
+          <Text flexShrink={0} variant="heading3" color="$neutral3">
+            {truncateSymbol(tokenSymbol)}
+          </Text>
+        </Flex>
 
         <Flex
           gap="$spacing2"
@@ -255,6 +255,13 @@ export function AuctionSupplySelector({
           />
         </Flex>
       </Flex>
+
+      {/* Total supply reference line — existing tokens only; new tokens have a dedicated input above */}
+      {showTotalSupply ? (
+        <Text variant="body4" color="$neutral2">
+          {t('toucan.auction.totalSupply')}: {totalSupplyFormatted} {tokenSymbol}
+        </Text>
+      ) : null}
     </Flex>
   )
 }

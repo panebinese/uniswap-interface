@@ -9,7 +9,7 @@ import {
 } from '~/lib/utils/analytics'
 import type { InterfaceTrade } from '~/state/routing/types'
 import { isClassicTrade, isUniswapXTradeType } from '~/state/routing/utils'
-import { TradeFillType, type LimitOrderResult } from '~/types/trade'
+import type { LimitOrderResult } from '~/types/trade'
 import { computeRealizedPriceImpact } from '~/utils/prices'
 
 export function formatSwapPriceUpdatedEventProperties({
@@ -62,7 +62,6 @@ export const formatSwapButtonClickEventProperties = ({
 
   return {
     estimated_network_fee_usd: isClassicTrade(trade) ? trade.gasUseEstimateUSD?.toString() : undefined,
-    transaction_hash: limitOrderResult?.type === TradeFillType.Classic ? limitOrderResult.response.hash : undefined,
     order_hash: isUniswapXTradeType(limitOrderResult?.type) ? limitOrderResult.response.orderHash : undefined,
     transaction_deadline_seconds: getDurationUntilTimestampSeconds(transactionDeadlineSecondsSinceEpoch),
     token_in_address: getTokenAddress(displayedInputCurrency),

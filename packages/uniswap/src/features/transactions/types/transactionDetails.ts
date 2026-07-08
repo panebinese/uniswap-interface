@@ -446,6 +446,12 @@ export interface BaseSwapTransactionInfo extends BaseTransactionInfo, PlanSwapTr
   simulationFailureReasons?: TradingApi.TransactionFailureReason[]
   dappInfo?: DappInfoTransactionDetails
 
+  /** Whether gas for this swap was sponsored, captured at submit so the finalization-time
+   *  Swap Transaction Completed/Failed event can report it. See getSponsorshipAnalyticsProperties. */
+  isSponsored?: boolean
+  /** Machine-readable sponsorship campaign id, captured at submit alongside `isSponsored`. */
+  sponsorshipCampaignId?: string
+
   /**
    * @deprecated This is used on interface only and will be deleted soon as part of WALL-7143
    * */
@@ -465,6 +471,11 @@ export interface BridgeTransactionInfo extends BaseTransactionInfo, PlanSwapTran
   gasUseEstimate?: string
   routingDappInfo?: DappInfoTransactionDetails
   depositConfirmed?: boolean // interface only
+  /** Whether gas for this bridge was sponsored, captured at submit so the finalization-time
+   *  Swap Transaction Completed/Failed event can report it. See getSponsorshipAnalyticsProperties. */
+  isSponsored?: boolean
+  /** Machine-readable sponsorship campaign id, captured at submit alongside `isSponsored`. */
+  sponsorshipCampaignId?: string
   /** Timestamp when the swap flow started (from Redux timing.swap.startTimestamp) */
   swapStartTimestamp?: number
 }

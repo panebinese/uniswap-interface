@@ -193,6 +193,8 @@ function useOnActivityUpdate(): OnActivityUpdate {
             swapStartTimestamp: original.typeInfo.swapStartTimestamp,
             planAnalytics: extractPlanFieldsFromTypeInfo(original.typeInfo),
             transactedUSDValue: original.typeInfo.transactedUSDValue,
+            isSponsored: original.typeInfo.isSponsored,
+            sponsorshipCampaignId: original.typeInfo.sponsorshipCampaignId,
             rwaAnalytics: {
               market_closed: original.typeInfo.marketClosed,
               price_warning: original.typeInfo.priceWarning,
@@ -219,6 +221,8 @@ function useOnActivityUpdate(): OnActivityUpdate {
             swapStartTimestamp: original.typeInfo.swapStartTimestamp,
             planAnalytics: extractPlanFieldsFromTypeInfo(original.typeInfo),
             transactedUSDValue: original.typeInfo.transactedUSDValue,
+            isSponsored: original.typeInfo.isSponsored,
+            sponsorshipCampaignId: original.typeInfo.sponsorshipCampaignId,
             rwaAnalytics: {
               market_closed: original.typeInfo.marketClosed,
               price_warning: original.typeInfo.priceWarning,

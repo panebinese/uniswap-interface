@@ -11,11 +11,14 @@ import { useLocalizationContext } from 'uniswap/src/features/language/Localizati
 import { useWalletPositions } from 'uniswap/src/features/positions/hooks/useWalletPositions'
 import type { PositionInfo } from 'uniswap/src/features/positions/types'
 import { getPositionKey } from 'uniswap/src/features/positions/utils'
-import { ModalName } from 'uniswap/src/features/telemetry/constants'
+import { ModalName, SectionName } from 'uniswap/src/features/telemetry/constants'
+import { Trace } from 'uniswap/src/features/telemetry/Trace'
 import { useCurrencyInfos } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { currencyId } from 'uniswap/src/utils/currencyId'
 import { NumberType } from 'utilities/src/format/types'
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import { logCollectFeesClick } from '~/features/Liquidity/analytics'
 import { PortfolioPoolsSidebarCard } from '~/pages/Portfolio/Pools/components/PortfolioPoolsSidebarCard'
 import { setOpenModal } from '~/state/application/reducer'
 import { useAppDispatch } from '~/state/hooks'
@@ -75,58 +78,60 @@ export function PortfolioPoolsFeesPanel({
   const hiddenPositions = useExpando ? eligiblePositions.slice(COLLAPSED_VISIBLE_ROWS) : []
 
   return (
-    <PortfolioPoolsSidebarCard gap="$gap16" maxHeight={maxHeight} style={{ overflowY: 'auto', overflowX: 'hidden' }}>
-      <Flex gap="$gap8">
-        <Text variant="body3" color="$neutral2">
-          {t('pool.fees.totalEarned')}
-        </Text>
-        {isFetchingAllPages ? (
-          <Skeleton>
-            <FlexLoader borderRadius="$rounded12" height={iconSizes.icon24} width={iconSizes.icon100} opacity={0.4} />
-          </Skeleton>
-        ) : (
-          <Flex testID={isEmpty ? TestID.PortfolioPoolsFeesEmpty : TestID.PortfolioPoolsFeesTotal}>
-            <AnimatedNumber
-              value={convertFiatAmountFormatted(totalUsd, NumberType.FiatTokenQuantity)}
-              numericValue={totalUsd}
-              textVariant="$heading3"
-              color={isEmpty ? '$neutral3' : '$neutral1'}
-            />
-          </Flex>
-        )}
-      </Flex>
-      {(isFetchingAllPages || eligiblePositions.length > 0) && (
+    <Trace section={SectionName.PortfolioPoolsFeesCard}>
+      <PortfolioPoolsSidebarCard gap="$gap16" maxHeight={maxHeight} style={{ overflowY: 'auto', overflowX: 'hidden' }}>
         <Flex gap="$gap8">
+          <Text variant="body3" color="$neutral2">
+            {t('pool.fees.totalEarned')}
+          </Text>
           {isFetchingAllPages ? (
-            Array.from({ length: COLLAPSED_VISIBLE_ROWS }).map((_, index) => <FeeRowSkeleton key={index} />)
+            <Skeleton>
+              <FlexLoader borderRadius="$rounded12" height={iconSizes.icon24} width={iconSizes.icon100} opacity={0.4} />
+            </Skeleton>
           ) : (
-            <>
-              {visiblePositions.map((position) => (
-                <FeeRow key={getPositionKey(position)} position={position} showCollectButton={!isExternalWallet} />
-              ))}
-              {useExpando && (
-                <>
-                  <ExpandoRow
-                    isExpanded={isExpanded}
-                    onPress={() => setIsExpanded((prev) => !prev)}
-                    label={t('pool.fees.morePositions', { count: hiddenPositions.length })}
-                    color="$neutral2"
-                  />
-                  {isExpanded &&
-                    hiddenPositions.map((position) => (
-                      <FeeRow
-                        key={getPositionKey(position)}
-                        position={position}
-                        showCollectButton={!isExternalWallet}
-                      />
-                    ))}
-                </>
-              )}
-            </>
+            <Flex testID={isEmpty ? TestID.PortfolioPoolsFeesEmpty : TestID.PortfolioPoolsFeesTotal}>
+              <AnimatedNumber
+                value={convertFiatAmountFormatted(totalUsd, NumberType.FiatTokenQuantity)}
+                numericValue={totalUsd}
+                textVariant="$heading3"
+                color={isEmpty ? '$neutral3' : '$neutral1'}
+              />
+            </Flex>
           )}
         </Flex>
-      )}
-    </PortfolioPoolsSidebarCard>
+        {(isFetchingAllPages || eligiblePositions.length > 0) && (
+          <Flex gap="$gap8">
+            {isFetchingAllPages ? (
+              Array.from({ length: COLLAPSED_VISIBLE_ROWS }).map((_, index) => <FeeRowSkeleton key={index} />)
+            ) : (
+              <>
+                {visiblePositions.map((position) => (
+                  <FeeRow key={getPositionKey(position)} position={position} showCollectButton={!isExternalWallet} />
+                ))}
+                {useExpando && (
+                  <>
+                    <ExpandoRow
+                      isExpanded={isExpanded}
+                      onPress={() => setIsExpanded((prev) => !prev)}
+                      label={t('pool.fees.morePositions', { count: hiddenPositions.length })}
+                      color="$neutral2"
+                    />
+                    {isExpanded &&
+                      hiddenPositions.map((position) => (
+                        <FeeRow
+                          key={getPositionKey(position)}
+                          position={position}
+                          showCollectButton={!isExternalWallet}
+                        />
+                      ))}
+                  </>
+                )}
+              </>
+            )}
+          </Flex>
+        )}
+      </PortfolioPoolsSidebarCard>
+    </Trace>
   )
 }
 
@@ -153,6 +158,7 @@ function FeeRow({ position, showCollectButton }: { position: PositionInfo; showC
   const { t } = useTranslation()
   const { convertFiatAmountFormatted } = useLocalizationContext()
   const dispatch = useAppDispatch()
+  const trace = useTrace()
 
   const [currency0Info, currency1Info] = useCurrencyInfos([
     currencyId(position.currency0Amount.currency),
@@ -160,8 +166,9 @@ function FeeRow({ position, showCollectButton }: { position: PositionInfo; showC
   ])
 
   const handleCollect = useCallback(() => {
+    logCollectFeesClick(position, trace)
     dispatch(setOpenModal({ name: ModalName.ClaimFee, initialState: position }))
-  }, [dispatch, position])
+  }, [dispatch, position, trace])
 
   return (
     <Flex row gap="$gap12" alignItems="center" width="100%">

@@ -256,6 +256,7 @@ export function TokenSelectorContent({
                   variation={variation}
                   addresses={addresses}
                   chainFilter={chainFilter}
+                  chainIds={effectiveChainIds}
                   input={input}
                   output={output}
                   renderedInModal={renderedInModal}

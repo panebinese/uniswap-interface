@@ -2,6 +2,7 @@ import { Currency } from '@uniswap/sdk-core'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
+import AnimatedNumber from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
 import { CurrencyLogo } from 'uniswap/src/components/CurrencyLogo/CurrencyLogo'
 import { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
@@ -49,9 +50,11 @@ export function Balance({
             </Text>
           </Flex>
           <Flex alignItems="flex-end">
-            <Text variant="body2" color="$neutral1">
-              {formattedUsdValue}
-            </Text>
+            <AnimatedNumber
+              value={formattedUsdValue}
+              numericValue={fetchedBalance?.balanceUSD ?? undefined}
+              textVariant="$body2"
+            />
             <Text variant="body3" color="$neutral2">
               {formattedBalance} {tokenSymbol}
             </Text>
@@ -70,9 +73,11 @@ export function Balance({
       />
       <Flex shrink row width="100%" justifyContent="space-between" alignItems="center" ml="$spacing12">
         <Flex>
-          <Text variant="subheading2" color="$neutral1">
-            {formattedUsdValue}
-          </Text>
+          <AnimatedNumber
+            value={formattedUsdValue}
+            numericValue={fetchedBalance?.balanceUSD ?? undefined}
+            textVariant="$subheading2"
+          />
         </Flex>
         <Flex>
           <Text variant="body3" color="$neutral2">

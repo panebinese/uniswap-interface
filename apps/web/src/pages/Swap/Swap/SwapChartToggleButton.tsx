@@ -17,8 +17,8 @@ export function SwapChartToggleButton({ showChart, onPress }: SwapChartToggleBut
       hoverStyle={{ backgroundColor: '$surface2' }}
       onPress={onPress}
     >
-      <Flex animation="fast" animateOnly={['transform']} hoverStyle={{ scale: 1.2 }}>
-        <TrendUp color={showChart ? '$neutral1' : '$neutral2'} size="$icon.20" />
+      <Flex animation="fast" animateOnly={['transform']} hoverStyle={{ scale: 1.1 }}>
+        <TrendUp color={showChart ? '$neutral1' : '$neutral2'} size="$icon.24" />
       </Flex>
     </TouchableArea>
   )

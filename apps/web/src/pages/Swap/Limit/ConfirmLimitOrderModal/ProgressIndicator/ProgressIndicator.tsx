@@ -14,7 +14,6 @@ import { useNativeCurrency } from '~/lib/hooks/useNativeCurrency'
 import { ICON_SIZE, Step, StepDetails } from '~/pages/Swap/Limit/ConfirmLimitOrderModal/ProgressIndicator/Step'
 import { useBlockConfirmationTime } from '~/pages/Swap/Limit/ConfirmLimitOrderModal/ProgressIndicator/useBlockConfirmationTime'
 import { ConfirmModalState } from '~/pages/Swap/Limit/ConfirmLimitOrderModal/state'
-import { useLimitOrderTransactionStatus } from '~/pages/Swap/Limit/useLimitOrderCallback'
 import { InterfaceTrade } from '~/state/routing/types'
 import { isLimitTrade, isUniswapXSwapTrade, isUniswapXTradeType } from '~/state/routing/utils'
 import { useIsTransactionConfirmed, useUniswapXOrderByOrderHash } from '~/state/transactions/hooks'
@@ -89,12 +88,11 @@ export function ProgressIndicator({
     }
   }, [blockConfirmationTime, estimatedTransactionTime])
 
-  const swapStatus = useLimitOrderTransactionStatus(limitOrderResult)
   const uniswapXOrder = useUniswapXOrderByOrderHash(
     isUniswapXTradeType(limitOrderResult?.type) ? limitOrderResult.response.orderHash : '',
   )
 
-  const swapConfirmed = swapStatus === TransactionStatus.Success || uniswapXOrder?.status === TransactionStatus.Success
+  const swapConfirmed = uniswapXOrder?.status === TransactionStatus.Success
   const wrapConfirmed = useIsTransactionConfirmed(wrapTxHash)
 
   const swapPending = limitOrderResult !== undefined && !swapConfirmed

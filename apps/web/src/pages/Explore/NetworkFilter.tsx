@@ -38,6 +38,7 @@ export function TableNetworkFilter({ networks }: { networks?: UniverseChainId[] 
 
   return (
     <NetworkFilter
+      forceAllNetworksLabel
       showMultichainOption={tabName !== ExploreTab.Transactions}
       position={media.lg ? 'left' : 'right'}
       onPress={onNetworkPress}

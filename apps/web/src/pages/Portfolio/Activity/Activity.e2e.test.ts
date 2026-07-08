@@ -33,9 +33,11 @@ async function goToPortfolioActivity({
   await mockGetPortfolioResponse({ page, mockPath: getPortfolioMock })
   await dataApi.intercept(listTransactions, listTransactionsMock)
 
-  const base = externalAddress ? `/portfolio/${externalAddress}/activity` : '/portfolio/activity'
-  const params = externalAddress ? 'eagerlyConnect=false' : `eagerlyConnectAddress=${HAYDEN_ADDRESS}`
-  const query = chain ? `${params}&chain=${chain}` : params
+  // Always navigate as external wallet (address in URL path) so isExternalWallet=true and the
+  // demo overlay (pointer-events:none) never blocks interactions, regardless of wallet connect timing.
+  const address = externalAddress ?? HAYDEN_ADDRESS
+  const base = `/portfolio/${address}/activity`
+  const query = chain ? `eagerlyConnect=false&chain=${chain}` : 'eagerlyConnect=false'
 
   const getPortfolioResponse = page.waitForResponse((res) => res.request().url().includes('GetPortfolio'))
   const listTransactionsResponse = page.waitForResponse((res) => res.url().includes('ListTransactions'))

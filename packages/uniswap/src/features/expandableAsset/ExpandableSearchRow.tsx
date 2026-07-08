@@ -1,13 +1,13 @@
 import { isWebPlatform } from '@universe/environment'
 import type { ReactNode } from 'react'
-import { Flex, type FlexProps, TouchableArea } from 'ui/src'
+import { Flex, type FlexProps, type ModifierPressProps, TouchableArea } from 'ui/src'
 import type { FocusedRowControl } from 'uniswap/src/components/lists/items/OptionItem'
 import { EXPANDABLE_ASSET_ISSUER_ROW_MIN_HEIGHT_PX } from 'uniswap/src/features/expandableAsset/expandableAssetLayout'
 import { KeyAction } from 'utilities/src/device/keyboard/types'
 import { useKeyDown } from 'utilities/src/device/keyboard/useKeyDown'
 import { noop } from 'utilities/src/react/noop'
 
-type ExpandableSearchRowProps = {
+type ExpandableSearchRowProps = ModifierPressProps & {
   /** False → the flat collapsed row; true → the `$surface2` shell with the header + panel slot. */
   showShell: boolean
   canExpand: boolean
@@ -40,6 +40,8 @@ export function ExpandableSearchRow({
   onToggle,
   onParentPress,
   onParentLongPress,
+  modifierPressHref,
+  onModifierPress,
   header,
   panelSlot,
   focusedRowControl,
@@ -82,6 +84,7 @@ export function ExpandableSearchRow({
           pressStyle={{ scale: 1 }}
           onPress={canExpand ? onToggle : onParentPress}
           onLongPress={onParentLongPress}
+          {...(!canExpand ? { modifierPressHref, onModifierPress } : {})}
           {...toggleA11yProps}
         >
           <Flex minHeight={EXPANDABLE_ASSET_ISSUER_ROW_MIN_HEIGHT_PX} width="100%">

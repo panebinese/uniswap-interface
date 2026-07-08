@@ -1,6 +1,8 @@
+import { GatedFeature } from '@uniswap/client-compliancev2/dist/uniswap/compliance/v1/api_pb'
 import {
   type ComplianceV2Client,
   fetchFeatureGatedToken,
+  fetchGatedFeatures,
   setTokenAcknowledgement,
 } from '@universe/compliance/src/client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -11,10 +13,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // request shape.
 const featureGatedTokensMethod = vi.fn()
 const setTokenAcknowledgementMethod = vi.fn()
+const gatedFeaturesMethod = vi.fn()
 
 const client = {
   featureGatedTokens: featureGatedTokensMethod,
   setTokenAcknowledgement: setTokenAcknowledgementMethod,
+  gatedFeatures: gatedFeaturesMethod,
 } as unknown as ComplianceV2Client
 
 describe(fetchFeatureGatedToken, () => {
@@ -65,5 +69,36 @@ describe(setTokenAcknowledgement, () => {
     const request = setTokenAcknowledgementMethod.mock.calls[0]?.[0]
     expect(request.token.chainId).toBe(8453)
     expect(request.token.address).toBe('0xdef')
+  })
+})
+
+describe(fetchGatedFeatures, () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('requests with an empty filter so the response covers every blocked feature', async () => {
+    gatedFeaturesMethod.mockResolvedValue({ features: [] })
+
+    await fetchGatedFeatures(client)
+
+    expect(gatedFeaturesMethod).toHaveBeenCalledTimes(1)
+    expect(gatedFeaturesMethod).toHaveBeenCalledWith({})
+  })
+
+  it('returns the blocked features from the response', async () => {
+    gatedFeaturesMethod.mockResolvedValue({
+      features: [GatedFeature.TOKEN_LAUNCHER, GatedFeature.ISSUER_SPECIFIC_RWA],
+    })
+
+    const result = await fetchGatedFeatures(client)
+
+    expect(result).toEqual([GatedFeature.TOKEN_LAUNCHER, GatedFeature.ISSUER_SPECIFIC_RWA])
+  })
+
+  it('returns an empty list when nothing is gated (fail-open for unauthenticated callers)', async () => {
+    gatedFeaturesMethod.mockResolvedValue({ features: [] })
+
+    expect(await fetchGatedFeatures(client)).toEqual([])
   })
 })

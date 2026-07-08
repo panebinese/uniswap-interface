@@ -1,11 +1,14 @@
 import { CurrencyAmount, Token } from '@uniswap/sdk-core'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { describe, expect, it } from 'vitest'
+import { getLaunchThreshold, quoteRaiseAtFloor } from '~/pages/Liquidity/CreateAuction/launchThreshold'
 import { minimumAuctionSupplyDeposit } from '~/pages/Liquidity/CreateAuction/store/postAuctionLiquidityAllocationState'
 import {
   CUSTOM_PRICE_RANGE_POSITIVE_INFINITY,
   MAX_CUSTOM_PRICE_RANGE_ENTRIES,
   type PostAuctionLiquidityAllocation,
   PostAuctionLiquidityAllocationType,
+  RaiseCurrency,
   UNBOUNDED_TIER_ID,
 } from '~/pages/Liquidity/CreateAuction/types'
 import {
@@ -36,6 +39,10 @@ const single = (percent: number): PostAuctionLiquidityAllocation => ({
   type: PostAuctionLiquidityAllocationType.SINGLE,
   percent,
 })
+
+/** Whole `TEST_TOKEN` units as a CurrencyAmount (TEST_TOKEN has 18 decimals). */
+const auctionTokens = (whole: number): CurrencyAmount<Token> =>
+  CurrencyAmount.fromRawAmount(TEST_TOKEN, (BigInt(whole) * 10n ** BigInt(TEST_TOKEN.decimals)).toString())
 
 describe('formatCompactNumberInput', () => {
   it('uses the next suffix when rounding would show 1000 of the smaller unit', () => {
@@ -568,5 +575,105 @@ describe('minimumAuctionSupplyDeposit', () => {
 
   it('falls back to a single base unit when there is no LP reserve', () => {
     expect(minimumAuctionSupplyDeposit(TEST_TOKEN, single(0)).quotient.toString()).toBe('1')
+  })
+})
+
+describe('quoteRaiseAtFloor', () => {
+  it('multiplies the floor price by the token amount, in the raise currency', () => {
+    // 0.1 USDC/token × 50M tokens = 5M USDC
+    const result = quoteRaiseAtFloor({
+      floorPrice: '0.1',
+      raiseCurrency: RaiseCurrency.USDC,
+      chainId: UniverseChainId.Mainnet,
+      tokensAmount: auctionTokens(50_000_000),
+    })
+    expect(result?.currency.symbol).toBe('USDC')
+    expect(result?.toExact()).toBe('5000000')
+  })
+
+  it('returns undefined for an empty floor price', () => {
+    expect(
+      quoteRaiseAtFloor({
+        floorPrice: '',
+        raiseCurrency: RaiseCurrency.USDC,
+        chainId: UniverseChainId.Mainnet,
+        tokensAmount: auctionTokens(50_000_000),
+      }),
+    ).toBeUndefined()
+  })
+
+  it('returns undefined when the token amount is zero', () => {
+    expect(
+      quoteRaiseAtFloor({
+        floorPrice: '0.1',
+        raiseCurrency: RaiseCurrency.USDC,
+        chainId: UniverseChainId.Mainnet,
+        tokensAmount: auctionTokens(0),
+      }),
+    ).toBeUndefined()
+  })
+})
+
+describe('getLaunchThreshold', () => {
+  it('is floor price × tokens sold (deposit − LP reserve), in the raise currency', () => {
+    // 100M deposit − 25M reserved for LP = 75M sold; 0.1 USDC floor → 7.5M USDC
+    const result = getLaunchThreshold({
+      floorPrice: '0.1',
+      raiseCurrency: RaiseCurrency.USDC,
+      chainId: UniverseChainId.Mainnet,
+      auctionSupplyAmount: auctionTokens(100_000_000),
+      postAuctionLiquidityAmount: auctionTokens(25_000_000),
+    })
+    expect(result?.currency.symbol).toBe('USDC')
+    expect(result?.toExact()).toBe('7500000')
+  })
+
+  it('rises when fewer tokens are reserved for the LP (more tokens sold)', () => {
+    const base = {
+      floorPrice: '0.1',
+      raiseCurrency: RaiseCurrency.USDC,
+      chainId: UniverseChainId.Mainnet,
+      auctionSupplyAmount: auctionTokens(100_000_000),
+    }
+    const higherLpReserve = getLaunchThreshold({ ...base, postAuctionLiquidityAmount: auctionTokens(40_000_000) }) // 20M sold
+    const lowerLpReserve = getLaunchThreshold({ ...base, postAuctionLiquidityAmount: auctionTokens(10_000_000) }) // 80M sold
+    expect(Number(lowerLpReserve?.toExact())).toBeGreaterThan(Number(higherLpReserve?.toExact()))
+  })
+
+  it('supports ETH as the raise currency', () => {
+    // 0.001 ETH/token × 75M sold = 75,000 ETH
+    const result = getLaunchThreshold({
+      floorPrice: '0.001',
+      raiseCurrency: RaiseCurrency.ETH,
+      chainId: UniverseChainId.Mainnet,
+      auctionSupplyAmount: auctionTokens(100_000_000),
+      postAuctionLiquidityAmount: auctionTokens(25_000_000),
+    })
+    expect(result?.currency.isNative).toBe(true)
+    expect(result?.toExact()).toBe('75000')
+  })
+
+  it('returns undefined when the floor price is empty', () => {
+    expect(
+      getLaunchThreshold({
+        floorPrice: '',
+        raiseCurrency: RaiseCurrency.USDC,
+        chainId: UniverseChainId.Mainnet,
+        auctionSupplyAmount: auctionTokens(100_000_000),
+        postAuctionLiquidityAmount: auctionTokens(25_000_000),
+      }),
+    ).toBeUndefined()
+  })
+
+  it('returns undefined when no tokens are sold (all supply reserved)', () => {
+    expect(
+      getLaunchThreshold({
+        floorPrice: '0.1',
+        raiseCurrency: RaiseCurrency.USDC,
+        chainId: UniverseChainId.Mainnet,
+        auctionSupplyAmount: auctionTokens(25_000_000),
+        postAuctionLiquidityAmount: auctionTokens(25_000_000),
+      }),
+    ).toBeUndefined()
   })
 })

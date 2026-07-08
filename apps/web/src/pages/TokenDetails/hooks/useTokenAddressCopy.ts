@@ -6,6 +6,7 @@ import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { useCopyClipboard } from 'utilities/src/react/useCopyClipboard'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import { ONE_SECOND_MS } from 'utilities/src/time/time'
 
 /**
  * Shared copy-to-clipboard + CopyAddress analytics for TDP address affordances
@@ -24,7 +25,7 @@ export function useTokenAddressCopy({
   onCopyMultichainAddress: (address: string, chainId: UniverseChainId) => void
 } {
   const trace = useTrace()
-  const [isCopied, setCopied] = useCopyClipboard()
+  const [isCopied, setCopied] = useCopyClipboard(ONE_SECOND_MS)
 
   const logAddressCopied = useCallback(
     (copiedChainId: UniverseChainId) => {

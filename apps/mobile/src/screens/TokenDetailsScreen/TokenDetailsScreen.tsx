@@ -19,8 +19,10 @@ import { TokenDetailsEarnSection } from 'src/components/TokenDetails/TokenDetail
 import { TokenDetailsHeader } from 'src/components/TokenDetails/TokenDetailsHeader'
 import { TokenDetailsLinks } from 'src/components/TokenDetails/TokenDetailsLinks'
 import { TokenDetailsStats } from 'src/components/TokenDetails/TokenDetailsStats/TokenDetailsStats'
+import { TokenDetailsVaultShareBanner } from 'src/components/TokenDetails/TokenDetailsVaultShareBanner'
 import { TokenPerformance } from 'src/components/TokenDetails/TokenPerformance'
 import { useMobileTokenDetailsEarnData } from 'src/components/TokenDetails/useMobileTokenDetailsEarnData'
+import { useMobileTokenDetailsVaultShareData } from 'src/components/TokenDetails/useMobileTokenDetailsVaultShareData'
 import { useTokenDetailsCrossChainBalances } from 'src/components/TokenDetails/useTokenDetailsCrossChainBalances'
 import { useGatedTokenDetailsRWAMatch } from 'src/components/TokenDetails/useTokenDetailsRWAMatch'
 import { TokenDetailsActionButtonsWrapper } from 'src/screens/TokenDetailsScreen/TokenDetailsActionButtonsWrapper'
@@ -124,6 +126,7 @@ const TokenDetails = memo(function TokenDetailsInner(): JSX.Element {
   const inModal = useIsInModal(MobileScreens.Explore, true)
 
   const { enabled: showEarn, activeAddress, earnData } = useMobileTokenDetailsEarnData()
+  const { enabled: showVaultShare, vaultShareData } = useMobileTokenDetailsVaultShareData()
 
   return (
     <>
@@ -137,6 +140,7 @@ const TokenDetails = memo(function TokenDetailsInner(): JSX.Element {
         <Flex gap="$spacing16" pb="$spacing16">
           <Flex gap="$spacing16">
             <TokenDetailsHeader />
+            {showVaultShare && <TokenDetailsVaultShareBanner vaultShareData={vaultShareData} />}
             <PriceExplorer />
             <OffHoursMarketWarning />
           </Flex>

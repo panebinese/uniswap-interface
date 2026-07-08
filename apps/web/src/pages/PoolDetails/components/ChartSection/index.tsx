@@ -7,6 +7,7 @@ import { createParser, useQueryState } from 'nuqs'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, SegmentedControl, useMedia } from 'ui/src'
+import { getLowVarianceAxisDecimals } from 'uniswap/src/components/charts/utils'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { useCurrentLocale } from 'uniswap/src/features/language/hooks'
@@ -20,6 +21,7 @@ import { Chart, refitChartContentAtom } from '~/components/Charts/ChartModel'
 import { ChartSkeleton } from '~/components/Charts/LoadingState'
 import { PriceChartData, PriceChartModel } from '~/components/Charts/PriceChart'
 import { PriceChartDelta } from '~/components/Charts/PriceChart/PriceChartDelta'
+import { getCandlestickPriceBounds } from '~/components/Charts/PriceChart/utils'
 import { ChartQueryResult, ChartType, DataQuality, PriceChartType } from '~/components/Charts/utils'
 import { VolumeChart } from '~/components/Charts/VolumeChart'
 import { SingleHistogramData } from '~/components/Charts/VolumeChart/utils'
@@ -324,9 +326,17 @@ function PriceChart({
   const baseSymbol = unwrappedToken(baseCurrency).symbol ?? baseCurrency.symbol
   const quoteSymbol = unwrappedToken(quoteCurrency).symbol ?? quoteCurrency.symbol
 
+  // Stablecoin pools sit in a price range too tight for the magnitude-based formatter to resolve,
+  // so derive the precision from the visible range to keep gridlines (and the header) distinct.
+  const axisFractionDigits = useMemo(() => {
+    const { min, max } = getCandlestickPriceBounds(data)
+    return getLowVarianceAxisDecimals(min, max)
+  }, [data])
+
   const yAxisFormatter = useMemo(
-    () => (price: number) => formatPriceWithSubscript({ price, locale, formatNumberOrString }),
-    [locale, formatNumberOrString],
+    () => (price: number) =>
+      formatPriceWithSubscript({ price, locale, formatNumberOrString, fractionDigits: axisFractionDigits }),
+    [locale, formatNumberOrString, axisFractionDigits],
   )
 
   const params = useMemo(
@@ -357,6 +367,7 @@ function PriceChart({
                 price: displayValue.close,
                 locale,
                 formatNumberOrString,
+                fractionDigits: axisFractionDigits,
               })} ${quoteSymbol}`}
             </ChartPriceText>
             <ChartPriceText color="neutral2">

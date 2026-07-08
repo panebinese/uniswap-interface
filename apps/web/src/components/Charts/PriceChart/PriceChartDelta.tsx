@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { Text } from 'ui/src'
+import { Flex, Text } from 'ui/src'
+import AnimatedNumber from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
 import { useFormatChartFiatDelta } from 'uniswap/src/features/fiatCurrency/hooks/useFormatChartFiatDelta'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { calculateDelta, DEFAULT_DELTA_COLOR, DeltaArrow, getDeltaTextColor } from '~/components/DeltaArrow/DeltaArrow'
@@ -85,16 +86,60 @@ export function PriceChartDelta({
 
   const textColor = colorText ? getDeltaTextColor(delta) : DEFAULT_DELTA_COLOR
 
+  const animatedPercent = (
+    <AnimatedNumber
+      value={formattedDelta}
+      numericValue={delta !== undefined ? Math.abs(delta) : undefined}
+      textVariant="$body2"
+      color={textColor}
+      disableAnimations={isHovering}
+    />
+  )
+
+  const deltaDisplay = (() => {
+    if (hidePercent) {
+      return fiatDelta ? (
+        <AnimatedNumber
+          value={fiatDelta.formatted}
+          numericValue={fiatDelta.rawDelta}
+          textVariant="$body2"
+          color={textColor}
+          disableAnimations={isHovering}
+        />
+      ) : null
+    }
+    if (fiatDelta) {
+      return (
+        <>
+          <AnimatedNumber
+            value={fiatDelta.formatted}
+            numericValue={fiatDelta.rawDelta}
+            textVariant="$body2"
+            color={textColor}
+            disableAnimations={isHovering}
+          />
+          <Text variant="body2" color={textColor}>
+            {' '}
+            (
+          </Text>
+          {animatedPercent}
+          <Text variant="body2" color={textColor}>
+            )
+          </Text>
+        </>
+      )
+    }
+    return animatedPercent
+  })()
+
   return (
-    <Text variant="body2" color={textColor} display="flex" alignItems="center" gap="$gap4">
+    <Flex row alignItems="center" gap="$gap4">
       {delta !== undefined && (!hidePercent || fiatDelta !== null) && (
         <DeltaArrow delta={delta} formattedDelta={formattedDelta} noColor={noColor} />
       )}
-      {hidePercent
-        ? (fiatDelta?.formatted ?? null)
-        : fiatDelta
-          ? `${fiatDelta.formatted} (${formattedDelta})`
-          : formattedDelta}
-    </Text>
+      <Flex row alignItems="center">
+        {deltaDisplay}
+      </Flex>
+    </Flex>
   )
 }

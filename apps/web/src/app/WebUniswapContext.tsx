@@ -8,6 +8,7 @@ import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
+import type { EarnPositionInfo, EarnVaultInfo } from 'uniswap/src/features/earn/types'
 import { FiatOnRampCurrency } from 'uniswap/src/features/fiatOnRamp/types'
 import { useNavigateToNftExplorerLink } from 'uniswap/src/features/nfts/hooks/useNavigateToNftExplorerLink'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
@@ -19,7 +20,13 @@ import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useGetCanSignPermits } from 'uniswap/src/features/transactions/hooks/useGetCanSignPermits'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { currencyIdToAddress, currencyIdToChain } from 'uniswap/src/utils/currencyId'
-import { getFiatOnRampURL, getPoolDetailsURL, type TdpChainSelection } from 'uniswap/src/utils/linking'
+import {
+  EARN_VAULT_MODAL_QUERY_PARAM,
+  EARN_VAULT_MODAL_QUERY_VALUE,
+  getFiatOnRampURL,
+  getPoolDetailsURL,
+  type TdpChainSelection,
+} from 'uniswap/src/utils/linking'
 import { useEvent, usePrevious } from 'utilities/src/react/hooks'
 import { noop } from 'utilities/src/react/noop'
 import { getTokenDetailsURL } from '~/appGraphql/data/util'
@@ -31,6 +38,7 @@ import { useAccountsStoreContext } from '~/features/accounts/store/provider'
 import { useAccount } from '~/hooks/useAccount'
 import { useEthersProvider } from '~/hooks/useEthersProvider'
 import { useEthersSigner } from '~/hooks/useEthersSigner'
+import { useGetSwapDelegationInfo } from '~/hooks/useGetSwapDelegationInfo'
 import { PageType } from '~/hooks/useIsPage'
 import { useModalState } from '~/hooks/useModalState'
 import { buildPortfolioUrl } from '~/pages/Portfolio/utils/portfolioUrls'
@@ -183,6 +191,22 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
     [navigate, closeSearchModal, accountDrawer],
   )
 
+  // Mirrors the TDP vault-share banner: route to the underlying token's TDP and auto-open the earn vault
+  // modal (TokenDetailsEarnSection reads ?modal=earn-vault on load).
+  const navigateToEarnVault = useCallback(
+    ({ vault }: { vault: EarnVaultInfo; position?: EarnPositionInfo }) => {
+      const tokenChainId = currencyIdToChain(vault.displayCurrencyId)
+      const url = getTokenDetailsURL({
+        address: currencyIdToAddress(vault.displayCurrencyId),
+        chain: tokenChainId ? toGraphQLChain(tokenChainId) : undefined,
+      })
+      navigate(`${url}?${EARN_VAULT_MODAL_QUERY_PARAM}=${EARN_VAULT_MODAL_QUERY_VALUE}`)
+      closeSearchModal()
+      accountDrawer.close()
+    },
+    [navigate, closeSearchModal, accountDrawer],
+  )
+
   const getHasMismatch = useHasAccountMismatchCallback()
   const isPermitMismatchUxEnabled = useFeatureFlag(FeatureFlags.EnablePermitMismatchUX)
   const getIsUniswapXSupported = useEvent((innerChainId?: UniverseChainId) => {
@@ -192,6 +216,7 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
     return true
   })
   const getCanSignPermits = useGetCanSignPermits()
+  const getSwapDelegationInfo = useGetSwapDelegationInfo()
 
   const navigateToExternalProfile = useCallback(
     ({ address }: { address: Address }) => {
@@ -261,6 +286,24 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
     accountDrawerMenu.setMenuState({ variant: MenuStateVariant.SETTINGS })
   }, [accountDrawer, accountDrawerMenu])
 
+  const getTokenDetailsUrl = useEvent((currencyId: string, chainSelection?: TdpChainSelection): string => {
+    const tokenChainId = currencyIdToChain(currencyId)
+    return getTokenDetailsURL({
+      address: currencyIdToAddress(currencyId),
+      chain: tokenChainId ? toGraphQLChain(tokenChainId) : undefined,
+      chainQueryParam: getTdpChainQueryParam({ selection: chainSelection, tokenChainId }),
+    })
+  })
+
+  // oxlint-disable-next-line no-shadow
+  const getPoolDetailsUrl = useEvent(({ poolId, chainId }: { poolId: Address; chainId: UniverseChainId }): string => {
+    return getPoolDetailsURL(poolId, chainId)
+  })
+
+  const getExternalProfileUrl = useEvent(({ address }: { address: Address }): string => {
+    return buildPortfolioUrl({ externalAddress: address })
+  })
+
   const navigateToNftDetails = useNavigateToNftExplorerLink()
 
   useAccountChainIdEffect()
@@ -280,15 +323,23 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
       navigateToExternalProfile={navigateToExternalProfile}
       navigateToNftDetails={navigateToNftDetails}
       navigateToPoolDetails={navigateToPoolDetails}
+      navigateToEarnVault={navigateToEarnVault}
       handleShareToken={handleShareToken}
       navigateToAdvancedSettings={navigateToAdvancedSettings}
       onConnectWallet={onConnectWallet}
       getCanSignPermits={getCanSignPermits}
+      getSwapDelegationInfo={getSwapDelegationInfo}
+      // Web executes embedded-wallet swaps via the EIP-5792 wallet_sendCalls surface (no userOp
+      // swap saga), so sponsored EW swaps route to /swap_5792 rather than the /swap_4337 userOp.
+      supportsUserOpSwaps={false}
       getIsUniswapXSupported={getIsUniswapXSupported}
       handleOnPressUniswapXUnsupported={handleOpenUniswapXUnsupportedModal}
       getCanBatchTransactions={getCanBatchTransactions}
       getHasAlternateGasFees={getHasAlternateGasFees}
       useAccountsStoreContextHook={useAccountsStoreContext}
+      getTokenDetailsUrl={getTokenDetailsUrl}
+      getPoolDetailsUrl={getPoolDetailsUrl}
+      getExternalProfileUrl={getExternalProfileUrl}
     >
       {children}
     </UniswapProvider>

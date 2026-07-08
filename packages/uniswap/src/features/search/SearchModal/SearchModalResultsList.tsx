@@ -22,7 +22,7 @@ interface SearchModalResultsListProps {
   onResetFilters?: () => void
   renderedInModal: boolean
   contentContainerStyle?: ContentStyle
-  wrapTokenRow?: SearchModalListProps['wrapTokenRow']
+  rowWrapper?: SearchModalListProps['rowWrapper']
 }
 
 function SearchModalResultsListInner({
@@ -36,7 +36,7 @@ function SearchModalResultsListInner({
   onResetFilters,
   renderedInModal,
   contentContainerStyle,
-  wrapTokenRow,
+  rowWrapper,
 }: SearchModalResultsListProps): JSX.Element {
   const { t } = useTranslation()
   const isOffline = useIsOffline()
@@ -120,7 +120,7 @@ function SearchModalResultsListInner({
       }}
       renderedInModal={renderedInModal}
       contentContainerStyle={contentContainerStyle}
-      wrapTokenRow={wrapTokenRow}
+      rowWrapper={rowWrapper}
       rwaIssuerCurrencyInfos={rwaIssuerCurrencyInfos}
       onSelect={onSelect}
     />

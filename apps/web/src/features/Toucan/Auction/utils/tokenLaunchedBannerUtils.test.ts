@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getTokenLaunchTradeAvailabilityBlock,
   isTokenLaunchTradeAvailable,
+  isTokenLaunchTradeLive,
   shouldShowTokenLaunchedBanner,
 } from '~/features/Toucan/Auction/utils/tokenLaunchedBannerUtils'
 
@@ -136,5 +137,43 @@ describe('isTokenLaunchTradeAvailable', () => {
         hasMigrated: true,
       }),
     ).toBe(true)
+  })
+})
+
+describe('isTokenLaunchTradeLive', () => {
+  it('is live when status permits trading and a market price exists', () => {
+    expect(
+      isTokenLaunchTradeLive({
+        isTradeAvailableFromStatus: true,
+        hasLiveMarketPrice: true,
+      }),
+    ).toBe(true)
+  })
+
+  it('is not live when status permits trading but no pool/market price exists (0% LP case)', () => {
+    expect(
+      isTokenLaunchTradeLive({
+        isTradeAvailableFromStatus: true,
+        hasLiveMarketPrice: false,
+      }),
+    ).toBe(false)
+  })
+
+  it('is not live when status does not permit trading even if a market price exists', () => {
+    expect(
+      isTokenLaunchTradeLive({
+        isTradeAvailableFromStatus: false,
+        hasLiveMarketPrice: true,
+      }),
+    ).toBe(false)
+  })
+
+  it('is not live when neither status nor market price allow trading', () => {
+    expect(
+      isTokenLaunchTradeLive({
+        isTradeAvailableFromStatus: false,
+        hasLiveMarketPrice: false,
+      }),
+    ).toBe(false)
   })
 })

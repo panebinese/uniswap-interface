@@ -15,8 +15,7 @@ import {
   LoadingIndicatorOverlay,
 } from '~/pages/Swap/Limit/ConfirmLimitOrderModal/PendingStatusIcons'
 import { TradeSummary } from '~/pages/Swap/Limit/ConfirmLimitOrderModal/TradeSummary'
-import { useLimitOrderTransactionStatus } from '~/pages/Swap/Limit/useLimitOrderCallback'
-import { InterfaceTrade, TradeFillType } from '~/state/routing/types'
+import { InterfaceTrade } from '~/state/routing/types'
 import { isLimitTrade, isUniswapXTradeType } from '~/state/routing/utils'
 import { useIsTransactionConfirmed, useUniswapXOrderByOrderHash } from '~/state/transactions/hooks'
 import { ExternalLink } from '~/theme/components/Links'
@@ -92,13 +91,12 @@ export function Pending({
   const { chainId } = useAccount()
   const { t } = useTranslation()
 
-  const swapStatus = useLimitOrderTransactionStatus(limitOrderResult)
   const uniswapXOrder = useUniswapXOrderByOrderHash(
     isUniswapXTradeType(limitOrderResult?.type) ? limitOrderResult.response.orderHash : '',
   )
 
   const limitPlaced = isLimitTrade(initialTrade) && uniswapXOrder?.status === TransactionStatus.Pending
-  const swapConfirmed = swapStatus === TransactionStatus.Success || uniswapXOrder?.status === TransactionStatus.Success
+  const swapConfirmed = uniswapXOrder?.status === TransactionStatus.Success
   const wrapConfirmed = useIsTransactionConfirmed(wrapTxHash)
 
   const swapPending = limitOrderResult !== undefined && !swapConfirmed
@@ -109,20 +107,15 @@ export function Pending({
   const showSuccess = swapConfirmed || (chainId !== UniverseChainId.Mainnet && swapPending)
 
   const explorerLink = useMemo(() => {
-    let txHash
-    if (limitOrderResult && limitOrderResult.type === TradeFillType.Classic) {
-      txHash = limitOrderResult.response.hash
-    } else if (uniswapXOrder && uniswapXOrder.status === TransactionStatus.Success) {
-      txHash = uniswapXOrder.hash
-    } else {
-      return undefined
+    if (uniswapXOrder && uniswapXOrder.status === TransactionStatus.Success) {
+      return getExplorerLink({
+        chainId: chainId || UniverseChainId.Mainnet,
+        data: uniswapXOrder.hash,
+        type: ExplorerDataType.TRANSACTION,
+      })
     }
-    return getExplorerLink({
-      chainId: chainId || UniverseChainId.Mainnet,
-      data: txHash,
-      type: ExplorerDataType.TRANSACTION,
-    })
-  }, [chainId, limitOrderResult, uniswapXOrder])
+    return undefined
+  }, [chainId, uniswapXOrder])
 
   // Handle special statuses for UniswapX orders
   if (
@@ -198,7 +191,7 @@ export function Pending({
             </Text>
           </Flex>
         )}
-        {/* Display after submitting Classic swap or after filling UniswapX order */}
+        {/* Display after filling UniswapX order */}
         {explorerLink && (
           <Flex row width="100%" justifyContent="center" alignItems="center" mt={32} minHeight={24}>
             <Text variant="body3" color="$neutral2">

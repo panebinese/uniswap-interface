@@ -59,7 +59,7 @@ export function MoreRwaTokens(): JSX.Element | null {
         <ExpandoRow
           color="$neutral2"
           isExpanded={isExpanded}
-          label={t('tdp.rwa.moreTokensCount', { count: hiddenCount })}
+          label={isExpanded ? t('common.button.showLess') : t('tdp.rwa.moreTokensCount', { count: hiddenCount })}
           mx="$spacing8"
           onPress={() => setIsExpanded((prev) => !prev)}
         />

@@ -17,6 +17,7 @@ interface NetworkFilterDropdownContentProps {
   maxHeight?: number
   autoFocus?: boolean
   isMobileSheet?: boolean
+  forceAllNetworksLabel?: boolean
 }
 
 export function NetworkFilterDropdownContent({
@@ -30,6 +31,7 @@ export function NetworkFilterDropdownContent({
   maxHeight,
   autoFocus,
   isMobileSheet,
+  forceAllNetworksLabel,
 }: NetworkFilterDropdownContentProps): JSX.Element {
   const { searchQuery, setSearchQuery, filteredChainIds, filteredTieredOptions, showAllNetworks } =
     useNetworkFilterSearch({ chainIds, tieredOptions, includeAllNetworks })
@@ -63,6 +65,7 @@ export function NetworkFilterDropdownContent({
             showAllNetworks={showAllNetworks}
             tieredOptions={filteredTieredOptions}
             allNetworksChainIds={allNetworksChainIds}
+            forceAllNetworksLabel={forceAllNetworksLabel}
             onPressChain={onPressChain}
           />
         </Flex>

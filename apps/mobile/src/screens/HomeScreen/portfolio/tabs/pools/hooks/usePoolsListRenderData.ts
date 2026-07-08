@@ -19,9 +19,12 @@ export interface PoolsListRenderData {
   isFetching: boolean
   isFetchingNextPage: boolean
   isFetchingFirstPage: boolean
+  /** First page is still loading and nothing has rendered yet — the surface should show the skeleton. */
+  isLoadingFirstPage: boolean
   /** Errored with nothing already shown — the surface should swap to the retry CTA. */
   hasErrorWithoutData: boolean
   hasNextPage: boolean
+  pagesLoaded: number
   refetch: () => void
   onListEndReached: () => void
 }
@@ -46,6 +49,7 @@ export function usePoolsListRenderData({ owner, skip }: { owner: string; skip: b
     hasNextPage,
     isFetching,
     isFetchingNextPage,
+    pagesLoaded,
   } = useWalletPositions({
     account: owner,
     chainIds: chains,
@@ -65,6 +69,7 @@ export function usePoolsListRenderData({ owner, skip }: { owner: string; skip: b
   })
 
   const isFetchingFirstPage = isFetching && !isFetchingNextPage
+  const isLoadingFirstPage = isFetchingFirstPage && !hasData
   const hasErrorWithoutData = !!error && !hasData && !isFetchingFirstPage
 
   return {
@@ -75,8 +80,10 @@ export function usePoolsListRenderData({ owner, skip }: { owner: string; skip: b
     isFetching,
     isFetchingNextPage,
     isFetchingFirstPage,
+    isLoadingFirstPage,
     hasErrorWithoutData,
     hasNextPage,
+    pagesLoaded,
     refetch,
     onListEndReached,
   }

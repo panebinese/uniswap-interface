@@ -3,19 +3,22 @@
 import { ApolloError } from '@apollo/client'
 import { createColumnHelper } from '@tanstack/react-table'
 import type { MultichainToken } from '@uniswap/client-data-api/dist/data/v1/types_pb'
+import { usePrice } from '@universe/prices'
 import { ReactElement, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, useMedia } from 'ui/src'
 import { InfoCircle } from 'ui/src/components/icons/InfoCircle'
 import AnimatedNumber from 'uniswap/src/components/AnimatedNumber/AnimatedNumber.web'
+import { DEFAULT_NATIVE_ADDRESS, DEFAULT_NATIVE_ADDRESS_LEGACY } from 'uniswap/src/features/chains/evm/defaults'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { fromGraphQLChain, toGraphQLChain } from 'uniswap/src/features/chains/utils'
-import { useTokenSpotPrice } from 'uniswap/src/features/dataApi/tokenDetails/useTokenDetailsData'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { Platform } from 'uniswap/src/features/platforms/types/Platform'
+import { isRemotePriceServiceSupportedChain } from 'uniswap/src/features/prices/isRemotePriceServiceSupportedChain'
 import { ElementName, SectionName, UniswapEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
-import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
+import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { FiatNumberType, NumberType } from 'utilities/src/format/types'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { SparklineMap } from '~/appGraphql/data/types'
@@ -63,11 +66,21 @@ const ROW_HEIGHT = 64
 
 function LivePriceCell({ token }: { token?: TokenStat }) {
   const { convertFiatAmountFormatted } = useLocalizationContext()
-  const chainId = token ? fromGraphQLChain(token.chain) : undefined
-  const currencyId = chainId && token?.address ? buildCurrencyId(chainId, token.address) : undefined
-  const livePrice = useTokenSpotPrice(currencyId)
 
-  const price = livePrice ?? token?.price?.value
+  const chainId = token ? fromGraphQLChain(token.chain) : undefined
+  const rawAddress = token?.address
+  const isLegacyNative = areAddressesEqual({
+    addressInput1: { address: rawAddress, platform: Platform.EVM },
+    addressInput2: { address: DEFAULT_NATIVE_ADDRESS_LEGACY, platform: Platform.EVM },
+  })
+  const address = isLegacyNative ? DEFAULT_NATIVE_ADDRESS : rawAddress
+  const isRemoteSupported = chainId != null && isRemotePriceServiceSupportedChain(chainId)
+  const { price: remotePrice } = usePrice({
+    chainId: isRemoteSupported ? chainId : undefined,
+    address: isRemoteSupported ? address : undefined,
+  })
+
+  const price = remotePrice ?? token?.price?.value
   const formatted = price ? convertFiatAmountFormatted(price, NumberType.FiatTokenPrice) : '-'
 
   return <AnimatedNumber numericValue={price} textVariant="$body2" value={formatted} />
@@ -217,11 +230,11 @@ export function TokenTable({
     })
   }, [showLoadingSkeleton, tokens, trace])
 
-  const media = useMedia()
+  const { lg: isLg } = useMedia()
   const columns = useMemo(() => {
     const columnHelper = createColumnHelper<TokenTableValue>()
     const filteredColumns = [
-      !media.lg
+      !isLg
         ? columnHelper.accessor((row) => row.index, {
             id: 'index',
             size: 60,
@@ -241,7 +254,7 @@ export function TokenTable({
         : null,
       columnHelper.accessor((row) => row.tokenDescription, {
         id: 'tokenDescription',
-        size: getTokenDescriptionColumnSize(media.lg),
+        size: getTokenDescriptionColumnSize(isLg),
         header: () => (
           <HeaderCell justifyContent="flex-start">
             <Text variant="body3" color="$neutral2" fontWeight="500">
@@ -417,7 +430,7 @@ export function TokenTable({
     ]
 
     return filteredColumns.filter((column): column is NonNullable<(typeof filteredColumns)[number]> => Boolean(column))
-  }, [orderDirection, showLoadingSkeleton, sortMethod, media, t, timePeriod])
+  }, [orderDirection, showLoadingSkeleton, sortMethod, isLg, t, timePeriod])
 
   return (
     <Table

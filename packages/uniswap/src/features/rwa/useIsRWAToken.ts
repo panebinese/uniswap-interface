@@ -1,5 +1,4 @@
 import type { Currency } from '@uniswap/sdk-core'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
 import { useListRwasQuery } from 'uniswap/src/data/rest/listRwas'
 import { getRWACandidatesFromCurrency } from 'uniswap/src/features/rwa/rwaCandidates'
@@ -28,12 +27,15 @@ function hasRWATokenMatch({
 }
 
 /**
- * Returns true when the given currency is a real-world asset (RWA) and the `rwa_geo_blocked` gate
- * is enabled (the user is in a region where RWAs are not tradable).
+ * Returns true when the given currency is a real-world asset (RWA), matched against the `ListRwas`
+ * registry. This is region-agnostic — it answers "is this an RWA?", not "is it tradable here". Pair
+ * it with a region check (e.g. compliance `useIsFeatureGated(GatedFeature.ISSUER_SPECIFIC_RWA)`) to
+ * decide whether trading is geo-blocked.
+ *
+ * `enabled` gates the underlying `ListRwas` fetch (and the result) so callers pay for it only when
+ * the region check says RWAs are blocked.
  */
-export function useIsRWAGeoBlocked(currency: Maybe<Currency>): boolean {
-  const isGeoblockEnabled = useFeatureFlag(FeatureFlags.RwaGeoblocked)
-
+export function useIsRWAToken(currency: Maybe<Currency>, { enabled = true }: { enabled?: boolean } = {}): boolean {
   const candidates = useMemo(() => (currency ? getRWACandidatesFromCurrency(currency) : []), [currency])
   const chainIds = useMemo(
     () =>
@@ -49,10 +51,8 @@ export function useIsRWAGeoBlocked(currency: Maybe<Currency>): boolean {
 
   const { data } = useListRwasQuery({
     chainIds,
-    enabled: isGeoblockEnabled && chainIds.length > 0,
+    enabled: enabled && chainIds.length > 0,
   })
 
-  const isRWA = useMemo(() => hasRWATokenMatch({ rwas: data?.rwas, candidates }), [data?.rwas, candidates])
-
-  return isGeoblockEnabled && isRWA
+  return useMemo(() => enabled && hasRWATokenMatch({ rwas: data?.rwas, candidates }), [enabled, data?.rwas, candidates])
 }

@@ -1,13 +1,15 @@
 import { type Currency } from '@uniswap/sdk-core'
 import {
   type ComplianceTokenInput,
+  GatedFeature,
   hasUnrecognizedReason,
   isAckGated,
   isHardBlocked,
   type RestrictionReason,
+  useIsFeatureGated,
   useTokenComplianceStatus,
 } from '@universe/compliance'
-import { useIsRWAGeoBlocked } from 'uniswap/src/features/rwa/useIsRWAGeoBlocked'
+import { useIsRWAToken } from 'uniswap/src/features/rwa/useIsRWAToken'
 import { useSwapFormStoreDerivedSwapInfo } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 import { NATIVE_ADDRESS_FOR_TRADING_API } from 'uniswap/src/features/transactions/swap/utils/tradingApi'
 import { CurrencyField } from 'uniswap/src/types/currency'
@@ -41,10 +43,12 @@ function classifyReasons(reasons: RestrictionReason[]): GeoRestrictionMode {
 /** Geo-restriction mode for a single currency, the shared basis for both the symbol and the swap-wide mode. */
 function useCurrencyGeoRestrictionMode(currency: Currency | undefined): GeoRestrictionMode {
   const { reasons } = useTokenComplianceStatus(toComplianceTokenRef(currency))
-  // INTERIM: the `rwa_geo_blocked` Statsig flag stands in for the region hard block until
-  // compliance v2 is the source of truth. Remove `useIsRWAGeoBlocked` once it is.
-  const isRWAGeoBlocked = useIsRWAGeoBlocked(currency)
-  return isRWAGeoBlocked ? 'restricted' : classifyReasons(reasons)
+  // RWA region hard block, sourced from compliance v2: the region is gated for RWAs AND this
+  // currency is an RWA. The feature check is region-only, so it must be ANDed with the RWA-token
+  // match — gating on the feature alone would restrict every token for users in a blocked region.
+  const isRWARegionBlocked = useIsFeatureGated(GatedFeature.ISSUER_SPECIFIC_RWA)
+  const isRWA = useIsRWAToken(currency, { enabled: isRWARegionBlocked })
+  return isRWARegionBlocked && isRWA ? 'restricted' : classifyReasons(reasons)
 }
 
 export function useIsTokenGeoRestricted(currency: Currency | undefined): boolean {

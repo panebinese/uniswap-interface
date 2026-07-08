@@ -55,8 +55,9 @@ export function PositionDetailsMenu({ positionInfo }: { positionInfo: PositionIn
 
   return (
     <ContextMenu
+      trackItemClicks
       closeMenu={closeMenu}
-      elementName={ElementName.PortfolioPoolContextMenu}
+      elementName={ElementName.LiquidityPositionContextMenu}
       isOpen={isOpen}
       menuItems={menuItems}
       openMenu={openMenu}

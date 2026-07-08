@@ -10,7 +10,6 @@ import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/type
 import { WarningModal } from 'uniswap/src/components/modals/WarningModal/WarningModal'
 import { UniswapHelpUrls } from 'uniswap/src/constants/urls'
 import { useFiatOnRampAggregatorGetCountryQuery } from 'uniswap/src/features/fiatOnRamp/hooks/useFiatOnRampQueries'
-import { FORCountry } from 'uniswap/src/features/fiatOnRamp/types'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useGeoRestrictionAcknowledgment } from 'uniswap/src/features/transactions/swap/hooks/useGeoRestrictionAcknowledgment'
 import { openUri } from 'uniswap/src/utils/linking'
@@ -48,7 +47,6 @@ export function GeoRestrictionModal({ isOpen, onClose, mode, tokenSymbol }: GeoR
       <AttestationContent
         isOpen={isOpen}
         tokenSymbol={tokenSymbol}
-        country={ipCountry}
         learnMore={learnMore}
         surface3={colors.surface3.val}
         isPending={isPending}
@@ -123,7 +121,6 @@ export function GeoRestrictionModal({ isOpen, onClose, mode, tokenSymbol }: GeoR
 function AttestationContent({
   isOpen,
   tokenSymbol,
-  country,
   learnMore,
   surface3,
   isPending,
@@ -132,7 +129,6 @@ function AttestationContent({
 }: {
   isOpen: boolean
   tokenSymbol?: string
-  country?: FORCountry
   learnMore: JSX.Element
   surface3: string
   isPending: boolean
@@ -154,14 +150,7 @@ function AttestationContent({
     ? t('swap.geoRestriction.modal.attest.caption', { tokenSymbol })
     : t('swap.geoRestriction.modal.attest.captionGeneric')
 
-  // US users (and the fallback when the IP country hasn't resolved) attest to the
-  // "U.S. person" wording; every other locale attests against its own country name.
-  const isUSUser = country?.countryCode === 'US'
-  const countryName = country?.displayName
-  const checkboxText =
-    isUSUser || !countryName
-      ? t('swap.geoRestriction.modal.attest.checkboxUS')
-      : t('swap.geoRestriction.modal.attest.checkboxCountry', { country: countryName })
+  const checkboxText = t('swap.geoRestriction.modal.attest.checkboxUS')
 
   return (
     <WarningModal

@@ -1,9 +1,24 @@
 import { settings } from '../../config'
 import { MonitorDefinition } from '../../types'
-import { PRIVY_EMBEDDED_WALLET_RUNBOOK, SERVICE_README_URL, TEAM, apmTagFilter } from './constants'
+import {
+  MIN_REQUESTS_5M,
+  PRIVY_EMBEDDED_WALLET_RUNBOOK,
+  SERVICE_README_URL,
+  TEAM,
+  apmTagFilter,
+  rateDenominatorFloor,
+} from './constants'
 
 const env = settings.environment
 const apmFilter = apmTagFilter(env)
+
+// Volume floor for the Privy API error-rate monitor. privy-embedded-wallet is low-traffic and
+// its Privy call volume is spiky (10m windows routinely dip to ~5-15 requests), so a single
+// isolated 5xx against a tiny denominator can cross 5% and page even when nothing is wrong.
+// clamp_min the denominator to the smallest count at which one 5xx stays under the 2% warning
+// (ceil(100/2)=50), matching the rate-floor pattern the ALB/APM and per-endpoint error monitors
+// already use — so a lone failure trips neither threshold, while a sustained rate still fires.
+const privyApiErrorFloor = rateDenominatorFloor(2, MIN_REQUESTS_5M)
 
 /**
  * Dependency monitors. Each external system this service talks to is a failure
@@ -23,19 +38,23 @@ const apmFilter = apmTagFilter(env)
 export const privyEmbeddedWalletDepsMonitors: MonitorDefinition[] = [
   // ────────────────────────────────────────────────────────────────────────
   // Privy API — outbound HTTP calls to api.privy.io
+  //
+  // Scope outbound HTTP by `peer.hostname` — that is the tag dd-trace puts the
+  // destination host on for client `http.request` spans (verified indexed on
+  // trace.http.request for this service). `target.host` is NOT emitted, so any
+  // monitor filtering on it evaluates to No Data and can never fire.
   // ────────────────────────────────────────────────────────────────────────
   {
     id: 'privy_embedded_wallet_dep_privy_api_error_rate',
     name: 'Privy API error rate elevated',
     type: 'query alert',
-    query: `sum(last_10m):( sum:trace.http.request.hits.by_http_status{${apmFilter},target.host:api.privy.io,http.status_code:5*}.as_count() / sum:trace.http.request.hits{${apmFilter},target.host:api.privy.io}.as_count() ) * 100 > 5`,
-    alertBody:
-      'Outbound HTTP error rate to api.privy.io is above 5% over the last 10 minutes. Every signing operation and wallet creation routes through Privy — sustained failures here translate to user-visible auth/signing failures.\n\nCheck: Privy status page, recent deploys, IAM/network changes that could affect outbound HTTPS.',
+    query: `sum(last_10m):( sum:trace.http.request.hits.by_http_status{${apmFilter},peer.hostname:api.privy.io,http.status_code:5*}.as_count() / clamp_min(sum:trace.http.request.hits{${apmFilter},peer.hostname:api.privy.io}.as_count(), ${privyApiErrorFloor}) ) * 100 > 5`,
+    alertBody: `Outbound HTTP error rate to api.privy.io is above 5% over the last 10 minutes. Every signing operation and wallet creation routes through Privy — sustained failures here translate to user-visible auth/signing failures.\n\nCheck: Privy status page, recent deploys, IAM/network changes that could affect outbound HTTPS.\n\nRequires at least ${privyApiErrorFloor} requests in the window before the rate can alert.`,
     recoveryBody: 'Privy API error rate has recovered.',
     team: TEAM,
     priority: 1,
     thresholds: { critical: 5, warning: 2 },
-    logQuery: 'service:privy-embedded-wallet @target.host:api.privy.io status:error',
+    logQuery: 'service:privy-embedded-wallet @peer.hostname:api.privy.io status:error',
     runbookUrl: PRIVY_EMBEDDED_WALLET_RUNBOOK,
     readmeUrl: SERVICE_README_URL,
     dashboards: [],
@@ -45,14 +64,14 @@ export const privyEmbeddedWalletDepsMonitors: MonitorDefinition[] = [
     id: 'privy_embedded_wallet_dep_privy_api_p95_latency',
     name: 'Privy API P95 latency elevated',
     type: 'query alert',
-    query: `avg(last_10m):p95:trace.http.request{${apmFilter},target.host:api.privy.io} > 3`,
+    query: `avg(last_10m):p95:trace.http.request{${apmFilter},peer.hostname:api.privy.io} > 3`,
     alertBody:
       'P95 latency on outbound calls to api.privy.io is above 3s over the last 10 minutes. Privy slowness propagates directly to user-visible latency on CreateWallet, SignMessage, SignTransaction, SignTypedData, and Sign7702Authorization.',
     recoveryBody: 'Privy API latency has recovered.',
     team: TEAM,
     priority: 2,
     thresholds: { critical: 3, warning: 2 },
-    logQuery: 'service:privy-embedded-wallet @target.host:api.privy.io',
+    logQuery: 'service:privy-embedded-wallet @peer.hostname:api.privy.io',
     runbookUrl: PRIVY_EMBEDDED_WALLET_RUNBOOK,
     readmeUrl: SERVICE_README_URL,
     dashboards: [],

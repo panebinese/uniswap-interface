@@ -115,6 +115,7 @@ export const TabViewBody = memo(function TabViewBodyInner({
               <Freeze freeze={freeze}>
                 <HomeScreenPoolsTab
                   testID={TestID.PoolsTab}
+                  owner={owner}
                   bodyOffsetY={bodyOffsetY}
                   poolsListRenderData={poolsListRenderData}
                   statusFilter={poolsStatusFilter}

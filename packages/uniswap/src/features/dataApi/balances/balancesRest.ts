@@ -2,6 +2,7 @@ import type { WatchQueryFetchPolicy } from '@apollo/client'
 import { type PlainMessage } from '@bufbuild/protobuf'
 import type { GetPortfolioResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb.d'
 import type { PollingInterval } from 'uniswap/src/constants/misc'
+import { calculateTotalBalancesUsdPerChainRest } from 'uniswap/src/data/balances/utils'
 import { normalizeTokenAddressForCache } from 'uniswap/src/data/cache'
 import { useGetPortfolioQuery } from 'uniswap/src/data/rest/getPortfolio'
 import type { GetPortfolioInput } from 'uniswap/src/data/rest/getPortfolio'
@@ -114,6 +115,8 @@ export function formatPortfolioResponseToMap({
 
 export type UsePortfolioDataQueryOptions = {
   skip?: boolean
+  /** Cache-only read: never fetches, but still re-renders when another observer updates the cached data. */
+  cacheOnly?: boolean
   pollInterval?: PollingInterval
   fetchPolicy?: WatchQueryFetchPolicy
   /**
@@ -130,7 +133,7 @@ function usePortfolioDataQueryWithSelect<T>(
     select: (portfolioData: PlainMessage<GetPortfolioResponse> | undefined) => T
   },
 ): BaseResult<T> {
-  const { evmAddress, svmAddress, select, requestMultichainFromBackend, ...queryOptions } = options
+  const { evmAddress, svmAddress, select, requestMultichainFromBackend, cacheOnly, ...queryOptions } = options
   const { chains: defaultChainIds } = useEnabledChains()
   const chainIds = queryOptions.chainIds || defaultChainIds
 
@@ -161,6 +164,7 @@ function usePortfolioDataQueryWithSelect<T>(
       multichain,
     },
     enabled: !!(evmAddress ?? svmAddress) && !queryOptions.skip,
+    cacheOnly,
     refetchInterval: internalPollInterval,
     select,
   })
@@ -207,6 +211,28 @@ export function usePortfolioDataMultichain(options: UsePortfolioDataQueryOptions
     }),
   )
   return usePortfolioDataQueryWithSelect({ ...options, select })
+}
+
+/**
+ * Cache-only read of total balances USD per chain, for telemetry.
+ * Built on the same query plumbing as `usePortfolioData` so its cache key always matches the
+ * queries that actually fetch portfolio data (never fetches on its own).
+ */
+export function usePortfolioTotalBalancesUsdPerChain({
+  evmAddress,
+  svmAddress,
+}: {
+  evmAddress?: Address
+  svmAddress?: Address
+}): Record<string, number> | undefined {
+  const { data } = usePortfolioDataQueryWithSelect({
+    evmAddress,
+    svmAddress,
+    select: calculateTotalBalancesUsdPerChainRest,
+    requestMultichainFromBackend: false,
+    cacheOnly: true,
+  })
+  return data
 }
 
 export function convertRestBalanceToPortfolioBalance(

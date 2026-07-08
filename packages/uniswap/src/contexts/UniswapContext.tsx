@@ -5,6 +5,7 @@ import { AccountsStore } from 'uniswap/src/features/accounts/store/types/Account
 import { DisplayName } from 'uniswap/src/features/accounts/types'
 import { WalletDisplayNameOptions } from 'uniswap/src/features/accounts/useOnchainDisplayName'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import type { EarnPositionInfo, EarnVaultInfo } from 'uniswap/src/features/earn/types'
 import { FiatOnRampCurrency } from 'uniswap/src/features/fiatOnRamp/types'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { SignDelegationAuthorizationFn, SwapDelegationInfo } from 'uniswap/src/features/smartWallet/delegation/types'
@@ -37,6 +38,9 @@ interface UniswapContextValue {
   navigateToExternalProfile: (args: { address: Address }) => void
   navigateToNftDetails: (args: NavigateToNftItemArgs) => void
   navigateToPoolDetails: (args: { poolId: Address; chainId: UniverseChainId }) => void
+  // Opens the earn vault destination for a vault share token (underlying TDP + earn modal on web, earn vault
+  // modal on mobile/extension). Optional: not all platforms/environments wire earn navigation.
+  navigateToEarnVault?: (args: { vault: EarnVaultInfo; position?: EarnPositionInfo }) => void
   handleShareToken: (args: { currencyId: string }) => void
   navigateToAdvancedSettings: () => void
   onSwapChainsChanged: (args: {
@@ -66,7 +70,14 @@ interface UniswapContextValue {
   // Signs an EIP-7702 delegation authorization to bundle into 4337 swap/approval requests.
   // Provided by wallet environments only; undefined elsewhere.
   signDelegationAuthorization?: SignDelegationAuthorizationFn
+  // Whether this platform executes swaps as 4337 userOps directly (mobile/extension). Web executes
+  // embedded-wallet swaps via the EIP-5792 wallet_sendCalls surface instead, so it leaves this
+  // false — sponsored EW swaps must route to /swap_5792, not the /swap_4337 userOp endpoint.
+  supportsUserOpSwaps?: boolean
   useAccountsStoreContextHook: () => AccountsStore
+  getTokenDetailsUrl?: (currencyId: string, chainSelection?: TdpChainSelection) => string
+  getPoolDetailsUrl?: (args: { poolId: Address; chainId: UniverseChainId }) => string
+  getExternalProfileUrl?: (args: { address: Address }) => string
 }
 
 export const UniswapContext = createContext<UniswapContextValue | null>(null)
@@ -82,6 +93,7 @@ export function UniswapProvider({
   navigateToExternalProfile,
   navigateToNftDetails,
   navigateToPoolDetails,
+  navigateToEarnVault,
   handleShareToken,
   navigateToAdvancedSettings,
   onSwapChainsChanged,
@@ -96,7 +108,11 @@ export function UniswapProvider({
   getHasAlternateGasFees,
   getSwapDelegationInfo,
   signDelegationAuthorization,
+  supportsUserOpSwaps,
   useAccountsStoreContextHook,
+  getTokenDetailsUrl,
+  getPoolDetailsUrl,
+  getExternalProfileUrl,
 }: PropsWithChildren<
   Omit<UniswapContextValue, 'isSwapTokenSelectorOpen' | 'setIsSwapTokenSelectorOpen' | 'setSwapOutputChainId'>
 >): JSX.Element {
@@ -115,6 +131,7 @@ export function UniswapProvider({
       navigateToExternalProfile,
       navigateToNftDetails,
       navigateToPoolDetails,
+      navigateToEarnVault,
       handleShareToken,
       navigateToAdvancedSettings,
       onSwapChainsChanged: ({
@@ -146,7 +163,11 @@ export function UniswapProvider({
       getHasAlternateGasFees,
       getSwapDelegationInfo,
       signDelegationAuthorization,
+      supportsUserOpSwaps,
       useAccountsStoreContextHook,
+      getTokenDetailsUrl,
+      getPoolDetailsUrl,
+      getExternalProfileUrl,
     }),
     [
       navigateToBuyOrReceiveWithEmptyWallet,
@@ -158,6 +179,7 @@ export function UniswapProvider({
       navigateToExternalProfile,
       navigateToNftDetails,
       navigateToPoolDetails,
+      navigateToEarnVault,
       handleShareToken,
       navigateToAdvancedSettings,
       signer,
@@ -174,8 +196,12 @@ export function UniswapProvider({
       getHasAlternateGasFees,
       getSwapDelegationInfo,
       signDelegationAuthorization,
+      supportsUserOpSwaps,
       onSwapChainsChanged,
       useAccountsStoreContextHook,
+      getTokenDetailsUrl,
+      getPoolDetailsUrl,
+      getExternalProfileUrl,
     ],
   )
 

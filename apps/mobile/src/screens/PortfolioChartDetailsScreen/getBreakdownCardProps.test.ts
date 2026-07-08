@@ -5,6 +5,7 @@ const breakdown = (tokensUSD: number | undefined, poolsUSD: number | undefined):
   total: { balanceUSD: (tokensUSD ?? 0) + (poolsUSD ?? 0), percentChange: 1, absoluteChangeUSD: 1 },
   tokens: { balanceUSD: tokensUSD, percentChange: -6.09, absoluteChangeUSD: -500 },
   pools: { balanceUSD: poolsUSD, percentChange: 1.02, absoluteChangeUSD: 70 },
+  failedChainIds: [],
 })
 
 const NO_SCRUB = { total: undefined, tokens: undefined, pools: undefined }

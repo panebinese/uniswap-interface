@@ -1,45 +1,14 @@
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ResolvedFontStyle } from 'ui/src/theme'
-import { AnimatedNumberDirection } from 'uniswap/src/components/AnimatedNumber/types'
 import {
-  ANIMATION_EASING,
   ROLL_TRANSITION_MS,
   SLIDE_PERCENT,
-} from 'uniswap/src/components/AnimatedNumber/web/animationConfig'
+  SLOT_PREV_CLEAR_DELAY_MS,
+} from 'uniswap/src/components/AnimatedNumber/animationConfig'
+import { AnimatedNumberDirection } from 'uniswap/src/components/AnimatedNumber/types'
+import { scheduleSlotTransition, type SlotState } from 'uniswap/src/components/AnimatedNumber/utils/slotScheduler'
 
-const SLOT_PREV_CLEAR_DELAY_MS = ROLL_TRANSITION_MS + 50
-
-type SlotState = {
-  current: string
-  prev: string | null
-  gen: number
-}
-
-function schedulePrevClear(setSlot: Dispatch<SetStateAction<SlotState>>): ReturnType<typeof setTimeout> {
-  return setTimeout(() => {
-    setSlot((s) => ({ ...s, prev: null }))
-  }, SLOT_PREV_CLEAR_DELAY_MS)
-}
-
-function scheduleSlotTransition({
-  delayMs,
-  setSlot,
-  computeNext,
-}: {
-  delayMs: number
-  setSlot: Dispatch<SetStateAction<SlotState>>
-  computeNext: (slot: SlotState) => SlotState
-}): () => void {
-  let prevClearId: ReturnType<typeof setTimeout> | undefined
-  const startId = setTimeout(() => {
-    setSlot(computeNext)
-    prevClearId = schedulePrevClear(setSlot)
-  }, delayMs)
-  return () => {
-    clearTimeout(startId)
-    clearTimeout(prevClearId)
-  }
-}
+const ANIMATION_EASING = 'ease-in-out'
 
 export function DigitSlot({
   digit,
@@ -76,6 +45,7 @@ export function DigitSlot({
     }
     return scheduleSlotTransition({
       delayMs: delayRef.current,
+      clearDelayMs: SLOT_PREV_CLEAR_DELAY_MS,
       setSlot,
       computeNext: (s) => {
         if (digit === s.current) {
@@ -93,6 +63,7 @@ export function DigitSlot({
     }
     return scheduleSlotTransition({
       delayMs: delayRef.current,
+      clearDelayMs: SLOT_PREV_CLEAR_DELAY_MS,
       setSlot,
       computeNext: (s) => {
         if (digit !== s.current) {

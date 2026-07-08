@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { ModifierPressProps } from 'ui/src'
 import type { IssuerToken } from 'uniswap/src/data/rest/rwa/types'
 
 export type ExpandableAssetGroupVariant = 'table' | 'search'
@@ -17,7 +18,7 @@ export type IssuerMenuControl = {
  * Every field is optional or structural, so this single shared shape (rather than per-site inline copies) keeps the
  * seam from silently drifting: adding a field here threads it through all consumers at compile time.
  */
-export type RenderIssuerRowArgs = {
+export type RenderIssuerRowArgs = ModifierPressProps & {
   issuer: IssuerToken
   isRowFocused: boolean
   onPress: () => void

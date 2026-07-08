@@ -63,6 +63,7 @@ export function createGetEVMSwapTransactionRequestInfo(ctx: {
       isSwapLoading: false,
       isRevokeNeeded,
       swapRequestParams: data?.swapRequestParams ?? undefined,
+      sponsorshipExpected: swapQuoteResponse.sponsorshipInfo?.sponsored,
     })
 
     return swapTxInfo

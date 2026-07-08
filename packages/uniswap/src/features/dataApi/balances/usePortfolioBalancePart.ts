@@ -25,6 +25,8 @@ type UsePortfolioBalancePartParams = {
   pollInterval?: PollingInterval
   fetchPolicy?: WatchQueryFetchPolicy
   enabled?: boolean
+  /** Cache-only read: never fetches, but still re-renders when another observer updates the cached data. */
+  cacheOnly?: boolean
   chainIds?: UniverseChainId[]
 }
 
@@ -88,6 +90,7 @@ export function usePortfolioBalancePart({
   pollInterval,
   fetchPolicy,
   enabled = true,
+  cacheOnly,
   chainIds,
 }: UsePortfolioBalancePartParams): PortfolioTotalValueResult {
   const { queryInput, walletBalancesQueryEnabled, refetchInterval } = usePortfolioBalanceQueryConfig({
@@ -104,6 +107,7 @@ export function usePortfolioBalancePart({
   const walletBalancesResult = useGetWalletBalancesQuery({
     input: queryInput,
     enabled: walletBalancesQueryEnabled,
+    cacheOnly,
     refetchInterval,
     select: selectFromWalletBalances,
   })

@@ -1,5 +1,6 @@
 import { TradingApi } from '@universe/api'
 import { transformTradingApiUserOpToRpcUserOp } from 'uniswap/src/features/smartWallet/userOp/transformTradingApiUserOp'
+import { pad } from 'viem'
 
 describe(transformTradingApiUserOpToRpcUserOp, () => {
   const validUserOp: TradingApi.UserOperation = {
@@ -33,7 +34,15 @@ describe(transformTradingApiUserOpToRpcUserOp, () => {
       },
     }
 
-    expect(transformTradingApiUserOpToRpcUserOp(userOp)).toEqual(userOp)
+    expect(transformTradingApiUserOpToRpcUserOp(userOp)).toEqual({
+      ...userOp,
+      eip7702Auth: {
+        ...userOp.eip7702Auth,
+        // r/s are left-padded to a full 32 bytes
+        r: pad('0xab', { size: 32 }),
+        s: pad('0xcd', { size: 32 }),
+      },
+    })
   })
 
   it('leaves optional fields and eip7702Auth as undefined when absent', () => {

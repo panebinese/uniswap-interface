@@ -21,6 +21,7 @@ export function ExpandableSearchRowContainer({
   onToggle,
   onParentPress,
   onParentLongPress,
+  parentHref,
   header,
   issuerPanel,
   issuerPanelHeightPx,
@@ -115,6 +116,7 @@ export function ExpandableSearchRowContainer({
       panelSlot={panelSlot}
       focusedRowControl={focusedRowControl}
       testID={testID}
+      modifierPressHref={parentHref}
       onToggle={onToggle}
       onParentPress={onParentPress}
       onParentLongPress={onParentLongPress}
