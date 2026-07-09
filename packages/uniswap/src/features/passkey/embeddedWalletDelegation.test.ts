@@ -244,6 +244,37 @@ describe('embeddedWalletDelegation', () => {
       expect(mockPublicClient.sendRawTransaction).toHaveBeenCalledWith({ serializedTransaction: '0xabcdef1234567890' })
     })
 
+    it('encodes a missing call value as hex, not decimal, for the wallet encoding request', async () => {
+      mockSign7702Auth.mockResolvedValue({
+        contractAddress: MOCK_DELEGATION_ADDRESS,
+        chainId: MOCK_CHAIN_ID,
+        nonce: 6,
+        r: '0xr',
+        s: '0xs',
+        yParity: 0,
+      })
+      mockSign7702Tx.mockResolvedValue('0xabcdef1234567890')
+
+      // ERC-20 transfer calldata carries no native value — matches the shape of a real token send.
+      await sendDelegatedTransaction({
+        ...baseCtx,
+        transactions: [{ to: '0xrecipient', data: '0xcalldata' }],
+        delegationResult: {
+          needsDelegation: true,
+          contractAddress: MOCK_DELEGATION_ADDRESS,
+          isWalletDelegatedToUniswap: false,
+        },
+      })
+
+      // The Trading API rejects `calls[].value` unless it matches /^0x[a-fA-F0-9]+$/ — a plain
+      // decimal "0" 400s with RequestValidationError.
+      expect(mockFetchWalletEncoding7702).toHaveBeenCalledWith(
+        expect.objectContaining({
+          calls: [expect.objectContaining({ value: '0x0' })],
+        }),
+      )
+    })
+
     it('uses standard self-call when already delegated', async () => {
       await sendDelegatedTransaction({
         ...baseCtx,

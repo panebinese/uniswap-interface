@@ -133,7 +133,7 @@ export async function sendDelegatedTransaction(ctx: {
       from: account.address,
       to: tx.to ?? '',
       data: tx.data || '0x',
-      value: tx.value ?? '0',
+      value: tx.value ?? '0x0',
       chainId: Number(chainId),
     })),
     smartContractDelegationAddress: contractAddress,
