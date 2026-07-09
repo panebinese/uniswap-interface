@@ -114,7 +114,11 @@ export function useTokenSectionsForSwap({
   const shouldShowStocks =
     !isRwaRegionBlocked && variation === TokenSelectorVariation.SwapOutput && !isTestnetModeEnabled
   // Gate the RWA query so it isn't fetched unless the Stocks section will actually render.
-  const rwaTokenOptions = useRwaTokenOptions({ chainFilter, enabled: shouldShowStocks })
+  // With no chain filter (All Chains), filter to the input token's chain so we never suggest impossible swaps.
+  const rwaTokenOptions = useRwaTokenOptions({
+    chainFilter: chainFilter ?? oppositeSelectedToken?.chainId ?? null,
+    enabled: shouldShowStocks,
+  })
   const stocksSectionOptions = useMemo(() => [rwaTokenOptions], [rwaTokenOptions])
   const memoizedNewTag = useMemo(() => <NewTag />, [])
   const stocksSection = useOnchainItemListSection({

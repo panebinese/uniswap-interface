@@ -7,6 +7,7 @@ import {
 import { OnchainItemSectionName } from 'uniswap/src/components/lists/OnchainItemList/types'
 import { useTokenSectionsForSwap } from 'uniswap/src/components/TokenSelector/lists/TokenSelectorSwapList'
 import { TokenSelectorVariation } from 'uniswap/src/components/TokenSelector/types'
+import { AssetType, TradeableAsset } from 'uniswap/src/entities/assets'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { renderHook } from 'uniswap/src/test/test-utils'
 
@@ -61,11 +62,15 @@ const tokenOption = {
   currencyInfo: { currencyId: 'token-currency-id' },
 } as TokenOption
 
-function renderSwapSections(variation: TokenSelectorVariation): ReturnType<typeof useTokenSectionsForSwap> {
+function renderSwapSections(
+  variation: TokenSelectorVariation,
+  options?: { chainFilter?: UniverseChainId | null; oppositeSelectedToken?: TradeableAsset },
+): ReturnType<typeof useTokenSectionsForSwap> {
   const { result } = renderHook(() =>
     useTokenSectionsForSwap({
       addresses: { evmAddress: undefined, svmAddress: undefined },
-      chainFilter: null,
+      chainFilter: options?.chainFilter ?? null,
+      oppositeSelectedToken: options?.oppositeSelectedToken,
       variation,
     }),
   )
@@ -116,6 +121,36 @@ describe('useTokenSectionsForSwap Stocks section', () => {
     mockUseRwaTokenOptions.mockReturnValue([])
     const { data } = renderSwapSections(TokenSelectorVariation.SwapOutput)
     expect(hasStocksSection(data)).toBe(false)
+  })
+
+  it('filters stocks by the input token chain when the chain filter is All Chains', () => {
+    const inputToken: TradeableAsset = {
+      address: '0x0000000000000000000000000000000000000001',
+      chainId: UniverseChainId.Unichain,
+      type: AssetType.Currency,
+    }
+    renderSwapSections(TokenSelectorVariation.SwapOutput, { oppositeSelectedToken: inputToken })
+    expect(mockUseRwaTokenOptions).toHaveBeenCalledWith(
+      expect.objectContaining({ chainFilter: UniverseChainId.Unichain }),
+    )
+  })
+
+  it('filters stocks by the selected chain even when an input token is on another chain', () => {
+    const inputToken: TradeableAsset = {
+      address: '0x0000000000000000000000000000000000000001',
+      chainId: UniverseChainId.Unichain,
+      type: AssetType.Currency,
+    }
+    renderSwapSections(TokenSelectorVariation.SwapOutput, {
+      chainFilter: UniverseChainId.Base,
+      oppositeSelectedToken: inputToken,
+    })
+    expect(mockUseRwaTokenOptions).toHaveBeenCalledWith(expect.objectContaining({ chainFilter: UniverseChainId.Base }))
+  })
+
+  it('does not filter stocks when there is no chain filter and no input token', () => {
+    renderSwapSections(TokenSelectorVariation.SwapOutput)
+    expect(mockUseRwaTokenOptions).toHaveBeenCalledWith(expect.objectContaining({ chainFilter: null }))
   })
 
   it('orders Stocks between Suggested and Bridging when both neighbors are present', () => {
