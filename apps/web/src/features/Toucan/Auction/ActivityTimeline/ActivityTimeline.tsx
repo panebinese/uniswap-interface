@@ -18,7 +18,7 @@ import { useAuctionTokenColor } from '~/features/Toucan/Auction/hooks/useAuction
 import { useBidTokenInfo } from '~/features/Toucan/Auction/hooks/useBidTokenInfo'
 import { useAuctionStore, useIsAuctionFailed } from '~/features/Toucan/Auction/store/useAuctionStore'
 import { formatTokenAmountWithSymbol } from '~/features/Toucan/Auction/utils/fixedPointFdv'
-import { getAuctionMetadata } from '~/features/Toucan/Config/config'
+import { isTradingRestrictedUntilTge } from '~/features/Toucan/Config/config'
 import { createDottedBackgroundStyles } from '~/utils/createDottedBackgroundStyles'
 
 const TRACK_WIDTH = 20
@@ -216,7 +216,7 @@ export function ActivityTimeline() {
   const tokenAddress = auctionDetails?.tokenAddress
   const chainId = auctionDetails?.chainId
   const tradingRestrictedUntilTge = Boolean(
-    tokenAddress && chainId && getAuctionMetadata({ chainId, tokenAddress })?.tradingRestrictedUntilTge,
+    tokenAddress && chainId && isTradingRestrictedUntilTge({ chainId, tokenAddress }),
   )
 
   const strings = useMemo(

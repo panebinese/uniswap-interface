@@ -18,7 +18,7 @@ import { useDurationRemaining } from '~/features/Toucan/Auction/hooks/useDuratio
 import { useAuctionStore } from '~/features/Toucan/Auction/store/useAuctionStore'
 import { getClearingPrice } from '~/features/Toucan/Auction/utils/clearingPrice'
 import { isTokenLaunchTradeLive } from '~/features/Toucan/Auction/utils/tokenLaunchedBannerUtils'
-import { getAuctionMetadata } from '~/features/Toucan/Config/config'
+import { isTradingRestrictedUntilTge } from '~/features/Toucan/Config/config'
 
 interface TokenLaunchedBannerProps {
   tokenName: string
@@ -64,7 +64,7 @@ export function TokenLaunchedBanner({
   )
 
   const tradingRestrictedUntilTge = Boolean(
-    tokenAddress && chainId && getAuctionMetadata({ chainId, tokenAddress })?.tradingRestrictedUntilTge,
+    tokenAddress && chainId && isTradingRestrictedUntilTge({ chainId, tokenAddress }),
   )
 
   // Redeemable virtual-token auctions present the REAL (underlying) token instead: its price/chart,

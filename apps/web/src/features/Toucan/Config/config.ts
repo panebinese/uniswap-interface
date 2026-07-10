@@ -15,6 +15,8 @@ export interface AuctionMetadataOverride {
   tokenName?: string
   tokenSymbol?: string
   tradingRestrictedUntilTge?: boolean
+  /** TGE time (unix seconds). When set with `tradingRestrictedUntilTge`, the restriction lifts automatically at this time. */
+  tgeTimestamp?: number
 }
 
 /**
@@ -52,6 +54,8 @@ const AUCTION_METADATA_OVERRIDES: Record<string, AuctionMetadataOverride> = {
   },
   '1-0xe172e9b6cfbeeb5593bdce3f077356fdb33af904': {
     logoUrl: '/images/logos/fold-token-launch-logo.jpeg',
+    tradingRestrictedUntilTge: true,
+    tgeTimestamp: 1787149535, // 2026-08-19T14:25:35Z
   },
   '42161-0x170f6e39ea851108f0713090467871f28a62a5d4': {
     logoUrl: '/images/logos/boardwalk-token-launch-logo.png',
@@ -71,6 +75,24 @@ export function getAuctionMetadata({
 }): AuctionMetadataOverride | undefined {
   const key = `${chainId}-${tokenAddress.toLowerCase()}`
   return AUCTION_METADATA_OVERRIDES[key]
+}
+
+/**
+ * Whether trading of the auctioned token is currently restricted until its TGE.
+ * When the override sets `tgeTimestamp`, the restriction lifts automatically once that time passes.
+ */
+export function isTradingRestrictedUntilTge({
+  chainId,
+  tokenAddress,
+}: {
+  chainId: number
+  tokenAddress: string
+}): boolean {
+  const metadata = getAuctionMetadata({ chainId, tokenAddress })
+  if (!metadata?.tradingRestrictedUntilTge) {
+    return false
+  }
+  return metadata.tgeTimestamp === undefined || Date.now() < metadata.tgeTimestamp * 1000
 }
 
 /**
