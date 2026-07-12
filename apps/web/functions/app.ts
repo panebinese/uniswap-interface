@@ -44,9 +44,21 @@ interface AppConfig {
 // frame-ancestors cannot be enforced via <meta> CSP tags (W3C spec) — it
 // must be an HTTP response header. Cloudflare Workers returns responses
 // with immutable headers, so we clone into a mutable Response.
+// Origins allowed to iframe-embed the app. Whitelisting an embedder
+// relaxes clickjacking protection for that origin — treat additions as a
+// deliberate product/security tradeoff.
+// A wildcard host-source does not match the apex domain, so dexscreener.com
+// needs both the apex and the subdomain-wildcard entries.
+const ALLOWED_FRAME_ANCESTORS = [
+  "'self'",
+  'https://app.safe.global',
+  'https://dexscreener.com',
+  'https://*.dexscreener.com',
+]
+
 function withFrameProtection(res: Response): Response {
   const headers = new Headers(res.headers)
-  headers.set('Content-Security-Policy', "frame-ancestors 'self' https://app.safe.global")
+  headers.set('Content-Security-Policy', `frame-ancestors ${ALLOWED_FRAME_ANCESTORS.join(' ')}`)
   headers.set('X-Frame-Options', 'SAMEORIGIN')
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
 }
