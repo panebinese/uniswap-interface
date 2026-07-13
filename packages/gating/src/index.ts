@@ -17,7 +17,6 @@ export {
   AuctionFdvWarningConfigKey,
   BlockedAsyncSubmissionChainIdsConfigKey,
   ChainsConfigKey,
-  CreateAuctionConfigKey,
   DatadogIgnoredErrorsConfigKey,
   DatadogSessionSampleRateKey,
   DisableWalletSearchTermsConfigKey,

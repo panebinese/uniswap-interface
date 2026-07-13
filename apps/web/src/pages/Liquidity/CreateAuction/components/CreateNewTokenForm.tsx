@@ -18,6 +18,7 @@ import { ImageUpload } from 'ui/src/components/icons/ImageUpload'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { fonts, iconSizes } from 'ui/src/theme'
 import { NetworkLogo } from 'uniswap/src/components/CurrencyLogo/NetworkLogo'
+import { NewTag } from 'uniswap/src/components/pill/NewTag'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
@@ -27,6 +28,7 @@ import Trace from 'uniswap/src/features/telemetry/Trace'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { useActiveAddress } from '~/features/accounts/store/hooks'
+import { NEW_LAUNCH_CHAINS } from '~/features/Toucan/supportedChains'
 import { getAuctionTokenInfoEnteredProperties } from '~/pages/Liquidity/CreateAuction/analytics'
 import { NoWalletSection } from '~/pages/Liquidity/CreateAuction/components/NoWalletSection'
 import { TokenAdditionalInfoSection } from '~/pages/Liquidity/CreateAuction/components/TokenAdditionalInfoSection'
@@ -103,6 +105,7 @@ function NetworkSelector({
                 >
                   <NetworkLogo chainId={chainId} size={iconSizes.icon20} />
                   <Text variant="buttonLabel3">{info.label}</Text>
+                  {NEW_LAUNCH_CHAINS.includes(chainId) && <NewTag ml="$none" />}
                   {isSelected && <CheckCircleFilled color="$neutral1" size="$icon.20" />}
                 </TouchableArea>
               </Popover.Close>

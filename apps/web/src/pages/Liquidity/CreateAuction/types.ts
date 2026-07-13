@@ -83,9 +83,15 @@ export const DEFAULT_NEW_TOKEN_AUCTION_SUPPLY_PERCENT = new Percent(100, 100)
 /** Default share for existing tokens: auction the user's entire wallet balance. */
 export const DEFAULT_EXISTING_TOKEN_AUCTION_SUPPLY_PERCENT = new Percent(100, 100)
 
+/**
+ * Which raise-currency option the creator picked: the chain's native currency (ETH/AVAX/OKB) or its
+ * curated primary stablecoin (USDC/USDG/USDT0). Resolve to the actual token via
+ * `getRaiseCurrencyAsCurrency` / `getPrimaryStablecoin`.
+ */
 export enum RaiseCurrency {
-  ETH = 'ETH',
-  USDC = 'USDC',
+  // oxlint-disable-next-line eslint-js/no-restricted-syntax -- raise-currency slot name, not the NATIVE_CHAIN_ID sentinel
+  NATIVE = 'NATIVE',
+  STABLECOIN = 'STABLECOIN',
 }
 
 /** What currency the user types floor price / FDV in (raise token vs USD fiat). */
@@ -285,7 +291,8 @@ export const DEFAULT_CREATE_AUCTION_STATE: CreateAuctionState = {
     description: '',
     imageUrl: '',
     localImagePreviewUri: '',
-    network: UniverseChainId.Unichain,
+    // Mainnet is pinned first in the supported-chains list; the create-new-token picker defaults to it.
+    network: UniverseChainId.Mainnet,
     xProfile: '',
     totalSupply: NEW_TOKEN_DEFAULT_TOTAL_SUPPLY,
   },
@@ -297,7 +304,7 @@ export const DEFAULT_CREATE_AUCTION_STATE: CreateAuctionState = {
       type: PostAuctionLiquidityAllocationType.SINGLE,
       percent: DEFAULT_POST_AUCTION_LIQUIDITY_PERCENT,
     },
-    raiseCurrency: RaiseCurrency.ETH,
+    raiseCurrency: RaiseCurrency.NATIVE,
     floorPrice: '',
     floorPriceInput: undefined,
     kycValidationHookAddress: undefined,

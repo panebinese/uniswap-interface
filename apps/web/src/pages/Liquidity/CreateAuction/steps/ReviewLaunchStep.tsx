@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex, Text } from 'ui/src'
-import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
@@ -16,7 +15,7 @@ import { NumberType } from 'utilities/src/format/types'
 import { logger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
-import { isAddress, zeroAddress } from '~/chains'
+import { isAddress } from '~/chains'
 import { BIPS_BASE } from '~/constants/misc'
 import { useActiveAddress } from '~/features/accounts/store/hooks'
 import {
@@ -51,6 +50,7 @@ import {
   TimeLockPreset,
   TokenMode,
 } from '~/pages/Liquidity/CreateAuction/types'
+import { getPrimaryStablecoin, getRaiseCurrencyAddress } from '~/pages/Liquidity/CreateAuction/utils'
 import { resolveTokenImageSrc } from '~/pages/Liquidity/CreateAuction/utils/resolveTokenImageSrc'
 
 // oxlint-disable-next-line complexity
@@ -128,12 +128,10 @@ export function ReviewLaunchStep(): JSX.Element | null {
     : undefined
 
   const nativeCurrencyInfo = useNativeCurrencyInfo(chainId)
-  const usdcCurrencyId = useMemo(() => {
-    const usdc = getChainInfo(chainId).tokens.USDC
-    return usdc ? buildCurrencyId(chainId, usdc.address) : undefined
-  }, [chainId])
-  const usdcCurrencyInfo = useCurrencyInfo(usdcCurrencyId, { skip: !usdcCurrencyId })
-  const raiseCurrencyInfo = configureAuction.raiseCurrency === RaiseCurrency.ETH ? nativeCurrencyInfo : usdcCurrencyInfo
+  const stablecoinCurrencyId = useMemo(() => buildCurrencyId(chainId, getPrimaryStablecoin(chainId).address), [chainId])
+  const stablecoinCurrencyInfo = useCurrencyInfo(stablecoinCurrencyId)
+  const raiseCurrencyInfo =
+    configureAuction.raiseCurrency === RaiseCurrency.NATIVE ? nativeCurrencyInfo : stablecoinCurrencyInfo
 
   const feeTierDisplay = formatPercent(customizePool.fee.feeAmount / BIPS_BASE, 4)
 
@@ -168,8 +166,7 @@ export function ReviewLaunchStep(): JSX.Element | null {
     return t('toucan.createAuction.step.customizePool.priceRange.fullRange')
   })()
 
-  const currencyAddress =
-    configureAuction.raiseCurrency === RaiseCurrency.ETH ? zeroAddress : getChainInfo(chainId).tokens.USDC?.address
+  const currencyAddress = getRaiseCurrencyAddress(configureAuction.raiseCurrency, chainId)
 
   const getCreateFailedProperties = useEvent(
     (args: { failedStep: AuctionCreateFailedStep; errorCode?: string | number }) =>
@@ -357,7 +354,7 @@ export function ReviewLaunchStep(): JSX.Element | null {
         startTime={configureAuction.startTime}
         endTime={configureAuction.endTime}
         feeTierDisplay={feeTierDisplay}
-        raiseCurrencySymbol={configureAuction.raiseCurrency}
+        raiseCurrencySymbol={raiseCurrencyInfo.currency.symbol ?? ''}
         launchThresholdAmount={launchThresholdAmount}
         tokenColor={tokenColor}
         progressSteps={launchFlow.progressSteps}
