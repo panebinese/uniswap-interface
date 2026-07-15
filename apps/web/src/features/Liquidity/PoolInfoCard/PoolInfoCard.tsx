@@ -1,5 +1,5 @@
 import type { Currency } from '@uniswap/sdk-core'
-import { GraphQLApi } from '@universe/api'
+import { GraphQLApi, parseRestProtocolVersion } from '@universe/api'
 import { curveCardinal, scaleLinear } from 'd3'
 import { type ComponentProps, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,10 +8,12 @@ import { ChevronsIn } from 'ui/src/components/icons/ChevronsIn'
 import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
 import { iconSizes } from 'ui/src/theme'
 import { BIPS_BASE } from 'uniswap/src/constants/misc'
+import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { NumberType } from 'utilities/src/format/types'
 import type { PoolData } from '~/appGraphql/data/pools/usePoolData'
+import { usePoolLpFeeFraction } from '~/appGraphql/data/pools/usePoolLpFeeFraction'
 import { calculateApr } from '~/appGraphql/data/pools/useTopPools'
 import { gqlToCurrency, toHistoryDuration, TimePeriod } from '~/appGraphql/data/util'
 import { getPriceBounds } from '~/components/Charts/PriceChart/utils'
@@ -202,9 +204,16 @@ export function PoolStatsContent({ poolData, sparklineWidth }: { poolData: PoolD
   const currentPrice =
     poolData.token1Price && poolData.token0Price ? poolData.token1Price / poolData.token0Price : undefined
 
+  const lpFeeFraction = usePoolLpFeeFraction({
+    chainId: fromGraphQLChain(poolData.token0.chain) ?? undefined,
+    poolAddress: poolData.idOrAddress,
+    protocolVersion: parseRestProtocolVersion(poolData.protocolVersion),
+    feeTier: poolData.feeTier?.feeAmount,
+  })
+
   const fees24h =
     poolData.volumeUSD24H !== undefined && poolData.feeTier
-      ? poolData.volumeUSD24H * (poolData.feeTier.feeAmount / (BIPS_BASE * 100))
+      ? poolData.volumeUSD24H * (poolData.feeTier.feeAmount / (BIPS_BASE * 100)) * lpFeeFraction
       : undefined
 
   const poolApr = useMemo(
@@ -213,8 +222,9 @@ export function PoolStatsContent({ poolData, sparklineWidth }: { poolData: PoolD
         volume24h: poolData.volumeUSD24H,
         tvl: poolData.tvlUSD,
         feeTier: poolData.feeTier?.feeAmount,
+        lpFeeFraction,
       }),
-    [poolData.volumeUSD24H, poolData.tvlUSD, poolData.feeTier],
+    [poolData.volumeUSD24H, poolData.tvlUSD, poolData.feeTier, lpFeeFraction],
   )
 
   return (

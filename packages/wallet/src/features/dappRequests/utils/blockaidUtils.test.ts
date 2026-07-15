@@ -1,6 +1,6 @@
 // Mock chain info to avoid importing chain data with PNG files
-jest.mock('uniswap/src/features/chains/chainInfo', () => ({
-  getChainInfo: jest.fn((chainId: number) => ({
+vi.mock('uniswap/src/features/chains/chainInfo', () => ({
+  getChainInfo: vi.fn((chainId: number) => ({
     nativeCurrency: {
       address: `0xNATIVE${chainId}`,
       name: 'Mock Native',

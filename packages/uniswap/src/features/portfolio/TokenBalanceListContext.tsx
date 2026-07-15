@@ -40,17 +40,36 @@ type TokenBalanceListContextState = {
 
 export const TokenBalanceListContext = createContext<TokenBalanceListContextState | undefined>(undefined)
 
+/**
+ * The subset of context consumed by every rendered row (`TokenBalanceItem`). Kept separate from the
+ * full context so rows don't re-render on each poll when only churny status fields (dataUpdatedAt,
+ * networkStatus, loading) change — these fields are all stable across polls.
+ */
+export type TokenBalanceItemConfig = {
+  evmOwner?: Address
+  svmOwner?: Address
+  expandedCurrencyIds: Set<string>
+  multichainRowExpansionEnabled: boolean
+  hiddenBalanceRowIds: Set<string>
+  onPressToken?: (currencyId: CurrencyId, options?: TokenBalancePressOptions) => void
+}
+
+const TokenBalanceItemConfigContext = createContext<TokenBalanceItemConfig | undefined>(undefined)
+
 export function TokenBalanceListContextProvider({
   evmOwner,
   svmOwner,
   isExternalProfile,
   children,
   onPressToken,
+  disablePolling = false,
 }: PropsWithChildren<{
   evmOwner?: Address
   svmOwner?: Address
   isExternalProfile: boolean
   onPressToken?: (currencyId: CurrencyId, options?: TokenBalancePressOptions) => void
+  /** When true, skips the internal poll — use when a parent coordinator already refreshes this data on its own cadence. */
+  disablePolling?: boolean
 }>): JSX.Element {
   const {
     data: sortedData,
@@ -63,7 +82,7 @@ export function TokenBalanceListContextProvider({
   } = useSortedPortfolioBalancesMultichain({
     evmAddress: evmOwner,
     svmAddress: svmOwner,
-    pollInterval: PollingInterval.KindaFast,
+    pollInterval: disablePolling ? undefined : PollingInterval.KindaFast,
     requestMultichainFromBackend: true,
   })
 
@@ -147,7 +166,23 @@ export function TokenBalanceListContextProvider({
     ],
   )
 
-  return <TokenBalanceListContext.Provider value={state}>{children}</TokenBalanceListContext.Provider>
+  const itemConfig = useMemo<TokenBalanceItemConfig>(
+    () => ({
+      evmOwner,
+      svmOwner,
+      expandedCurrencyIds,
+      multichainRowExpansionEnabled,
+      hiddenBalanceRowIds,
+      onPressToken,
+    }),
+    [evmOwner, svmOwner, expandedCurrencyIds, multichainRowExpansionEnabled, hiddenBalanceRowIds, onPressToken],
+  )
+
+  return (
+    <TokenBalanceListContext.Provider value={state}>
+      <TokenBalanceItemConfigContext.Provider value={itemConfig}>{children}</TokenBalanceItemConfigContext.Provider>
+    </TokenBalanceListContext.Provider>
+  )
 }
 
 export const useTokenBalanceListContext = (): TokenBalanceListContextState => {
@@ -155,6 +190,20 @@ export const useTokenBalanceListContext = (): TokenBalanceListContextState => {
 
   if (context === undefined) {
     throw new Error('`useTokenBalanceListContext` must be used inside of `TokenBalanceListContextProvider`')
+  }
+
+  return context
+}
+
+/**
+ * Stable per-row config. Prefer this over `useTokenBalanceListContext` in components rendered once per
+ * row, so they don't re-render on every portfolio poll.
+ */
+export const useTokenBalanceItemConfig = (): TokenBalanceItemConfig => {
+  const context = useContext(TokenBalanceItemConfigContext)
+
+  if (context === undefined) {
+    throw new Error('`useTokenBalanceItemConfig` must be used inside of `TokenBalanceListContextProvider`')
   }
 
   return context

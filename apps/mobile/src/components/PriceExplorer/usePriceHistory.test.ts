@@ -291,9 +291,11 @@ describe(useTokenPriceHistory, () => {
       })
 
       expect(result.current.data?.priceHistory).toEqual(formatPriceHistory(tokenHistory))
-      expect(result.current.data?.spot).toEqual({
-        value: expect.objectContaining({ value: project.tokens[0]?.market?.price?.value }),
-        relativeChange: expect.objectContaining({ value: projectPercentChange24h.value }),
+      await waitFor(() => {
+        expect(result.current.data?.spot).toEqual({
+          value: expect.objectContaining({ value: project.tokens[0]?.market?.price?.value }),
+          relativeChange: expect.objectContaining({ value: projectPercentChange24h.value }),
+        })
       })
     })
 

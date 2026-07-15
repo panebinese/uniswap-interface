@@ -2,6 +2,7 @@ import { SharedQueryClient } from '@universe/api'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useCallback } from 'react'
 import { isL2ChainId } from 'uniswap/src/features/chains/utils'
+import { useIsEarnEnabled } from 'uniswap/src/features/earn/hooks/useIsEarnEnabled'
 import { getDisplayedPriceSource } from 'uniswap/src/features/prices/getDisplayedPriceSource'
 import { AuctionEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
@@ -30,6 +31,7 @@ import { useActivePlanTransactions, usePollPendingPlanTransactions } from '~/sta
 import { usePollPendingTransactions } from '~/state/activity/polling/transactions'
 import { type ActivityUpdate, ActivityUpdateTransactionType, type OnActivityUpdate } from '~/state/activity/types'
 import { useAppDispatch } from '~/state/hooks'
+import { maybeAddEarnSwapUpsellPopup } from '~/state/popups/earnSwapUpsell'
 import { popupRegistry } from '~/state/popups/registry'
 import { PopupType } from '~/state/popups/types'
 import type { TransactionDetails } from '~/state/transactions/types'
@@ -104,6 +106,7 @@ function useOnActivityUpdate(): OnActivityUpdate {
   const dispatch = useAppDispatch()
   const analyticsContext = useTrace()
   const isCentralizedPricesEnabled = useFeatureFlag(FeatureFlags.CentralizedPrices)
+  const isEarnEnabled = useIsEarnEnabled()
   const handleUniswapXActivityUpdate = useHandleUniswapXActivityUpdate()
 
   return useCallback(
@@ -256,6 +259,14 @@ function useOnActivityUpdate(): OnActivityUpdate {
         if (hash) {
           popupRegistry.addPopup({ type: PopupType.Transaction, hash }, hash, popupDismissalTime)
         }
+
+        maybeAddEarnSwapUpsellPopup({
+          isEarnEnabled,
+          status: updatedTransaction.status,
+          typeInfo: updatedTransaction.typeInfo,
+          transactionId: updatedTransaction.id,
+          swapPopupKey: hash,
+        })
         // TransactionType can only be UniswapXOrder here
         // This check is in place in case more types get added in the future
       } else if (activity.type === ActivityUpdateTransactionType.UniswapXOrder) {
@@ -275,12 +286,20 @@ function useOnActivityUpdate(): OnActivityUpdate {
             update.typeInfo.planId,
             popupDismissalTime,
           )
+
+          maybeAddEarnSwapUpsellPopup({
+            isEarnEnabled,
+            status: update.status,
+            typeInfo: update.typeInfo,
+            transactionId: update.id,
+            swapPopupKey: update.typeInfo.planId,
+          })
         } else {
           dispatch(updateTransaction(update))
         }
       }
     },
-    [analyticsContext, dispatch, handleUniswapXActivityUpdate, isCentralizedPricesEnabled],
+    [analyticsContext, dispatch, handleUniswapXActivityUpdate, isCentralizedPricesEnabled, isEarnEnabled],
   )
 }
 

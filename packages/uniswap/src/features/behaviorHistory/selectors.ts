@@ -1,4 +1,4 @@
-import { UniswapState } from 'uniswap/src/state/uniswapReducer'
+import type { UniswapState } from 'uniswap/src/state/uniswapReducer'
 
 export const selectHasViewedBridgingBanner = (state: UniswapState): boolean =>
   state.uniswapBehaviorHistory.hasViewedBridgingBanner === true

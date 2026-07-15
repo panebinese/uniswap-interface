@@ -21,6 +21,7 @@ import { useAuctionStatsData } from '~/features/Toucan/Auction/hooks/useAuctionS
 import { useBidTokenInfo } from '~/features/Toucan/Auction/hooks/useBidTokenInfo'
 import { useLoadBidActivities } from '~/features/Toucan/Auction/hooks/useLoadBidActivities'
 import { useAuctionStore } from '~/features/Toucan/Auction/store/useAuctionStore'
+import { getAuctionTokenDecimals } from '~/features/Toucan/Auction/utils/tokenMetadata'
 import { useTimeAgo } from '~/features/Toucan/Shared/TimeCell'
 
 const ROW_HEIGHT = 48
@@ -173,7 +174,7 @@ export const BidActivities = ({
     setIsHovering(false)
   }, [allActivities])
 
-  const { bidTokenInfo, loading: bidTokenInfoLoading } = useBidTokenInfo({
+  const { bidTokenInfo, loading: bidTokenLoading } = useBidTokenInfo({
     bidTokenAddress: auctionDetails?.currency,
     chainId: auctionChainId,
   })
@@ -183,13 +184,15 @@ export const BidActivities = ({
   const bidTokenSymbol = bidTokenInfo?.symbol ?? 'ETH'
   const bidTokenPriceFiat = bidTokenInfo?.priceFiat ?? 0
   const hasPriceFiat = bidTokenPriceFiat > 0
-  const auctionTokenDecimals = auctionDetails?.token?.currency.decimals ?? 18
+  const auctionTokenDecimals = getAuctionTokenDecimals(auctionDetails?.token)
+  const bidTokenInfoLoading = bidTokenLoading || auctionTokenDecimals === undefined
 
   const formattedBidActivities: BidActivityRow[] = useMemo(() => {
     return visibleActivities.map((bid) => {
       const bidPriceInToken = Number(formatUnits(BigInt(bid.baseTokenInitial), bidTokenDecimals))
       const bidPriceFiat = hasPriceFiat ? convertFiatAmount(bidPriceInToken * bidTokenPriceFiat).amount : 0
-      const maxPricePerTokenWei = q96ToRawAmount(bid.price, auctionTokenDecimals)
+      const maxPricePerTokenWei =
+        auctionTokenDecimals !== undefined ? q96ToRawAmount(bid.price, auctionTokenDecimals) : 0n
       const maxPriceInToken = Number(formatUnits(maxPricePerTokenWei, bidTokenDecimals))
       const maxPriceFiat = hasPriceFiat ? convertFiatAmount(maxPriceInToken * bidTokenPriceFiat).amount : 0
 

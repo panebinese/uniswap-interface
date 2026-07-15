@@ -110,6 +110,10 @@ vi.mock('react-native-reanimated', async () => {
   }
 })
 
+// reanimated 4 pulls in react-native-worklets, whose lib/module build uses extensionless
+// ESM imports vitest can't resolve. Its src mock loads cleanly and covers what RNGH v3 needs.
+vi.mock('react-native-worklets', async () => vi.importActual('react-native-worklets/src/mock'))
+
 // Mock environment variables
 process.env.EXPO_OS = 'web'
 process.env.ANALYTICS_REQUEST_TIMEOUT_MS = '10000'

@@ -3392,6 +3392,10 @@
           "routing": {
             "$ref": "#/components/schemas/Routing"
           },
+          "isTokenApprovalApplicable": {
+            "type": "boolean",
+            "description": "Whether an ERC-20 token approval is applicable to this swap's input. `true` when the routing pulls the input token via an allowance, so an approval may be required — verify (or orchestrate) it via `/check_approval`. `false` when no approval is ever needed for this route (e.g. native-currency input, wrap/unwrap, or a native-gas-token input paid as native value). Reflects the routing mechanism, not the swapper's current on-chain allowance. If absent, assume an approval is applicable."
+          },
           "permitTransaction": {
             "$ref": "#/components/schemas/TransactionRequest"
           },
@@ -3785,6 +3789,10 @@
           },
           "walletExecutionContext": {
             "$ref": "#/components/schemas/WalletExecutionContext",
+            "x-internal": true
+          },
+          "earnIntent": {
+            "$ref": "#/components/schemas/EarnIntent",
             "x-internal": true
           }
         },
@@ -5134,6 +5142,8 @@
           "DUTCH_V3",
           "QUICKROUTE",
           "CHAINED",
+          "VAULT_DEPOSIT",
+          "VAULT_WITHDRAW",
           "APPROVAL_TXN",
           "APPROVAL_PERMIT",
           "RESET_APPROVAL_TXN"
@@ -7576,6 +7586,10 @@
           },
           "urgency": {
             "$ref": "#/components/schemas/Urgency"
+          },
+          "earnIntent": {
+            "$ref": "#/components/schemas/EarnIntent",
+            "x-internal": true
           }
         },
         "required": [
@@ -7720,6 +7734,10 @@
           },
           "walletExecutionContext": {
             "$ref": "#/components/schemas/WalletExecutionContext",
+            "x-internal": true
+          },
+          "earnIntent": {
+            "$ref": "#/components/schemas/EarnQuoteIntent",
             "x-internal": true
           }
         },
@@ -7990,6 +8008,14 @@
           },
           "autoSlippage": {
             "$ref": "#/components/schemas/AutoSlippage"
+          },
+          "earnIntent": {
+            "$ref": "#/components/schemas/EarnQuoteIntent",
+            "x-internal": true
+          },
+          "earnPreview": {
+            "$ref": "#/components/schemas/EarnPreview",
+            "x-internal": true
           }
         },
         "required": [
@@ -8147,6 +8173,212 @@
           "limitInflationFactor",
           "priceInflationFactor",
           "percentileThresholdFor1559Fee"
+        ]
+      },
+      "EarnAction": {
+        "x-internal": true,
+        "type": "string",
+        "enum": [
+          "deposit",
+          "withdraw"
+        ],
+        "description": "The Earn vault action to quote or plan."
+      },
+      "EarnWithdrawMode": {
+        "x-internal": true,
+        "type": "string",
+        "enum": [
+          "EXACT_ASSETS",
+          "MAX_SHARES"
+        ],
+        "description": "The ERC-4626 withdraw mode. EXACT_ASSETS withdraws the requested asset amount; MAX_SHARES redeems the owner's currently redeemable shares."
+      },
+      "EarnDestinationGasMode": {
+        "x-internal": true,
+        "type": "string",
+        "enum": [
+          "WALLET_BALANCE",
+          "SELF_FUNDED"
+        ],
+        "description": "Backend-selected funding mode for destination-chain gas on standard cross-chain Earn deposits. WALLET_BALANCE means the swapper has enough destination native gas; SELF_FUNDED means the route bridges native gas and reserves part of it for the remaining destination transactions."
+      },
+      "EarnIntent": {
+        "x-internal": true,
+        "type": "object",
+        "description": "Earn vault intent supplied on /quote and repeated on /plan. Earn currently supports the allowlisted Mainnet Morpho vaults.",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/EarnAction"
+          },
+          "vault": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "chainId": {
+            "$ref": "#/components/schemas/ChainId"
+          },
+          "withdrawMode": {
+            "$ref": "#/components/schemas/EarnWithdrawMode"
+          }
+        },
+        "required": [
+          "action",
+          "vault",
+          "chainId"
+        ]
+      },
+      "EarnPreview": {
+        "x-internal": true,
+        "description": "Action-specific preview amounts computed while normalizing an Earn intent.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EarnDepositPreview"
+          },
+          {
+            "$ref": "#/components/schemas/EarnExactAssetsWithdrawPreview"
+          },
+          {
+            "$ref": "#/components/schemas/EarnMaxSharesWithdrawPreview"
+          }
+        ]
+      },
+      "EarnDepositPreview": {
+        "x-internal": true,
+        "type": "object",
+        "description": "Deposit preview. Asset amounts are vault-underlying assets, and share amounts are vault shares.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "DEPOSIT"
+            ]
+          },
+          "depositAssets": {
+            "type": "array",
+            "description": "Vault underlying assets that will be deposited after any swap, bridge, wrap, or unwrap steps.",
+            "items": {
+              "$ref": "#/components/schemas/EarnPreviewDepositAsset"
+            }
+          },
+          "estimatedSharesOut": {
+            "description": "Estimated vault shares received from the deposit.",
+            "$ref": "#/components/schemas/tokenAmount"
+          }
+        },
+        "required": [
+          "type",
+          "depositAssets",
+          "estimatedSharesOut"
+        ]
+      },
+      "EarnExactAssetsWithdrawPreview": {
+        "x-internal": true,
+        "type": "object",
+        "description": "Exact-assets withdraw preview. Assets are vault-underlying assets, and shares are vault shares.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "EXACT_ASSETS_WITHDRAW"
+            ]
+          },
+          "requestedAssetsOut": {
+            "description": "Requested vault underlying assets returned by the withdraw.",
+            "$ref": "#/components/schemas/tokenAmount"
+          },
+          "estimatedSharesIn": {
+            "description": "Estimated vault shares spent to withdraw the requested assets.",
+            "$ref": "#/components/schemas/tokenAmount"
+          }
+        },
+        "required": [
+          "type",
+          "requestedAssetsOut",
+          "estimatedSharesIn"
+        ]
+      },
+      "EarnMaxSharesWithdrawPreview": {
+        "x-internal": true,
+        "type": "object",
+        "description": "Max-shares withdraw preview. Assets are vault-underlying assets, and shares are vault shares.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "MAX_SHARES_WITHDRAW"
+            ]
+          },
+          "maxRedeemableSharesIn": {
+            "description": "Vault shares spent by the max-shares redeem.",
+            "$ref": "#/components/schemas/tokenAmount"
+          },
+          "previewAssetsOut": {
+            "description": "Estimated vault underlying assets received by redeeming max redeemable shares.",
+            "$ref": "#/components/schemas/tokenAmount"
+          }
+        },
+        "required": [
+          "type",
+          "maxRedeemableSharesIn",
+          "previewAssetsOut"
+        ]
+      },
+      "EarnPreviewDepositAsset": {
+        "x-internal": true,
+        "type": "object",
+        "description": "A vault deposit input asset amount after all pre-vault routing has completed.",
+        "properties": {
+          "token": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "chainId": {
+            "$ref": "#/components/schemas/ChainId"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/tokenAmount"
+          }
+        },
+        "required": [
+          "token",
+          "chainId",
+          "amount"
+        ]
+      },
+      "EarnQuoteIntent": {
+        "x-internal": true,
+        "type": "object",
+        "description": "Validated Earn intent returned by /quote and /plan. Internal vault execution metadata is kept off the public contract.",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/EarnAction"
+          },
+          "vault": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "chainId": {
+            "$ref": "#/components/schemas/ChainId"
+          },
+          "withdrawMode": {
+            "$ref": "#/components/schemas/EarnWithdrawMode"
+          },
+          "destinationGasMode": {
+            "$ref": "#/components/schemas/EarnDestinationGasMode"
+          },
+          "underlyingAsset": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "requestedAssets": {
+            "$ref": "#/components/schemas/tokenAmount",
+            "description": "Requested underlying asset amount for EXACT_ASSETS withdraw intents."
+          },
+          "preview": {
+            "$ref": "#/components/schemas/EarnPreview"
+          }
+        },
+        "required": [
+          "action",
+          "vault",
+          "chainId",
+          "underlyingAsset"
         ]
       }
     },

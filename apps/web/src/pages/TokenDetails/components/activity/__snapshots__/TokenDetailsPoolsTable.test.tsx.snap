@@ -303,7 +303,7 @@ exports[`TDPPoolTable > renders data filled state 1`] = `
                                   <img
                                     height="24"
                                     src="eth-logo.png"
-                                    style="object-fit: contain; border-radius: 24px; z-index: 1;"
+                                    style="object-fit: cover; width: 24px; height: 24px; border-radius: 24px; z-index: 1;"
                                     width="24"
                                   />
                                 </div>
@@ -327,7 +327,7 @@ exports[`TDPPoolTable > renders data filled state 1`] = `
                                   <img
                                     height="24"
                                     src="https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
-                                    style="object-fit: contain; border-radius: 24px; z-index: 1;"
+                                    style="object-fit: cover; width: 24px; height: 24px; border-radius: 24px; z-index: 1;"
                                     width="24"
                                   />
                                 </div>

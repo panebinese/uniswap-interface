@@ -657,12 +657,16 @@ function SelectStepError({
       <ErrorCallout
         isWarning
         errorMessage={true}
-        title={t('position.wrapped.warning', { nativeToken: wrappedNativeWarning.nativeToken.symbol })}
-        description={t('position.wrapped.warning.info', {
-          nativeToken: wrappedNativeWarning.nativeToken.symbol,
-          wrappedToken: wrappedNativeWarning.wrappedToken.symbol,
+        title={t('position.wrapped.warning', {
+          nativeToken: wrappedNativeWarning.nativeToken.symbol ?? t('common.token'),
         })}
-        action={t('position.wrapped.unwrap', { wrappedToken: wrappedNativeWarning.wrappedToken.symbol })}
+        description={t('position.wrapped.warning.info', {
+          nativeToken: wrappedNativeWarning.nativeToken.symbol ?? t('common.token'),
+          wrappedToken: wrappedNativeWarning.wrappedToken.symbol ?? t('common.token'),
+        })}
+        action={t('position.wrapped.unwrap', {
+          wrappedToken: wrappedNativeWarning.wrappedToken.symbol ?? t('common.token'),
+        })}
         onPress={() => navigate(`/swap${wrappedNativeWarning.swapUrlParams}`)}
       />
     )
@@ -673,7 +677,7 @@ function SelectStepError({
       <ErrorCallout
         errorMessage={true}
         title={t('token.safety.warning.fotLow.title')}
-        description={t('position.fot.warning', { token: fotToken.currency.symbol })}
+        description={t('position.fot.warning', { token: fotToken.currency.symbol ?? t('common.token') })}
         action={t('position.fot.warning.cta')}
         onPress={() => {
           navigate('/positions/create/v2')

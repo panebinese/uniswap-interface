@@ -285,6 +285,7 @@ export function ConfigureAuctionStep() {
         borderRadius="$rounded20"
         p="$spacing24"
         gap="$spacing24"
+        $md={{ borderWidth: 0, borderRadius: '$none', p: '$none' }}
       >
         <Text variant="heading3" color="$neutral1" pb="$spacing12">
           {t('toucan.createAuction.step.configureAuction.title')}

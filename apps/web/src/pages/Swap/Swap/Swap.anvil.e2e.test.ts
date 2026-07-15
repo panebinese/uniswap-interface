@@ -58,7 +58,7 @@ test.describe(
     test('should be able to swap token with FOT warning via TDP', async ({ page, anvil }) => {
       await stubTradingApiEndpoint({ page, endpoint: V1_TRADING_API_PATHS.quote })
 
-      await page.route(`${getUniswapServiceUrls().tradingApiUrl}/v1/swap`, async (route) => {
+      await page.route(`${getUniswapServiceUrls().tradingApiUrl}/swap`, async (route) => {
         const request = route.request()
         const postData = request.postDataJSON()
 

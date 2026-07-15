@@ -7,7 +7,7 @@
     "@uniswap/client-notification-service": "0.0.11",
     "@universe/api": "workspace:*",
     "ms": "2.1.3",
-    "react": "19.1.0",
+    "react": "19.2.3",
     "react-i18next": "14.1.0",
     "ui": "workspace:^"
   },

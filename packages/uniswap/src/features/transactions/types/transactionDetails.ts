@@ -1,7 +1,8 @@
 /* oxlint-disable max-lines */
 import { Protocol } from '@uniswap/router-sdk'
-import { Currency, CurrencyAmount, TradeType } from '@uniswap/sdk-core'
-import { GasEstimate, TradingApi } from '@universe/api'
+import type { Currency, CurrencyAmount, TradeType } from '@uniswap/sdk-core'
+import { TradingApi } from '@universe/api'
+import type { GasEstimate } from '@universe/api'
 import { providers } from 'ethers/lib/ethers'
 import { AssetType } from 'uniswap/src/entities/assets'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -817,6 +818,7 @@ export interface PlanTransactionInfo extends BaseTransactionInfo {
   outputCurrencyAmountRaw: string
   tradeType: TradeType.EXACT_INPUT
   transactionHashes?: string[]
+  earnAction?: TradingApi.EarnAction
 }
 
 export type TransactionTypeInfo =

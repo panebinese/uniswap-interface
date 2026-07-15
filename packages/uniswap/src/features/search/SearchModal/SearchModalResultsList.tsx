@@ -1,6 +1,6 @@
-import { ContentStyle } from '@shopify/flash-list'
 import { memo, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { StyleProp, ViewStyle } from 'react-native'
 import { NetworkError, NoResultsFound } from 'uniswap/src/components/lists/NoResultsFound'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useSectionsForSearchResults } from 'uniswap/src/features/search/SearchModal/hooks/useSectionsForSearchResults'
@@ -21,7 +21,7 @@ interface SearchModalResultsListProps {
   onSelect?: SearchModalListProps['onSelect']
   onResetFilters?: () => void
   renderedInModal: boolean
-  contentContainerStyle?: ContentStyle
+  contentContainerStyle?: StyleProp<ViewStyle>
   rowWrapper?: SearchModalListProps['rowWrapper']
 }
 

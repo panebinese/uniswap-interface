@@ -138,7 +138,9 @@ export const getFeatureFlaggedHeaders = async (
 export const TradingApiClient: TradingApiClientType = createTradingApiClient({
   fetchClient: TradingFetchClient,
   getFeatureFlagHeaders: getFeatureFlaggedHeaders,
-  getApiPathPrefix: () => (config.tradingApiWebTestEnv === 'true' ? '' : '/v1'),
+  // Entry gateway serves trading at unversioned paths (same as the session/Plan client and DataApi),
+  // so no `/v1` prefix. The legacy trading-api-labs cloudflare host required `/v1`; we no longer use it.
+  getApiPathPrefix: () => '',
 })
 
 // Default maximum amount of combinations wallet<>chainId per check delegation request

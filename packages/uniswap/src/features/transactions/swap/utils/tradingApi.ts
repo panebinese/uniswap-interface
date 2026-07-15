@@ -4,6 +4,7 @@ import { DynamicConfigs, getDynamicConfigValue, SwapConfigKey } from '@universe/
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { isUniverseChainId } from 'uniswap/src/features/chains/utils'
+import { createEarnChainedActionDisplayAmounts } from 'uniswap/src/features/earn/chainedDisplayAmounts'
 import {
   createBridgeTrade,
   createChainedActionTrade,
@@ -40,10 +41,11 @@ interface TradingApiResponseToTradeArgs {
   tradeType: TradeType
   deadline: number | undefined
   data: DiscriminatedQuoteResponse | undefined
+  earnIntent?: TradingApi.EarnIntent
 }
 
 export function transformTradingApiResponseToTrade(params: TradingApiResponseToTradeArgs): Trade | null {
-  const { currencyIn, currencyOut, tradeType, deadline, data } = params
+  const { currencyIn, currencyOut, tradeType, deadline, data, earnIntent } = params
 
   switch (data?.routing) {
     case TradingApi.Routing.CLASSIC: {
@@ -97,7 +99,27 @@ export function transformTradingApiResponseToTrade(params: TradingApiResponseToT
       return createUnwrapTrade({ quote: data, currencyIn, currencyOut, tradeType })
     }
     case TradingApi.Routing.CHAINED: {
-      return createChainedActionTrade({ quote: data, currencyIn, currencyOut })
+      const resolvedEarnIntent = earnIntent ?? data.quote.earnIntent
+      const earnDisplayAmounts = resolvedEarnIntent
+        ? createEarnChainedActionDisplayAmounts({
+            quote: data,
+            currencyIn,
+            currencyOut,
+            earnIntent: resolvedEarnIntent,
+          })
+        : undefined
+
+      if (resolvedEarnIntent && !earnDisplayAmounts) {
+        return null
+      }
+
+      return createChainedActionTrade({
+        quote: data,
+        currencyIn,
+        currencyOut,
+        earnIntent: resolvedEarnIntent,
+        displayAmountsOverride: earnDisplayAmounts ?? undefined,
+      })
     }
     default: {
       return null
@@ -182,7 +204,9 @@ export function validateTrade({
     },
   })
 
-  const tokenAddressesMatch = inputsMatch && outputsMatch
+  const isEarnDeposit = isEarnDepositTrade(trade)
+  const outputsAreValid = isEarnDeposit ? hasValidEarnDepositOutput(trade) : outputsMatch
+  const tokenAddressesMatch = inputsMatch && outputsAreValid
   // TODO(WEB-5132): Add validation checking that exact amount from response matches exact amount from user input
   if (!tokenAddressesMatch) {
     logger.error(new Error(`Mismatched address in swap trade`), {
@@ -202,6 +226,31 @@ export function validateTrade({
   }
 
   return trade
+}
+
+function hasValidEarnDepositOutput(trade: Trade): boolean {
+  if (!isEarnDepositTrade(trade)) {
+    return false
+  }
+
+  const earnIntent = trade.earnIntent
+  const outputToken = trade.quote.quote.output.token
+
+  if (trade.quote.quote.earnPreview?.type !== 'DEPOSIT' || !outputToken) {
+    return false
+  }
+
+  return areAddressesEqual({
+    addressInput1: { address: outputToken, chainId: Number(trade.quote.quote.tokenOutChainId) },
+    addressInput2: { address: earnIntent.vault, chainId: Number(earnIntent.chainId) },
+  })
+}
+
+function isEarnDepositTrade(trade: Trade): trade is Trade & {
+  routing: TradingApi.Routing.CHAINED
+  earnIntent: NonNullable<Extract<Trade, { routing: TradingApi.Routing.CHAINED }>['earnIntent']>
+} {
+  return trade.routing === TradingApi.Routing.CHAINED && trade.earnIntent?.action === TradingApi.EarnAction.DEPOSIT
 }
 
 type UseQuoteRoutingParamsArgs = {

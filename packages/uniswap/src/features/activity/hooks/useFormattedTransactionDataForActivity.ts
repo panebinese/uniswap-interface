@@ -26,7 +26,7 @@ const LOADING_DATA = [LOADING_ITEM(1), LOADING_ITEM(2), LOADING_ITEM(3), LOADING
 
 // Native FlatList performance degrades with large lists; callers that don't have this constraint
 // (e.g. web) can pass a higher maxItems value
-const MOBILE_MAX_ACTIVITY_ITEMS = isAndroid ? 100 : 250
+const MOBILE_MAX_ACTIVITY_ITEMS = isAndroid ? 100 : 200
 
 function hasReachedLimit(transactions: TransactionDetails[] | undefined, maxItems: number): boolean {
   const currentTransactionCount = transactions?.length ?? 0

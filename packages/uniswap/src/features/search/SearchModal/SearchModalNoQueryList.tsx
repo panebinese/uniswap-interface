@@ -1,6 +1,6 @@
-import { ContentStyle } from '@shopify/flash-list'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { StyleProp, ViewStyle } from 'react-native'
 import { Flex, GeneratedIcon, Text } from 'ui/src'
 import { Person } from 'ui/src/components/icons'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -26,7 +26,7 @@ interface SearchModalNoQueryListProps {
   activeTab: SearchTab
   onSelect?: SearchModalListProps['onSelect']
   renderedInModal: boolean
-  contentContainerStyle?: ContentStyle
+  contentContainerStyle?: StyleProp<ViewStyle>
   rowWrapper?: SearchModalListProps['rowWrapper']
 }
 

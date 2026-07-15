@@ -1,6 +1,7 @@
 import type { PartialMessage } from '@bufbuild/protobuf'
 import type { FiatOnRampParams, ListTransactionsResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import type { TransactionTypeFilter } from '@uniswap/client-data-api/dist/data/v1/types_pb'
+import { isWebPlatform } from '@universe/environment'
 import { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useListTransactionsQuery } from 'uniswap/src/data/rest/listTransactions'
@@ -14,7 +15,7 @@ import type { TransactionDetails } from 'uniswap/src/features/transactions/types
 import { selectActivityVisibility } from 'uniswap/src/features/visibility/selectors'
 import type { CurrencyIdToVisibility, NFTKeyToVisibility } from 'uniswap/src/features/visibility/slice'
 
-const DEFAULT_PAGE_SIZE = 100
+const DEFAULT_PAGE_SIZE = isWebPlatform ? 100 : 20
 
 export type TransactionListDataResult = BaseResult<TransactionDetails[]> &
   PaginationControls & {

@@ -564,7 +564,7 @@ function SubmitOrderButton({
 
     if (hasInsufficientFunds) {
       return inputCurrency
-        ? t('common.insufficientTokenBalance.error.simple', { tokenSymbol: inputCurrency.symbol })
+        ? t('common.insufficientTokenBalance.error.simple', { tokenSymbol: inputCurrency.symbol ?? t('common.token') })
         : t('common.insufficientBalance.error')
     }
     return t('common.confirm')

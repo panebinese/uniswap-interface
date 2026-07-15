@@ -55,7 +55,8 @@ export function NetworkFilterDropdownContent({
           style={{
             ...scrollbarStyles,
             scrollbarWidth: 'auto',
-            overflow: 'auto',
+            overflowY: 'auto',
+            overflowX: 'hidden',
           }}
         >
           <NetworkFilterContent

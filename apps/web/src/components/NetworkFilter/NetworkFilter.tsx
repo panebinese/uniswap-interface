@@ -43,7 +43,7 @@ type DropdownSize = DropdownSizeVariants | 'large' | 'medium' | 'small' | 'xsmal
 
 const StyledDropdown = {
   maxHeight: 350,
-  minWidth: 256,
+  minWidth: 272,
   px: 0,
   py: 0,
 } satisfies FlexProps

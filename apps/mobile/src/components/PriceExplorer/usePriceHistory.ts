@@ -1,4 +1,5 @@
 import { type GqlResult, GraphQLApi, isError, isNonPollingRequestInFlight } from '@universe/api'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import maxBy from 'lodash/maxBy'
 import { type Dispatch, type SetStateAction, useCallback, useMemo, useRef, useState } from 'react'
 import { type SharedValue, useDerivedValue } from 'react-native-reanimated'
@@ -120,12 +121,16 @@ export function useTokenPriceHistory({
   numberOfDigits: PriceNumberOfDigits
 } {
   const lastPrice = useRef<undefined | number>(undefined)
+  const hasEverLoadedRef = useRef(false)
   const lastNumberOfDigits = useRef({
     left: 0,
     right: 0,
   })
   const [duration, setDuration] = useState(initialDuration)
   const { convertFiatAmount } = useLocalizationContext()
+  // The TDP heartbeat coordinator only takes over refreshing when this flag is on —
+  // otherwise this query must keep its own poll running, or it would never refresh.
+  const isDataLivelinessEnabled = useFeatureFlag(FeatureFlags.DataLivelinessUI)
 
   const {
     data: priceData,
@@ -137,8 +142,8 @@ export function useTokenPriceHistory({
       duration,
     },
     notifyOnNetworkStatusChange: true,
-    pollInterval: PollingInterval.Normal,
     fetchPolicy: 'network-only',
+    pollInterval: isDataLivelinessEnabled ? undefined : PollingInterval.Normal,
     skip,
   })
 
@@ -149,6 +154,9 @@ export function useTokenPriceHistory({
     priceData,
   })
   lastPrice.current = price
+  if (price !== undefined) {
+    hasEverLoadedRef.current = true
+  }
 
   const calculatedPriceChange = useMemo(() => calculatePriceChange(priceHistory), [priceHistory])
 
@@ -204,7 +212,7 @@ export function useTokenPriceHistory({
 
   return {
     data,
-    loading: skip || isNonPollingRequestInFlight(networkStatus),
+    loading: skip || (isNonPollingRequestInFlight(networkStatus) && !hasEverLoadedRef.current),
     error: !skip && isError(networkStatus, !!priceData),
     refetch: retry,
     setDuration,

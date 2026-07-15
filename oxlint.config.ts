@@ -520,7 +520,7 @@ export default defineConfig({
     'typescript/no-unsafe-return': 'error',
     'typescript/no-unnecessary-condition': ['error', { allowConstantLoopConditions: true }],
     'typescript/no-redundant-type-constituents': 'off',
-    'typescript/unbound-method': 'off',
+    'typescript/unbound-method': ['error', { ignoreStatic: true }],
     'typescript/restrict-template-expressions': 'off',
     'typescript/no-base-to-string': 'off',
 
@@ -570,6 +570,8 @@ export default defineConfig({
 
     // ── jsPlugin rules (excluded when ENABLE_FAST_LINT=true) ──────────
     ...(!isFastLint && {
+      // correctness
+      'import/no-cycle': ['error', { ignoreExternal: true }],
       // security
       'security/detect-unsafe-regex': 'error',
       'security/detect-buffer-noassert': 'error',
@@ -625,6 +627,18 @@ export default defineConfig({
         'typescript/no-unsafe-return': 'off',
       },
     },
+
+    // ── Saga files ──────────────────────
+    {
+      files: ['**/*saga.ts', '**/*saga.tsx', '**/*Saga.ts', '**/*Saga.tsx'],
+      rules: {
+        // redux-saga's call/fork/etc. bind the receiver via the
+        // [obj, method] array form, an idiom unbound-method can't model, so it
+        // false-positives on the bound method reference. Disable it for sagas.
+        'typescript/unbound-method': 'off',
+      },
+    },
+
     // ── Logger, scripts, devtools: allow console ──────────────────────
     {
       files: [
@@ -987,6 +1001,14 @@ export default defineConfig({
           },
         ]
       : []),
+    // Disable the no-cycles lint rule for web/state/sagas
+    // The sagas and redux store have many cycles, deep refactoring is needed
+    {
+      files: ['apps/web/src/state/sagas/**/*.ts'],
+      rules: {
+        'import/no-cycle': 'off',
+      },
+    },
     {
       files: [
         'apps/web/vite.config.*',
@@ -1238,7 +1260,9 @@ export default defineConfig({
 
     // ── @universe/* packages with standard pattern ────────────────────
     // (no-relative-import-paths + restrictedImportPatternsForUniversePackage)
-    ...(['api', 'compliance', 'config', 'gating', 'notifications', 'sessions', 'transactional', 'websocket'] as const).map((pkg) => ({
+    ...(
+      ['api', 'compliance', 'config', 'gating', 'notifications', 'sessions', 'transactional', 'websocket'] as const
+    ).map((pkg) => ({
       files: [`packages/${pkg}/**`],
       rules: {
         ...(!isFastLint && {
@@ -1284,11 +1308,13 @@ export default defineConfig({
         'no-console': 'off',
         'no-lone-blocks': 'off',
         'no-unsafe-optional-chaining': 'off',
+        'import/no-cycle': 'off',
         'typescript/triple-slash-reference': 'off',
         'typescript/await-thenable': 'off',
         'typescript/no-unsafe-return': 'off',
         'typescript/no-misused-spread': 'off',
         'typescript/no-var-requires': 'off',
+        'typescript/unbound-method': 'off',
         'prefer-const': 'off',
         'vitest/hoisted-apis-on-top': 'error',
         ...(!isFastLint && {

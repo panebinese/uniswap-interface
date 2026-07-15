@@ -83,6 +83,7 @@ export {
   type TradingApiClient,
   type TradingClientContext,
   V1_TRADING_API_PATHS,
+  type PlanEndpoints,
 } from '@universe/api/src/clients/trading/createTradingApiClient'
 export {
   createTradingApiFetchClient,
@@ -198,6 +199,11 @@ export {
   type GetWalletBalancesQueryParams,
 } from '@universe/api/src/clients/dataApi/getGetWalletBalancesQueryOptions'
 export {
+  fetchWalletsBalances,
+  getGetWalletsBalancesQueryOptions,
+  type GetWalletsBalancesQueryParams,
+} from '@universe/api/src/clients/dataApi/getGetWalletsBalancesQueryOptions'
+export {
   TopPoolsOrderBy,
   TokensOrderBy,
   type BalanceComponent,
@@ -227,6 +233,12 @@ export {
   TokenReportEventType,
   ReportAssetType,
 } from '@universe/api/src/clients/data/createDataServiceApiClient'
+
+// Data API Service V2
+export {
+  createDataApiServiceClientV2,
+  type DataApiServiceClientV2,
+} from '@universe/api/src/clients/dataApi/createDataApiServiceClientV2'
 
 // Notifications API
 export { createNotificationsApiClient } from '@universe/api/src/clients/notifications/createNotificationsApiClient'
@@ -317,7 +329,9 @@ export {
   parseRestProtocolVersion,
   parseSafetyLevel,
   transformInput,
+  transformWalletsInput,
   type WithoutWalletAccount,
+  type WithoutWalletAccounts,
 } from '@universe/api/src/connectRpc/utils'
 
 // Conversion Tracking API
@@ -370,7 +384,7 @@ export {
   ENTRY_GATEWAY_PROXY_ENV_SEGMENT,
   ENTRY_GATEWAY_PROXY_PATH,
   getEntryGatewayUrl,
-  getMigratedForApiUrl,
+  getForApiUrl,
 } from '@universe/api/src/getEntryGatewayUrl'
 
 export { getWebSocketUrl } from '@universe/api/src/getWebSocketUrl'

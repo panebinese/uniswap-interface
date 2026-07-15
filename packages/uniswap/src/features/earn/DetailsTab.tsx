@@ -1,12 +1,13 @@
 import dayjs from 'dayjs'
 import { useCallback, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { Button, Flex, Text, TouchableArea, UniversalImage } from 'ui/src'
 import { ExternalLink } from 'ui/src/components/icons/ExternalLink'
 import { MorphoLogoFull } from 'ui/src/components/icons/MorphoLogoFull'
 import { borderRadii, iconSizes } from 'ui/src/theme'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { ExpandoRow } from 'uniswap/src/components/ExpandoRow/ExpandoRow'
+import { UniswapHelpUrls, UniswapStaticUrls } from 'uniswap/src/constants/urls'
 import type { EarnVaultInfo } from 'uniswap/src/features/earn/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { FORMAT_DATE_MEDIUM, useFormattedDate } from 'uniswap/src/features/language/localizedDayjs'
@@ -32,6 +33,11 @@ export function DetailsTab({
 }: DetailsTabProps): JSX.Element {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
+  const onOpenMorphoHome = useCallback(() => {
+    if (vault.morphoUrl) {
+      openUri({ uri: vault.morphoUrl }).catch(() => undefined)
+    }
+  }, [vault.morphoUrl])
 
   return (
     <Flex gap="$spacing16">
@@ -45,16 +51,16 @@ export function DetailsTab({
       {expanded && (
         <>
           <VaultDetailsList vault={vault} />
-          <VaultDescription curatorName={vault.curator.name} />
+          <VaultDescription />
         </>
       )}
       {!isConnected ? (
-        <Button fill={false} variant="branded" emphasis="secondary" size="medium" onPress={onConnectWallet}>
+        <Button fill={false} width="100%" variant="branded" emphasis="secondary" size="large" onPress={onConnectWallet}>
           {t('common.connectWallet.button')}
         </Button>
       ) : (
         !hasPosition && (
-          <Button fill={false} emphasis="primary" size="medium" onPress={onDeposit}>
+          <Button fill={false} width="100%" variant="branded" emphasis="primary" size="large" onPress={onDeposit}>
             {t('explore.earn.vault.deposit')}
           </Button>
         )
@@ -64,33 +70,57 @@ export function DetailsTab({
           {t('swap.details.poweredBy')}
         </Text>
 
-        <Flex width={70} height={14}>
+        <TouchableArea width={70} height={14} onPress={vault.morphoUrl ? onOpenMorphoHome : undefined}>
           {/* width/height are stripped from IconProps but flow through to the SVG at runtime,
               which is the only way to render the 70x14 Morpho wordmark at its true aspect ratio. */}
           {/* @ts-expect-error see comment above */}
           <MorphoLogoFull color="$neutral3" width="100%" height="100%" />
-        </Flex>
+        </TouchableArea>
       </Flex>
     </Flex>
   )
 }
 
-function VaultDescription({ curatorName }: { curatorName: string }): JSX.Element {
-  const { t } = useTranslation()
+function VaultDescription(): JSX.Element {
+  const onOpenUniswapTerms = useCallback(() => {
+    openUri({
+      uri: UniswapHelpUrls.articles.uniswapLabsTermsOfService,
+      openExternalBrowser: true,
+      isSafeUri: true,
+    }).catch(() => undefined)
+  }, [])
+
+  const onOpenMorphoDisclaimer = useCallback(() => {
+    openUri({ uri: UniswapStaticUrls.morphoDisclaimerUrl, openExternalBrowser: true, isSafeUri: true }).catch(
+      () => undefined,
+    )
+  }, [])
+
   return (
     <Text variant="body4" color="$neutral2">
-      {t('explore.earn.vault.details.description', { curator: curatorName })}{' '}
-      <Text
-        variant="body4"
-        color="$neutral1"
-        textDecorationLine="underline"
-        cursor="pointer"
-        onPress={() => {
-          // TODO(CONS-1782): link the description "Learn more" to the vault governance article.
+      <Trans
+        components={{
+          morphoDisclaimerLink: (
+            <Text
+              variant="body4"
+              color="$neutral1"
+              textDecorationLine="underline"
+              cursor="pointer"
+              onPress={onOpenMorphoDisclaimer}
+            />
+          ),
+          termsLink: (
+            <Text
+              variant="body4"
+              color="$neutral1"
+              textDecorationLine="underline"
+              cursor="pointer"
+              onPress={onOpenUniswapTerms}
+            />
+          ),
         }}
-      >
-        {t('common.button.learn')}
-      </Text>
+        i18nKey="explore.earn.vault.details.legalDisclaimer"
+      />
     </Text>
   )
 }
@@ -220,6 +250,11 @@ function VaultDetailsList({ vault }: { vault: EarnVaultInfo }): JSX.Element {
   const onOpenVaultExplorer = useCallback(() => {
     openUri({ uri: vaultExplorerUrl }).catch(() => undefined)
   }, [vaultExplorerUrl])
+  const onOpenExposureAndRisk = useCallback(() => {
+    if (vault.exposureAndRiskUrl) {
+      openUri({ uri: vault.exposureAndRiskUrl }).catch(() => undefined)
+    }
+  }, [vault.exposureAndRiskUrl])
 
   return (
     <Flex gap="$spacing12">
@@ -234,9 +269,7 @@ function VaultDetailsList({ vault }: { vault: EarnVaultInfo }): JSX.Element {
                 uri={vault.curator.imageUrl}
               />
             )}
-            <Text variant="body3" color="$neutral1">
-              {vault.curator.name}
-            </Text>
+            <Text variant="body3">{vault.curator.name}</Text>
           </Flex>
         }
       />
@@ -244,9 +277,7 @@ function VaultDetailsList({ vault }: { vault: EarnVaultInfo }): JSX.Element {
         label={t('explore.earn.vault.vault')}
         value={
           <TouchableArea row alignItems="center" gap="$spacing4" onPress={onOpenVaultExplorer}>
-            <Text variant="body3" color="$neutral1">
-              {shortenAddress({ address: vault.vaultAddress })}
-            </Text>
+            <Text variant="body3">{shortenAddress({ address: vault.vaultAddress })}</Text>
             <ExternalLink color="$neutral2" size="$icon.16" />
           </TouchableArea>
         }
@@ -258,24 +289,16 @@ function VaultDetailsList({ vault }: { vault: EarnVaultInfo }): JSX.Element {
             row
             alignItems="center"
             gap="$spacing4"
-            onPress={() => {
-              // TODO(CONS-1781): link to exposure-and-risk details page.
-            }}
+            onPress={vault.exposureAndRiskUrl ? onOpenExposureAndRisk : undefined}
           >
-            <Text variant="body3" color="$neutral1">
-              {t('explore.earn.vault.viewDetails')}
-            </Text>
+            <Text variant="body3">{t('explore.earn.vault.viewDetails')}</Text>
             <ExternalLink color="$neutral2" size="$icon.16" />
           </TouchableArea>
         }
       />
       <DetailRow
         label={t('explore.earn.vault.deploymentDate')}
-        value={
-          <Text variant="body3" color="$neutral1">
-            {deploymentDateLabel}
-          </Text>
-        }
+        value={<Text variant="body3">{deploymentDateLabel}</Text>}
       />
     </Flex>
   )

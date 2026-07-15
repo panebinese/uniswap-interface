@@ -84,7 +84,7 @@ export function EarnDepositSourceSelectorModal({
             ))}
           </Flex>
 
-          {/* TODO(CONS-XXXX): add "Unsupported networks" expandable section per Figma. */}
+          {/* TODO(CONS-2388): add "Unsupported networks" expandable section per Figma. */}
         </Flex>
       </BottomSheetScrollView>
     </Modal>

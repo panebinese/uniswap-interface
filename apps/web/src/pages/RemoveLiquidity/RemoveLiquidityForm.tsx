@@ -61,7 +61,7 @@ export function RemoveLiquidityForm() {
         px="$padding16"
       >
         <Text variant="body3" color="$neutral2">
-          {t('pool.withdrawAs', { nativeWrappedSymbol: nativeCurrency.symbol })}
+          {t('pool.withdrawAs', { nativeWrappedSymbol: nativeCurrency.symbol ?? t('common.token') })}
         </Text>
         <Switch
           id="add-as-weth"

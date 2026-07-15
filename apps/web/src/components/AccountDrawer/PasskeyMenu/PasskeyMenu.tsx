@@ -138,7 +138,7 @@ const AuthenticatorRow = ({
         <Text variant="body2">{authenticator.label}</Text>
         {isValidDate && (
           <Text variant="body3" color="$neutral2">
-            {i18n.t('common.created.date', { date: formattedDate })}
+            {i18n.t('common.created.date', { date: formattedDate ?? i18n.t('common.unknown') })}
           </Text>
         )}
       </Flex>

@@ -346,6 +346,7 @@ export function WalletConnectRequestModal({ onClose, request }: Props): JSX.Elem
           : t('walletConnect.request.button.sign')
       }
       disableConfirm={!confirmEnabled}
+      isCriticalRisk={riskLevel === TransactionRiskLevel.Critical}
       name={ModalName.WCSignRequest}
       scrollDownButtonText={t('walletConnect.request.button.scrollDown')}
       contentContainerStyle={{

@@ -37,6 +37,14 @@ export interface GetParameterValueResponse {
   value?: string
   author?: string
   updatedAt?: string
+  paramType?: string
+  jtdSchema?: string
+}
+
+/** Optional param type identifier + JTD (RFC 8927) schema stored alongside a value. */
+export interface ParamTypeInfo {
+  paramType?: string
+  jtdSchema?: string
 }
 
 export interface SetParameterReply {
@@ -60,6 +68,8 @@ export interface GetProposedParamResponse {
   proposedAt?: string // RFC3339 timestamp string
   approvers?: string[]
   operation?: string // "SET" or "DELETE"
+  paramType?: string
+  jtdSchema?: string
 }
 
 export interface ApproveProposedParamReply {
@@ -82,6 +92,8 @@ export interface ParameterEntry {
   key?: string
   value?: string
   author?: string
+  paramType?: string
+  jtdSchema?: string
 }
 
 export interface GetParameterValuesInScopeResponse {
@@ -135,8 +147,14 @@ export function createConfigServerClient(config: ConfigServerClientConfig) {
       return rpcCall<GetParameterValuesInScopeResponse>('GetParameterValuesInScope', { scope_path: scopePath })
     },
 
-    async setParameter(key: string, value: string): Promise<SetParameterReply> {
-      return rpcCall<SetParameterReply>('SetParameter', { key, value })
+    // oxlint-disable-next-line max-params -- optional typeInfo mirrors the proto request fields
+    async setParameter(key: string, value: string, typeInfo?: ParamTypeInfo): Promise<SetParameterReply> {
+      return rpcCall<SetParameterReply>('SetParameter', {
+        key,
+        value,
+        param_type: typeInfo?.paramType || undefined,
+        jtd_schema: typeInfo?.jtdSchema || undefined,
+      })
     },
 
     async deleteParameter(key: string): Promise<DeleteParameterResponse> {

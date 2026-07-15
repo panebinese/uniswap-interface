@@ -178,7 +178,7 @@ exports[`PoolDetailsHeader > renders header text correctly 1`] = `
                     <img
                       height="56"
                       src="https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
-                      style="object-fit: contain; border-radius: 56px; z-index: 1;"
+                      style="object-fit: cover; width: 56px; height: 56px; border-radius: 56px; z-index: 1;"
                       width="56"
                     />
                   </div>
@@ -202,7 +202,7 @@ exports[`PoolDetailsHeader > renders header text correctly 1`] = `
                     <img
                       height="56"
                       src="https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
-                      style="object-fit: contain; border-radius: 56px; z-index: 1;"
+                      style="object-fit: cover; width: 56px; height: 56px; border-radius: 56px; z-index: 1;"
                       width="56"
                     />
                   </div>

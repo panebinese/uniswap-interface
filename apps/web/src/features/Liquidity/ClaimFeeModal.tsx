@@ -97,7 +97,7 @@ function UnwrapUnderCard({
       px="$padding16"
     >
       <Text variant="body2" color="$neutral2">
-        {t('pool.collectAs', { nativeWrappedSymbol: nativeCurrency?.symbol })}
+        {t('pool.collectAs', { nativeWrappedSymbol: nativeCurrency?.symbol ?? t('common.token') })}
       </Text>
       <Switch
         id="collect-as-weth"

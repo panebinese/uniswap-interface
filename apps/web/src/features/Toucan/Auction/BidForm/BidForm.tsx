@@ -35,8 +35,9 @@ import { useBidFormWarningState } from '~/features/Toucan/Auction/BidForm/useBid
 import { useAuctionKycStatus } from '~/features/Toucan/Auction/hooks/useAuctionKycStatus'
 import { useAuctionTokenColor } from '~/features/Toucan/Auction/hooks/useAuctionTokenColor'
 import { useBidFormController } from '~/features/Toucan/Auction/hooks/useBidFormController'
+import { useIsQuickLaunchExemptAuction } from '~/features/Toucan/Auction/hooks/useIsQuickLaunchExemptAuction'
 import { AuctionProgressState } from '~/features/Toucan/Auction/store/types'
-import { useAuctionStore } from '~/features/Toucan/Auction/store/useAuctionStore'
+import { useAuctionStore, useAuctionStoreActions } from '~/features/Toucan/Auction/store/useAuctionStore'
 import { getRequiredTestnetMode } from '~/features/Toucan/Shared/getRequiredTestnetMode'
 import { InlineAlertBanner } from '~/features/Toucan/Shared/InlineAlertBanner'
 
@@ -78,13 +79,21 @@ export function BidForm({ onInputChange, onBidSubmitted }: BidFormProps): JSX.El
   const isAuctionEnded = auctionProgressState === AuctionProgressState.ENDED
   const { validTokenColor } = useColorsFromTokenColor(tokenColor)
 
+  const { setBidInputFocused } = useAuctionStoreActions()
+
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
   const [isKycInterstitialModalOpen, setIsKycInterstitialModalOpen] = useState(false)
   const [isKycFailedModalOpen, setIsKycFailedModalOpen] = useState(false)
   const [showTokenWarningModal, setShowTokenWarningModal] = useState(false)
 
+  // SECURITY REVIEW REQUIRED BEFORE ENABLING FOR REAL USERS: this suppresses the Blockaid/
+  // token-protection warning card + modal for quick-launch auctions — i.e. it hides a
+  // user-protection signal for a token class. Double-gated (off-by-default quick_launch flag
+  // AND the quick-launch fingerprint) inside useIsQuickLaunchExemptAuction; display layer only.
+  const isQuickLaunchExempt = useIsQuickLaunchExemptAuction()
+
   const tokenWarningSeverity = token ? getTokenWarningSeverity(token) : WarningSeverity.None
-  const shouldShowTokenWarning = tokenWarningSeverity > WarningSeverity.Low
+  const shouldShowTokenWarning = !isQuickLaunchExempt && tokenWarningSeverity > WarningSeverity.Low
 
   const {
     budgetField,
@@ -254,7 +263,12 @@ export function BidForm({ onInputChange, onBidSubmitted }: BidFormProps): JSX.El
               description={t('toucan.auction.bidForm.auctionConcluded.description')}
             />
           )}
-          <Flex opacity={shouldDisableBidForm ? 0.54 : 1} pointerEvents={shouldDisableBidForm ? 'none' : 'auto'}>
+          <Flex
+            opacity={shouldDisableBidForm ? 0.54 : 1}
+            pointerEvents={shouldDisableBidForm ? 'none' : 'auto'}
+            onFocus={() => setBidInputFocused(true)}
+            onBlur={() => setBidInputFocused(false)}
+          >
             <Flex flexDirection="column">
               <BidBudgetInput
                 label={t('toucan.bidForm.maxBudget')}

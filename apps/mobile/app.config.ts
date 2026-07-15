@@ -18,6 +18,21 @@ const config: ExpoConfig = {
     // EAS cache reinstalls a fingerprint-matched APK, embedding stale JS on JS-only release-variant changes. runAndroidLocal.sh disables it to force a real build.
     buildCacheProvider: useEasBuildCache ? 'eas' : undefined,
   },
+  plugins: [
+    [
+      'expo-build-properties',
+      {
+        ios: {
+          newArchEnabled: true,
+          deploymentTarget: '16.4',
+        },
+        android: {
+          newArchEnabled: true,
+          predictiveBackGestureEnabled: false,
+        },
+      },
+    ],
+  ],
 }
 
 export default config

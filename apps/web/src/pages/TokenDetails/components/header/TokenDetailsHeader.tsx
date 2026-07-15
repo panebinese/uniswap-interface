@@ -10,7 +10,7 @@ import { ReportTokenDataModal } from 'uniswap/src/components/reporting/ReportTok
 import { ReportTokenIssueModalPropsAtom } from 'uniswap/src/components/reporting/ReportTokenIssueModal'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import type { RWAMatch } from 'uniswap/src/features/rwa/rwaMatch'
+import { getRWAHeaderIdentity } from 'uniswap/src/features/rwa/getRWAHeaderIdentity'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
@@ -56,22 +56,6 @@ function getShowAddressCopy({
     return !isNative
   }
   return !!selectedChainId && !isNative
-}
-
-function getRWAHeaderIdentity({
-  rwaMatch,
-  fallbackName,
-  fallbackLogoUrl,
-}: {
-  rwaMatch?: RWAMatch
-  fallbackName: string
-  fallbackLogoUrl?: string
-}): { name: string; logoUrl?: string } {
-  if (rwaMatch) {
-    // Use the token's own logo (like every other asset), not the shared canonical RWA asset icon.
-    return { name: rwaMatch.asset.name, logoUrl: fallbackLogoUrl }
-  }
-  return { name: fallbackName, logoUrl: fallbackLogoUrl }
 }
 
 export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
@@ -140,7 +124,7 @@ export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
   const { name: tokenName, logoUrl: tokenLogoUrl } = getRWAHeaderIdentity({
     rwaMatch,
     fallbackName: fallbackTokenName,
-    fallbackLogoUrl: tokenProjectQuery.data?.token?.project?.logoUrl,
+    logoUrl: tokenProjectQuery.data?.token?.project?.logoUrl,
   })
   const showAddressCopy = getShowAddressCopy({ isNative, isMultiChainAsset, selectedChainId })
 

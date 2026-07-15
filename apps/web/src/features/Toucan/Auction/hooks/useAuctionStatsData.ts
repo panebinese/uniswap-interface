@@ -9,7 +9,7 @@ import { useStatsBannerData } from '~/features/Toucan/Auction/hooks/useStatsBann
 import { BidTokenInfo } from '~/features/Toucan/Auction/store/types'
 import { useAuctionStore } from '~/features/Toucan/Auction/store/useAuctionStore'
 import { formatCompactFromRaw } from '~/features/Toucan/Auction/utils/fixedPointFdv'
-import { mergeAuctionTokenMetadata } from '~/features/Toucan/Auction/utils/tokenMetadata'
+import { getAuctionTokenDecimals, mergeAuctionTokenMetadata } from '~/features/Toucan/Auction/utils/tokenMetadata'
 import { AuctionMetadataOverride, getAuctionMetadata } from '~/features/Toucan/Config/config'
 import { useBlockTimestamp } from '~/hooks/useBlockTimestamp'
 
@@ -145,12 +145,13 @@ export function useAuctionStatsData(): AuctionStatsData {
   // Get total bid count from checkpoint data
   const totalBidCount = checkpointData?.totalBidCount ?? null
 
+  const auctionTokenDecimals = getAuctionTokenDecimals(auctionDetails?.token)
+
   // Format auction supply (uses totalSupply - the amount being auctioned)
   const auctionSupply = useMemo(() => {
     const auctionSupplyRaw = auctionDetails?.totalSupply
-    const auctionTokenDecimals = auctionDetails?.token?.currency.decimals ?? 18
 
-    if (!auctionSupplyRaw) {
+    if (!auctionSupplyRaw || auctionTokenDecimals === undefined) {
       return null
     }
 
@@ -159,14 +160,13 @@ export function useAuctionStatsData(): AuctionStatsData {
       decimals: auctionTokenDecimals,
       maxFractionDigits: 2,
     })
-  }, [auctionDetails?.totalSupply, auctionDetails?.token?.currency.decimals])
+  }, [auctionDetails?.totalSupply, auctionTokenDecimals])
 
   // Format total supply (uses tokenTotalSupply - the total circulating supply of the token)
   const totalSupply = useMemo(() => {
     const tokenTotalSupplyRaw = auctionDetails?.tokenTotalSupply
-    const auctionTokenDecimals = auctionDetails?.token?.currency.decimals ?? 18
 
-    if (!tokenTotalSupplyRaw) {
+    if (!tokenTotalSupplyRaw || auctionTokenDecimals === undefined) {
       return null
     }
 
@@ -175,13 +175,13 @@ export function useAuctionStatsData(): AuctionStatsData {
       decimals: auctionTokenDecimals,
       maxFractionDigits: 2,
     })
-  }, [auctionDetails?.tokenTotalSupply, auctionDetails?.token?.currency.decimals])
+  }, [auctionDetails?.tokenTotalSupply, auctionTokenDecimals])
 
   // Format implied token price from concentration band (same as "Bids concentrated at" in AuctionStatsBanner)
   // Uses formatTickAsBidToken for subscript notation on small values (e.g., 0.0₄15)
   // Returns structured data: { start: string, end?: string } for flexible rendering
   const impliedTokenPrice = useMemo(() => {
-    if (!bidTokenInfo) {
+    if (!bidTokenInfo || auctionTokenDecimals === undefined) {
       return null
     }
 
@@ -204,7 +204,14 @@ export function useAuctionStatsData(): AuctionStatsData {
     })
 
     return { start: startFormatted, end: endFormatted }
-  }, [concentrationStartDecimal, concentrationEndDecimal, bidTokenInfo, isAuctionEnded, clearingPriceDecimal])
+  }, [
+    concentrationStartDecimal,
+    concentrationEndDecimal,
+    bidTokenInfo,
+    isAuctionEnded,
+    clearingPriceDecimal,
+    auctionTokenDecimals,
+  ])
 
   // Get project metadata from config overrides, filled in with the launched-token
   // metadata returned by the auction API (description / X handle). Overrides win.

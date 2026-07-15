@@ -29,6 +29,12 @@ export const BaseConfigValues = {
   isUnitTest: process.env.JEST_WORKER_ID ?? process.env.VITEST_WORKER_ID,
   isE2ETest: process.env.IS_E2E_TEST,
   isVercelEnvironment: process.env.VERCEL,
+  // Build-time channel for the extension (dev/beta/prod). Used to resolve the env of
+  // unpacked builds whose runtime extension ID matches none of the trusted IDs.
+  buildEnv: process.env.BUILD_ENV,
+  // When true, a Beta build points its APIs at prod instead of staging. Set at build time
+  // (e.g. by the on-demand beta workflow); unset/false keeps the default beta → staging in urls.ts.
+  isBetaUsingProdApi: process.env.BETA_USES_PROD_API,
 
   // API Keys
   alchemyApiKey: process.env.ALCHEMY_API_KEY ?? process.env.REACT_APP_ALCHEMY_API_KEY,
@@ -89,6 +95,8 @@ export const BaseConfigSchema = z.object({
   isUnitTest: boolIfDefined.describe('Is the app running in a unit test (Jest or Vitest)'),
   isE2ETest: boolFromString.describe('Is the app running in E2E test mode'),
   isVercelEnvironment: boolFromOne.describe('Is the app deployed on Vercel'),
+  buildEnv: optionalString.describe('Build-time channel for the extension (dev/beta/prod)'),
+  isBetaUsingProdApi: boolFromString.describe('For Beta builds, point APIs at prod instead of staging'),
 
   // API Keys
   alchemyApiKey: optionalString.describe('API key for Alchemy'),

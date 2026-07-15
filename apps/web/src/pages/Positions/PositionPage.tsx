@@ -364,8 +364,8 @@ function PositionPage({ chainId }: { chainId: EVMUniverseChainId | undefined }) 
       <Helmet>
         <title>
           {t(`liquidityPool.positions.page.title`, {
-            quoteSymbol: currency1Amount.currency.symbol,
-            baseSymbol: currency0Amount.currency.symbol,
+            quoteSymbol: currency1Amount.currency.symbol ?? t('common.token'),
+            baseSymbol: currency0Amount.currency.symbol ?? t('common.token'),
           })}
         </title>
         {metatags.map((tag, index) => (

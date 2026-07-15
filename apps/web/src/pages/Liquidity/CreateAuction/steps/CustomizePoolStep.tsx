@@ -321,6 +321,7 @@ export function CustomizePoolStep() {
         borderRadius="$rounded20"
         p="$spacing24"
         gap="$spacing24"
+        $md={{ borderWidth: 0, borderRadius: '$none', p: '$none' }}
       >
         <Flex>
           <Text variant="heading3" color="$neutral1" py="$spacing12">

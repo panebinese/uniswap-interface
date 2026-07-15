@@ -43,7 +43,7 @@ interface ReviewLaunchAuctionDetailsSectionProps {
   stableRaiseUsdPrice: number | null
   floorPriceNum: number | undefined
   fdv: number | undefined
-  onEditAuctionConfig: () => void
+  onEditAuctionConfig?: () => void
   onOpenKycHookExplorer: () => void
 }
 

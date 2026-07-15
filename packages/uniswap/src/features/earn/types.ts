@@ -21,6 +21,8 @@ export interface EarnVaultInfo {
   apyPercent: number
   exposureCurrencyIds: readonly string[]
   totalDepositsUsd: number
+  /** Raw underlying amount that can currently be withdrawn from the vault. */
+  liquidityRaw?: string
   liquidityUsd: number
   curator: EarnVaultCurator
   deploymentDate?: Date
@@ -52,6 +54,11 @@ export type EarnDepositSourceOption = {
   chainId: UniverseChainId
   currencyInfo: CurrencyInfo
   balanceQuantity: number
+  /**
+   * Exact raw wallet balance when the portfolio API provides one. Prefer this for Max/exact deposits
+   * because `balanceQuantity` is a rounded JS number and can be slightly above the true balance.
+   */
+  balanceRaw?: string
   /** Undefined when the portfolio query could not price the balance. */
   balanceUsd: number | undefined
 }

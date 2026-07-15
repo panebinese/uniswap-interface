@@ -35,13 +35,6 @@ export function buildFlagGroups(extras: {
       ],
     },
     {
-      name: 'FOR API',
-      flags: [
-        { flag: FeatureFlags.ForSessionsEnabled, label: 'Enable FOR Sessions' },
-        { flag: FeatureFlags.ForUrlMigration, label: 'Enable FOR URL Migration' },
-      ],
-    },
-    {
       name: 'XLayer',
       flags: [{ flag: FeatureFlags.XLayer, label: 'Enable XLayer UX' }],
     },
@@ -145,6 +138,7 @@ export function buildFlagGroups(extras: {
         { flag: FeatureFlags.V2EndpointsPositions, label: 'Enable V2 Endpoints Positions' },
         { flag: FeatureFlags.V2EndpointsPortfolio, label: 'Enable V2 Endpoints Portfolio' },
         { flag: FeatureFlags.V2EndpointsSearch, label: 'Enable V2 Endpoints Search' },
+        { flag: FeatureFlags.V2EndpointsCurrencyConversion, label: 'Enable V2 Endpoints Currency Conversion' },
       ],
     },
     {

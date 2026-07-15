@@ -17,15 +17,23 @@ export type ExpandoRowProps = {
   onPress: () => void
   label: string
   mx?: number | Animated.AnimatedNode | GetThemeValueForKey<'marginHorizontal'> | null
+  py?: number | Animated.AnimatedNode | GetThemeValueForKey<'paddingVertical'> | null
   color?: ColorTokens
 }
 
-export function ExpandoRow({ label, isExpanded, onPress, mx, color = '$neutral3' }: ExpandoRowProps): JSX.Element {
+export function ExpandoRow({
+  label,
+  isExpanded,
+  onPress,
+  mx,
+  py = '$spacing8',
+  color = '$neutral3',
+}: ExpandoRowProps): JSX.Element {
   useLayoutAnimationOnChange(isExpanded)
 
   return (
     <TouchableArea activeOpacity={1} mx={mx} testID={TestID.ExpandoRow} onPress={onPress}>
-      <Flex row alignItems="center" justifyContent="space-between" py="$spacing8">
+      <Flex row alignItems="center" justifyContent="space-between" py={py}>
         <Flex centered grow row gap="$spacing12">
           <Separator />
 

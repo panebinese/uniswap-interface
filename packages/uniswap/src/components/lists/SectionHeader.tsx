@@ -90,7 +90,7 @@ function useSectionTitle(section: OnchainItemSectionName): string {
     case OnchainItemSectionName.Earn:
       return t('explore.earn.title')
     case OnchainItemSectionName.Tokens:
-      return t('common.tokens')
+      return t('common.token.plural')
     case OnchainItemSectionName.Pools:
       return t('common.pools')
     case OnchainItemSectionName.TrendingPools:

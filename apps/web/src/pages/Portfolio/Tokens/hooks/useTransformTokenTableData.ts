@@ -2,12 +2,15 @@ import { NetworkStatus } from '@apollo/client'
 import type { PlainMessage } from '@bufbuild/protobuf'
 import { GetWalletTokensProfitLossResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { useMemo } from 'react'
+import { normalizeCurrencyIdForMapLookup } from 'uniswap/src/data/cache'
 import { DEFAULT_NATIVE_ADDRESS } from 'uniswap/src/features/chains/evm/rpc'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { isStablecoinAddress } from 'uniswap/src/features/chains/utils'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import type { PortfolioChainBalance, PortfolioMultichainBalance } from 'uniswap/src/features/dataApi/types'
+import { useEarnVaults } from 'uniswap/src/features/earn/hooks/useEarnVaults'
+import { useIsEarnEnabled } from 'uniswap/src/features/earn/hooks/useIsEarnEnabled'
 import {
   flattenPortfolioMultichainBalanceToSingleChainRows,
   partitionMultichainBalancesByPerChainVisibility,
@@ -15,7 +18,7 @@ import {
 import { useSortedPortfolioBalancesMultichain } from 'uniswap/src/features/portfolio/balances/hooks'
 import { useCurrencyIdToVisibility } from 'uniswap/src/features/transactions/selectors'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
-import { currencyAddress } from 'uniswap/src/utils/currencyId'
+import { buildCurrencyId, currencyAddress, currencyId } from 'uniswap/src/utils/currencyId'
 import { usePortfolioAddresses } from '~/pages/Portfolio/hooks/usePortfolioAddresses'
 import {
   buildPnlLookupsFromProfitLoss,
@@ -56,6 +59,25 @@ export interface TokenData {
   isStablecoin: boolean
 }
 
+function filterVaultShareTokens({
+  balance,
+  vaultShareCurrencyIds,
+}: {
+  balance: PortfolioMultichainBalance
+  vaultShareCurrencyIds: Set<string>
+}): PortfolioMultichainBalance {
+  if (vaultShareCurrencyIds.size === 0) {
+    return balance
+  }
+
+  const tokens = balance.tokens.filter((token) => {
+    const tokenCurrencyId = normalizeCurrencyIdForMapLookup(currencyId(token.currencyInfo.currency))
+    return !vaultShareCurrencyIds.has(tokenCurrencyId)
+  })
+
+  return tokens.length === balance.tokens.length ? balance : { ...balance, tokens }
+}
+
 export function useTransformTokenTableData({
   chainIds,
   limit,
@@ -81,6 +103,15 @@ export function useTransformTokenTableData({
   )
   const currencyIdToTokenVisibility = useCurrencyIdToVisibility(ownerAddresses)
   const { isTestnetModeEnabled } = useEnabledChains()
+  const isEarnEnabled = useIsEarnEnabled()
+  const { isLoadingVaults, vaults } = useEarnVaults({ enabled: isEarnEnabled })
+  const vaultShareCurrencyIds = useMemo(
+    () =>
+      new Set(
+        vaults.map((vault) => normalizeCurrencyIdForMapLookup(buildCurrencyId(vault.chainId, vault.vaultAddress))),
+      ),
+    [vaults],
+  )
 
   const {
     data: sortedBalances,
@@ -99,7 +130,7 @@ export function useTransformTokenTableData({
     // Only show empty state on initial load, not during refetch.
     // networkStatus === NetworkStatus.loading means the query has never completed.
     // This is synchronously true from the very first render when there is no cached data, even before isFetching is set.
-    const isInitialLoading = networkStatus === NetworkStatus.loading && !sortedBalances
+    const isInitialLoading = (networkStatus === NetworkStatus.loading && !sortedBalances) || isLoadingVaults
     const isRefetching = loading && !!sortedBalances
 
     if (isInitialLoading) {
@@ -134,7 +165,9 @@ export function useTransformTokenTableData({
     }
 
     const balancesWithTokens = (balances: PortfolioMultichainBalance[]): PortfolioMultichainBalance[] =>
-      balances.filter((b) => b.tokens.length > 0)
+      balances
+        .map((balance) => filterVaultShareTokens({ balance, vaultShareCurrencyIds }))
+        .filter((b) => b.tokens.length > 0)
 
     const visibleBalances = balancesWithTokens(sortedBalances.balances)
     const hiddenBalancesFiltered = balancesWithTokens(sortedBalances.hiddenBalances)
@@ -293,5 +326,7 @@ export function useTransformTokenTableData({
     tokenProfitLossData,
     isTestnetModeEnabled,
     currencyIdToTokenVisibility,
+    isLoadingVaults,
+    vaultShareCurrencyIds,
   ])
 }

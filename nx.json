@@ -20,13 +20,12 @@
       "dependsOn": ["^prepare"],
       "cache": true,
       "inputs": [
-        { "env": "USE_NEW_CONFIGS" },
         { "env": "CONFIG_ENV" },
         { "env": "SKIP_CONFIG_PULL" },
         { "runtime": "date -u +%Y-%m-%dT%H" },
         "ciCacheBust"
       ],
-      "outputs": ["{projectRoot}/.env.new"]
+      "outputs": ["{projectRoot}/.env"]
     },
     "build:production": {
       "dependsOn": ["^prepare", "prepare"],
@@ -117,14 +116,9 @@
       "cache": true,
       "inputs": ["sourceFiles", "lintConfig"]
     },
-    "lint:typeaware-custom": {
-      "dependsOn": ["prepare"],
-      "cache": true,
-      "inputs": ["sourceFiles", "lintConfig", "{workspaceRoot}/config/oxlint-plugins/typeaware-custom.ts"]
-    },
     "lint": {
       "executor": "nx:noop",
-      "dependsOn": ["prepare", "lint:oxlint", "lint:typeaware-custom"]
+      "dependsOn": ["prepare", "lint:oxlint"]
     },
     "lint:fix": {
       "executor": "nx:noop",
@@ -133,15 +127,11 @@
     },
     "check": {
       "executor": "nx:noop",
-      "dependsOn": ["prepare", "format", "typecheck", "lint", "check:circular", "check:deps:usage"]
+      "dependsOn": ["prepare", "format", "typecheck", "lint", "check:deps:usage"]
     },
     "check:fast": {
       "executor": "nx:noop",
       "dependsOn": ["prepare", "format", "typecheck", "lint:oxlint:fast"]
-    },
-    "check:circular": {
-      "inputs": ["sourceFiles"],
-      "cache": true
     },
     "check:deps:usage": {
       "command": "bun --preload ./scripts/silence-deprecation-warnings.js ./node_modules/.bin/knip-bun --include dependencies,devDependencies --no-progress --no-config-hints --workspace {projectRoot}",

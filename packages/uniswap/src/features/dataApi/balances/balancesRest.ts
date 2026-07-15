@@ -279,6 +279,8 @@ export function convertRestBalanceToPortfolioBalance(
     id: tokenBalanceId,
     cacheId: `TokenBalance:${tokenBalanceId}`,
     quantity: amount.amount,
+    // Protobuf string fields default to '' — normalize to undefined so consumers can fall back.
+    quantityRaw: amount.raw || undefined,
     balanceUSD: valueUsd,
     currencyInfo,
     relativeChange24: pricePercentChange1d,

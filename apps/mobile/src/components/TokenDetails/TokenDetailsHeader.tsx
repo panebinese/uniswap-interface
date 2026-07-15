@@ -1,7 +1,6 @@
 import { FeatureFlags } from '@universe/gating'
 import React, { memo } from 'react'
 import { useSelector } from 'react-redux'
-import { getRWAHeaderIdentity } from 'src/components/TokenDetails/getRWAHeaderIdentity'
 import { RWAIssuerHeaderDetails } from 'src/components/TokenDetails/rwa/RWAIssuerHeaderDetails'
 import { useTokenDetailsContext } from 'src/components/TokenDetails/TokenDetailsContext'
 import { useFeatureFlaggedProjectTokens } from 'src/components/TokenDetails/useFeatureFlaggedProjectTokens'
@@ -17,6 +16,7 @@ import {
 import { selectHasViewedContractAddressExplainer } from 'uniswap/src/features/behaviorHistory/selectors'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { isMultichainProjectTokens } from 'uniswap/src/features/dataApi/tokenProjects/utils/isMultichainProjectTokens'
+import { getRWAHeaderIdentity } from 'uniswap/src/features/rwa/getRWAHeaderIdentity'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 
 export const TokenDetailsHeader = memo(function TokenDetailsHeaderInner(): JSX.Element {

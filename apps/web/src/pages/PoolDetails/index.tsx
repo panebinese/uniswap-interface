@@ -15,6 +15,7 @@ import { shouldReverseForWaterfall } from 'uniswap/src/features/tokens/waterfall
 import { AddressStringFormat, normalizeAddress } from 'uniswap/src/utils/addresses'
 import { isEVMAddress } from 'utilities/src/addresses/evm/evm'
 import { PoolData, usePoolData } from '~/appGraphql/data/pools/usePoolData'
+import { usePoolLpFeeFraction } from '~/appGraphql/data/pools/usePoolLpFeeFraction'
 import { calculateApr } from '~/appGraphql/data/pools/useTopPools'
 import { gqlToCurrency, unwrapToken } from '~/appGraphql/data/util'
 import { StickyCollapsibleHeader } from '~/components/StickyCollapsibleHeader/StickyCollapsibleHeader'
@@ -147,14 +148,21 @@ export function PoolDetailsPage() {
   const [token0, token1] = isReversed ? [unwrappedTokens[1], unwrappedTokens[0]] : unwrappedTokens
   const isLPIncentivesEnabled = useFeatureFlag(FeatureFlags.LpIncentives)
 
+  const lpFeeFraction = usePoolLpFeeFraction({
+    chainId: chainInfo?.id,
+    poolAddress: poolData?.idOrAddress,
+    protocolVersion: parseRestProtocolVersion(poolData?.protocolVersion),
+    feeTier: poolData?.feeTier?.feeAmount,
+  })
   const poolApr = useMemo(
     () =>
       calculateApr({
         volume24h: poolData?.volumeUSD24H,
         tvl: poolData?.tvlUSD,
         feeTier: poolData?.feeTier?.feeAmount,
+        lpFeeFraction,
       }),
-    [poolData?.volumeUSD24H, poolData?.tvlUSD, poolData?.feeTier],
+    [poolData?.volumeUSD24H, poolData?.tvlUSD, poolData?.feeTier, lpFeeFraction],
   )
   const [orderBookCurrencyA, orderBookCurrencyB] = useMemo(
     () => [
@@ -327,6 +335,7 @@ export function PoolDetailsPage() {
               chainId={chainInfo.id}
               loading={loading}
               poolApr={poolApr}
+              lpFeeFraction={lpFeeFraction}
               rewardsApr={isLPIncentivesEnabled ? poolData?.rewardsCampaign?.boostedApr : undefined}
             />
             <TokenDetailsWrapper>

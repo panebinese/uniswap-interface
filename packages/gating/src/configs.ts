@@ -69,6 +69,7 @@ export enum DynamicConfigs {
   BlockedAsyncSubmissionChainIds = 'blocked_async_submission_chain_ids',
   Chains = 'chains',
   DisableWalletSearchTerms = 'disable_wallet_search_terms',
+  Earn = 'earn_config',
   NetworkRequests = 'network_requests',
   Swap = 'swap_config',
   SyncTransactionSubmissionChainIds = 'sync_transaction_submission_chain_ids',
@@ -143,6 +144,11 @@ export enum ChainsConfigKey {
 
 export enum DisableWalletSearchTermsConfigKey {
   Terms = 'terms',
+}
+
+export enum EarnConfigKey {
+  MinDepositUsd = 'minDepositUsd',
+  SwapToggleMonthlyEarningsThresholdUsd = 'swapToggleMonthlyEarningsThresholdUsd',
 }
 
 // Wallet
@@ -281,6 +287,7 @@ export type DynamicConfigKeys = {
   [DynamicConfigs.BlockedAsyncSubmissionChainIds]: BlockedAsyncSubmissionChainIdsConfigKey
   [DynamicConfigs.Chains]: ChainsConfigKey
   [DynamicConfigs.DisableWalletSearchTerms]: DisableWalletSearchTermsConfigKey
+  [DynamicConfigs.Earn]: EarnConfigKey
   [DynamicConfigs.NetworkRequests]: NetworkRequestsConfigKey
   [DynamicConfigs.Swap]: SwapConfigKey
   [DynamicConfigs.SyncTransactionSubmissionChainIds]: SyncTransactionSubmissionChainIdsConfigKey

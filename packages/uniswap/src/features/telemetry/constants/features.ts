@@ -30,6 +30,24 @@ export enum FiatOnRampEventName {
   FiatOnRampPaymentMethodFilterSelected = 'Fiat OnRamp Payment Method Filter Selected',
 }
 
+export enum EarnEventName {
+  EarnDepositCompleted = 'Earn Deposit Completed',
+  EarnDepositFailed = 'Earn Deposit Failed',
+  EarnDepositStarted = 'Earn Deposit Started',
+  EarnDepositSubmitted = 'Earn Deposit Submitted',
+  EarnSwapUpsellConverted = 'Earn Swap Upsell Converted',
+  EarnSwapUpsellToastClicked = 'Earn Swap Upsell Toast Clicked',
+  EarnSwapUpsellToastDismissed = 'Earn Swap Upsell Toast Dismissed',
+  EarnSwapUpsellToastShown = 'Earn Swap Upsell Toast Shown',
+  EarnSwapUpsellToggleChanged = 'Earn Swap Upsell Toggle Changed',
+  EarnSwapUpsellToggleShown = 'Earn Swap Upsell Toggle Shown',
+  EarnVaultSelected = 'Earn Vault Selected',
+  EarnWithdrawCompleted = 'Earn Withdraw Completed',
+  EarnWithdrawFailed = 'Earn Withdraw Failed',
+  EarnWithdrawStarted = 'Earn Withdraw Started',
+  EarnWithdrawSubmitted = 'Earn Withdraw Submitted',
+}
+
 export enum SwapEventName {
   SwapAutorouterVisualizationExpanded = 'Swap Autorouter Visualization Expanded',
   SwapBlocked = 'Swap Blocked',

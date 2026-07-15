@@ -13,7 +13,6 @@ export enum TrafficFlows {
   GraphQL = 'graphql',
   Metrics = 'metrics',
   Gating = 'gating',
-  TradingApi = 'trading-api-labs',
   Unitags = 'unitags',
   FOR = 'for',
   Scantastic = 'scantastic',
@@ -61,13 +60,9 @@ export function getServicePrefix(flow?: TrafficFlows): string {
 export function getCloudflareApiBaseUrl(params?: { flow?: TrafficFlows; postfix?: string }): string {
   const { flow, postfix } = params ?? {}
   let baseUrl
-  if (flow === TrafficFlows.TradingApi && !isE2eTestEnv()) {
-    // This is an exception that only applies to dev + TAPI where the order of the prefix matters
-    baseUrl = `https://${isDevEnv() ? 'beta.' : ''}trading-api-labs.${getCloudflarePrefix(flow)}.gateway.uniswap.org`
-  }
   // DataApi: use staging entry gateway in dev to avoid CORS issues with beta.gateway.
   // Entry gateway doesn't use the /v2 path prefix, so postfix is intentionally ignored here.
-  else if (flow === TrafficFlows.DataApi && isDevEnv() && !isE2eTestEnv()) {
+  if (flow === TrafficFlows.DataApi && isDevEnv() && !isE2eTestEnv()) {
     return STAGING_ENTRY_GATEWAY_API_BASE_URL
   } else if (flow === TrafficFlows.DataApi) {
     baseUrl = `https://${getCloudflarePrefix(flow)}.gateway.uniswap.org`

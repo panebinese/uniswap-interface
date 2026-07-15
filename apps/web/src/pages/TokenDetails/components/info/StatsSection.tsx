@@ -185,10 +185,10 @@ export function StatsSection({ tokenQueryData, isLoading = false }: StatsSection
             description={
               networkFilterName
                 ? t('stats.tvl.description.network', {
-                    symbol: effectiveCurrency.symbol,
+                    symbol: effectiveCurrency.symbol ?? t('common.token'),
                     network: networkFilterName,
                   })
-                : t('stats.tvl.description', { symbol: effectiveCurrency.symbol })
+                : t('stats.tvl.description', { symbol: effectiveCurrency.symbol ?? t('common.token') })
             }
             title={t('common.totalValueLocked')}
           />

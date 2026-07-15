@@ -134,7 +134,7 @@ export function useHomeScreenPortfolioHeader(): HomeScreenPortfolioHeaderState {
             </Flex>
           </TouchableArea>
         )}
-        <HomeScreenEarningSection evmAddress={activeAccount.address} mt="$spacing12" mx="$spacing12" />
+        <HomeScreenEarningSection evmAddress={activeAccount.address} mt="$spacing16" mx="$spacing20" />
         {promoBanner}
       </Flex>
     ),

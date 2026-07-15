@@ -15,6 +15,8 @@ import { isTestnetChain } from 'uniswap/src/features/chains/utils'
 import { selectIsTestnetModeEnabled } from 'uniswap/src/features/settings/selectors'
 import { useCurrencyInfos } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
+import { approximateNumberFromRaw } from '~/features/Toucan/Auction/utils/fixedPointFdv'
+import { computePreBidEndBlock } from '~/features/Toucan/Auction/utils/preBidEndBlock'
 import { DEFAULT_VERIFIED_AUCTION_IDS, getAuctionMetadata } from '~/features/Toucan/Config/config'
 import { isAuctionCompleted } from '~/features/Toucan/hooks/useTopAuctions/isAuctionCompleted'
 import { BlockTimestampRequest, useGetBlockTimestamps, useMultiChainBlockInfo } from '~/hooks/useMultiChainBlockInfo'
@@ -30,16 +32,36 @@ const HIDDEN_AUCTION_IDS = new Set<string>([
   '1_0xD9E8355f9f57185928347a5BdDEe164006b16e58', // Abandoned Interfold (FOLD) auction, superseded by 0x687Cc3...
 ])
 
-export function auctionCommittedVolumeComparator(a: EnrichedAuction, b: EnrichedAuction): number {
-  // Use USD values for cross-currency comparison (follows portfolio balances pattern)
-  if (a.auction?.totalBidVolumeUsd === undefined) {
-    return 1 // Missing price sorts to end
+/** Descending comparator that sorts rows without a sort value to the end. */
+export function compareDescendingMissingLast(a: number | undefined, b: number | undefined): number {
+  if (a === undefined && b === undefined) {
+    return 0
   }
-  if (b.auction?.totalBidVolumeUsd === undefined) {
+  if (a === undefined) {
+    return 1
+  }
+  if (b === undefined) {
     return -1
   }
+  return b - a
+}
 
-  return Number(b.auction.totalBidVolumeUsd) - Number(a.auction.totalBidVolumeUsd)
+function getBidTokenVolume(auction: EnrichedAuction['auction']): number | undefined {
+  if (!auction?.totalBidVolume || !auction.currencyTokenDecimals) {
+    return undefined
+  }
+  return approximateNumberFromRaw({ raw: BigInt(auction.totalBidVolume), decimals: auction.currencyTokenDecimals })
+}
+
+export function auctionCommittedVolumeComparator(a: EnrichedAuction, b: EnrichedAuction): number {
+  // USD when both sides have it (cross-currency comparison); otherwise fall back to the
+  // bid-token amount so chains without a USD price feed (e.g. Robinhood) still sort.
+  const aUsd = a.auction?.totalBidVolumeUsd
+  const bUsd = b.auction?.totalBidVolumeUsd
+  if (aUsd !== undefined && bUsd !== undefined) {
+    return Number(bUsd) - Number(aUsd)
+  }
+  return compareDescendingMissingLast(getBidTokenVolume(a.auction), getBidTokenVolume(b.auction))
 }
 
 export type EnrichedAuction = PlainMessage<AuctionWithStats> & {
@@ -49,6 +71,8 @@ export type EnrichedAuction = PlainMessage<AuctionWithStats> & {
     isCompleted: boolean
     startBlockTimestamp: bigint | undefined
     endBlockTimestamp: bigint | undefined
+    /** When pre-bidding ends (first token-emitting auction step). Equals start when there's no pre-bid window. */
+    preBidEndBlockTimestamp: bigint | undefined
   }
 }
 
@@ -192,6 +216,14 @@ export function useTopAuctions(): {
           })
         }
 
+        const preBidEndBlock = computePreBidEndBlock(auction.parsedAuctionSteps, auction.startBlock)
+        if (preBidEndBlock && preBidEndBlock !== auction.startBlock) {
+          requests.push({
+            chainId: auction.chainId,
+            blockNumber: preBidEndBlock,
+          })
+        }
+
         return requests
       })
       .flat()
@@ -230,6 +262,14 @@ export function useTopAuctions(): {
             ? getBlockTimestamp(coreAuction.chainId, coreAuction.endBlock)
             : undefined
 
+        const preBidEndBlock = coreAuction
+          ? computePreBidEndBlock(coreAuction.parsedAuctionSteps, coreAuction.startBlock)
+          : undefined
+        const preBidEndBlockTimestamp =
+          coreAuction?.chainId && preBidEndBlock && preBidEndBlock !== coreAuction.startBlock
+            ? getBlockTimestamp(coreAuction.chainId, preBidEndBlock)
+            : startBlockTimestamp
+
         let auctionWithCurrency: PlainMessage<AuctionWithStats>['auction']
         if (coreAuction !== undefined) {
           auctionWithCurrency = {
@@ -250,6 +290,7 @@ export function useTopAuctions(): {
           timeRemaining: {
             startBlockTimestamp,
             endBlockTimestamp,
+            preBidEndBlockTimestamp,
             isCompleted: isAuctionCompleted({
               endBlock: coreAuction?.endBlock,
               blockNumber: coreAuction?.chainId ? blocksByChain.get(coreAuction.chainId)?.number : undefined,

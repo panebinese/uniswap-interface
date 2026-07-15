@@ -58,7 +58,15 @@ describe('create auction help links', () => {
   })
 
   it('points the launch failed modal help CTA to the launch auction article', () => {
-    render(<LaunchAuctionErrorModal isOpen tokenSymbol="UNI" onClose={() => undefined} onRetry={() => undefined} />)
+    render(
+      <LaunchAuctionErrorModal
+        isOpen
+        tokenSymbol="UNI"
+        onClose={() => undefined}
+        onRetry={() => undefined}
+        onEditTokenInfo={() => undefined}
+      />,
+    )
 
     expect(screen.getByRole('link', { name: 'Get help' })).toHaveAttribute(
       'href',

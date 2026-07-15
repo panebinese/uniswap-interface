@@ -98,8 +98,9 @@ export function YouNeedTokenView({
       <Flex gap="$spacing8">
         <Button
           emphasis="primary"
-          size="medium"
+          size="large"
           fill={false}
+          width="100%"
           isDisabled={actionsDisabled}
           // tokenColor is a runtime hex string, not a Tamagui theme token — applied via `style`.
           style={{ backgroundColor: tokenColor }}
@@ -109,10 +110,11 @@ export function YouNeedTokenView({
         </Button>
         <Button
           emphasis="tertiary"
-          size="medium"
+          size="large"
           borderWidth="$spacing1"
           borderColor="$surface3"
           fill={false}
+          width="100%"
           backgroundColor="$surface3"
           icon={<Bank color="$neutral1" size="$icon.20" />}
           isDisabled={actionsDisabled}

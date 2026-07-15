@@ -319,4 +319,24 @@ describe('createCreateAuctionStore', () => {
 
     expect(store.getState().customizePool.customPriceRanges).toHaveLength(MAX_CUSTOM_PRICE_RANGE_ENTRIES)
   })
+
+  it('stores the wallet the X verification token was bound to', () => {
+    const store = createCreateAuctionStore()
+    const { actions } = store.getState()
+
+    actions.setXVerification({
+      xHandle: 'satoshi',
+      xVerificationToken: 'token-abc',
+      boundWalletAddress: '0x1111111111111111111111111111111111111111',
+    })
+
+    expect(store.getState().xVerification).toEqual({
+      xHandle: 'satoshi',
+      xVerificationToken: 'token-abc',
+      boundWalletAddress: '0x1111111111111111111111111111111111111111',
+    })
+
+    actions.setXVerification(undefined)
+    expect(store.getState().xVerification).toBeUndefined()
+  })
 })

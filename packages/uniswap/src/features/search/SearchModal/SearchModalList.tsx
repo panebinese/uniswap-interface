@@ -1,7 +1,7 @@
-import { ContentStyle } from '@shopify/flash-list'
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { isHoverable } from '@universe/environment'
 import { memo, useCallback, useState, type ReactNode } from 'react'
+import type { StyleProp, ViewStyle } from 'react-native'
 import { Flex } from 'ui/src'
 import { ArrowRight } from 'ui/src/components/icons/ArrowRight'
 import { EarnVaultOptionItem } from 'uniswap/src/components/lists/items/earn/EarnVaultOptionItem'
@@ -32,7 +32,6 @@ import type { RenderIssuerRowArgs } from 'uniswap/src/features/expandableAsset/t
 import { sendSearchOptionItemClickedAnalytics } from 'uniswap/src/features/search/SearchModal/analytics/analytics'
 import { SearchFilterContext } from 'uniswap/src/features/search/SearchModal/analytics/SearchContext'
 import { useDelayedMenuClose } from 'uniswap/src/features/search/SearchModal/hooks/useDelayedMenuClose'
-import { MultichainTokenContextMenuButton } from 'uniswap/src/features/search/SearchModal/MultichainTokenContextMenuButton'
 import { RwaCollectionItem } from 'uniswap/src/features/search/SearchModal/RwaCollectionItem'
 import { RwaIssuerRow } from 'uniswap/src/features/search/SearchModal/RwaIssuerRow'
 import { getRwaCollectionKey } from 'uniswap/src/features/search/SearchModal/stocks/rwaSearchGrouping'
@@ -97,7 +96,7 @@ export interface SearchModalListProps {
   onSelect?: () => void
   searchFilters: SearchFilterContext
   renderedInModal: boolean
-  contentContainerStyle?: ContentStyle
+  contentContainerStyle?: StyleProp<ViewStyle>
   rowWrapper?: (props: {
     element: JSX.Element
     currencyInfo: CurrencyInfo
@@ -328,15 +327,6 @@ export const SearchModalList = memo(function SearchModalListInner({
               setFocusedRowIndex,
               rowIndex,
             }}
-            rightElement={
-              isHoverable ? (
-                <MultichainTokenContextMenuButton
-                  multichainResult={item.multichainResult}
-                  primaryCurrencyInfo={item.primaryCurrencyInfo}
-                  isVisible={rowIndex === focusedRowIndex}
-                />
-              ) : undefined
-            }
             modifierPressHref={getTokenDetailsUrl?.(
               item.primaryCurrencyInfo.currencyId,
               tdpChainSelectionFromFilter(multichainTdpChain),

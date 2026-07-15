@@ -1,3 +1,4 @@
+import 'src/global.css'
 import { ApolloProvider } from '@apollo/client'
 import { loadDevMessages, loadErrorMessages } from '@apollo/client/dev'
 import { DdRum, RumActionType } from '@datadog/mobile-react-native'
@@ -9,7 +10,6 @@ import {
   DatadogSessionSampleRateKey,
   DynamicConfigs,
   Experiments,
-  FeatureFlags,
   getDynamicConfigValue,
   getIsHashcashSolverEnabled,
   getIsSessionServiceEnabled,
@@ -20,7 +20,6 @@ import {
   StatsigCustomAppValue,
   type StatsigUser,
   Storage,
-  useFeatureFlag,
   useIsSessionServiceEnabled,
   WALLET_FEATURE_FLAG_NAMES,
 } from '@universe/gating'
@@ -49,6 +48,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { enableFreeze } from 'react-native-screens'
 import { useDispatch, useSelector } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
+import { ignoreFabricMountStateErrors } from 'src/app/ignoreFabricMountStateErrors'
 import { createMMKVApolloAdapter } from 'src/app/mmkvApolloAdapter'
 import { MobileWalletNavigationProvider } from 'src/app/MobileWalletNavigationProvider'
 import { AppModals } from 'src/app/modals/AppModals'
@@ -86,7 +86,7 @@ import { SystemBannerPortalProvider } from 'src/notification-service/notificatio
 import { initDynamicIntlPolyfills, loadIntlPolyfillsForLocale } from 'src/polyfills/intl-delayed'
 import { useDatadogUserAttributesTracking } from 'src/screens/HomeScreen/useDatadogUserAttributesTracking'
 import { useAppStateTrigger } from 'src/utils/useAppStateTrigger'
-import { flexStyles, ImageSettingsProvider, useIsDarkMode } from 'ui/src'
+import { flexStyles, useIsDarkMode } from 'ui/src'
 import { TestnetModeBanner } from 'uniswap/src/components/banners/TestnetModeBanner'
 import { BlankUrlProvider } from 'uniswap/src/contexts/UrlContext'
 import { initializePortfolioQueryOverrides } from 'uniswap/src/data/rest/portfolioBalanceOverrides'
@@ -105,6 +105,7 @@ import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import i18n, { changeLanguage } from 'uniswap/src/i18n'
 import { type CurrencyId } from 'uniswap/src/types/currency'
+import { Uniwind } from 'uniwind'
 import { registerConsoleOverrides } from 'utilities/src/logger/console'
 import { attachUnhandledRejectionHandler, setAttributesToDatadog } from 'utilities/src/logger/datadog/Datadog'
 import { DDRumAction, DDRumTiming } from 'utilities/src/logger/datadog/datadogEvents'
@@ -319,8 +320,6 @@ function AppOuter(): JSX.Element | null {
     sendAnalyticsEvent(MobileEventName.PerformanceReport, report)
   }, [])
 
-  const enableExpoImage = useFeatureFlag(FeatureFlags.ExpoImage)
-
   useEffect(() => {
     for (const [_, flagKey] of WALLET_FEATURE_FLAG_NAMES.entries()) {
       DdRum.addFeatureFlagEvaluation(
@@ -358,34 +357,35 @@ function AppOuter(): JSX.Element | null {
           <ApplyPersistedLanguage />
           <BlankUrlProvider>
             <LocalizationContextProvider>
-              <ImageSettingsProvider enableExpoImage={enableExpoImage}>
-                <GestureHandlerRootView style={flexStyles.fill}>
-                  <WalletContextProvider>
-                    <PrivyProviderWrapper>
-                      <NavigationContainer>
-                        <MobileWalletNavigationProvider>
-                          <NativeWalletProvider>
-                            <RemotePriceProvider>
-                              <WalletUniswapProvider>
-                                <AccountsStoreContextProvider>
-                                  <DataUpdaters />
-                                  <BottomSheetModalProvider>
-                                    <AppModals />
-                                    <PerformanceProfiler onReportPrepared={onReportPrepared}>
-                                      <AppInner />
-                                    </PerformanceProfiler>
-                                  </BottomSheetModalProvider>
-                                  <NotificationToastWrapper />
-                                </AccountsStoreContextProvider>
-                              </WalletUniswapProvider>
-                            </RemotePriceProvider>
-                          </NativeWalletProvider>
-                        </MobileWalletNavigationProvider>
-                      </NavigationContainer>
-                    </PrivyProviderWrapper>
-                  </WalletContextProvider>
-                </GestureHandlerRootView>
-              </ImageSettingsProvider>
+              <GestureHandlerRootView style={flexStyles.fill}>
+                <WalletContextProvider>
+                  <PrivyProviderWrapper>
+                    <NavigationContainer>
+                      <MobileWalletNavigationProvider>
+                        <NativeWalletProvider>
+                          <RemotePriceProvider>
+                            <WalletUniswapProvider>
+                              <AccountsStoreContextProvider>
+                                <DataUpdaters />
+                                <BottomSheetModalProvider>
+                                  <AppModals />
+                                  <PerformanceProfiler
+                                    errorHandler={ignoreFabricMountStateErrors}
+                                    onReportPrepared={onReportPrepared}
+                                  >
+                                    <AppInner />
+                                  </PerformanceProfiler>
+                                </BottomSheetModalProvider>
+                                <NotificationToastWrapper />
+                              </AccountsStoreContextProvider>
+                            </WalletUniswapProvider>
+                          </RemotePriceProvider>
+                        </NativeWalletProvider>
+                      </MobileWalletNavigationProvider>
+                    </NavigationContainer>
+                  </PrivyProviderWrapper>
+                </WalletContextProvider>
+              </GestureHandlerRootView>
             </LocalizationContextProvider>
           </BlankUrlProvider>
         </ErrorBoundaryWrapper>
@@ -426,6 +426,11 @@ function AppInner(): JSX.Element {
     // changes selectedColorScheme but not themeSetting, and the native side must re-sync.
     NativeModules['ThemeModule'].setColorScheme(themeSetting)
   }, [themeSetting, selectedColorScheme])
+
+  useEffect(() => {
+    // Sync uniwind's theme (Tailwind tokens from @universe/tailwind/native) with the resolved color scheme; no DOM, so switched imperatively.
+    Uniwind.setTheme(selectedColorScheme)
+  }, [selectedColorScheme])
 
   useLogMissingMnemonic()
   useLogUnexpectedOnboardingReset()

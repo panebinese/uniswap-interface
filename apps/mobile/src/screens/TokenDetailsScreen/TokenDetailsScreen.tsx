@@ -1,7 +1,7 @@
 import { useApolloClient } from '@apollo/client'
 import { ReactNavigationPerformanceView } from '@shopify/react-native-performance-navigation'
 import { GQLQueries, GraphQLApi } from '@universe/api'
-import { FeatureFlags } from '@universe/gating'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { memo, useEffect, useMemo } from 'react'
 import { FadeInDown, FadeOutDown } from 'react-native-reanimated'
 import type { AppStackScreenProp } from 'src/app/navigation/types'
@@ -28,6 +28,7 @@ import { useGatedTokenDetailsRWAMatch } from 'src/components/TokenDetails/useTok
 import { TokenDetailsActionButtonsWrapper } from 'src/screens/TokenDetailsScreen/TokenDetailsActionButtonsWrapper'
 import { HeaderRightElement, HeaderTitleElement } from 'src/screens/TokenDetailsScreen/TokenDetailsHeaders'
 import { TokenDetailsModals } from 'src/screens/TokenDetailsScreen/TokenDetailsModals'
+import { useMobileTDPHeartbeatCoordinator } from 'src/screens/TokenDetailsScreen/useMobileTDPHeartbeatCoordinator'
 import { Flex } from 'ui/src'
 import { AnimatedFlex } from 'ui/src/components/layout/AnimatedFlex'
 import { BaseCard } from 'uniswap/src/components/BaseCard/BaseCard'
@@ -102,15 +103,20 @@ function TokenDetailsWrapper(): JSX.Element {
 
 const TokenDetailsQuery = memo(function TokenDetailsQueryInner(): JSX.Element {
   const { currencyId, setError } = useTokenDetailsContext()
+  // The TDP heartbeat coordinator only takes over refreshing when this flag is on —
+  // otherwise these queries must keep their own poll running, or they'd never refresh.
+  const isDataLivelinessEnabled = useFeatureFlag(FeatureFlags.DataLivelinessUI)
+
+  useMobileTDPHeartbeatCoordinator({ enabled: isDataLivelinessEnabled })
 
   const { error } = GraphQLApi.useTokenDetailsScreenQuery({
     variables: {
       ...currencyIdToContractInput(currencyId),
       multichain: true,
     },
-    pollInterval: PollingInterval.Normal,
     notifyOnNetworkStatusChange: true,
     returnPartialData: true,
+    pollInterval: isDataLivelinessEnabled ? undefined : PollingInterval.Normal,
   })
 
   useEffect(() => setError(error), [error, setError])
@@ -156,7 +162,7 @@ const TokenDetails = memo(function TokenDetailsInner(): JSX.Element {
 
             {showEarn && <TokenDetailsEarnSection activeAddress={activeAddress} earnData={earnData} />}
 
-            {showEarn && <TokenDetailsEarnBanner earnData={earnData} />}
+            {showEarn && <TokenDetailsEarnBanner activeAddress={activeAddress} earnData={earnData} />}
           </Flex>
           <Flex gap="$spacing24">
             <TokenPerformance />

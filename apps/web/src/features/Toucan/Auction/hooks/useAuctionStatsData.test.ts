@@ -1,0 +1,143 @@
+import { renderHook } from '@testing-library/react'
+import { Token } from '@uniswap/sdk-core'
+import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useAuctionStatsData } from '~/features/Toucan/Auction/hooks/useAuctionStatsData'
+import { AuctionDetails, BidTokenInfo } from '~/features/Toucan/Auction/store/types'
+
+const mockUseStatsBannerData = vi.fn()
+const mockStoreState = { auctionDetails: null as AuctionDetails | null, checkpointData: null }
+
+vi.mock('~/features/Toucan/Auction/hooks/useStatsBannerData', () => ({
+  useStatsBannerData: () => mockUseStatsBannerData(),
+}))
+
+vi.mock('~/features/Toucan/Auction/store/useAuctionStore', () => ({
+  useAuctionStore: (selector: (state: typeof mockStoreState) => unknown) => selector(mockStoreState),
+}))
+
+vi.mock('uniswap/src/features/language/LocalizationContext', () => ({
+  useLocalizationContext: () => ({
+    formatPercent: (value: number) => `${value}%`,
+  }),
+}))
+
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: () => ({ data: undefined }),
+}))
+
+vi.mock('uniswap/src/data/apiClients/liquidityService/AuctionQueryClient', () => ({
+  AuctionQueryClient: {},
+}))
+
+vi.mock('~/hooks/useBlockTimestamp', () => ({
+  useBlockTimestamp: () => undefined,
+}))
+
+vi.mock('~/features/Toucan/Config/config', () => ({
+  getAuctionMetadata: () => undefined,
+}))
+
+const CHAIN_ID = 1
+const TOKEN_ADDRESS = '0x0000000000000000000000000000000000000001'
+// 1 billion tokens with 18 decimals
+const TOKEN_TOTAL_SUPPLY_RAW = (10n ** 27n).toString()
+
+const bidTokenInfo: BidTokenInfo = {
+  symbol: 'ETH',
+  decimals: 18,
+  priceFiat: 3000,
+  isStablecoin: false,
+  logoUrl: null,
+}
+
+function buildToken({ decimals, symbol, name }: { decimals: number; symbol?: string; name?: string }): CurrencyInfo {
+  return {
+    currency: new Token(CHAIN_ID, TOKEN_ADDRESS, decimals, symbol, name),
+    currencyId: `${CHAIN_ID}-${TOKEN_ADDRESS}`,
+    logoUrl: null,
+  } as CurrencyInfo
+}
+
+function buildAuctionDetails({ token }: { token: CurrencyInfo | undefined }): AuctionDetails {
+  return {
+    auctionId: 'auction-1',
+    chainId: CHAIN_ID,
+    address: '0x0000000000000000000000000000000000000002',
+    tokenAddress: TOKEN_ADDRESS,
+    totalSupply: TOKEN_TOTAL_SUPPLY_RAW,
+    tokenTotalSupply: TOKEN_TOTAL_SUPPLY_RAW,
+    startBlock: '100',
+    token,
+  } as unknown as AuctionDetails
+}
+
+function mockStatsBanner(overrides: Partial<ReturnType<typeof buildStatsBannerFixture>> = {}) {
+  mockUseStatsBannerData.mockReturnValue({ ...buildStatsBannerFixture(), ...overrides })
+}
+
+function buildStatsBannerFixture() {
+  return {
+    clearingPriceDecimal: 0.05,
+    concentrationStartDecimal: null,
+    concentrationEndDecimal: null,
+    bidTokenInfo,
+    currencyRaisedFormatted: null,
+    requiredCurrencyFormatted: null,
+    isLoading: false,
+    isAuctionEnded: true,
+    isAuctionNotStarted: false,
+  }
+}
+
+describe('useAuctionStatsData', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockStatsBanner()
+  })
+
+  it('formats supplies and implied price with resolved decimals (18)', () => {
+    mockStoreState.auctionDetails = buildAuctionDetails({
+      token: buildToken({ decimals: 18, symbol: 'TCAN', name: 'Toucan' }),
+    })
+
+    const { result } = renderHook(() => useAuctionStatsData())
+
+    // 10^27 raw scaled by 18 decimals = 1 billion tokens
+    expect(result.current.totalSupply).toBe('1B')
+    expect(result.current.auctionSupply).toBe('1B')
+    expect(result.current.impliedTokenPrice?.start).toMatch(/ETH$/)
+  })
+
+  it('falls back to placeholders while token metadata has not resolved (undefined decimals)', () => {
+    mockStoreState.auctionDetails = buildAuctionDetails({ token: undefined })
+
+    const { result } = renderHook(() => useAuctionStatsData())
+
+    // Never renders the raw un-scaled supply (e.g. "1000000000000000T") by assuming decimals
+    expect(result.current.totalSupply).toBeNull()
+    expect(result.current.auctionSupply).toBeNull()
+    expect(result.current.impliedTokenPrice).toBeNull()
+  })
+
+  it('falls back to placeholders for corrupt metadata (decimals=0 with empty name/symbol)', () => {
+    mockStoreState.auctionDetails = buildAuctionDetails({ token: buildToken({ decimals: 0 }) })
+
+    const { result } = renderHook(() => useAuctionStatsData())
+
+    expect(result.current.totalSupply).toBeNull()
+    expect(result.current.auctionSupply).toBeNull()
+    expect(result.current.impliedTokenPrice).toBeNull()
+  })
+
+  it('keeps a legitimate 0-decimals token (real name/symbol) rendering', () => {
+    mockStoreState.auctionDetails = buildAuctionDetails({
+      token: buildToken({ decimals: 0, symbol: 'ZERO', name: 'Zero Decimals' }),
+    })
+
+    const { result } = renderHook(() => useAuctionStatsData())
+
+    // 10^27 raw with 0 decimals really is 10^27 tokens
+    expect(result.current.totalSupply).toBe('1000000000000000T')
+  })
+})

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex, Text } from 'ui/src'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -40,9 +40,11 @@ import {
 import { useCreateAuctionSubmit } from '~/pages/Liquidity/CreateAuction/hooks/useCreateAuctionSubmit'
 import { useCreateAuctionTokenColor } from '~/pages/Liquidity/CreateAuction/hooks/useCreateAuctionTokenColor'
 import { useExistingTokenWalletBalance } from '~/pages/Liquidity/CreateAuction/hooks/useExistingTokenWalletBalance'
+import { useIsQuickLaunchMode } from '~/pages/Liquidity/CreateAuction/hooks/useIsQuickLaunchMode'
 import { useLaunchAuctionFlow } from '~/pages/Liquidity/CreateAuction/hooks/useLaunchAuctionFlow'
 import { useStableRaiseUsdPrice } from '~/pages/Liquidity/CreateAuction/hooks/useStableRaiseUsdPrice'
 import { getLaunchThreshold } from '~/pages/Liquidity/CreateAuction/launchThreshold'
+import { applyQuickLaunchAuctionWindow } from '~/pages/Liquidity/CreateAuction/quickLaunch/quickLaunchPreset'
 import {
   CreateAuctionStep,
   PriceRangeStrategy,
@@ -59,10 +61,15 @@ export function ReviewLaunchStep(): JSX.Element | null {
   const tokenColor = useCreateAuctionTokenColor()
   const { formatNumberOrString, formatPercent } = useLocalizationContext()
   const tokenForm = useCreateAuctionStore((state) => state.tokenForm)
+  // QuickLaunch: quick launch skips the Configure/Customize steps, so their edit buttons are hidden.
+  // Effective mode (flag + new-token + switch), NOT the raw store flag, which defaults to on.
+  const quickLaunch = useIsQuickLaunchMode()
+  const quickLaunchDuration = useCreateAuctionStore((state) => state.quickLaunchDuration)
+  const [pendingQuickLaunchRetry, setPendingQuickLaunchRetry] = useState(false)
   const configureAuction = useCreateAuctionStore((state) => state.configureAuction)
   const customizePool = useCreateAuctionStore((state) => state.customizePool)
   const xVerification = useCreateAuctionStore((state) => state.xVerification)
-  const { setStep } = useCreateAuctionStoreActions()
+  const { setStep, setStartTime, setEndTime } = useCreateAuctionStoreActions()
   const activeAddress = useActiveAddress(Platform.EVM)
   const { evmAccount } = useWallet()
   const trace = useTrace()
@@ -191,7 +198,7 @@ export function ReviewLaunchStep(): JSX.Element | null {
     customizePool,
     walletAddress: activeAddress ?? undefined,
     currencyAddress,
-    xVerificationToken: xVerification?.xVerificationToken,
+    xVerification,
     existingTokenWalletBalanceRaw,
     getCreateFailedProperties,
   })
@@ -222,6 +229,13 @@ export function ReviewLaunchStep(): JSX.Element | null {
       ? resolveTokenImageSrc(tokenForm.imageUrl)
       : (tokenForm.existingTokenCurrencyInfo?.logoUrl ?? undefined)
 
+  // Quick launch has no editable start time, so a stale start is fixed by refreshing the preset
+  // window and retrying once the store update has rendered (handleRetry reads this render's props).
+  const handleQuickLaunchRetry = useEvent(() => {
+    applyQuickLaunchAuctionWindow({ setStartTime, setEndTime }, quickLaunchDuration)
+    setPendingQuickLaunchRetry(true)
+  })
+
   const launchFlow = useLaunchAuctionFlow({
     evmAccount,
     chainId,
@@ -234,13 +248,21 @@ export function ReviewLaunchStep(): JSX.Element | null {
     tokenLogoUrl: launchTokenLogoUrl,
   })
 
+  const launchFlowHandleRetry = launchFlow.handleRetry
+  useEffect(() => {
+    if (pendingQuickLaunchRetry && configureAuction.startTime && configureAuction.startTime.getTime() > Date.now()) {
+      setPendingQuickLaunchRetry(false)
+      launchFlowHandleRetry()
+    }
+  }, [pendingQuickLaunchRetry, configureAuction.startTime, launchFlowHandleRetry])
+
   if (!committed || !raiseCurrencyInfo) {
     return null
   }
 
   return (
     <Flex gap="$spacing12">
-      <Flex backgroundColor="$surface1" p="$spacing24" gap="$spacing32">
+      <Flex backgroundColor="$surface1" p="$spacing24" gap="$spacing32" $md={{ p: '$none' }}>
         <ReviewLaunchTokenInfoSection
           tokenForm={tokenForm}
           tokenName={tokenName}
@@ -262,14 +284,14 @@ export function ReviewLaunchStep(): JSX.Element | null {
           stableRaiseUsdPrice={stableRaiseUsdPrice}
           floorPriceNum={floorPriceNum}
           fdv={fdv}
-          onEditAuctionConfig={handleEditAuctionConfig}
+          onEditAuctionConfig={quickLaunch ? undefined : handleEditAuctionConfig}
           onOpenKycHookExplorer={handleOpenKycHookExplorer}
         />
 
         <Flex gap="$spacing16">
           <SectionHeader
             title={t('toucan.createAuction.step.reviewLaunch.poolDetails')}
-            onEdit={handleEditCustomizePool}
+            onEdit={quickLaunch ? undefined : handleEditCustomizePool}
           />
 
           <ReviewRow label={t('fee.tier')}>
@@ -370,7 +392,8 @@ export function ReviewLaunchStep(): JSX.Element | null {
         tokenSymbol={tokenSymbol}
         error={launchFlow.launchError}
         onClose={launchFlow.handleCloseErrorModal}
-        onRetry={launchFlow.handleRetry}
+        onRetry={quickLaunch ? handleQuickLaunchRetry : launchFlow.handleRetry}
+        onEditTokenInfo={handleEditTokenInfo}
       />
 
       <LaunchAuctionSuccessModal

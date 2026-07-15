@@ -1,18 +1,27 @@
 import type { Currency } from '@uniswap/sdk-core'
 import type { MutableRefObject } from 'react'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { MAX_FIAT_INPUT_DECIMALS } from 'uniswap/src/constants/transactions'
-import { getEarnFiatPercentageInput, getEarnPercentageInput } from 'uniswap/src/features/earn/amount'
+import {
+  getEarnDepositPercentageInput,
+  getEarnFiatPercentageInput,
+  getMaxDepositTokenAmount,
+} from 'uniswap/src/features/earn/amount'
+import { useMaxAmountSpend } from 'uniswap/src/features/gas/hooks/useMaxAmountSpend'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { getCurrencyAmount, ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
 import { useUSDTokenUpdater } from 'uniswap/src/features/transactions/hooks/useUSDTokenUpdater'
+import { TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
 
 type UseEarnAmountEntryMobileParams = {
   currency: Currency | undefined
   isWithdrawing: boolean
   initialAmount?: string
   walletBalance: number
+  walletBalanceRaw?: string
   selectedDepositSourceBalanceUsd: number | undefined
-  positionBalanceUsd: number
+  withdrawableBalanceUsd: number
+  isWithdrawLiquidityLimited: boolean
 }
 
 type UseEarnAmountEntryMobileResult = {
@@ -26,6 +35,7 @@ type UseEarnAmountEntryMobileResult = {
   hasInputAmount: boolean
   tokenComparisonAmount: number | undefined
   localFiatComparisonAmount: number | undefined
+  isMaxSelected: boolean
   setActiveAmount: (next: string) => void
   handlePercentPress: (pct: number) => void
   handleToggleInputMode: () => void
@@ -39,17 +49,50 @@ export function useEarnAmountEntryMobile({
   isWithdrawing,
   initialAmount,
   walletBalance,
+  walletBalanceRaw,
   selectedDepositSourceBalanceUsd,
-  positionBalanceUsd,
+  withdrawableBalanceUsd,
+  isWithdrawLiquidityLimited,
 }: UseEarnAmountEntryMobileParams): UseEarnAmountEntryMobileResult {
   const { convertFiatAmount } = useLocalizationContext()
   const [exactAmountFiat, setExactAmountFiat, exactAmountFiatRef] = useStateWithRef(initialAmount ?? '')
   const [exactAmountToken, setExactAmountToken, exactAmountTokenRef] = useStateWithRef('')
   const [isFiatInput, setIsFiatInput] = useState(true)
+  const [isMaxSelected, setIsMaxSelected] = useState(false)
 
   const exactValueRef = isFiatInput ? exactAmountFiatRef : exactAmountTokenRef
   const value = isFiatInput ? exactAmountFiat : exactAmountToken
   const maxDecimals = isFiatInput ? MAX_FIAT_INPUT_DECIMALS : (currency?.decimals ?? 0)
+  const walletBalanceAmount = useMemo(
+    () =>
+      currency
+        ? getCurrencyAmount({
+            value: walletBalanceRaw ?? walletBalance.toFixed(currency.decimals),
+            valueType: walletBalanceRaw ? ValueType.Raw : ValueType.Exact,
+            currency,
+          })
+        : undefined,
+    [currency, walletBalance, walletBalanceRaw],
+  )
+  const maxSpendableAmount = useMaxAmountSpend({
+    currencyAmount: walletBalanceAmount,
+    txType: TransactionType.Deposit,
+  })
+  const maxDepositTokenAmount = useMemo(() => {
+    if (!currency) {
+      return undefined
+    }
+
+    if (currency.isNative && maxSpendableAmount) {
+      return maxSpendableAmount.toExact()
+    }
+
+    return getMaxDepositTokenAmount({
+      balanceQuantity: walletBalance,
+      balanceRaw: walletBalanceRaw,
+      currency,
+    })
+  }, [currency, maxSpendableAmount, walletBalance, walletBalanceRaw])
 
   useUSDTokenUpdater({
     isFiatInput,
@@ -67,6 +110,7 @@ export function useEarnAmountEntryMobile({
       } else {
         setExactAmountToken(next)
       }
+      setIsMaxSelected(false)
     },
     [isFiatInput, setExactAmountFiat, setExactAmountToken],
   )
@@ -74,22 +118,25 @@ export function useEarnAmountEntryMobile({
   const handlePercentPress = useCallback(
     (pct: number) => {
       const convertUsdToLocalFiat = (balanceUsd: number): number => convertFiatAmount(balanceUsd).amount
+      setIsMaxSelected(pct === 1)
       if (isWithdrawing) {
         const fiatAmount = getEarnFiatPercentageInput({
-          balanceUsd: positionBalanceUsd,
+          balanceUsd: withdrawableBalanceUsd,
           convertUsdToLocalFiat,
           fiatDecimals: MAX_FIAT_INPUT_DECIMALS,
           percentage: pct,
+          rounding: pct === 1 && isWithdrawLiquidityLimited ? 'down' : 'nearest',
         })
         setExactAmountFiat(fiatAmount)
         setIsFiatInput(true)
         return
       }
 
-      const percentageInput = getEarnPercentageInput({
+      const percentageInput = getEarnDepositPercentageInput({
         balanceQuantity: walletBalance,
         balanceUsd: selectedDepositSourceBalanceUsd,
         convertUsdToLocalFiat,
+        exactMaxTokenAmount: maxDepositTokenAmount,
         fiatDecimals: MAX_FIAT_INPUT_DECIMALS,
         percentage: pct,
         tokenDecimals: currency?.decimals ?? MAX_FIAT_INPUT_DECIMALS,
@@ -102,10 +149,12 @@ export function useEarnAmountEntryMobile({
       convertFiatAmount,
       currency?.decimals,
       isWithdrawing,
-      positionBalanceUsd,
+      isWithdrawLiquidityLimited,
+      maxDepositTokenAmount,
       selectedDepositSourceBalanceUsd,
       setExactAmountFiat,
       setExactAmountToken,
+      withdrawableBalanceUsd,
       walletBalance,
     ],
   )
@@ -141,6 +190,7 @@ export function useEarnAmountEntryMobile({
     hasInputAmount,
     tokenComparisonAmount,
     localFiatComparisonAmount,
+    isMaxSelected,
     setActiveAmount,
     handlePercentPress,
     handleToggleInputMode,

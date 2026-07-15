@@ -157,6 +157,8 @@ export { createNoopPerformanceTracker } from '@universe/sessions/src/performance
 
 // Test utilities (for integration testing)
 export {
+  createMockSessionClient,
+  defineMockEndpoints,
   InMemorySessionStorage,
   InMemoryDeviceIdService,
   InMemoryUniswapIdentifierService,
