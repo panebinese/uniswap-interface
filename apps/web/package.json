@@ -198,7 +198,7 @@
     "@types/react-scroll-sync": "0.9.0",
     "@uniswap/analytics": "1.7.2",
     "@uniswap/analytics-events": "2.43.0",
-    "@uniswap/client-data-api": "0.0.122",
+    "@uniswap/client-data-api": "0.0.129",
     "@uniswap/client-explore": "0.0.18",
     "@uniswap/client-liquidity": "1.3.6",
     "@uniswap/client-notification-service": "0.0.11",

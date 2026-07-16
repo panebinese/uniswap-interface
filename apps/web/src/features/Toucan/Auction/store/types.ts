@@ -17,10 +17,11 @@ export enum AuctionLockMode {
  * Liquidity-lock metadata (`data.v1.LiquidityLockInfo`) for auctions whose graduated LP position
  * is held by a timelock recipient contract.
  *
- * These fields are not yet published in `@uniswap/client-data-api` (verified absent as of 0.0.122),
- * so they are typed locally with every field optional. Consumers must treat absence as "not locked"
- * so the frontend ships ahead of backend readiness — once the client publishes `liquidity_lock`,
- * values flow through `GetAuction` without further changes here.
+ * `Auction.liquidity_lock` is published in `@uniswap/client-data-api` as of 0.0.124, but this
+ * local widening remains deliberate: auction data reaches the store via an unchecked cast (see
+ * useLoadAuctionDetails), so every field stays optional and the enum/uint64 fields accept both
+ * wire shapes (string names / numbers) — `useAuctionLiquidityLock` normalizes them. It also
+ * carries `lockedForever`, which ships in 0.0.125 (not yet in 0.0.124).
  */
 export interface AuctionLiquidityLockInfo {
   /** Lock recipient contract address (the burn address for burn-mode locks). Presence means the LP position is locked. */
@@ -49,7 +50,7 @@ export interface AuctionLiquidityLockInfo {
   totalTokensBurned?: string
 }
 
-export interface AuctionDetails extends Omit<Auction, 'chainId'> {
+export interface AuctionDetails extends Omit<Auction, 'chainId' | 'liquidityLock'> {
   // Override chainId to use EVMUniverseChainId for type safety
   chainId: EVMUniverseChainId
   // Auction token info (the token being auctioned off via tokenAddress)
@@ -57,11 +58,11 @@ export interface AuctionDetails extends Omit<Auction, 'chainId'> {
   token?: CurrencyInfo
   // Pre-bidding end block derived from parsedAuctionSteps
   preBidEndBlock?: string
-  // Liquidity-lock metadata — optional and absent until the client-data-api release that
-  // carries `liquidity_lock` (see AuctionLiquidityLockInfo). Absence means "not locked".
+  // Liquidity-lock metadata — overrides the generated `LiquidityLockInfo` message type with the
+  // widened wire-shape form (see AuctionLiquidityLockInfo). Absence means "not locked".
   liquidityLock?: AuctionLiquidityLockInfo
-  // Pool owner address for the unlocked case ("LP owner" display). Same pending-release caveat.
-  poolOwner?: string
+  // poolOwner (unlocked "LP owner" display) is inherited from the generated Auction type
+  // (served since client-data-api 0.0.124; unset until migration params are indexed).
   // Launched-token metadata (tokenImageUrl / tokenDescription / xHandle, fields 40-42 on
   // `data.v1.Auction`) is inherited from the generated Auction type. It is unset (not empty
   // string) while a newly launched token's metadata is pending moderation, so all consumers

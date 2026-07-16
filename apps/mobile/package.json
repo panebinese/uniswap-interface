@@ -112,7 +112,7 @@
     "@tanstack/react-query": "5.90.20",
     "@uniswap/analytics": "1.7.2",
     "@uniswap/analytics-events": "2.43.0",
-    "@uniswap/client-data-api": "0.0.122",
+    "@uniswap/client-data-api": "0.0.129",
     "@uniswap/client-explore": "0.0.18",
     "@uniswap/client-notification-service": "0.0.11",
     "@uniswap/ethers-rs-mobile": "0.0.5",
