@@ -60,6 +60,10 @@ const AUCTION_METADATA_OVERRIDES: Record<string, AuctionMetadataOverride> = {
   '42161-0x170f6e39ea851108f0713090467871f28a62a5d4': {
     logoUrl: '/images/logos/boardwalk-token-launch-logo.png',
   },
+  // Boardwalk (BWLK) — Ethereum mainnet auction token
+  '1-0xf9a352b7c7b62a852e5c8a64a455246dd9596461': {
+    logoUrl: '/images/logos/bwlk-token-launch-logo.png',
+  },
 }
 
 /**
@@ -146,4 +150,5 @@ export const DEFAULT_VERIFIED_AUCTION_IDS = [
   '1_0xfFDab1083fCbBCEE32997795388B3D61Ebab786E',
   '1_0x20eEBd78151EAe9Ed2380AC613204aaF5CA0cd24',
   '1_0x687Cc38d8279dF3352b64cF3EC1fe8e033933595', // Interfold (FOLD)
+  '1_0x74D1fbC555D8888b0AD87f5822dD1666498459e4', // Boardwalk (BWLK)
 ]
