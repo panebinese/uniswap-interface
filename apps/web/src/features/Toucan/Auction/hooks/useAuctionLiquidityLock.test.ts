@@ -12,7 +12,10 @@ import {
 import { formatTimestampToDate } from '~/features/Toucan/Auction/utils/formatting'
 
 const mockUseStatsBannerData = vi.fn()
-const mockStoreState = { auctionDetails: null as AuctionDetails | null }
+const mockStoreState = {
+  auctionDetails: null as AuctionDetails | null,
+  currentBlockNumber: undefined as number | undefined,
+}
 
 vi.mock('~/features/Toucan/Auction/hooks/useStatsBannerData', () => ({
   useStatsBannerData: () => mockUseStatsBannerData(),
@@ -91,6 +94,7 @@ describe('useAuctionLiquidityLock', () => {
     vi.clearAllMocks()
     mockStatsBanner()
     mockStoreState.auctionDetails = null
+    mockStoreState.currentBlockNumber = undefined
   })
 
   it('returns not-locked defaults when the auction has no lock info', () => {
@@ -147,6 +151,124 @@ describe('useAuctionLiquidityLock', () => {
     expect(result.current.lpOwner).toBe(LP_OPERATOR)
     expect(result.current.unlockTimestamp).toBe(UNLOCK_TIMESTAMP)
     expect(result.current.unlockDateFormatted).toBe(formatTimestampToDate(UNLOCK_TIMESTAMP))
+  })
+
+  it('reads an expired timelock as never-locked', () => {
+    mockStoreState.currentBlockNumber = 40000001
+    mockStoreState.auctionDetails = buildAuctionDetails({
+      poolOwner: POOL_OWNER,
+      liquidityLock: {
+        lockRecipient: LOCK_RECIPIENT,
+        lockMode: 1,
+        unlockBlock: '40000000',
+        lpOperator: LP_OPERATOR,
+      },
+    })
+
+    const { result } = renderHook(() => useAuctionLiquidityLock())
+
+    // Lock-status indicators clear: no unlock date, LP owner falls back to the pool owner
+    expect(result.current.isLocked).toBe(false)
+    expect(result.current.isBuybackEnabled).toBe(false)
+    expect(result.current.isFeesForwarder).toBe(false)
+    expect(result.current.unlockTimestamp).toBeUndefined()
+    expect(result.current.unlockDateFormatted).toBeUndefined()
+    expect(result.current.lpOwner).toBe(POOL_OWNER)
+  })
+
+  it('keeps the buyback-burn stat and pill after the lock expires', () => {
+    mockStoreState.currentBlockNumber = 40000001
+    mockStoreState.auctionDetails = buildAuctionDetails({
+      poolOwner: POOL_OWNER,
+      liquidityLock: {
+        lockRecipient: LOCK_RECIPIENT,
+        lockMode: 3,
+        unlockBlock: '40000000',
+        lpOperator: LP_OPERATOR,
+        totalTokensBurned: BURNED_RAW,
+      },
+    })
+
+    const { result } = renderHook(() => useAuctionLiquidityLock())
+
+    // Lock-status indicators clear on expiry...
+    expect(result.current.isLocked).toBe(false)
+    expect(result.current.unlockDateFormatted).toBeUndefined()
+    expect(result.current.lpOwner).toBe(POOL_OWNER)
+    // ...but buyback & burn is a permanent characteristic and must persist
+    expect(result.current.isBuybackEnabled).toBe(true)
+    expect(result.current.hasBurnedTokens).toBe(true)
+    expect(result.current.burnedAmountFormatted).toBe('1.25M TCAN')
+    expect(result.current.burnedUsdFormatted).toBe('$187500000')
+  })
+
+  it('shows no buyback stat for a never-locked auction', () => {
+    mockStoreState.auctionDetails = buildAuctionDetails({ poolOwner: POOL_OWNER })
+
+    const { result } = renderHook(() => useAuctionLiquidityLock())
+
+    expect(result.current.isBuybackEnabled).toBe(false)
+    expect(result.current.hasBurnedTokens).toBe(false)
+    expect(result.current.burnedAmountFormatted).toBeUndefined()
+  })
+
+  it('stays locked when the unlock block has not been reached yet', () => {
+    mockStoreState.currentBlockNumber = 39999999
+    mockStoreState.auctionDetails = buildAuctionDetails({
+      poolOwner: POOL_OWNER,
+      liquidityLock: {
+        lockRecipient: LOCK_RECIPIENT,
+        lockMode: 1,
+        unlockBlock: '40000000',
+        lpOperator: LP_OPERATOR,
+      },
+    })
+
+    const { result } = renderHook(() => useAuctionLiquidityLock())
+
+    expect(result.current.isLocked).toBe(true)
+    expect(result.current.lockMode).toBe(AuctionLockMode.Timelock)
+    expect(result.current.lpOwner).toBe(LP_OPERATOR)
+    expect(result.current.unlockDateFormatted).toBe(formatTimestampToDate(UNLOCK_TIMESTAMP))
+  })
+
+  it('keeps a permanent lock locked regardless of the current block', () => {
+    mockStoreState.currentBlockNumber = 260000000001
+    mockStoreState.auctionDetails = buildAuctionDetails({
+      liquidityLock: {
+        lockRecipient: LOCK_RECIPIENT,
+        lockMode: 1,
+        unlockBlock: '260000000000',
+        lpOperator: LP_OPERATOR,
+        lockedForever: true,
+      },
+    })
+
+    const { result } = renderHook(() => useAuctionLiquidityLock())
+
+    expect(result.current.isLocked).toBe(true)
+    expect(result.current.isPermanentlyLocked).toBe(true)
+    expect(result.current.lockMode).toBe(AuctionLockMode.Timelock)
+    expect(result.current.lpOwner).toBe(LP_OPERATOR)
+  })
+
+  it('stays locked while the current block is still loading (no flash-off)', () => {
+    mockStoreState.currentBlockNumber = undefined
+    mockStoreState.auctionDetails = buildAuctionDetails({
+      poolOwner: POOL_OWNER,
+      liquidityLock: {
+        lockRecipient: LOCK_RECIPIENT,
+        lockMode: 1,
+        unlockBlock: '40000000',
+        lpOperator: LP_OPERATOR,
+      },
+    })
+
+    const { result } = renderHook(() => useAuctionLiquidityLock())
+
+    expect(result.current.isLocked).toBe(true)
+    expect(result.current.lockMode).toBe(AuctionLockMode.Timelock)
+    expect(result.current.lpOwner).toBe(LP_OPERATOR)
   })
 
   it('reads a burn lock as permanently locked with no unlock date or LP owner', () => {

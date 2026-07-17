@@ -17,9 +17,15 @@ export interface AuctionLiquidityLockData {
    * timelocks (`locked_forever` on the wire). Render "Forever" instead of an unlock date.
    */
   isPermanentlyLocked: boolean
-  /** Lock mode — undefined when not locked or the mode is unrecognized */
+  /**
+   * Lock mode from the raw lock data — undefined only when there is no lock or the mode is
+   * unrecognized. Independent of expiry (buyback-burn characteristics persist after a lock expires).
+   */
   lockMode: AuctionLockMode | undefined
-  /** True when the lock is a buyback & burn recipient. All buyback UI must be hidden when false. */
+  /**
+   * True when the lock is a buyback & burn recipient. Independent of expiry — the burn is
+   * permanent, so this stays true after a lock unlocks. All buyback UI must be hidden when false.
+   */
   isBuybackEnabled: boolean
   /** True when the lock is a fees-forwarder recipient */
   isFeesForwarder: boolean
@@ -77,6 +83,36 @@ function parseBigIntOrUndefined(value: string | number | bigint | undefined): bi
 }
 
 /**
+ * A lock reads as active only while its unlock block is still in the future. Compare block
+ * numbers against `currentBlockNumber` — never the estimated unlock date, which drifts.
+ * `lockedForever` locks (burn / legacy max-int sentinel) never expire; any finite-unlockBlock
+ * lock — including buyback-burn — expires once the block is reached. While `currentBlockNumber`
+ * is undefined (still loading) the lock stays active to avoid a flash-off of the indicators.
+ */
+function resolveIsLocked({
+  hasLockRecipient,
+  isPermanentlyLocked,
+  unlockBlock,
+  currentBlockNumber,
+}: {
+  hasLockRecipient: boolean
+  isPermanentlyLocked: boolean
+  unlockBlock: bigint | undefined
+  currentBlockNumber: number | undefined
+}): boolean {
+  if (isPermanentlyLocked) {
+    return true
+  }
+  if (!hasLockRecipient) {
+    return false
+  }
+  if (unlockBlock === undefined || currentBlockNumber === undefined) {
+    return true
+  }
+  return BigInt(currentBlockNumber) < unlockBlock
+}
+
+/**
  * Derives display state for an auction's liquidity lock (timelock / fees-forwarder /
  * buyback & burn) from `GetAuction` data.
  *
@@ -93,19 +129,34 @@ export function useAuctionLiquidityLock(): AuctionLiquidityLockData {
   const { clearingPriceDecimal, bidTokenInfo } = useStatsBannerData()
 
   const auctionDetails = useAuctionStore((state) => state.auctionDetails)
+  const currentBlockNumber = useAuctionStore((state) => state.currentBlockNumber)
 
   const lock = auctionDetails?.liquidityLock
   // Burn-mode locks and legacy max-int "Permanent" timelocks are served with `lockedForever`
   const isPermanentlyLocked = Boolean(lock?.lockedForever)
-  const isLocked = Boolean(lock?.lockRecipient) || isPermanentlyLocked
-  const lockMode = isLocked ? parseLockMode(lock?.lockMode) : undefined
+
+  // An expired lock reads as never-locked (see resolveIsLocked), so the lock-status indicators —
+  // chip, lock icon, "LP locked until", lpOwner — clear on expiry. Buyback-burn UI is derived
+  // separately below and intentionally survives expiry.
+  const unlockBlockBigInt = parseBigIntOrUndefined(lock?.unlockBlock)
+  const isLocked = resolveIsLocked({
+    hasLockRecipient: Boolean(lock?.lockRecipient),
+    isPermanentlyLocked,
+    unlockBlock: unlockBlockBigInt,
+    currentBlockNumber,
+  })
+
+  // Buyback & burn is a permanent token characteristic, not a lock-active state, so its mode and
+  // burned totals must survive lock expiry — derive them from the raw lock mode, never from the
+  // expiry-aware isLocked. Fees-forwarding, by contrast, stops once the LP unlocks (see feeRecipient).
+  const lockMode = parseLockMode(lock?.lockMode)
   const isBuybackEnabled = lockMode === AuctionLockMode.BuybackBurn
   const isFeesForwarder = lockMode === AuctionLockMode.FeesForwarder
 
   // Backend serves the unlock block only — estimate the calendar date the same way the
   // auction countdown estimates future blocks. A permanent lock has no meaningful unlock
   // block (0 for burn), so it must never feed the estimator.
-  const unlockBlock = isLocked && !isPermanentlyLocked ? parseBigIntOrUndefined(lock?.unlockBlock) : undefined
+  const unlockBlock = isLocked && !isPermanentlyLocked ? unlockBlockBigInt : undefined
   const unlockTimestamp = useBlockTimestamp({
     chainId: auctionDetails?.chainId,
     blockNumber: unlockBlock === undefined ? undefined : Number(unlockBlock),
@@ -113,7 +164,8 @@ export function useAuctionLiquidityLock(): AuctionLiquidityLockData {
   const unlockDateFormatted = unlockTimestamp === undefined ? undefined : formatTimestampToDate(unlockTimestamp)
 
   const lpOwner = (isLocked ? lock?.lpOperator : auctionDetails?.poolOwner) || undefined
-  const feeRecipient = (isFeesForwarder ? lock?.feeRecipient : undefined) || undefined
+  // Fee forwarding is only meaningful while the LP is actually locked — hide it once expired
+  const feeRecipient = (isLocked && isFeesForwarder ? lock?.feeRecipient : undefined) || undefined
 
   const auctionTokenDecimals = getAuctionTokenDecimals(auctionDetails?.token)
   const auctionTokenSymbol = auctionDetails?.token?.currency.symbol ?? auctionDetails?.tokenSymbol
