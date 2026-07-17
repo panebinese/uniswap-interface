@@ -392,6 +392,7 @@ export {
   getPrimaryStablecoin,
   getRaiseCurrencyAddress,
   getRaiseCurrencyAsCurrency,
+  getSupportedAuctionCurrencyAddresses,
 } from '~/pages/Liquidity/CreateAuction/raiseCurrency'
 
 /**

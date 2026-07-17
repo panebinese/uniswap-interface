@@ -42,3 +42,12 @@ export function getRaiseCurrencyAsCurrency(
 export function getRaiseCurrencyAddress(raiseCurrency: RaiseCurrency, chainId: UniverseChainId): string {
   return raiseCurrency === RaiseCurrency.NATIVE ? zeroAddress : getPrimaryStablecoin(chainId).address
 }
+
+/**
+ * Every on-chain currency address an auction can be denominated in on a chain — the single source
+ * of truth the bid form shares with creation so the two can't accept different currency sets.
+ * Native is the zero address.
+ */
+export function getSupportedAuctionCurrencyAddresses(chainId: UniverseChainId): string[] {
+  return Object.values(RaiseCurrency).map((raiseCurrency) => getRaiseCurrencyAddress(raiseCurrency, chainId))
+}
