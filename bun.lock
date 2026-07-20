@@ -886,7 +886,7 @@
         "@uniswap/client-for": "0.1.5",
         "@uniswap/client-liquidity": "1.3.6",
         "@uniswap/client-notification-service": "0.0.11",
-        "@uniswap/client-privy-embedded-wallet": "0.1.2",
+        "@uniswap/client-privy-embedded-wallet": "0.1.5",
         "@uniswap/client-unirpc-v2": "0.0.4",
         "@uniswap/client-unitag": "0.0.4",
         "@universe/config": "workspace:^",
@@ -1393,7 +1393,7 @@
         "@uniswap/client-embeddedwallet": "0.0.16",
         "@uniswap/client-explore": "0.0.18",
         "@uniswap/client-liquidity": "1.3.6",
-        "@uniswap/client-privy-embedded-wallet": "0.1.2",
+        "@uniswap/client-privy-embedded-wallet": "0.1.5",
         "@uniswap/client-unirpc-v2": "0.0.4",
         "@uniswap/permit2-sdk": "1.3.0",
         "@uniswap/router-sdk": "2.7.1",
@@ -5159,7 +5159,7 @@
 
     "@uniswap/client-platform-service": ["@uniswap/client-platform-service@0.0.20", "", {}, "sha512-63qrg7s+q4uzhUg6gLItQvhIhJT0oNtTYKRforWuf+zuiS0Orn0f8er755D2EMMDF4RAXUFjJNPIb4nPTeuqtA=="],
 
-    "@uniswap/client-privy-embedded-wallet": ["@uniswap/client-privy-embedded-wallet@0.1.2", "", {}, "sha512-nAJlfOkrzmYJz5zSy2WGhD5Rxlq1gZCknDuWc9IPNFFcS/gIMqR31wVkz6qaaE2sKk+7+TCmiAbkTmDCfQ6D0g=="],
+    "@uniswap/client-privy-embedded-wallet": ["@uniswap/client-privy-embedded-wallet@0.1.5", "", {}, "sha512-kfxayIO1WAaMIqxn7wEfLWfBCS2L9CDNPlOOae/y599Yu/wj2oKYBPGr4CZ0+DghW/rdUhcEGKHRy4Oj+i0S4Q=="],
 
     "@uniswap/client-trading": ["@uniswap/client-trading@0.1.3", "", {}, "sha512-ZQ4Hjz8/KU5ZpOAmB2shcuFRgBTc09U4pG8Lew2fvFV3XIhgU6MQXpzII340IDjMsoG9729arasLT+rI1uKNdA=="],
 

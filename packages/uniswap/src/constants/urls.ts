@@ -81,6 +81,8 @@ export const UniswapHelpUrls = {
     supportedNetworks: createHelpArticleUrl('14569415293325'),
     swapFeeInfo: createHelpArticleUrl('20131678274957'),
     passkeysInfo: createHelpArticleUrl('35522111260173'),
+    // TODO(INFRA): swap placeholder id for the rotation help article
+    backupLoginReconnect: createHelpArticleUrl('35522111260173'),
     smartWalletDelegation: createHelpArticleUrl('36391987158797'),
     swapProtection: createHelpArticleUrl('18814993155853'),
     swapSlippage: createHelpArticleUrl('8643879653261-What-is-Price-Slippage-'),
@@ -286,7 +288,10 @@ export function getUniswapServiceUrls(overrides: UniswapUrlOverrides): UniswapSe
 
     // Privy REST endpoints
     // Docs: https://docs.privy.io/guide/api/encrypted-authorization-keys
-    privyEncryptedAuthorizationKeysUrl: `https://privy.${embeddedWalletHostname}/api/v1/encrypted_authorization_keys`,
+    // Local dev (vite dev only) hits Privy directly; deployed/e2e use the cookie-wrapping proxy.
+    privyEncryptedAuthorizationKeysUrl: isDevEnv()
+      ? 'https://auth.privy.io/api/v1/encrypted_authorization_keys'
+      : `https://privy.${embeddedWalletHostname}/api/v1/encrypted_authorization_keys`,
 
     scantasticApiUrl:
       overrides.scantasticApiUrlOverride ||

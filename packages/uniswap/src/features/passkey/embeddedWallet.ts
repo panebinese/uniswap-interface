@@ -264,7 +264,7 @@ export {
 } from 'uniswap/src/features/passkey/authenticatorManagement'
 export { authenticateWithPasskey, refreshNeckSession } from 'uniswap/src/features/passkey/passkeySession'
 export type { SetupProgress } from 'uniswap/src/features/passkey/recoverySetup'
-export { encryptAndStoreRecovery } from 'uniswap/src/features/passkey/recoverySetup'
+export { encryptAndStoreRecovery, RecoveryOprfError } from 'uniswap/src/features/passkey/recoverySetup'
 // Re-exports from sub-modules — consumers continue to import from this file
 export {
   exportEncryptedSeedPhrase,
@@ -288,6 +288,10 @@ export interface EncryptedRecoveryState {
  * transient activation window is still open when `authenticatePasskey` fires.
  */
 export type RecoveryAuthMethodType = 'EMAIL' | 'GOOGLE' | 'APPLE'
+
+export function toRecoveryAuthMethodType(provider: 'google' | 'apple' | null): RecoveryAuthMethodType {
+  return provider === 'google' ? 'GOOGLE' : provider === 'apple' ? 'APPLE' : 'EMAIL'
+}
 
 export async function authorizeAndCompleteRecovery({
   encrypted,

@@ -96,6 +96,10 @@ export function buildFlagGroups(extras: {
       flags: [
         { flag: FeatureFlags.EmbeddedWallet, label: 'Add internal embedded wallet functionality' },
         {
+          flag: FeatureFlags.DisableV1EwRotation,
+          label: 'Disable v1 embedded-wallet recovery rotation (force passkey sign-in)',
+        },
+        {
           flag: FeatureFlags.Support7677GasSponsorship,
           label: 'Advertise EIP-7677 paymaster sponsorship in wallet_getCapabilities',
         },

@@ -169,6 +169,7 @@ export const ModalName = {
   RecipientSelectViewOnlyWarning: 'recipient-select-view-only-warning',
   RecoveryPhraseDownloadPrompt: 'recovery-phrase-download-prompt',
   RecoverySpeedBump: 'recovery-speed-bump',
+  ReconnectBackupLogin: 'reconnect-backup-login-modal',
   RemoveBackupLogin: 'remove-backup-login-modal',
   RemoveLiquidity: 'remove-liquidity',
   RemoveSeedPhraseWarningModal: 'remove-seed-phrase-warning-modal',

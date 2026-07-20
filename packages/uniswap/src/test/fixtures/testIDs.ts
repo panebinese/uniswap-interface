@@ -258,6 +258,7 @@ export const TestID = {
   RangeInputIncrement: 'range-input-increment',
   ReadMoreButton: 'read-more-button',
   Receive: 'receive',
+  ReconnectBackupLogin: 'reconnect-backup-login',
   RelativePriceChange: 'relative-price-change',
   Remove: 'remove',
   RemoveBackupLoginOverflow: 'remove-backup-login-overflow',

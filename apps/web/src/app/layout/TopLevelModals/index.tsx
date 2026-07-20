@@ -61,6 +61,7 @@ export function TopLevelModals() {
         <ModalRenderer modalName={ModalName.PendingWalletConnection} />
         <ModalRenderer modalName={ModalName.AddPasskey} />
         <ModalRenderer modalName={ModalName.AddBackupLogin} />
+        <ModalRenderer modalName={ModalName.ReconnectBackupLogin} />
         <ModalRenderer modalName={ModalName.RecoverWallet} />
         <ModalRenderer modalName={ModalName.DeletePasskey} />
         <ModalRenderer modalName={ModalName.RemoveBackupLogin} />
@@ -108,6 +109,7 @@ export function TopLevelModals() {
       />
       <ModalRenderer modalName={ModalName.AddPasskey} />
       <ModalRenderer modalName={ModalName.AddBackupLogin} />
+      <ModalRenderer modalName={ModalName.ReconnectBackupLogin} />
       <ModalRenderer modalName={ModalName.RecoverWallet} />
       <ModalRenderer modalName={ModalName.DeletePasskey} />
       <ModalRenderer modalName={ModalName.RemoveBackupLogin} />
