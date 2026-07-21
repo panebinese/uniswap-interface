@@ -39,7 +39,7 @@ interface AuctionStatsData {
   // start: "0.041589 ETH", end: undefined (single price when auction ended)
   impliedTokenPrice: { start: string; end?: string } | null
 
-  // Percent of auction supply committed to LP
+  // Percent of the full token supply committed to LP
   percentCommittedToLpFormatted: string | null
 
   // Loading state
@@ -115,25 +115,29 @@ export function useAuctionStatsData(): AuctionStatsData {
   })
 
   const percentCommittedToLpFormatted = useMemo(() => {
-    if (!lpAllocationResponse?.tokenCountAllocatedToLp || !auctionDetails?.totalSupply) {
+    // Denominator is the FULL token supply (tokenTotalSupply), not the auctioned slice
+    // (totalSupply) — the LP allocation is drawn from the full supply, so dividing by the
+    // slice overflows past 100%. tokenTotalSupply is optional (null on an RPC error).
+    const tokenTotalSupplyRaw = auctionDetails?.tokenTotalSupply
+    if (lpAllocationResponse?.tokenCountAllocatedToLp == null || tokenTotalSupplyRaw == null) {
       return null
     }
 
     try {
       const lpTokenCount = BigInt(lpAllocationResponse.tokenCountAllocatedToLp)
-      const auctionSupplyRaw = BigInt(auctionDetails.totalSupply)
+      const tokenTotalSupply = BigInt(tokenTotalSupplyRaw)
 
-      if (auctionSupplyRaw === 0n) {
+      if (tokenTotalSupply === 0n) {
         return null
       }
 
       // Round to whole percent for display
-      const percentRounded = (lpTokenCount * 100n + auctionSupplyRaw / 2n) / auctionSupplyRaw
+      const percentRounded = (lpTokenCount * 100n + tokenTotalSupply / 2n) / tokenTotalSupply
       return formatPercent(Number(percentRounded), 1)
     } catch {
       return null
     }
-  }, [auctionDetails?.totalSupply, formatPercent, lpAllocationResponse?.tokenCountAllocatedToLp])
+  }, [auctionDetails?.tokenTotalSupply, formatPercent, lpAllocationResponse?.tokenCountAllocatedToLp])
 
   // Get auction start block timestamp
   const auctionStartBlockNumber = auctionDetails?.startBlock ? Number(auctionDetails.startBlock) : undefined
